@@ -9,6 +9,9 @@
     <Authors>umlx5h</Authors>
     <Copyright>umlx5h © 2025</Copyright>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+    <ApplicationIcon>LLPlayer.ico</ApplicationIcon>
+    <Description>The media player for language learning.</Description>
+    <PackageProjectUrl>https://llplayer.com</PackageProjectUrl>
   </PropertyGroup>
 
 </Project>
