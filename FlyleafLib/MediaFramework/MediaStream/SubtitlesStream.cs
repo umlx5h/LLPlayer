@@ -1,12 +1,56 @@
 ﻿using System.IO;
-
+using System.Linq;
 using FlyleafLib.MediaFramework.MediaDemuxer;
+using FlyleafLib.MediaPlayer;
 
 namespace FlyleafLib.MediaFramework.MediaStream;
 
-public unsafe class SubtitlesStream : StreamBase
+public enum SelectSubMethod
 {
-    public bool     IsBitmap    { get; set; }
+    Original
+}
+
+// Both external and internal subtitles implement this interface and use it with PopMenu.
+public interface ISubtitlesStream
+{
+    public bool EnabledPrimarySubtitle { get; }
+    public bool EnabledSecondarySubtitle { get; }
+}
+
+public class SelectedSubMethod
+{
+    private readonly ISubtitlesStream _stream;
+
+    public SelectedSubMethod(ISubtitlesStream stream, SelectSubMethod method)
+    {
+        _stream = stream;
+        SelectSubMethod = method;
+    }
+
+    public SelectSubMethod SelectSubMethod { get; }
+
+    public bool IsPrimaryEnabled => _stream.EnabledPrimarySubtitle
+                                    && SelectSubMethod == SubtitlesSelectedHelper.PrimaryMethod;
+
+    public bool IsSecondaryEnabled => _stream.EnabledSecondarySubtitle
+                                    && SelectSubMethod == SubtitlesSelectedHelper.SecondaryMethod;
+}
+
+public unsafe class SubtitlesStream : StreamBase, ISubtitlesStream
+{
+    public bool IsBitmap { get; set; }
+
+    public SelectedSubMethod[] SelectedSubMethods {
+        get
+        {
+            var methods = (SelectSubMethod[])Enum.GetValues(typeof(SelectSubMethod));
+
+            return methods.
+                Select(m => new SelectedSubMethod(this, m)).ToArray();
+        }
+    }
+
+    public string DisplayMember => $"[#{StreamIndex}] {Language} ({(IsBitmap ? "BMP" : "TXT")})";
 
     public override string GetDump()
         => $"[{Type}  #{StreamIndex}-{Language.IdSubLanguage}{(Title != null ? "(" + Title + ")" : "")}] {Codec} | [BR: {BitRate}] | {Utils.TicksToTime((long)(AVStream->start_time * Timebase))}/{Utils.TicksToTime((long)(AVStream->duration * Timebase))} | {Utils.TicksToTime(StartTime)}/{Utils.TicksToTime(Duration)}";

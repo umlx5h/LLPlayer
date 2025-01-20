@@ -57,7 +57,7 @@ unsafe partial class Player
 
     int     vDistanceMs;
     int     aDistanceMs;
-    int     sDistanceMs;
+    int[]   sDistanceMss;
     int     dDistanceMs;
     int     sleepMs;
 
@@ -71,11 +71,16 @@ unsafe partial class Player
     long    curLatency;
     internal long curAudioDeviceDelay;
 
+    public int subNum => Config.Subtitles.Max;
+
     Stopwatch sw = new();
 
     private void ShowOneFrame()
     {
-        sFrame = null;
+        for (int i = 0; i < subNum; i++)
+        {
+            sFrames[i] = null;
+        }
         if (VideoDecoder.Frames.IsEmpty || !VideoDecoder.Frames.TryDequeue(out vFrame))
             return;
 
@@ -87,19 +92,17 @@ unsafe partial class Player
         if (!VideoDemuxer.IsHLSLive)
             curTime = vFrame.timestamp;
 
-        UIAdd(() => UpdateCurTime());
+        UI(() => UpdateCurTime());
 
-        // Clear last subtitles text if video timestamp is not within subs timestamp + duration (to prevent clearing current subs on pause/play)
-        if (sFramePrev == null || sFramePrev.timestamp > vFrame.timestamp || (sFramePrev.timestamp + (sFramePrev.duration * (long)10000)) < vFrame.timestamp)
+        for (int i = 0; i < subNum; i++)
         {
-            sFramePrev = null;
-            renderer.ClearOverlayTexture();
-            Subtitles.subsText = "";
-            if (Subtitles._SubsText != "")
-                UIAdd(() => Subtitles.SubsText = Subtitles.SubsText);
+            // Clear last subtitles text if video timestamp is not within subs timestamp + duration (to prevent clearing current subs on pause/play)
+            if (sFramesPrev[i] == null || sFramesPrev[i].timestamp > vFrame.timestamp || (sFramesPrev[i].timestamp + (sFramesPrev[i].duration * (long)10000)) < vFrame.timestamp)
+            {
+                sFramesPrev[i] = null;
+                SubtitleClear(i);
+            }
         }
-
-        UIAll();
 
         // Required for buffering on paused
         if (decoder.RequiresResync && !IsPlaying && seeks.IsEmpty)
@@ -133,15 +136,27 @@ unsafe partial class Player
             }
         }
 
-        if (Subtitles.isOpened && Config.Subtitles.Enabled)
+        if (Config.Subtitles.Enabled)
         {
-            lock (lockSubtitles)
-            if (SubtitlesDecoder.OnVideoDemuxer)
-                SubtitlesDecoder.Start();
-            else if (!decoder.RequiresResync)
+            for (int i = 0; i < subNum; i++)
             {
-                SubtitlesDemuxer.Start();
-                SubtitlesDecoder.Start();
+                if (!Subtitles[i].IsOpened)
+                {
+                    continue;
+                }
+
+                lock (lockSubtitles)
+                {
+                    if (SubtitlesDecoders[i].OnVideoDemuxer)
+                    {
+                        SubtitlesDecoders[i].Start();
+                    }
+                    else if (!decoder.RequiresResync)
+                    {
+                        SubtitlesDemuxers[i].Start();
+                        SubtitlesDecoders[i].Start();
+                    }
+                }
             }
         }
 
@@ -159,7 +174,10 @@ unsafe partial class Player
         VideoDecoder.DisposeFrame(vFrame);
         vFrame = null;
         aFrame = null;
-        sFrame = null;
+        for (int i = 0; i < subNum; i++)
+        {
+            sFrames[i] = null;
+        }
         dFrame = null;
 
         bool gotAudio       = !Audio.IsOpened || Config.Player.MaxLatency != 0;
@@ -304,13 +322,13 @@ unsafe partial class Player
                 seeks.Clear();
                 requiresBuffering = true;
 
-                if (sFramePrev != null)
+                for (int i = 0; i < subNum; i++)
                 {
-                    sFramePrev = null;
-                    renderer.ClearOverlayTexture();
-                    Subtitles.subsText = "";
-                    if (Subtitles._SubsText != "")
-                        UI(() => Subtitles.SubsText = Subtitles.SubsText);
+                    if (sFramesPrev[i] != null)
+                    {
+                        sFramesPrev[i] = null;
+                        SubtitleClear(i);
+                    }
                 }
 
                 decoder.PauseDecoders(); // TBR: Required to avoid gettings packets between Seek and ShowFrame which causes resync issues
@@ -387,8 +405,11 @@ unsafe partial class Player
             if (aFrame == null && !isAudioSwitch)
                 AudioDecoder.Frames.TryDequeue(out aFrame);
 
-            if (sFrame == null && !isSubsSwitch )
-                SubtitlesDecoder.Frames.TryPeek(out sFrame);
+            for (int i = 0; i < subNum; i++)
+            {
+                if (sFrames[i] == null && !isSubsSwitches[i])
+                    SubtitlesDecoders[i].Frames.TryPeek(out sFrames[i]);
+            }
 
             if (dFrame == null && !isDataSwitch)
                 DataDecoder.Frames.TryPeek(out dFrame);
@@ -429,9 +450,12 @@ unsafe partial class Player
             else
                 aDistanceMs = int.MaxValue;
 
-            sDistanceMs = sFrame != null
-                ? (int) ((((sFrame.timestamp - startTicks) / speed) - elapsedTicks) / 10000)
-                : int.MaxValue;
+            for (int i = 0; i < subNum; i++)
+            {
+                sDistanceMss[i] = sFrames[i] != null
+                    ? (int)((((sFrames[i].timestamp - startTicks) / speed) - elapsedTicks) / 10000)
+                    : int.MaxValue;
+            }
 
             dDistanceMs = dFrame != null
                 ? (int)((((dFrame.timestamp - startTicks) / speed) - elapsedTicks) / 10000)
@@ -571,51 +595,52 @@ unsafe partial class Player
                 VideoDecoder.Frames.TryDequeue(out vFrame);
             }
 
-            if (sFramePrev != null && ((sFramePrev.timestamp - startTicks + (sFramePrev.duration * (long)10000)) / speed) - (long) (sw.ElapsedTicks * SWFREQ_TO_TICKS) < 0)
+            for (int i = 0; i < subNum; i++)
             {
-                if (string.IsNullOrEmpty(sFramePrev.text))
-                    renderer.ClearOverlayTexture();
-                else
+                if (sFramesPrev[i] != null && ((sFramesPrev[i].timestamp - startTicks + (sFramesPrev[i].duration * (long)10000)) / speed) - (long) (sw.ElapsedTicks * SWFREQ_TO_TICKS) < 0)
                 {
-                    Subtitles.subsText = "";
-                    UI(() => Subtitles.SubsText = Subtitles.SubsText);
+                    SubtitleClear(i);
+
+                    sFramesPrev[i] = null;
                 }
 
-                sFramePrev = null;
-            }
-
-            if (sFrame != null)
-            {
-                if (Math.Abs(sDistanceMs - sleepMs) < 30 || (sDistanceMs < -30 && sFrame.duration + sDistanceMs > 0))
+                if (sFrames[i] != null)
                 {
-                    if (string.IsNullOrEmpty(sFrame.text))
+                    if (Math.Abs(sDistanceMss[i] - sleepMs) < 30 || (sDistanceMss[i] < -30 && sFrames[i].duration + sDistanceMss[i] > 0))
                     {
-                        if (sFrame.sub.num_rects > 0)
+                        if (sFrames[i].isBitmap && sFrames[i].sub.num_rects > 0)
                         {
-                            renderer.CreateOverlayTexture(sFrame, SubtitlesDecoder.CodecCtx->width, SubtitlesDecoder.CodecCtx->height);
-                            SubtitlesDecoder.DisposeFrame(sFrame); // only rects
+                            // renderer.CreateOverlayTexture(sFrame, SubtitlesDecoder.CodecCtx->width, SubtitlesDecoder.CodecCtx->height);
+                            SubtitleDisplay(sFrames[i].bitmap, i);
+
+                            SubtitlesDecoder.DisposeFrame(sFrames[i]);  // only rects
+                        }
+                        else if (sFrames[i].isBitmap && sFrames[i].sub.num_rects == 0)
+                        {
+                            // For Blu-ray subtitles (PGS), clear the previous subtitle
+                            SubtitleClear(i);
+                            sFramesPrev[i] = sFrames[i] = null;
                         }
                         else
-                            renderer.ClearOverlayTexture();
+                        {
+                            SubtitleDisplay(sFrames[i].text, i);
+                        }
+                        sFramesPrev[i] = sFrames[i];
+                        sFrames[i] = null;
+                        SubtitlesDecoders[i].Frames.TryDequeue(out _);
                     }
-                    else
+                    else if (sDistanceMss[i] < -30)
                     {
-                        Subtitles.subsText = sFrame.text;
-                        UI(() => Subtitles.SubsText = Subtitles.SubsText);
+                        if (CanDebug)
+                            Log.Debug($"sDistanceMss[i] = {sDistanceMss[i]}");
+
+                        SubtitleClear(i);
+
+                        // TODO: L: Here sFrames can be null, occurs when switching subtitles?
+                        SubtitlesDecoder.DisposeFrame(sFrames[i]);
+                        sFrames[i] = null;
+                        SubtitlesDecoders[i].Frames.TryDequeue(out _);
                     }
-
-                    sFramePrev = sFrame;
-                    sFrame = null;
-                    SubtitlesDecoder.Frames.TryDequeue(out var devnull);
-                }
-                else if (sDistanceMs < -30)
-                {
-                    if (CanDebug) Log.Debug($"sDistanceMs = {sDistanceMs}");
-
-                    SubtitlesDecoder.DisposeFrame(sFrame);
-                    renderer.ClearOverlayTexture();
-                    sFrame = null;
-                    SubtitlesDecoder.Frames.TryDequeue(out var devnull);
                 }
             }
 

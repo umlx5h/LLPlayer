@@ -1,9 +1,10 @@
 ﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Threading;
-
+using FlyleafLib.MediaFramework.MediaDemuxer;
 using FlyleafLib.MediaFramework.MediaStream;
 using FlyleafLib.MediaFramework.MediaFrame;
-
+using FlyleafLib.MediaFramework.MediaRenderer;
 using static FlyleafLib.Logger;
 
 namespace FlyleafLib.MediaFramework.MediaDecoder;
@@ -15,8 +16,14 @@ public unsafe class SubtitlesDecoder : DecoderBase
     public ConcurrentQueue<SubtitlesFrame>
                             Frames              { get; protected set; } = new ConcurrentQueue<SubtitlesFrame>();
 
-    public SubtitlesDecoder(Config config, int uniqueId = -1) : base(config, uniqueId) { }
+    public PacketQueue      SubtitlesPackets;
 
+    public SubtitlesDecoder(Config config, int uniqueId = -1, int subIndex = 0) : base(config, uniqueId)
+    {
+        this.subIndex = subIndex;
+    }
+
+    private readonly int subIndex;
     protected override int Setup(AVCodec* codec)
     {
         lock (lockCodecCtx)
@@ -55,6 +62,8 @@ public unsafe class SubtitlesDecoder : DecoderBase
         int allowedErrors = Config.Decoder.MaxErrors;
         AVPacket *packet;
 
+        SubtitlesPackets = demuxer.SubtitlesPackets[subIndex];
+
         do
         {
             // Wait until Queue not Full or Stopped
@@ -73,14 +82,14 @@ public unsafe class SubtitlesDecoder : DecoderBase
             }
 
             // While Packets Queue Empty (Ended | Quit if Demuxer stopped | Wait until we get packets)
-            if (demuxer.SubtitlesPackets.Count == 0)
+            if (SubtitlesPackets.Count == 0)
             {
                 CriticalArea = true;
 
                 lock (lockStatus)
                     if (Status == Status.Running) Status = Status.QueueEmpty;
 
-                while (demuxer.SubtitlesPackets.Count == 0 && Status == Status.QueueEmpty)
+                while (SubtitlesPackets.Count == 0 && Status == Status.QueueEmpty)
                 {
                     if (demuxer.Status == Status.Ended)
                     {
@@ -127,8 +136,8 @@ public unsafe class SubtitlesDecoder : DecoderBase
 
             lock (lockCodecCtx)
             {
-                if (Status == Status.Stopped || demuxer.SubtitlesPackets.Count == 0) continue;
-                packet = demuxer.SubtitlesPackets.Dequeue();
+                if (Status == Status.Stopped || SubtitlesPackets.Count == 0) continue;
+                packet = SubtitlesPackets.Dequeue();
 
                 int gotFrame = 0;
                 SubtitlesFrame subFrame = new();
@@ -174,7 +183,8 @@ public unsafe class SubtitlesDecoder : DecoderBase
                     if (SubtitlesStream.IsBitmap) // clear prev subs frame
                     {
                         subFrame.duration   = uint.MaxValue;
-                        subFrame.timestamp  = pts - demuxer.StartTime + Config.Subtitles.Delay;
+                        subFrame.timestamp  = pts - demuxer.StartTime + Config.Subtitles[subIndex].Delay;
+                        subFrame.isBitmap   = true;
                         Frames.Enqueue(subFrame);
                     }
 
@@ -185,7 +195,7 @@ public unsafe class SubtitlesDecoder : DecoderBase
                 }
 
                 subFrame.duration   = subFrame.sub.end_display_time;
-                subFrame.timestamp  = pts - demuxer.StartTime + Config.Subtitles.Delay;
+                subFrame.timestamp  = pts - demuxer.StartTime + Config.Subtitles[subIndex].Delay;
 
                 if (subFrame.sub.rects[0]->type == AVSubtitleType.Ass)
                 {
@@ -208,6 +218,21 @@ public unsafe class SubtitlesDecoder : DecoderBase
                     if (string.IsNullOrEmpty(subFrame.text))
                         continue;
                 }
+                else if (subFrame.sub.rects[0]->type == AVSubtitleType.Bitmap)
+                {
+                    var rect = subFrame.sub.rects[0];
+                    byte[] data = Renderer.ConvertBitmapSub(subFrame.sub, false);
+
+                    subFrame.isBitmap = true;
+                    subFrame.bitmap = new SubtitlesFrameBitmap()
+                    {
+                        data = data,
+                        width = rect->w,
+                        height = rect->h,
+                        x = rect->x,
+                        y = rect->y,
+                    };
+                }
 
                 if (CanTrace) Log.Trace($"Processes {Utils.TicksToTime(subFrame.timestamp)}");
 
@@ -218,7 +243,8 @@ public unsafe class SubtitlesDecoder : DecoderBase
 
     public static void DisposeFrame(SubtitlesFrame frame)
     {
-        if (frame.sub.num_rects > 0)
+        Debug.Assert(frame != null, "frame is already disposed (race condition)");
+        if (frame != null && frame.sub.num_rects > 0)
             fixed(AVSubtitle* ptr = &frame.sub)
                 avsubtitle_free(ptr);
     }

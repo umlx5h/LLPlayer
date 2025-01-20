@@ -2,6 +2,7 @@
 
 using FlyleafLib.MediaFramework.MediaDemuxer;
 using FlyleafLib.MediaFramework.MediaPlaylist;
+using FlyleafLib.MediaPlayer;
 
 namespace FlyleafLib.MediaFramework.MediaStream;
 
@@ -29,7 +30,22 @@ public class ExternalStream : DemuxerInput
     /// <summary>
     /// Whether the item is currently enabled or not
     /// </summary>
-    public bool     Enabled         { get => _Enabled; set { if (SetUI(ref _Enabled, value) && value == true) OpenedCounter++; } }
+    public bool Enabled
+    {
+        get => _Enabled;
+        set
+        {
+            if (SetUI(ref _Enabled, value))
+            {
+                if (value)
+                {
+                    OpenedCounter++;
+                }
+                RaiseUI(nameof(EnabledPrimarySubtitle));
+                RaiseUI(nameof(EnabledSecondarySubtitle));
+            }
+        }
+    }
     bool _Enabled;
 
     /// <summary>
@@ -39,4 +55,10 @@ public class ExternalStream : DemuxerInput
 
     public MediaType
                     Type => this is ExternalAudioStream ? MediaType.Audio : this is ExternalVideoStream ? MediaType.Video : MediaType.Subs;
+
+    #region Subtitles
+    // TODO: L: Used for subtitle streams only, but defined in the base class
+    public bool EnabledPrimarySubtitle => Enabled && this.GetSubEnabled(0);
+    public bool EnabledSecondarySubtitle => Enabled && this.GetSubEnabled(1);
+    #endregion
 }

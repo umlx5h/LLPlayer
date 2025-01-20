@@ -100,11 +100,12 @@ unsafe partial class Player
         {
             Pause();
             dFrame = null;
-            sFrame = null;
-            renderer.ClearOverlayTexture();
-            Subtitles.subsText = "";
-            if (Subtitles._SubsText != "")
-                UI(() => Subtitles.SubsText = Subtitles.SubsText);
+            for (int i = 0; i < subNum; i++)
+            {
+                sFrames[i] = null;
+                SubtitleClear(i);
+            }
+
             decoder.Flush();
             decoder.RequiresResync = true;
 
@@ -153,14 +154,11 @@ unsafe partial class Player
                 VideoDecoder.DisposeFrame(vFrame);
             }
 
-            if (Subtitles._SubsText != "")
+            for (int i = 0; i < subNum; i++)
             {
-                sFrame = null;
-                Subtitles.subsText = "";
-                Subtitles.SubsText = Subtitles.SubsText;
+                sFrames[i] = null;
+                SubtitleClear(i);
             }
-            else
-                renderer.ClearOverlayTexture();
 
             if (VideoDecoder.Frames.IsEmpty)
                 vFrame = VideoDecoder.GetFrameNext();
@@ -205,14 +203,11 @@ unsafe partial class Player
                 shouldFlushPrev = false;
             }
 
-            if (Subtitles._SubsText != "")
+            for (int i = 0; i < subNum; i++)
             {
-                sFrame = null;
-                Subtitles.subsText = "";
-                Subtitles.SubsText = Subtitles.SubsText;
+                sFrames[i] = null;
+                SubtitleClear(i);
             }
-            else
-                renderer.ClearOverlayTexture();
 
             if (VideoDecoder.Frames.IsEmpty)
             {

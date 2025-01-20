@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-
+using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using FlyleafLib.MediaFramework.MediaDecoder;
-
+using FlyleafLib.MediaFramework.MediaFrame;
 using static FlyleafLib.Utils;
 using static FlyleafLib.Logger;
 
@@ -93,7 +96,10 @@ partial class Player
             {
                 VideoDecoder.DisposeFrame(vFrame);
                 vFrame = null;
-                sFrame = null;
+                for (int i = 0; i < subNum; i++)
+                {
+                    sFrames[i] = null;
+                }
 
                 if (Status == Status.Stopped)
                     decoder?.Initialize();
@@ -252,13 +258,13 @@ partial class Player
                         UI(() => Status = Status);
                     }
 
-                    if (sFramePrev != null)
+                    for (int i = 0; i < subNum; i++)
                     {
-                        sFramePrev = null;
-                        renderer.ClearOverlayTexture();
-                        Subtitles.subsText = "";
-                        if (Subtitles._SubsText != "")
-                            UI(() => Subtitles.SubsText = Subtitles.SubsText);
+                        if (sFramesPrev[i] != null)
+                        {
+                            sFramesPrev[i] = null;
+                            SubtitleClear(i);
+                        }
                     }
 
                     if (!Video.IsOpened)
@@ -300,7 +306,10 @@ partial class Player
                             ShowOneFrame();
                             VideoDemuxer.Start();
                             AudioDemuxer.Start();
-                            SubtitlesDemuxer.Start();
+                            for (int i = 0; i < subNum; i++)
+                            {
+                                SubtitlesDemuxers[i].Start();
+                            }
                             DataDemuxer.Start();
                             decoder.PauseOnQueueFull();
                             SeekCompleted?.Invoke(this, seekData.ms);
@@ -342,6 +351,79 @@ partial class Player
             Initialize();
             renderer?.Flush();
         }
+    }
+    public void SubtitleClear()
+    {
+        for (int i = 0; i < subNum; i++)
+        {
+            SubtitleClear(i);
+        }
+    }
+
+    public void SubtitleClear(int subIndex)
+    {
+        Subtitles[subIndex].Data.Clear();
+        //renderer.ClearOverlayTexture();
+    }
+
+    /// <summary>
+    /// Updated text format subtitle display
+    /// </summary>
+    /// <param name="text"></param>
+    /// <param name="subIndex"></param>
+    public void SubtitleDisplay(string text, int subIndex)
+    {
+        UI(() =>
+        {
+            Subtitles[subIndex].Data.Text = text;
+            Subtitles[subIndex].Data.Bitmap = null;
+        });
+    }
+
+    /// <summary>
+    /// Update bitmap format subtitle display
+    /// </summary>
+    /// <param name="bitmap"></param>
+    /// <param name="subIndex"></param>
+    public void SubtitleDisplay(SubtitlesFrameBitmap bitmap, int subIndex)
+    {
+        // TODO: L: refactor
+
+        // Each subtitle has a different size and needs to be generated each time.
+        WriteableBitmap wb = new(
+            bitmap.width, bitmap.height,
+            NativeMethods.DpiXSource, NativeMethods.DpiYSource,
+            PixelFormats.Bgra32, null
+        );
+        Int32Rect rect = new(0, 0, bitmap.width, bitmap.height);
+        wb.Lock();
+
+        Marshal.Copy(bitmap.data, 0, wb.BackBuffer, bitmap.data.Length);
+
+        wb.AddDirtyRect(rect);
+        wb.Unlock();
+        // Note that you will get a UI thread error if you don't call
+        wb.Freeze();
+
+        int x = bitmap.x;
+        int y = bitmap.y;
+        int w = bitmap.width;
+        int h = bitmap.height;
+
+        SubsBitmap subsBitmap = new()
+        {
+            X = x,
+            Y = y,
+            Width = w,
+            Height = h,
+            Source = wb,
+        };
+
+        UI(() =>
+        {
+            Subtitles[subIndex].Data.Bitmap = subsBitmap;
+            Subtitles[subIndex].Data.Text = "";
+        });
     }
 }
 

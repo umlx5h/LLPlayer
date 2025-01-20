@@ -20,7 +20,7 @@ public class OpenSubtitles : PluginBase, IOpenSubtitles, ISearchLocalSubtitles
 
     public OpenSubtitlesResults Open(string url)
     {
-        foreach(var extStream in Selected.ExternalSubtitlesStreams)
+        foreach(var extStream in Selected.ExternalSubtitlesStreamsAll)
             if (extStream.Url == url)
                 return new OpenSubtitlesResults(extStream);
 

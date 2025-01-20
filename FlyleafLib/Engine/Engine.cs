@@ -251,9 +251,10 @@ public static class Engine
                             if (player.Config.Player.Stats)
                             {
                                 var curStats = player.stats;
-                                long curTotalBytes  = player.VideoDemuxer.TotalBytes + player.AudioDemuxer.TotalBytes + player.SubtitlesDemuxer.TotalBytes;
-                                long curVideoBytes  = player.VideoDemuxer.VideoPackets.Bytes + player.AudioDemuxer.VideoPackets.Bytes + player.SubtitlesDemuxer.VideoPackets.Bytes;
-                                long curAudioBytes  = player.VideoDemuxer.AudioPackets.Bytes + player.AudioDemuxer.AudioPackets.Bytes + player.SubtitlesDemuxer.AudioPackets.Bytes;
+                                // TODO: L: including Subtitles bytes?
+                                long curTotalBytes  = player.VideoDemuxer.TotalBytes + player.AudioDemuxer.TotalBytes;
+                                long curVideoBytes  = player.VideoDemuxer.VideoPackets.Bytes + player.AudioDemuxer.VideoPackets.Bytes;
+                                long curAudioBytes  = player.VideoDemuxer.AudioPackets.Bytes + player.AudioDemuxer.AudioPackets.Bytes;
 
                                 player.bitRate      = (curTotalBytes - curStats.TotalBytes) * 8 / 1000.0;
                                 player.Video.bitRate= (curVideoBytes - curStats.VideoBytes) * 8 / 1000.0;

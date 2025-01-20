@@ -258,6 +258,7 @@ public static partial class Utils
 
         #region DPI
         public static double DpiX, DpiY;
+        public static int DpiXSource, DpiYSource;
         const int LOGPIXELSX = 88, LOGPIXELSY = 90;
         [DllImport("gdi32.dll", CharSet = CharSet.Auto, SetLastError = true, ExactSpelling = true)]
         public static extern int GetDeviceCaps(IntPtr hDC, int nIndex);
@@ -266,8 +267,10 @@ public static partial class Utils
         {
             Graphics GraphicsObject = Graphics.FromHwnd(handle); // DESKTOP Handle
             IntPtr dcHandle = GraphicsObject.GetHdc();
-            dpiX = GetDeviceCaps(dcHandle, LOGPIXELSX) / 96.0;
-            dpiY = GetDeviceCaps(dcHandle, LOGPIXELSY) / 96.0;
+            DpiXSource = GetDeviceCaps(dcHandle, LOGPIXELSX);
+            dpiX = DpiXSource / 96.0;
+            DpiYSource = GetDeviceCaps(dcHandle, LOGPIXELSY);
+            dpiY = DpiYSource / 96.0;
             GraphicsObject.ReleaseHdc(dcHandle);
             GraphicsObject.Dispose();
         }

@@ -108,11 +108,11 @@ public unsafe class StreamSuggester : PluginBase, ISuggestPlaylistItem, ISuggest
 
         langs.Add(Language.Unknown);
 
-        var extStreams = Selected.ExternalSubtitlesStreams.OrderBy(x => x.Language.ToString()).ThenByDescending(x => x.Rating).ThenBy(x => x.Downloaded);
+        var extStreams = Selected.ExternalSubtitlesStreamsAll.OrderBy(x => x.Language.ToString()).ThenByDescending(x => x.Rating).ThenBy(x => x.Downloaded);
 
         foreach (var lang in langs)
         {
-            foreach(var embStream in decoder.VideoDemuxer.SubtitlesStreams)
+            foreach(var embStream in decoder.VideoDemuxer.SubtitlesStreamsAll)
                 if (embStream.Language == lang)
                 {
                     stream = embStream;
@@ -130,7 +130,7 @@ public unsafe class StreamSuggester : PluginBase, ISuggestPlaylistItem, ISuggest
 
     public ExternalSubtitlesStream SuggestBestExternalSubtitles()
     {
-        var extStreams = Selected.ExternalSubtitlesStreams.OrderBy(x => x.Language.ToString()).ThenByDescending(x => x.Rating).ThenBy(x => x.Downloaded);
+        var extStreams = Selected.ExternalSubtitlesStreamsAll.OrderBy(x => x.Language.ToString()).ThenByDescending(x => x.Rating).ThenBy(x => x.Downloaded);
 
         foreach(var extStream in extStreams)
             if (extStream.Language == Config.Subtitles.Languages[0])

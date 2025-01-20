@@ -63,6 +63,12 @@ public class Config : NotifyPropertyChanged
         config.Loaded       = true;
         config.LoadedPath   = path;
 
+        // TODO: L: refactor
+        config.Player.config = config;
+        config.Demuxer.config = config;
+
+        config.Subtitles.SetChildren();
+
         return config;
     }
     public void Save(string path = null, JsonSerializerOptions jsonOptions = null)
@@ -88,7 +94,7 @@ public class Config : NotifyPropertyChanged
         Decoder.player  = player;
         Audio.player    = player;
         Video.player    = player;
-        Subtitles.player= player;
+        Subtitles.SetPlayer(player);
     }
 
     /// <summary>
@@ -768,8 +774,77 @@ public class Config : NotifyPropertyChanged
         public List<Language>   Languages { get { _Languages ??= GetSystemLanguages(); return _Languages; } set => _Languages = value; }
         List<Language> _Languages;
     }
+
+    public class SubConfig : NotifyPropertyChanged
+    {
+        internal Player player;
+
+        public SubConfig()
+        {
+        }
+
+        public SubConfig(int subIndex)
+        {
+            SubIndex = subIndex;
+        }
+
+        [JsonIgnore]
+        public int SubIndex { get; set => Set(ref field, value); }
+
+        /// <summary>
+        /// Subtitle delay ticks (will be reset to 0 for every new subtitle stream)
+        /// </summary>
+        public long Delay
+        {
+            get => _delay;
+            set
+            {
+                if (player == null || !player.Subtitles[SubIndex].Enabled)
+                {
+                    return;
+                }
+                if (Set(ref _delay, value))
+                {
+                    player.ReSync(player.decoder.SubtitlesStreams[SubIndex]);
+                }
+            }
+        }
+        private long _delay;
+
+        internal void SetDelay(long delay) => Set(ref _delay, delay, true, nameof(Delay));
+
+        /// <summary>
+        /// Whether subtitle should be visible
+        /// TODO: L: should move to AppConfig?
+        /// </summary>
+        [JsonIgnore]
+        public bool Visible { get; set => Set(ref field, value); } = true;
+    }
+
     public class SubtitlesConfig : NotifyPropertyChanged
     {
+        public SubConfig[] SubConfigs { get; set; }
+
+        public SubConfig this[int subIndex] => SubConfigs[subIndex];
+
+        public SubtitlesConfig()
+        {
+            int subNum = 2;
+            SubConfigs = new SubConfig[subNum];
+            for (int i = 0; i < subNum; i++)
+            {
+                SubConfigs[i] = new SubConfig(i);
+            }
+        }
+
+        internal void SetChildren()
+        {
+            for (int i = 0; i < SubConfigs.Length; i++)
+            {
+                SubConfigs[i].SubIndex = i;
+            }
+        }
+
         public SubtitlesConfig Clone()
         {
             SubtitlesConfig subs = new();
@@ -783,14 +858,16 @@ public class Config : NotifyPropertyChanged
             return subs;
         }
 
-        internal Player player;
+        private Player player;
+        internal void SetPlayer(Player player)
+        {
+            this.player = player;
 
-        /// <summary>
-        /// Subtitle delay ticks (will be reseted to 0 for every new subtitle stream)
-        /// </summary>
-        public long             Delay               { get => _Delay; set { if (player != null && !player.Subtitles.IsOpened) return; if (Set(ref _Delay, value)) player?.ReSync(player.decoder.SubtitlesStream); } }
-        long _Delay;
-        internal void SetDelay(long delay)          => Set(ref _Delay, delay, true, nameof(Delay));
+            foreach (SubConfig conf in SubConfigs)
+            {
+                conf.player = player;
+            }
+        }
 
         /// <summary>
         /// Whether subtitles should be allowed
@@ -798,6 +875,11 @@ public class Config : NotifyPropertyChanged
         public bool             Enabled             { get => _Enabled; set { if(Set(ref _Enabled, value)) if (value) player?.Subtitles.Enable(); else player?.Subtitles.Disable(); } }
         bool _Enabled = true;
         internal void SetEnabled(bool enabled)      => Set(ref _Enabled, enabled, true, nameof(Enabled));
+
+        /// <summary>
+        /// Max number of subtitles (currently not configurable)
+        /// </summary>
+        public int Max { get; set => Set(ref field, value); } = 2;
 
         /// <summary>
         /// Subtitle languages preference by priority

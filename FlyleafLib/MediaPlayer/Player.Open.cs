@@ -102,20 +102,31 @@ unsafe partial class Player
     }
     private void Decoder_OpenSubtitlesStreamCompleted(object sender, OpenSubtitlesStreamCompletedArgs e)
     {
-        Config.Subtitles.SetDelay(0);
-        Subtitles.Refresh();
+        int i = SubtitlesSelectedHelper.CurIndex;
+
+        Config.Subtitles[i].SetDelay(0);
+        Subtitles[i].Refresh();
         UIAll();
 
-        if (IsPlaying && Subtitles.isOpened && Config.Subtitles.Enabled) // TBR (First run mainly with -from DecoderContext->OpenSuggestedSubtitles-> Task.Run causes late open, possible resync?)
+        if (IsPlaying && Config.Subtitles.Enabled) // TBR (First run mainly with -from DecoderContext->OpenSuggestedSubtitles-> Task.Run causes late open, possible resync?)
         {
+            if (!Subtitles[i].IsOpened)
+            {
+                return;
+            }
+
             lock (lockSubtitles)
-                if (SubtitlesDecoder.OnVideoDemuxer)
-                    SubtitlesDecoder.Start();
+            {
+                if (SubtitlesDecoders[i].OnVideoDemuxer)
+                {
+                    SubtitlesDecoders[i].Start();
+                }
                 else// if (!decoder.RequiresResync)
                 {
-                    SubtitlesDemuxer.Start();
-                    SubtitlesDecoder.Start();
+                    SubtitlesDemuxers[i].Start();
+                    SubtitlesDecoders[i].Start();
                 }
+            }
         }
     }
 
@@ -157,7 +168,10 @@ unsafe partial class Player
     private void Decoder_OpenExternalSubtitlesStreamCompleted(object sender, OpenExternalSubtitlesStreamCompletedArgs e)
     {
         if (e.Success)
-            lock (lockSubtitles) ReSync(decoder.SubtitlesStream, decoder.GetCurTimeMs());
+        {
+            lock (lockSubtitles)
+                ReSync(decoder.SubtitlesStreams[SubtitlesSelectedHelper.CurIndex], decoder.GetCurTimeMs());
+        }
     }
     #endregion
 
@@ -243,7 +257,7 @@ unsafe partial class Player
             args.Error = decoder.OpenSubtitles(url).Error;
 
             if (args.Success)
-                ReSync(decoder.SubtitlesStream);
+                ReSync(decoder.SubtitlesStreams[SubtitlesSelectedHelper.CurIndex]);
 
             return args;
 
@@ -523,7 +537,10 @@ unsafe partial class Player
                 decoder.GetVideoFrame(syncMs * (long)10000);
                 VideoDemuxer.Start();
                 AudioDemuxer.Start();
-                SubtitlesDemuxer.Start();
+                for (int i = 0; i < subNum; i++)
+                {
+                    SubtitlesDemuxers[i].Start();
+                }
                 DataDemuxer.Start();
                 decoder.PauseOnQueueFull();
 
@@ -620,7 +637,7 @@ unsafe partial class Player
                 // Wait for at least on package before seek to update the HLS context first_time
                 if (stream.Demuxer.IsHLSLive)
                 {
-                    while (stream.Demuxer.IsRunning && stream.Demuxer.GetPacketsPtr(stream.Type).Count < 3)
+                    while (stream.Demuxer.IsRunning && stream.Demuxer.GetPacketsPtr(stream).Count < 3)
                         System.Threading.Thread.Sleep(20);
 
                     ReSync(stream, (int) ((Duration - fromEnd - (DateTime.UtcNow.Ticks - delay))/ 10000));
@@ -684,10 +701,11 @@ unsafe partial class Player
         if (item.ExternalVideoStream != null)
             session.ExternalVideoStream = item.ExternalVideoStream.Index;
 
-        if (item.ExternalSubtitlesStream != null)
-            session.ExternalSubtitlesUrl = item.ExternalSubtitlesStream.Url;
-        else if (decoder.SubtitlesStream != null)
-            session.SubtitlesStream = decoder.SubtitlesStream.StreamIndex;
+        // TODO: L: Support secondary subtitles
+        if (item.ExternalSubtitlesStreams[0] != null)
+            session.ExternalSubtitlesUrl = item.ExternalSubtitlesStreams[0].Url;
+        else if (decoder.SubtitlesStreams[0] != null)
+            session.SubtitlesStream = decoder.SubtitlesStreams[0].StreamIndex;
 
         if (decoder.AudioStream != null)
             session.AudioStream = decoder.AudioStream.StreamIndex;
@@ -697,7 +715,8 @@ unsafe partial class Player
 
         session.CurTime = CurTime;
         session.AudioDelay = Config.Audio.Delay;
-        session.SubtitlesDelay = Config.Subtitles.Delay;
+        // TODO: L: Support secondary subtitles
+        session.SubtitlesDelay = Config.Subtitles[0].Delay;
 
         return session;
     }
@@ -716,7 +735,10 @@ unsafe partial class Player
         {
             isVideoSwitch = true;
             isAudioSwitch = true;
-            isSubsSwitch = true;
+            for (int i = 0; i < subNum; i++)
+            {
+                isSubsSwitches[i] = true;
+            }
             isDataSwitch = true;
             requiresBuffering = true;
 
@@ -732,8 +754,11 @@ unsafe partial class Player
             aFrame = null;
             isAudioSwitch = false;
             isVideoSwitch = false;
-            sFrame = sFramePrev = null;
-            isSubsSwitch = false;
+            for (int i = 0; i < subNum; i++)
+            {
+                sFrames[i] = sFramesPrev[i] = null;
+                isSubsSwitches[i] = false;
+            }
             dFrame = null;
             isDataSwitch = false;
 
@@ -745,10 +770,7 @@ unsafe partial class Player
             }
             else
             {
-                renderer?.ClearOverlayTexture();
-                Subtitles.subsText = "";
-                if (Subtitles._SubsText != "")
-                    UI(() => Subtitles.SubsText = Subtitles.SubsText);
+                SubtitleClear();
             }
         }
         else
@@ -762,14 +784,14 @@ unsafe partial class Player
             }
             else if (stream.Demuxer.Type == MediaType.Subs)
             {
-                isSubsSwitch = true;
-                decoder.SeekSubtitles();
-                renderer.ClearOverlayTexture();
-                sFrame = sFramePrev = null;
-                Subtitles.subsText = "";
-                if (Subtitles._SubsText != "")
-                    UI(() => Subtitles.SubsText = Subtitles.SubsText);
-                isSubsSwitch = false;
+                int i = SubtitlesSelectedHelper.CurIndex;
+
+                isSubsSwitches[i] = true;
+
+                decoder.SeekSubtitles(i);
+                sFrames[i] = sFramesPrev[i] = null;
+                SubtitleClear(i);
+                isSubsSwitches[i] = false;
             }
             else
             {
@@ -782,7 +804,7 @@ unsafe partial class Player
             if (IsPlaying)
             {
                 stream.Demuxer.Start();
-                decoder.GetDecoderPtr(stream.Type).Start();
+                decoder.GetDecoderPtr(stream).Start();
             }
         }
     }
@@ -894,6 +916,10 @@ unsafe partial class Player
 
                 openInputs.Push(new OpenAsyncData(url_iostream, defaultPlaylistItem, defaultVideo, defaultAudio, defaultSubtitles));
             }
+
+            // Select primary subtitle & original mode when dropped
+            SubtitlesSelectedHelper.CurIndex = 0;
+            SubtitlesSelectedHelper.PrimaryMethod = SelectSubMethod.Original;
 
             OpenAsync();
         }

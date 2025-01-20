@@ -289,10 +289,10 @@ public class KeysConfig
         Add(Key.OemCloseBrackets,   KeyBindingAction.AudioDelayAdd);
         Add(Key.OemCloseBrackets,   KeyBindingAction.AudioDelayAdd2, false, true);
 
-        Add(Key.OemSemicolon,       KeyBindingAction.SubtitlesDelayRemove);
-        Add(Key.OemSemicolon,       KeyBindingAction.SubtitlesDelayRemove2, false, true);
-        Add(Key.OemQuotes,          KeyBindingAction.SubtitlesDelayAdd);
-        Add(Key.OemQuotes,          KeyBindingAction.SubtitlesDelayAdd2, false, true);
+        Add(Key.OemSemicolon,       KeyBindingAction.SubsDelayRemovePrimary);
+        Add(Key.OemSemicolon,       KeyBindingAction.SubsDelayRemove2Primary, false, true);
+        Add(Key.OemQuotes,          KeyBindingAction.SubsDelayAddPrimary);
+        Add(Key.OemQuotes,          KeyBindingAction.SubsDelayAdd2Primary, false, true);
 
         Add(Key.V,                  KeyBindingAction.OpenFromClipboard, false, true);
         Add(Key.O,                  KeyBindingAction.OpenFromFileDialog);
@@ -325,7 +325,7 @@ public class KeysConfig
         Add(Key.Play,               KeyBindingAction.TogglePlayPause);
 
         Add(Key.A,                  KeyBindingAction.ToggleAudio, false, false, true);
-        Add(Key.S,                  KeyBindingAction.ToggleSubtitles, false, false, true);
+        Add(Key.H,                  KeyBindingAction.ToggleSubtitlesVisibility);
         Add(Key.V,                  KeyBindingAction.ToggleVideo, false, false, true);
         Add(Key.H,                  KeyBindingAction.ToggleVideoAcceleration, false, true);
 
@@ -380,16 +380,30 @@ public class KeysConfig
             case KeyBindingAction.ToggleVideoAcceleration:
                 return player.Video.ToggleVideoAcceleration;
 
-            case KeyBindingAction.SubtitlesDelayAdd:
-                return player.Subtitles.DelayAdd;
-            case KeyBindingAction.SubtitlesDelayRemove:
-                return player.Subtitles.DelayRemove;
-            case KeyBindingAction.SubtitlesDelayAdd2:
-                return player.Subtitles.DelayAdd2;
-            case KeyBindingAction.SubtitlesDelayRemove2:
-                return player.Subtitles.DelayRemove2;
-            case KeyBindingAction.ToggleSubtitles:
-                return player.Subtitles.Toggle;
+            case KeyBindingAction.SubsDelayAddPrimary:
+                return player.Subtitles.DelayAddPrimary;
+            case KeyBindingAction.SubsDelayRemovePrimary:
+                return player.Subtitles.DelayRemovePrimary;
+            case KeyBindingAction.SubsDelayAdd2Primary:
+                return player.Subtitles.DelayAdd2Primary;
+            case KeyBindingAction.SubsDelayRemove2Primary:
+                return player.Subtitles.DelayRemove2Primary;
+
+            case KeyBindingAction.SubsDelayAddSecondary:
+                return player.Subtitles.DelayAddSecondary;
+            case KeyBindingAction.SubsDelayRemoveSecondary:
+                return player.Subtitles.DelayRemoveSecondary;
+            case KeyBindingAction.SubsDelayAdd2Secondary:
+                return player.Subtitles.DelayAdd2Secondary;
+            case KeyBindingAction.SubsDelayRemove2Secondary:
+                return player.Subtitles.DelayRemove2Secondary;
+
+            case KeyBindingAction.ToggleSubtitlesVisibility:
+                return player.Subtitles.ToggleVisibility;
+            case KeyBindingAction.ToggleSubtitlesVisibilityPrimary:
+                return player.Subtitles.ToggleVisibilityPrimary;
+            case KeyBindingAction.ToggleSubtitlesVisibilitySecondary:
+                return player.Subtitles.ToggleVisibilitySecondary;
 
             case KeyBindingAction.OpenFromClipboard:
                 return player.OpenFromClipboard;
@@ -498,7 +512,9 @@ public class KeysConfig
         { KeyBindingAction.ToggleVideo },
         { KeyBindingAction.ToggleKeepRatio },
         { KeyBindingAction.ToggleVideoAcceleration },
-        { KeyBindingAction.ToggleSubtitles },
+        { KeyBindingAction.ToggleSubtitlesVisibility },
+        { KeyBindingAction.ToggleSubtitlesVisibilityPrimary },
+        { KeyBindingAction.ToggleSubtitlesVisibilitySecondary },
         { KeyBindingAction.ToggleMute },
         { KeyBindingAction.TogglePlayPause },
         { KeyBindingAction.ToggleRecording },
@@ -548,14 +564,16 @@ public enum KeyBindingAction
     ForceIdle, ForceActive, ForceFullActive,
 
     AudioDelayAdd, AudioDelayAdd2, AudioDelayRemove, AudioDelayRemove2, ToggleMute, VolumeUp, VolumeDown,
-    SubtitlesDelayAdd, SubtitlesDelayAdd2, SubtitlesDelayRemove, SubtitlesDelayRemove2,
+    SubsDelayAddPrimary, SubsDelayAdd2Primary, SubsDelayRemovePrimary, SubsDelayRemove2Primary,
+    SubsDelayAddSecondary, SubsDelayAdd2Secondary, SubsDelayRemoveSecondary, SubsDelayRemove2Secondary,
 
     CopyToClipboard, CopyItemToClipboard, OpenFromClipboard, OpenFromFileDialog,
     Stop, Pause, Play, TogglePlayPause, ToggleReversePlayback, Flush,
     TakeSnapshot,
     NormalScreen, FullScreen, ToggleFullScreen,
 
-    ToggleAudio, ToggleVideo, ToggleSubtitles,
+    ToggleAudio, ToggleVideo,
+    ToggleSubtitlesVisibility, ToggleSubtitlesVisibilityPrimary, ToggleSubtitlesVisibilitySecondary,
 
     ToggleKeepRatio,
     ToggleVideoAcceleration,

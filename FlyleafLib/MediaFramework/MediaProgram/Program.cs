@@ -36,7 +36,7 @@ public class Program
             if (stream == null)
             {
                 stream = demuxer.VideoStreams.FirstOrDefault(it => it.StreamIndex == streamIndex);
-                stream ??= demuxer.SubtitlesStreams.FirstOrDefault(it => it.StreamIndex == streamIndex);
+                stream ??= demuxer.SubtitlesStreamsAll.FirstOrDefault(it => it.StreamIndex == streamIndex);
             }
             if (stream!=null)
             {

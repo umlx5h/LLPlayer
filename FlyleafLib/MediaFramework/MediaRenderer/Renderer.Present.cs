@@ -174,27 +174,10 @@ public unsafe partial class Renderer
         overlayTextureDesc.Width    = (uint)rect->w;
         overlayTextureDesc.Height   = (uint)rect->h;
 
-        byte[] data = new byte[rect->w * rect->h * 4];
+        byte[] data = ConvertBitmapSub(frame.sub, false);
 
         fixed(byte* ptr = data)
         {
-            uint[] colors   = new uint[256];
-            var colorsData  = new Span<uint>((byte*)rect->data[1], rect->nb_colors);
-
-            for (int i = 0; i < colorsData.Length; i++)
-                colors[i] = colorsData[i];
-
-            ConvertPal(colors, 256, false);
-
-            for (int y = 0; y < rect->h; y++)
-            {
-                uint* xout =(uint*) (ptr + y * stride);
-                byte* xin = ((byte*)rect->data[0]) + y * rect->linesize[0];
-
-                for (int x = 0; x < rect->w; x++)
-                    *xout++ = colors[*xin++];
-            }
-
             SubresourceData subData = new()
             {
                 DataPointer = (nint)ptr,
@@ -209,7 +192,37 @@ public unsafe partial class Renderer
         }
     }
 
-    static void ConvertPal(uint[] colors, int count, bool gray) // subs bitmap (source: mpv)
+    public static byte[] ConvertBitmapSub(AVSubtitle sub, bool grey)
+    {
+        var rect = sub.rects[0];
+        var stride = rect->linesize[0] * 4;
+
+        byte[] data = new byte[rect->w * rect->h * 4];
+        Span<uint> colors = stackalloc uint[256];
+
+        fixed(byte* ptr = data)
+        {
+            var colorsData  = new Span<uint>((byte*)rect->data[1], rect->nb_colors);
+
+            for (int i = 0; i < colorsData.Length; i++)
+                colors[i] = colorsData[i];
+
+            ConvertPal(colors, 256, grey);
+
+            for (int y = 0; y < rect->h; y++)
+            {
+                uint* xout =(uint*) (ptr + y * stride);
+                byte* xin = ((byte*)rect->data[0]) + y * rect->linesize[0];
+
+                for (int x = 0; x < rect->w; x++)
+                    *xout++ = colors[*xin++];
+            }
+        }
+
+        return data;
+    }
+
+    static void ConvertPal(Span<uint> colors, int count, bool gray) // subs bitmap (source: mpv)
     {
         for (int n = 0; n < count; n++)
         {

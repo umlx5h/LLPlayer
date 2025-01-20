@@ -301,22 +301,22 @@
 
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Style="{StaticResource TextInfo}" Text="IsOpened"/>
-                    <TextBlock Style="{StaticResource TextValue}" Text="{Binding Player.Subtitles.IsOpened}"/>
+                    <TextBlock Style="{StaticResource TextValue}" Text="{Binding Player.Subtitles[0].IsOpened}"/>
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Style="{StaticResource TextInfo}" Text="Delay"/>
-                    <TextBlock Style="{StaticResource TextValue}" Text="{Binding Player.Config.Subtitles.Delay, Converter={StaticResource TicksToMilliSeconds}, StringFormat={}{0} ms}"/>
+                    <TextBlock Style="{StaticResource TextValue}" Text="{Binding Player.Config.Subtitles[0].Delay, Converter={StaticResource TicksToMilliSeconds}, StringFormat={}{0} ms}"/>
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Style="{StaticResource TextInfo}" Text="Codec"/>
-                    <TextBlock Style="{StaticResource TextValue}" Text="{Binding Player.Subtitles.Codec}"/>
+                    <TextBlock Style="{StaticResource TextValue}" Text="{Binding Player.Subtitles[0].Codec}"/>
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" Margin="0 0 0 10">
                     <TextBlock Style="{StaticResource TextInfo}" Text="SubsText"/>
-                    <TextBlock Style="{StaticResource TextValue}" Text="{Binding Player.Subtitles.SubsText}" Margin="-90 0 0 0" Width="225"/>
+                    <TextBlock Style="{StaticResource TextValue}" Text="{Binding Player.Subtitles[0].Data.Text}" Margin="-90 0 0 0" Width="225"/>
                 </StackPanel>
             </StackPanel>
 

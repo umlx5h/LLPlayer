@@ -16,12 +16,22 @@ public class Commands
     public ICommand AudioDelayRemove        { get; set; }
     public ICommand AudioDelayRemove2       { get; set; }
 
-    public ICommand SubtitlesDelaySet       { get; set; }
-    public ICommand SubtitlesDelaySet2      { get; set; }
-    public ICommand SubtitlesDelayAdd       { get; set; }
-    public ICommand SubtitlesDelayAdd2      { get; set; }
-    public ICommand SubtitlesDelayRemove    { get; set; }
-    public ICommand SubtitlesDelayRemove2   { get; set; }
+    public ICommand SubtitlesDelaySetPrimary       { get; set; }
+    public ICommand SubtitlesDelaySet2Primary      { get; set; }
+    public ICommand SubtitlesDelayAddPrimary       { get; set; }
+    public ICommand SubtitlesDelayAdd2Primary      { get; set; }
+    public ICommand SubtitlesDelayRemovePrimary    { get; set; }
+    public ICommand SubtitlesDelayRemove2Primary   { get; set; }
+
+    public ICommand SubtitlesDelaySetSecondary     { get; set; }
+    public ICommand SubtitlesDelaySet2Secondary    { get; set; }
+    public ICommand SubtitlesDelayAddSecondary     { get; set; }
+    public ICommand SubtitlesDelayAdd2Secondary    { get; set; }
+    public ICommand SubtitlesDelayRemoveSecondary  { get; set; }
+    public ICommand SubtitlesDelayRemove2Secondary { get; set; }
+
+    public ICommand OpenSubtitles           { get; set; }
+    public ICommand SubtitlesOff            { get; set; }
 
     public ICommand Open                    { get; set; }
     public ICommand OpenFromClipboard       { get; set; }
@@ -140,12 +150,22 @@ public class Commands
         AudioDelayRemove        = new RelayCommandSimple(player.Audio.DelayRemove);
         AudioDelayRemove2       = new RelayCommandSimple(player.Audio.DelayRemove2);
 
-        SubtitlesDelaySet       = new RelayCommand(SubtitlesDelaySetAction);
-        SubtitlesDelaySet2      = new RelayCommand(SubtitlesDelaySetAction2);
-        SubtitlesDelayAdd       = new RelayCommandSimple(player.Subtitles.DelayAdd);
-        SubtitlesDelayAdd2      = new RelayCommandSimple(player.Subtitles.DelayAdd2);
-        SubtitlesDelayRemove    = new RelayCommandSimple(player.Subtitles.DelayRemove);
-        SubtitlesDelayRemove2   = new RelayCommandSimple(player.Subtitles.DelayRemove2);
+        SubtitlesDelaySetPrimary       = new RelayCommand(SubtitlesDelaySetActionPrimary);
+        SubtitlesDelaySet2Primary      = new RelayCommand(SubtitlesDelaySetAction2Primary);
+        SubtitlesDelayAddPrimary       = new RelayCommandSimple(player.Subtitles.DelayAddPrimary);
+        SubtitlesDelayAdd2Primary      = new RelayCommandSimple(player.Subtitles.DelayAdd2Primary);
+        SubtitlesDelayRemovePrimary    = new RelayCommandSimple(player.Subtitles.DelayRemovePrimary);
+        SubtitlesDelayRemove2Primary   = new RelayCommandSimple(player.Subtitles.DelayRemove2Primary);
+
+        SubtitlesDelaySetSecondary     = new RelayCommand(SubtitlesDelaySetActionSecondary);
+        SubtitlesDelaySet2Secondary    = new RelayCommand(SubtitlesDelaySetAction2Secondary);
+        SubtitlesDelayAddSecondary     = new RelayCommandSimple(player.Subtitles.DelayAddSecondary);
+        SubtitlesDelayAdd2Secondary    = new RelayCommandSimple(player.Subtitles.DelayAdd2Secondary);
+        SubtitlesDelayRemoveSecondary  = new RelayCommandSimple(player.Subtitles.DelayRemoveSecondary);
+        SubtitlesDelayRemove2Secondary = new RelayCommandSimple(player.Subtitles.DelayRemove2Secondary);
+
+        OpenSubtitles           = new RelayCommand(OpenSubtitlesAction);
+        SubtitlesOff            = new RelayCommand(SubtitlesOffAction);
 
         ForceIdle               = new RelayCommandSimple(player.Activity.ForceIdle);
         ForceActive             = new RelayCommandSimple(player.Activity.ForceActive);
@@ -173,10 +193,18 @@ public class Commands
         => player.Config.Audio.Delay = int.Parse(delay.ToString()) * (long)10000;
     public void AudioDelaySetAction2(object delay)
         => player.Config.Audio.Delay += int.Parse(delay.ToString()) * (long)10000;
-    public void SubtitlesDelaySetAction(object delay)
-        => player.Config.Subtitles.Delay = int.Parse(delay.ToString()) * (long)10000;
-    public void SubtitlesDelaySetAction2(object delay)
-        => player.Config.Subtitles.Delay += int.Parse(delay.ToString()) * (long)10000;
+
+    public void SubtitlesDelaySetActionPrimary(object delay)
+        => player.Config.Subtitles[0].Delay = int.Parse(delay.ToString()) * (long)10000;
+    public void SubtitlesDelaySetAction2Primary(object delay)
+        => player.Config.Subtitles[0].Delay += int.Parse(delay.ToString()) * (long)10000;
+
+    // TODO: L: refactor
+    public void SubtitlesDelaySetActionSecondary(object delay)
+        => player.Config.Subtitles[1].Delay = int.Parse(delay.ToString()) * (long)10000;
+    public void SubtitlesDelaySetAction2Secondary(object delay)
+        => player.Config.Subtitles[1].Delay += int.Parse(delay.ToString()) * (long)10000;
+
 
     public void TakeSnapshotAction() => Task.Run(() => { try { player.TakeSnapshotToFile(); } catch { } });
 
@@ -189,6 +217,46 @@ public class Commands
             player.SeekToChapter((MediaFramework.MediaDemuxer.Demuxer.Chapter)chapter);
         else if (int.TryParse(chapter.ToString(), out int chapterId) && chapterId < player.Chapters.Count)
             player.SeekToChapter(player.Chapters[chapterId]);
+    }
+
+    public void OpenSubtitlesAction(object input)
+    {
+        if (input is not ValueTuple<object, object, object> tuple)
+        {
+            return;
+        }
+
+        if (tuple is { Item1: string, Item2: SubtitlesStream, Item3: SelectSubMethod })
+        {
+            var subIndex = int.Parse((string)tuple.Item1);
+            var stream = (SubtitlesStream)tuple.Item2;
+            var selectSubMethod = (SelectSubMethod)tuple.Item3;
+
+            SubtitlesSelectedHelper.Set(subIndex, (stream.StreamIndex, null));
+            SubtitlesSelectedHelper.SetMethod(subIndex, selectSubMethod);
+            SubtitlesSelectedHelper.CurIndex = subIndex;
+        }
+        else if (tuple is { Item1: string, Item2: ExternalSubtitlesStream, Item3: SelectSubMethod })
+        {
+            var subIndex = int.Parse((string)tuple.Item1);
+            var stream = (ExternalSubtitlesStream)tuple.Item2;
+            var selectSubMethod = (SelectSubMethod)tuple.Item3;
+
+            SubtitlesSelectedHelper.Set(subIndex, (null, stream));
+            SubtitlesSelectedHelper.SetMethod(subIndex, selectSubMethod);
+            SubtitlesSelectedHelper.CurIndex = subIndex;
+        }
+
+        OpenAction(tuple.Item2);
+    }
+
+    public void SubtitlesOffAction(object input)
+    {
+        if (int.TryParse(input.ToString(), out var subIndex))
+        {
+            SubtitlesSelectedHelper.CurIndex = subIndex;
+            player.Subtitles[subIndex].Disable();
+        }
     }
 
     public void OpenAction(object input)

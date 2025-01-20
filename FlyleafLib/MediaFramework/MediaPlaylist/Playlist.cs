@@ -141,7 +141,7 @@ public class Playlist : NotifyPropertyChanged
         {
             System.Windows.Data.BindingOperations.EnableCollectionSynchronization(item.ExternalAudioStreams, item.lockExternalStreams);
             System.Windows.Data.BindingOperations.EnableCollectionSynchronization(item.ExternalVideoStreams, item.lockExternalStreams);
-            System.Windows.Data.BindingOperations.EnableCollectionSynchronization(item.ExternalSubtitlesStreams, item.lockExternalStreams);
+            System.Windows.Data.BindingOperations.EnableCollectionSynchronization(item.ExternalSubtitlesStreamsAll, item.lockExternalStreams);
         });
     }
 }

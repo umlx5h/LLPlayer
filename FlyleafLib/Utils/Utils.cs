@@ -78,7 +78,7 @@ public static partial class Utils
     public static int GetUniqueId() { Interlocked.Increment(ref uniqueId); return uniqueId; }
 
     /// <summary>
-    /// Begin invokes the UI thread if required to execute the specified action
+    /// Begin Invokes the UI thread to execute the specified action
     /// </summary>
     /// <param name="action"></param>
     public static void UI(Action action)
@@ -89,6 +89,22 @@ public static partial class Utils
 #endif
 
         Application.Current.Dispatcher.BeginInvoke(action, System.Windows.Threading.DispatcherPriority.DataBind);
+    }
+
+    /// <summary>
+    /// Begin invokes the UI thread if required to execute the specified action
+    /// </summary>
+    /// <param name="action"></param>
+    public static void UIIfRequired(Action action)
+    {
+        if (Application.Current.Dispatcher.CheckAccess())
+        {
+            action();
+        }
+        else
+        {
+            Application.Current.Dispatcher.BeginInvoke(action, System.Windows.Threading.DispatcherPriority.DataBind);
+        }
     }
 
     /// <summary>

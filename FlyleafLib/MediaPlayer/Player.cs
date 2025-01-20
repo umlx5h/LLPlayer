@@ -88,7 +88,7 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
     /// Subtitles Decoder
     /// (Normally you should not access this directly)
     /// </summary>
-    public SubtitlesDecoder     SubtitlesDecoder    => decoder.SubtitlesDecoder;
+    public SubtitlesDecoder[]   SubtitlesDecoders   => decoder.SubtitlesDecoders;
 
     /// <summary>
     /// Data Decoder
@@ -118,7 +118,7 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
     /// Subtitles Demuxer
     /// (Normally you should not access this directly)
     /// </summary>
-    public Demuxer              SubtitlesDemuxer    => decoder.SubtitlesDemuxer;
+    public Demuxer[]            SubtitlesDemuxers  => decoder.SubtitlesDemuxers;
 
     /// <summary>
     /// Data Demuxer
@@ -290,11 +290,9 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
             speed                   = newValue;
             decoder.RequiresResync  = true;
             requiresBuffering       = true;
-            Subtitles.subsText      = "";
-            renderer.ClearOverlayTexture();
+            SubtitleClear();
             UI(() =>
             {
-                Subtitles.SubsText = Subtitles.SubsText;
                 Raise(nameof(Speed));
             });
         }
@@ -355,11 +353,13 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
                 bool shouldPlay = IsPlaying || (Status == Status.Ended && Config.Player.AutoPlay);
                 Pause();
                 dFrame = null;
-                sFrame = null;
-                renderer.ClearOverlayTexture();
-                Subtitles.subsText = "";
-                if (Subtitles._SubsText != "")
-                    UI(() => Subtitles.SubsText = Subtitles.SubsText);
+
+                for (int i = 0; i < subNum; i++)
+                {
+                    sFrames[i] = null;
+                    SubtitleClear(i);
+                }
+
                 decoder.StopThreads();
                 decoder.Flush();
 
@@ -412,7 +412,7 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
 
     internal AudioFrame     aFrame;
     internal VideoFrame     vFrame;
-    internal SubtitlesFrame sFrame, sFramePrev;
+    internal SubtitlesFrame[] sFrames, sFramesPrev;
     internal DataFrame      dFrame;
     internal PlayerStats    stats = new();
     internal LogHandler     Log;
@@ -422,7 +422,7 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
 
     bool isVideoSwitch;
     bool isAudioSwitch;
-    bool isSubsSwitch;
+    bool[] isSubsSwitches;
     bool isDataSwitch;
     #endregion
 
@@ -479,6 +479,12 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
         VideoDecoder.CodecChanged   = Decoder_VideoCodecChanged;
         decoder.RecordingCompleted += (o, e) => { IsRecording = false; };
         Chapters.CollectionChanged += (o, e) => { RaiseUI(nameof(Chapters)); };
+
+        // second subtitles
+        sFrames = new SubtitlesFrame[subNum];
+        sFramesPrev = new SubtitlesFrame[subNum];
+        sDistanceMss = new int[subNum];
+        isSubsSwitches = new bool[subNum];
 
         status = Status.Stopped;
         Reset();

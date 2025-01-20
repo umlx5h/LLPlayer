@@ -1,8 +1,8 @@
 ﻿using FlyleafLib.MediaFramework.MediaDecoder;
 using FlyleafLib.MediaFramework.MediaDemuxer;
-using FlyleafLib.MediaFramework.MediaPlaylist;
 using FlyleafLib.MediaFramework.MediaRemuxer;
 using FlyleafLib.MediaFramework.MediaStream;
+using FlyleafLib.MediaPlayer;
 using FlyleafLib.Plugins;
 
 using static FlyleafLib.Logger;
@@ -43,14 +43,22 @@ public unsafe partial class DecoderContext : PluginHandler
             {
                 VideoDemuxer.Interrupter.ForceInterrupt = 1;
                 AudioDemuxer.Interrupter.ForceInterrupt = 1;
-                SubtitlesDemuxer.Interrupter.ForceInterrupt = 1;
+
+                for (int i = 0; i < subNum; i++)
+                {
+                    SubtitlesDemuxers[i].Interrupter.ForceInterrupt = 1;
+                }
                 DataDemuxer.Interrupter.ForceInterrupt = 1;
             }
             else
             {
                 VideoDemuxer.Interrupter.ForceInterrupt = 0;
                 AudioDemuxer.Interrupter.ForceInterrupt = 0;
-                SubtitlesDemuxer.Interrupter.ForceInterrupt = 0;
+
+                for (int i = 0; i < subNum; i++)
+                {
+                    SubtitlesDemuxers[i].Interrupter.ForceInterrupt = 0;
+                }
                 DataDemuxer.Interrupter.ForceInterrupt = 0;
             }
         }
@@ -67,31 +75,65 @@ public unsafe partial class DecoderContext : PluginHandler
     public Demuxer              MainDemuxer         { get; private set; }
     public Demuxer              AudioDemuxer        { get; private set; }
     public Demuxer              VideoDemuxer        { get; private set; }
-    public Demuxer              SubtitlesDemuxer    { get; private set; }
+    public Demuxer[]            SubtitlesDemuxers   { get; private set; }
     public Demuxer              DataDemuxer         { get; private set; }
-    public Demuxer      GetDemuxerPtr(MediaType type) => type == MediaType.Audio ? AudioDemuxer : (type == MediaType.Video ? VideoDemuxer : (type == MediaType.Subs ? SubtitlesDemuxer : DataDemuxer));
 
     // Decoders
     public AudioDecoder         AudioDecoder        { get; private set; }
     public VideoDecoder         VideoDecoder        { get; internal set;}
-    public SubtitlesDecoder     SubtitlesDecoder    { get; private set; }
+    public SubtitlesDecoder[]   SubtitlesDecoders   { get; private set; }
     public DataDecoder          DataDecoder         { get; private set; }
-    public DecoderBase  GetDecoderPtr(MediaType type) => type == MediaType.Audio ? AudioDecoder : (type == MediaType.Video ? VideoDecoder : (type == MediaType.Subs ? SubtitlesDecoder : DataDecoder));
-
+    public DecoderBase GetDecoderPtr(StreamBase stream)
+    {
+        switch (stream.Type)
+        {
+            case MediaType.Audio:
+                return AudioDecoder;
+            case MediaType.Video:
+                return VideoDecoder;
+            case MediaType.Data:
+                return DataDecoder;
+            case MediaType.Subs:
+                return SubtitlesDecoders[SubtitlesSelectedHelper.CurIndex];
+            default:
+                throw new InvalidOperationException();
+        }
+    }
     // Streams
     public AudioStream          AudioStream         => (VideoDemuxer?.AudioStream) ?? AudioDemuxer.AudioStream;
     public VideoStream          VideoStream         => VideoDemuxer?.VideoStream;
-    public SubtitlesStream      SubtitlesStream     => (VideoDemuxer?.SubtitlesStream) ?? SubtitlesDemuxer.SubtitlesStream;
+    public SubtitlesStream[]    SubtitlesStreams
+    {
+        get
+        {
+            SubtitlesStream[] streams = new SubtitlesStream[subNum];
+
+            for (int i = 0; i < subNum; i++)
+            {
+                if (VideoDemuxer?.SubtitlesStreams?[i] != null)
+                {
+                    streams[i] = VideoDemuxer.SubtitlesStreams[i];
+                }
+                else if (SubtitlesDemuxers[i]?.SubtitlesStreams?[i] != null)
+                {
+                    streams[i] = SubtitlesDemuxers[i].SubtitlesStreams[i];
+                }
+            }
+
+            return streams;
+        }
+    }
     public DataStream           DataStream          => (VideoDemuxer?.DataStream) ?? DataDemuxer.DataStream;
 
     public Tuple<ExternalAudioStream, int>      ClosedAudioStream       { get; private set; }
     public Tuple<ExternalVideoStream, int>      ClosedVideoStream       { get; private set; }
-    public Tuple<ExternalSubtitlesStream, int>  ClosedSubtitlesStream   { get; private set; }
     #endregion
 
     #region Initialize
     LogHandler Log;
     bool shouldDispose;
+    int subNum => Config.Subtitles.Max;
+
     public DecoderContext(Config config = null, int uniqueId = -1, bool enableDecoding = true) : base(config, uniqueId)
     {
         Log = new LogHandler(("[#" + UniqueId + "]").PadRight(8, ' ') + " [DecoderContext] ");
@@ -101,14 +143,22 @@ public unsafe partial class DecoderContext : PluginHandler
 
         AudioDemuxer        = new Demuxer(Config.Demuxer, MediaType.Audio, UniqueId, EnableDecoding);
         VideoDemuxer        = new Demuxer(Config.Demuxer, MediaType.Video, UniqueId, EnableDecoding);
-        SubtitlesDemuxer    = new Demuxer(Config.Demuxer, MediaType.Subs,  UniqueId, EnableDecoding);
+        SubtitlesDemuxers   = new Demuxer[subNum];
+        for (int i = 0; i < subNum; i++)
+        {
+            SubtitlesDemuxers[i] = new Demuxer(Config.Demuxer, MediaType.Subs, UniqueId, EnableDecoding);
+        }
         DataDemuxer         = new Demuxer(Config.Demuxer, MediaType.Data, UniqueId, EnableDecoding);
 
         Recorder            = new Remuxer(UniqueId);
 
         VideoDecoder        = new VideoDecoder(Config, UniqueId);
         AudioDecoder        = new AudioDecoder(Config, UniqueId, VideoDecoder);
-        SubtitlesDecoder    = new SubtitlesDecoder(Config, UniqueId);
+        SubtitlesDecoders   = new SubtitlesDecoder[subNum];
+        for (int i = 0; i < subNum; i++)
+        {
+            SubtitlesDecoders[i] = new SubtitlesDecoder(Config, UniqueId, i);
+        }
         DataDecoder         = new DataDecoder(Config, UniqueId);
 
         if (EnableDecoding && config.Player.Usage != MediaPlayer.Usage.Audio)
@@ -133,7 +183,6 @@ public unsafe partial class DecoderContext : PluginHandler
         RequiresResync = false;
         ClosedAudioStream = null;
         ClosedVideoStream = null;
-        ClosedSubtitlesStream = null;
 
         OnInitializingSwitch();
         Stop();
@@ -152,7 +201,8 @@ public unsafe partial class DecoderContext : PluginHandler
         AudioDecoder.resyncWithVideoRequired = false; // Temporary to avoid dead lock on AudioDecoder.lockCodecCtx
         lock (VideoDecoder.lockCodecCtx)
         lock (AudioDecoder.lockCodecCtx)
-        lock (SubtitlesDecoder.lockCodecCtx)
+        lock (SubtitlesDecoders[0].lockCodecCtx)
+        lock (SubtitlesDecoders[1].lockCodecCtx)
         lock (DataDecoder.lockCodecCtx)
         {
             long seekTimestamp = CalcSeekTimestamp(VideoDemuxer, ms, ref forward);
@@ -181,8 +231,13 @@ public unsafe partial class DecoderContext : PluginHandler
                     AudioDecoder.nextPts = AudioDecoder.Stream.StartTimePts;
             }
 
-            if (SubtitlesStream != null && SubtitlesDecoder.OnVideoDemuxer)
-                SubtitlesDecoder.Flush();
+            for (int i = 0; i < subNum; i++)
+            {
+                if (SubtitlesStreams[i] != null && SubtitlesDecoders[i].OnVideoDemuxer)
+                {
+                    SubtitlesDecoders[i].Flush();
+                }
+            }
 
             if (DataStream != null && DataDecoder.OnVideoDemuxer)
                 DataDecoder.Flush();
@@ -196,12 +251,15 @@ public unsafe partial class DecoderContext : PluginHandler
             RequiresResync = true;
         }
 
-        if (SubtitlesStream != null && !SubtitlesDecoder.OnVideoDemuxer)
+        for (int i = 0; i < subNum; i++)
         {
-            SubtitlesDecoder.Pause();
-            SubtitlesDecoder.Flush();
-            SubtitlesDemuxer.PauseOnQueueFull = true;
-            RequiresResync = true;
+            if (SubtitlesStreams[i] != null && !SubtitlesDecoders[i].OnVideoDemuxer)
+            {
+                SubtitlesDecoders[i].Pause();
+                SubtitlesDecoders[i].Flush();
+                SubtitlesDemuxers[i].PauseOnQueueFull = true;
+                RequiresResync = true;
+            }
         }
 
         if (DataStream != null && !DataDecoder.OnVideoDemuxer)
@@ -242,32 +300,56 @@ public unsafe partial class DecoderContext : PluginHandler
 
         return ret;
     }
-    public int SeekSubtitles(long ms = -1, bool forward = false)
+
+    public int SeekSubtitles(int subIndex = -1, long ms = -1, bool forward = false)
     {
-        int ret = 0;
+        int ret = -1;
 
-        if (SubtitlesDemuxer.Disposed || SubtitlesDecoder.OnVideoDemuxer || !Config.Subtitles.Enabled) return -1;
+        if (!Config.Subtitles.Enabled)
+            return ret;
 
-        if (ms == -1) ms = GetCurTimeMs();
-
-        long seekTimestamp = CalcSeekTimestamp(SubtitlesDemuxer, ms, ref forward);
-
-        lock (SubtitlesDecoder.lockActions)
-        lock (SubtitlesDecoder.lockCodecCtx)
+        // all sub streams
+        int startIndex = 0;
+        int endIndex = subNum - 1;
+        if (subIndex != -1)
         {
-            // Currently disabled as it will fail to seek within the queue the most of the times
-            //lock (SubtitlesDemuxer.lockActions)
-                //if (SubtitlesDemuxer.SeekInQueue(seekTimestamp, forward) != 0)
-            ret = SubtitlesDemuxer.Seek(seekTimestamp, forward);
-
-            SubtitlesDecoder.Flush();
-            if (VideoDecoder.IsRunning)
-            {
-                SubtitlesDemuxer.Start();
-                SubtitlesDecoder.Start();
-            }
+            // specific sub stream
+            startIndex = subIndex;
+            endIndex = subIndex;
         }
 
+        for (int i = startIndex; i <= endIndex; i++)
+        {
+            // Perform seek only for external subtitles
+            if (SubtitlesDemuxers[i].Disposed || SubtitlesDecoders[i].OnVideoDemuxer)
+            {
+                continue;
+            }
+
+            long localMs = ms;
+            if (localMs == -1)
+            {
+                localMs = GetCurTimeMs();
+            }
+
+            long seekTimestamp = CalcSeekTimestamp(SubtitlesDemuxers[i], localMs, ref forward);
+
+            lock (SubtitlesDecoders[i].lockActions)
+            lock (SubtitlesDecoders[i].lockCodecCtx)
+            {
+                // Currently disabled as it will fail to seek within the queue the most of the times
+                //lock (SubtitlesDemuxer.lockActions)
+                //if (SubtitlesDemuxer.SeekInQueue(seekTimestamp, forward) != 0)
+                ret = SubtitlesDemuxers[i].Seek(seekTimestamp, forward);
+
+                SubtitlesDecoders[i].Flush();
+                if (VideoDecoder.IsRunning)
+                {
+                    SubtitlesDemuxers[i].Start();
+                    SubtitlesDecoders[i].Start();
+                }
+            }
+        }
         return ret;
     }
 
@@ -308,7 +390,11 @@ public unsafe partial class DecoderContext : PluginHandler
         long ticks = (ms * 10000) + startTime;
 
         if (demuxer.Type == MediaType.Audio) ticks -= Config.Audio.Delay;
-        if (demuxer.Type == MediaType.Subs ) ticks -= Config.Subtitles.Delay + (2 * 1000 * 10000); // We even want the previous subtitles
+        if (demuxer.Type == MediaType.Subs)
+        {
+            int i = SubtitlesDemuxers[0] == demuxer ? 0 : 1;
+            ticks -= Config.Subtitles[i].Delay + (2 * 1000 * 10000); // We even want the previous subtitles
+        }
 
         if (ticks < startTime)
         {
@@ -330,26 +416,38 @@ public unsafe partial class DecoderContext : PluginHandler
     {
         VideoDecoder.Pause();
         AudioDecoder.Pause();
-        SubtitlesDecoder.Pause();
+        for (int i = 0; i < subNum; i++)
+        {
+            SubtitlesDecoders[i].Pause();
+        }
         DataDecoder.Pause();
 
         VideoDemuxer.Pause();
         AudioDemuxer.Pause();
-        SubtitlesDemuxer.Pause();
+        for (int i = 0; i < subNum; i++)
+        {
+            SubtitlesDemuxers[i].Pause();
+        }
         DataDemuxer.Pause();
     }
     public void PauseDecoders()
     {
         VideoDecoder.Pause();
         AudioDecoder.Pause();
-        SubtitlesDecoder.Pause();
+        for (int i = 0; i < subNum; i++)
+        {
+            SubtitlesDecoders[i].Pause();
+        }
         DataDecoder.Pause();
     }
     public void PauseOnQueueFull()
     {
         VideoDemuxer.PauseOnQueueFull = true;
         AudioDemuxer.PauseOnQueueFull = true;
-        SubtitlesDemuxer.PauseOnQueueFull = true;
+        for (int i = 0; i < subNum; i++)
+        {
+            SubtitlesDemuxers[i].PauseOnQueueFull = true;
+        }
         DataDecoder.PauseOnQueueFull = true;
     }
     public void Start()
@@ -370,8 +468,14 @@ public unsafe partial class DecoderContext : PluginHandler
 
         if (Config.Subtitles.Enabled)
         {
-            SubtitlesDemuxer.Start();
-            SubtitlesDecoder.Start();
+            for (int i = 0; i < subNum; i++)
+            {
+                if (SubtitlesStreams[i] != null && !SubtitlesDecoders[i].OnVideoDemuxer)
+                    SubtitlesDemuxers[i].Start();
+
+                if (SubtitlesStreams[i] != null)
+                    SubtitlesDecoders[i].Start();
+            }
         }
 
         if (Config.Data.Enabled)
@@ -386,10 +490,18 @@ public unsafe partial class DecoderContext : PluginHandler
 
         VideoDecoder.Dispose();
         AudioDecoder.Dispose();
-        SubtitlesDecoder.Dispose();
+        for (int i = 0; i < subNum; i++)
+        {
+            SubtitlesDecoders[i].Dispose();
+        }
+
         DataDecoder.Dispose();
         AudioDemuxer.Dispose();
-        SubtitlesDemuxer.Dispose();
+        for (int i = 0; i < subNum; i++)
+        {
+            SubtitlesDemuxers[i].Dispose();
+        }
+
         DataDemuxer.Dispose();
         VideoDemuxer.Dispose();
 
@@ -401,10 +513,17 @@ public unsafe partial class DecoderContext : PluginHandler
 
         VideoDecoder.Stop();
         AudioDecoder.Stop();
-        SubtitlesDecoder.Stop();
+        for (int i = 0; i < subNum; i++)
+        {
+            SubtitlesDecoders[i].Stop();
+        }
+
         DataDecoder.Stop();
         AudioDemuxer.Stop();
-        SubtitlesDemuxer.Stop();
+        for (int i = 0; i < subNum; i++)
+        {
+            SubtitlesDemuxers[i].Stop();
+        }
         DataDemuxer.Stop();
         VideoDemuxer.Stop();
 
@@ -429,16 +548,21 @@ public unsafe partial class DecoderContext : PluginHandler
             }
         }
 
-        if (SubtitlesStream != null && SubtitlesStream.Demuxer.Type != MediaType.Video && Config.Subtitles.Enabled)
+        for (int i = 0; i < subNum; i++)
         {
-            if (timestamp == -1) timestamp = VideoDemuxer.CurTime;
-            if (CanInfo) Log.Info($"Resync subs to {TicksToTime(timestamp)}");
-
-            SeekSubtitles(timestamp / 10000);
-            if (isRunning)
+            if (SubtitlesStreams[i] != null && SubtitlesStreams[i].Demuxer.Type != MediaType.Video && Config.Subtitles.Enabled)
             {
-                SubtitlesDemuxer.Start();
-                SubtitlesDecoder.Start();
+                if (timestamp == -1)
+                    timestamp = VideoDemuxer.CurTime;
+                if (CanInfo)
+                    Log.Info($"Resync subs:{i} to {TicksToTime(timestamp)}");
+
+                SeekSubtitles(i, timestamp / 10000, false);
+                if (isRunning)
+                {
+                    SubtitlesDemuxers[i].Start();
+                    SubtitlesDecoders[i].Start();
+                }
             }
         }
 
@@ -460,34 +584,40 @@ public unsafe partial class DecoderContext : PluginHandler
         RequiresResync = false;
     }
 
-    public void ResyncSubtitles(long timestamp = -1)
-    {
-        if (SubtitlesStream != null && Config.Subtitles.Enabled)
-        {
-            if (timestamp == -1) timestamp = VideoDemuxer.CurTime;
-            if (CanInfo) Log.Info($"Resync subs to {TicksToTime(timestamp)}");
+    //public void ResyncSubtitles(long timestamp = -1)
+    //{
+    //    if (SubtitlesStream != null && Config.Subtitles.Enabled)
+    //    {
+    //        if (timestamp == -1) timestamp = VideoDemuxer.CurTime;
+    //        if (CanInfo) Log.Info($"Resync subs to {TicksToTime(timestamp)}");
 
-            if (SubtitlesStream.Demuxer.Type != MediaType.Video)
-                SeekSubtitles(timestamp / 10000);
-            else
+    //        if (SubtitlesStream.Demuxer.Type != MediaType.Video)
+    //            SeekSubtitles(timestamp / 10000);
+    //        else
 
-            if (VideoDemuxer.IsRunning)
-            {
-                SubtitlesDemuxer.Start();
-                SubtitlesDecoder.Start();
-            }
-        }
-    }
+    //        if (VideoDemuxer.IsRunning)
+    //        {
+    //            SubtitlesDemuxer.Start();
+    //            SubtitlesDecoder.Start();
+    //        }
+    //    }
+    //}
     public void Flush()
     {
         VideoDemuxer.DisposePackets();
         AudioDemuxer.DisposePackets();
-        SubtitlesDemuxer.DisposePackets();
+        for (int i = 0; i < subNum; i++)
+        {
+            SubtitlesDemuxers[i].DisposePackets();
+        }
         DataDemuxer.DisposePackets();
 
         VideoDecoder.Flush();
         AudioDecoder.Flush();
-        SubtitlesDecoder.Flush();
+        for (int i = 0; i < subNum; i++)
+        {
+            SubtitlesDecoders[i].Flush();
+        }
         DataDecoder.Flush();
     }
 
@@ -556,10 +686,24 @@ public unsafe partial class DecoderContext : PluginHandler
                     continue;
 
                 case AVMediaType.Subtitle:
-                    if (timestamp == -1 || (long)(packet->pts * SubtitlesStream.Timebase) - VideoDemuxer.StartTime + (VideoStream.FrameDuration / 2) > timestamp)
-                        VideoDemuxer.SubtitlesPackets.Enqueue(packet);
-                    else
-                        av_packet_free(&packet);
+                    for (int i = 0; i < subNum; i++)
+                    {
+                        if (SubtitlesStreams[i]?.StreamIndex != packet->stream_index)
+                        {
+                            continue;
+                        }
+
+                        if (timestamp == -1 ||
+                            (long)(packet->pts * SubtitlesStreams[i].Timebase) - VideoDemuxer.StartTime +
+                            (VideoStream.FrameDuration / 2) > timestamp)
+                        {
+                            // Clone packets to support simultaneous display of the same subtitle
+                            VideoDemuxer.SubtitlesPackets[i].Enqueue(av_packet_clone(packet));
+                        }
+                    }
+
+                    // cloned, so free packet
+                    av_packet_free(&packet);
 
                     continue;
 
@@ -678,13 +822,24 @@ public unsafe partial class DecoderContext : PluginHandler
         string dump = "\r\n-===== Streams / Packets / Frames =====-\r\n";
         dump += $"\r\n AudioPackets      ({VideoDemuxer.AudioStreams.Count}): {VideoDemuxer.AudioPackets.Count}";
         dump += $"\r\n VideoPackets      ({VideoDemuxer.VideoStreams.Count}): {VideoDemuxer.VideoPackets.Count}";
-        dump += $"\r\n SubtitlesPackets  ({VideoDemuxer.SubtitlesStreams.Count}): {VideoDemuxer.SubtitlesPackets.Count}";
+        for (int i = 0; i < subNum; i++)
+        {
+            dump += $"\r\n SubtitlesPackets{i+1}  ({VideoDemuxer.SubtitlesStreamsAll.Count}): {VideoDemuxer.SubtitlesPackets[i].Count}";
+        }
+
         dump += $"\r\n AudioPackets      ({AudioDemuxer.AudioStreams.Count}): {AudioDemuxer.AudioPackets.Count} (AudioDemuxer)";
-        dump += $"\r\n SubtitlesPackets  ({SubtitlesDemuxer.SubtitlesStreams.Count}): {SubtitlesDemuxer.SubtitlesPackets.Count} (SubtitlesDemuxer)";
+
+        for (int i = 0; i < subNum; i++)
+        {
+            dump += $"\r\n SubtitlesPackets{i+1}  ({SubtitlesDemuxers[i].SubtitlesStreamsAll.Count}): {SubtitlesDemuxers[i].SubtitlesPackets[0].Count} (SubtitlesDemuxer)";
+        }
 
         dump += $"\r\n Video Frames         : {VideoDecoder.Frames.Count}";
         dump += $"\r\n Audio Frames         : {AudioDecoder.Frames.Count}";
-        dump += $"\r\n Subtitles Frames     : {SubtitlesDecoder.Frames.Count}";
+        for (int i = 0; i < subNum; i++)
+        {
+            dump += $"\r\n Subtitles Frames{i+1}     : {SubtitlesDecoders[i].Frames.Count}";
+        }
 
         if (CanInfo) Log.Info(dump);
     }

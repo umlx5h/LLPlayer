@@ -4,12 +4,24 @@ using System.Globalization;
 
 namespace FlyleafLib.MediaFramework.MediaFrame;
 
-public unsafe class SubtitlesFrame : FrameBase
+public class SubtitlesFrame : FrameBase
 {
+    public bool isBitmap;
     public uint duration;
     public string text;
     public List<SubStyle> subStyles;
     public AVSubtitle sub;
+    public SubtitlesFrameBitmap bitmap;
+}
+
+public class SubtitlesFrameBitmap
+{
+    // Buffer to hold decoded pixels
+    public byte[] data;
+    public int width;
+    public int height;
+    public int x;
+    public int y;
 }
 
 public struct SubStyle
@@ -65,6 +77,11 @@ public static class ParseSubtitles
 
         //SubStyle fontname      = new SubStyle(SubStyles.FONTNAME);
         //SubStyle fontsize      = new SubStyle(SubStyles.FONTSIZE);
+
+        if (string.IsNullOrEmpty(s))
+        {
+            return sout;
+        }
 
         s = s.LastIndexOf(",,") == -1 ? s : s[(s.LastIndexOf(",,") + 2)..].Replace("\\N", "\n").Trim();
 

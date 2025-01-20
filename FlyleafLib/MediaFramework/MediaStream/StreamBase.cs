@@ -3,6 +3,7 @@
 using static Flyleaf.FFmpeg.ffmpegEx;
 
 using FlyleafLib.MediaFramework.MediaDemuxer;
+using FlyleafLib.MediaPlayer;
 
 namespace FlyleafLib.MediaFramework.MediaStream;
 
@@ -17,7 +18,19 @@ public abstract unsafe class StreamBase : NotifyPropertyChanged
     public double                       Timebase            { get; internal set; }
 
     // TBR: To update Pop-up menu's (Player.Audio/Player.Video ... should inherit this?)
-    public bool                         Enabled             { get => _Enabled; internal set => SetUI(ref _Enabled, value); }
+    public bool                         Enabled
+    {
+        get => _Enabled;
+        internal set
+        {
+            if (SetUI(ref _Enabled, value))
+            {
+                RaiseUI(nameof(EnabledPrimarySubtitle));
+                RaiseUI(nameof(EnabledSecondarySubtitle));
+            }
+        }
+    }
+
     bool _Enabled;
 
     public long                         BitRate             { get; internal set; }
@@ -31,6 +44,12 @@ public abstract unsafe class StreamBase : NotifyPropertyChanged
     public long                         Duration            { get; internal set; }
     public Dictionary<string, string>   Metadata            { get; internal set; } = new Dictionary<string, string>();
     public MediaType                    Type                { get; internal set; }
+
+    #region Subtitles
+    // TODO: L: Used for subtitle streams only, but defined in the base class
+    public bool EnabledPrimarySubtitle => Enabled && this.GetSubEnabled(0);
+    public bool EnabledSecondarySubtitle => Enabled && this.GetSubEnabled(1);
+    #endregion
 
     public abstract string GetDump();
     public StreamBase() { }

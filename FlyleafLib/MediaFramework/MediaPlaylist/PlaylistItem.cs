@@ -78,15 +78,16 @@ public class PlaylistItem : DemuxerInput
                     ExternalVideoStream     { get; set; }
     public ExternalAudioStream
                     ExternalAudioStream     { get; set; }
-    public ExternalSubtitlesStream
-                    ExternalSubtitlesStream { get; set; }
+    public ExternalSubtitlesStream[]
+                    ExternalSubtitlesStreams
+                                            { get; set; } = new ExternalSubtitlesStream[2];
 
     public ObservableCollection<ExternalVideoStream>
                     ExternalVideoStreams    { get; set; } = new ObservableCollection<ExternalVideoStream>();
     public ObservableCollection<ExternalAudioStream>
                     ExternalAudioStreams    { get; set; } = new ObservableCollection<ExternalAudioStream>();
     public ObservableCollection<ExternalSubtitlesStream>
-                    ExternalSubtitlesStreams{ get; set; } = new ObservableCollection<ExternalSubtitlesStream>();
+                    ExternalSubtitlesStreamsAll{ get; set; } = new ObservableCollection<ExternalSubtitlesStream>();
     internal object lockExternalStreams = new();
 
     public void AddExternalStream(ExternalStream extStream, PlaylistItem item, string pluginName, object tag = null)
@@ -108,8 +109,8 @@ public class PlaylistItem : DemuxerInput
             }
             else if (extStream is ExternalSubtitlesStream)
             {
-                item.ExternalSubtitlesStreams.Add((ExternalSubtitlesStream)extStream);
-                extStream.Index = item.ExternalSubtitlesStreams.Count - 1;
+                item.ExternalSubtitlesStreamsAll.Add((ExternalSubtitlesStream)extStream);
+                extStream.Index = item.ExternalSubtitlesStreamsAll.Count - 1;
             }
 
             if (tag != null)

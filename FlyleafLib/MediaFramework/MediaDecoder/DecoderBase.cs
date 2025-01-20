@@ -11,6 +11,9 @@ public abstract unsafe class DecoderBase : RunThreadBase
     public Demuxer                  Demuxer         => demuxer;
     public StreamBase               Stream          { get; protected set; }
     public AVCodecContext*          CodecCtx        => codecCtx;
+    public int                      Width           => codecCtx->width;  // for subtitle
+    public int                      Height          => codecCtx->height; // for subtitle
+
     public Action<DecoderBase>      CodecChanged    { get; set; }
     public Config                   Config          { get; protected set; }
     public double                   Speed           { get => speed; set { if (Disposed) { speed = value; return; } if (speed != value) OnSpeedChanged(value); } }
