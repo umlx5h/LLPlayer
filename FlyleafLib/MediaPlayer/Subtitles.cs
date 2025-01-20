@@ -4,6 +4,7 @@ using FlyleafLib.MediaFramework.MediaContext;
 using FlyleafLib.MediaFramework.MediaStream;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using static FlyleafLib.Utils;
@@ -477,6 +478,8 @@ public class Subtitle : NotifyPropertyChanged
         // TODO: L: Here it may be null when switching subs while displaying.
         _player.sFrames[_subIndex] = null;
 
+        _player.SubtitlesManager[_subIndex].Reset();
+
         _player.SubtitleClear(_subIndex);
         //_player.renderer?.ClearOverlayTexture();
 
@@ -519,6 +522,8 @@ public class Subtitle : NotifyPropertyChanged
         _player.SubtitleClear(_subIndex);
         //player.renderer?.ClearOverlayTexture();
 
+        _player.SubtitlesManager[_subIndex].Reset();
+
         if (_player.renderer != null)
         {
             // Adjust bitmap subtitle size when resizing screen
@@ -527,6 +532,37 @@ public class Subtitle : NotifyPropertyChanged
         }
 
         UpdateUI();
+
+        // Create cache of the all subtitles in a separate thread
+        Task.Run(Load);
+    }
+
+    internal void Load()
+    {
+        // Do not cache for original secondary subtitles
+        if (_subIndex > 0 && SubtitlesSelectedHelper.SecondaryMethod == SelectSubMethod.Original)
+        {
+            return;
+        }
+
+        SubtitlesStream stream = Decoder.SubtitlesStreams[_subIndex];
+        bool isExternal = stream.ExternalStream != null;
+        ExternalSubtitlesStream extStream = (ExternalSubtitlesStream)stream.ExternalStream;
+
+        if (isExternal)
+        {
+            // external sub
+            _player.SubtitlesManager.Open(_subIndex, extStream.Url, -1, extStream.Language);
+        }
+        else
+        {
+            // internal sub
+            _player.SubtitlesManager.Open(_subIndex, Decoder.MainDemuxer.Url, stream.StreamIndex, stream.Language);
+        }
+
+        TimeSpan curTime = new(_player.CurTime);
+
+        _player.SubtitlesManager[_subIndex].SetCurrentTime(curTime);
     }
 
     internal void Enable()
@@ -651,5 +687,64 @@ public class Subtitles
     public void ToggleVisibilitySecondary()
     {
         Config.Subtitles[1].Visible = !Config.Subtitles[1].Visible;
+    }
+
+    private bool _prevSeek()
+    {
+        var prev = _player.SubtitlesManager[0].GetPrev();
+        if (prev is not null)
+        {
+            _player.SeekAccurate(prev.StartTime, 0);
+            return true;
+        }
+
+        return false;
+    }
+
+    public void PrevSeek() => _prevSeek();
+
+    public void PrevSeekFallback()
+    {
+        bool seeked = _prevSeek();
+        if (!seeked)
+        {
+            _player.SeekBackward();
+        }
+    }
+
+    public void CurSeek()
+    {
+        var cur = _player.SubtitlesManager[0].GetCurrent();
+        if (cur is not null)
+        {
+            _player.SeekAccurate(cur.StartTime, 0);
+        }
+        else
+        {
+            // fallback to prevSeek (same as mpv)
+            PrevSeek();
+        }
+    }
+
+    private bool _nextSeek()
+    {
+        var next = _player.SubtitlesManager[0].GetNext();
+        if (next is not null)
+        {
+            _player.SeekAccurate(next.StartTime, 0);
+            return true;
+        }
+        return false;
+    }
+
+    public void NextSeek() => _nextSeek();
+
+    public void NextSeekFallback()
+    {
+        bool seeked = _nextSeek();
+        if (!seeked)
+        {
+            _player.SeekForward();
+        }
     }
 }

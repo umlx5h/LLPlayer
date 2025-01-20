@@ -198,9 +198,35 @@ partial class Player
     /// <summary>
     /// Seeks at the exact timestamp (with half frame distance accuracy)
     /// </summary>
+    /// <param name="time"></param>
+    /// <param name="subIndex"></param>
+    public void SeekAccurate(TimeSpan time, int subIndex = -1)
+    {
+        int ms = (int)time.TotalMilliseconds;
+        if (subIndex != -1 && time.Microseconds > 0)
+        {
+            // When seeking subtitles, rounding down the milliseconds or less will cause the previous subtitle
+            // ASR subtitles are in microseconds, so if you truncate, you'll end up one before the current subtitle.
+            ms += 1;
+        }
+
+        SeekAccurate(ms, subIndex);
+    }
+
+    /// <summary>
+    /// Seeks at the exact timestamp (with half frame distance accuracy)
+    /// </summary>
     /// <param name="ms"></param>
-    public void SeekAccurate(int ms)
-        => Seek(ms, false, !IsLive);
+    /// <param name="subIndex"></param>
+    public void SeekAccurate(int ms, int subIndex = -1)
+    {
+        if (subIndex >= 0)
+        {
+            ms += (int)(Config.Subtitles[subIndex].Delay / 10000);
+        }
+
+        Seek(ms, false, !IsLive);
+    }
 
     public void ToggleSeekAccurate()
         => Config.Player.SeekAccurate = !Config.Player.SeekAccurate;
@@ -215,6 +241,11 @@ partial class Player
             _CurTime = curTime = ms * (long)10000;
             seeks.Push(new SeekData(ms, forward, accurate));
         }
+
+        // Set timestamp to Manager immediately after seek to enable continuous seek
+        // (Without this, seek is called with the same timestamp on successive calls, so it will seek to the same subtitle.)
+        SubtitlesManager.SetCurrentTime(new TimeSpan(curTime));
+
         Raise(nameof(CurTime));
 
         if (Status == Status.Playing)

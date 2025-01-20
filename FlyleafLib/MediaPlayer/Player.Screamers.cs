@@ -595,6 +595,17 @@ unsafe partial class Player
                 VideoDecoder.Frames.TryDequeue(out vFrame);
             }
 
+            // Set the current time to SubtitleManager in a loop
+            if (Config.Subtitles.Enabled)
+            {
+                for (int i = 0; i < subNum; i++)
+                {
+                    if (Subtitles[i].Enabled)
+                    {
+                        SubtitlesManager[i].SetCurrentTime(new TimeSpan(curTime));
+                    }
+                }
+            }
             for (int i = 0; i < subNum; i++)
             {
                 if (sFramesPrev[i] != null && ((sFramesPrev[i].timestamp - startTicks + (sFramesPrev[i].duration * (long)10000)) / speed) - (long) (sw.ElapsedTicks * SWFREQ_TO_TICKS) < 0)

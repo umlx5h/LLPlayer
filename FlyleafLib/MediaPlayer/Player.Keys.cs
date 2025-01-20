@@ -294,6 +294,13 @@ public class KeysConfig
         Add(Key.OemQuotes,          KeyBindingAction.SubsDelayAddPrimary);
         Add(Key.OemQuotes,          KeyBindingAction.SubsDelayAdd2Primary, false, true);
 
+        Add(Key.A,                  KeyBindingAction.SubsPrevSeek);
+        Add(Key.S,                  KeyBindingAction.SubsCurSeek);
+        Add(Key.D,                  KeyBindingAction.SubsNextSeek);
+        // Mouse backford/forward button
+        Add(Key.Left,               KeyBindingAction.SubsPrevSeekFallback, true);
+        Add(Key.Right,              KeyBindingAction.SubsNextSeekFallback, true);
+
         Add(Key.V,                  KeyBindingAction.OpenFromClipboard, false, true);
         Add(Key.O,                  KeyBindingAction.OpenFromFileDialog);
         Add(Key.C,                  KeyBindingAction.CopyToClipboard, false, true);
@@ -465,6 +472,17 @@ public class KeysConfig
             case KeyBindingAction.SeekForward2:
                 return player.SeekForward2;
 
+            case KeyBindingAction.SubsCurSeek:
+                return player.Subtitles.CurSeek;
+            case KeyBindingAction.SubsPrevSeek:
+                return player.Subtitles.PrevSeek;
+            case KeyBindingAction.SubsNextSeek:
+                return player.Subtitles.NextSeek;
+            case KeyBindingAction.SubsNextSeekFallback:
+                return player.Subtitles.NextSeekFallback;
+            case KeyBindingAction.SubsPrevSeekFallback:
+                return player.Subtitles.PrevSeekFallback;
+
             case KeyBindingAction.SpeedAdd:
                 return player.SpeedUp;
 
@@ -566,6 +584,7 @@ public enum KeyBindingAction
     AudioDelayAdd, AudioDelayAdd2, AudioDelayRemove, AudioDelayRemove2, ToggleMute, VolumeUp, VolumeDown,
     SubsDelayAddPrimary, SubsDelayAdd2Primary, SubsDelayRemovePrimary, SubsDelayRemove2Primary,
     SubsDelayAddSecondary, SubsDelayAdd2Secondary, SubsDelayRemoveSecondary, SubsDelayRemove2Secondary,
+    SubsPrevSeek, SubsCurSeek, SubsNextSeek, SubsPrevSeekFallback, SubsNextSeekFallback,
 
     CopyToClipboard, CopyItemToClipboard, OpenFromClipboard, OpenFromFileDialog,
     Stop, Pause, Play, TogglePlayPause, ToggleReversePlayback, Flush,
