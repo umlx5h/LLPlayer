@@ -186,7 +186,8 @@ public class Audio : NotifyPropertyChanged
             FramesDropped   = FramesDropped;
         };
 
-        Volume = Config.Player.VolumeMax / 2;
+        // Set 75 to default volume
+        Volume = Math.Min(75, Config.Player.VolumeMax);
         Initialize();
     }
 
