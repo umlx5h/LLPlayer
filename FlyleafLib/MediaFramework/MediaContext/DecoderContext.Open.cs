@@ -862,20 +862,18 @@ public partial class DecoderContext
                 }
             }
 
-            // 4. Prevent Local/Online Search for 'small' duration videos
-            if (VideoDemuxer.Duration < TimeSpan.FromMinutes(25).Ticks)
+            // 4. Search offline if allowed
+            if (SearchLocalSubtitles())
             {
-                // 6. (Any) Check embedded/external streams for config languages (including 'undefined')
-                SuggestSubtitles(out var stream, out var extStream);
-
-                if (stream != null)
-                    Open(stream);
-                else if (extStream != null)
+                // 4.1 Check external streams for high suggest (again for the new additions if any)
+                ExternalSubtitlesStream extStream = SuggestBestExternalSubtitles();
+                if (extStream != null)
+                {
+                    Log.Debug("[Subtitles] Found high suggested local external stream");
                     Open(extStream);
-
-                return;
+                    return;
+                }
             }
-
 
         } catch (Exception e)
         {
@@ -894,19 +892,6 @@ public partial class DecoderContext
                 }
 
                 ExternalSubtitlesStream extStream;
-
-                // 4. Search offline if allowed (not async)
-                if (SearchLocalSubtitles())
-                {
-                    // 4.1 Check external streams for high suggest (again for the new additions if any)
-                    extStream = SuggestBestExternalSubtitles();
-                    if (extStream != null)
-                    {
-                        Log.Debug("[Subtitles] Found high suggested external stream");
-                        Open(extStream);
-                        return;
-                    }
-                }
 
                 if (sessionId != OpenItemCounter)
                 {
