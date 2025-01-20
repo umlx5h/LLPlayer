@@ -1,0 +1,13 @@
+root = true
+
+[*]
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{cs,xaml}]
+# In Visual Studio 2022 and Rider (2025), even if utf-8 is specified, new files will have bom. so set this to avoid confusion
+charset = utf-8-bom
+indent_style = space
+indent_size = 4
+# to distinguish
+tab_width = 8
