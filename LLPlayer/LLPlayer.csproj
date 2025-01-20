@@ -14,4 +14,8 @@
     <PackageProjectUrl>https://llplayer.com</PackageProjectUrl>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\FlyleafLib\FlyleafLib.csproj" />
+  </ItemGroup>
+
 </Project>

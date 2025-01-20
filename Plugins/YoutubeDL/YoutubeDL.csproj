@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>net8.0-windows</TargetFrameworks>
+		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+		<AssemblyVersion>1.3.1.0</AssemblyVersion>
+		<FileVersion>1.3.1.0</FileVersion>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\FlyleafLib\FlyleafLib.csproj">
+			<Private>false</Private>
+			<ExcludeAssets>All</ExcludeAssets>
+		</ProjectReference>
+	</ItemGroup>
+
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+		<Exec Command="if &quot;$(OutDir)&quot; == &quot;bin\Debug\net8.0-windows\&quot; (&#xD;&#xA;  set plugindir=Plugins.NET8&#xD;&#xA;) else if &quot;$(OutDir)&quot; == &quot;bin\Release\net8.0-windows\&quot; (&#xD;&#xA;  set plugindir=Plugins.NET8&#xD;&#xA;) else if &quot;$(OutDir)&quot; == &quot;bin\Debug\net6.0-windows\&quot; (&#xD;&#xA;  set plugindir=Plugins.NET6&#xD;&#xA;) else if &quot;$(OutDir)&quot; == &quot;bin\Release\net6.0-windows\&quot; (&#xD;&#xA;  set plugindir=Plugins.NET6&#xD;&#xA;) else if &quot;$(OutDir)&quot; == &quot;bin\Release\net472\&quot; (&#xD;&#xA;  set plugindir=Plugins.NET4&#xD;&#xA;) else if &quot;$(OutDir)&quot; == &quot;bin\Debug\net472\&quot; (&#xD;&#xA;  set plugindir=Plugins.NET4&#xD;&#xA;)&#xD;&#xA;&#xD;&#xA;set pluginname=YoutubeDL&#xD;&#xA;&#xD;&#xA;if not exist &quot;$(SolutionDir)\Plugins\bin\%25plugindir%25\%25pluginname%25&quot; mkdir &quot;$(SolutionDir)\Plugins\bin\%25plugindir%25\%25pluginname%25&quot;&#xD;&#xA;&#xD;&#xA;move &quot;$(TargetDir)*.dll&quot; &quot;$(SolutionDir)\Plugins\bin\%25plugindir%25\%25pluginname%25\&quot;&#xD;&#xA;copy /Y &quot;$(ProjectDir)Libs\*&quot; &quot;$(SolutionDir)\Plugins\bin\%25plugindir%25\%25pluginname%25\&quot;&#xD;&#xA;del /Q &quot;$(SolutionDir)\Plugins\bin\%25plugindir%25\%25pluginname%25\yt-dlp.exe_here&quot;" />
+	</Target>
+
+</Project>

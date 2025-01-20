@@ -1,0 +1,78 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0-windows</TargetFrameworks>
+    <UseWindowsForms>true</UseWindowsForms>
+    <UseWPF>true</UseWPF>
+    <PackageIcon>Flyleaf.png</PackageIcon>
+    <PackageIconUrl />
+    <RepositoryUrl></RepositoryUrl>
+    <Description>Media Player .NET Library for WinUI 3/WPF/WinForms (based on FFmpeg/DirectX)</Description>
+    <Version>3.8.2</Version>
+    <Authors>SuRGeoNix</Authors>
+    <Copyright>SuRGeoNix © 2024</Copyright>
+    <PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/SuRGeoNix/Flyleaf</PackageProjectUrl>
+    <PackageTags>flyleaf flyleaflib video audio media player engine framework download extract ffmpeg vortice directx</PackageTags>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageReleaseNotes>
+        - Config: Update viewport when Config.Video.CustomAspectRatio changes
+        - FFmpeg Libraries: Fixes HLS seek patch
+        - Player: Exposes player to Audio/Video/Subtitles
+        - Player: Fixes an issue with resolving windows link files in external fs
+        - Plugins.SubtitlesConverter: Fixes a critical issue by restoring code which removed by mistake after deprecating .NETFramework in 3.8.1
+        - Plugins.YoutubeDL: Improved video stream selection for YT
+    </PackageReleaseNotes>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DocumentationFile>FlyleafLib.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-windows|AnyCPU'">
+    <WarningLevel>6</WarningLevel>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-windows|AnyCPU'">
+    <WarningLevel>6</WarningLevel>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Import Include="System" />
+    <Import Include="System.Drawing" />
+    <Import Include="System.Net.Http" />
+    <Import Include="System.Numerics" />
+    <Import Include="System.Windows" />
+    <Import Include="System.Windows.Forms" />
+    <Import Include="System.Xaml" />
+    <Import Include="System.Xml.Linq" />
+    <Import Include="Microsoft.CSharp" />
+    <Import Include="System.Xml" />
+    <Import Include="WindowsBase" />
+    <Import Include="WindowsFormsIntegration" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\Images\Flyleaf.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Flyleaf.FFmpeg.Bindings" Version="7.1.0" />
+    <PackageReference Include="Vortice.D3DCompiler" Version="3.6.2" />
+    <PackageReference Include="Vortice.Direct3D11" Version="3.6.2" />
+    <PackageReference Include="Vortice.DirectComposition" Version="3.6.2" />
+    <PackageReference Include="Vortice.Mathematics" Version="1.9.2" />
+    <PackageReference Include="Vortice.MediaFoundation" Version="3.6.2" />
+    <PackageReference Include="Vortice.XAudio2" Version="3.6.2" />
+  </ItemGroup>
+
+</Project>

@@ -5,6 +5,12 @@ VisualStudioVersion = 17.12.35707.178 d17.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LLPlayer", "LLPlayer\LLPlayer.csproj", "{DA75ED0F-6A7C-45BD-AA57-442FCA088F23}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlyleafLib", "FlyleafLib\FlyleafLib.csproj", "{38809EE7-E9E3-46FF-965B-5F79462B1A09}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{E9CDFB12-4D80-4D2D-BAA7-1E23B23A2326}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YoutubeDL", "Plugins\YoutubeDL\YoutubeDL.csproj", "{1A910199-AB16-47B7-8983-BBD1E80E16B5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,8 +21,19 @@ Global
 		{DA75ED0F-6A7C-45BD-AA57-442FCA088F23}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DA75ED0F-6A7C-45BD-AA57-442FCA088F23}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DA75ED0F-6A7C-45BD-AA57-442FCA088F23}.Release|Any CPU.Build.0 = Release|Any CPU
+		{38809EE7-E9E3-46FF-965B-5F79462B1A09}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{38809EE7-E9E3-46FF-965B-5F79462B1A09}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{38809EE7-E9E3-46FF-965B-5F79462B1A09}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{38809EE7-E9E3-46FF-965B-5F79462B1A09}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A910199-AB16-47B7-8983-BBD1E80E16B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A910199-AB16-47B7-8983-BBD1E80E16B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A910199-AB16-47B7-8983-BBD1E80E16B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A910199-AB16-47B7-8983-BBD1E80E16B5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1A910199-AB16-47B7-8983-BBD1E80E16B5} = {E9CDFB12-4D80-4D2D-BAA7-1E23B23A2326}
 	EndGlobalSection
 EndGlobal
