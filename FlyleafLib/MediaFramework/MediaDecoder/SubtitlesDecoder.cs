@@ -17,7 +17,19 @@ public unsafe class SubtitlesDecoder : DecoderBase
 
     public SubtitlesDecoder(Config config, int uniqueId = -1) : base(config, uniqueId) { }
 
-    protected override unsafe int Setup(AVCodec* codec) => 0;
+    protected override int Setup(AVCodec* codec)
+    {
+        lock (lockCodecCtx)
+        {
+            if (demuxer.avioCtx != null)
+            {
+                // Disable check since already converted to UTF-8
+                codecCtx->sub_charenc_mode = SubCharencModeFlags.Ignore;
+            }
+        }
+
+        return 0;
+    }
 
     protected override void DisposeInternal()
         => DisposeFrames();

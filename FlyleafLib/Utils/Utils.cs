@@ -42,10 +42,17 @@ public static partial class Utils
         "apng", "bmp", "gif", "jpg", "jpeg", "png", "ico", "tif", "tiff", "tga","jfif"
     };
 
-    public static List<string> ExtensionsSubtitles = new()
+    public static List<string> ExtensionsSubtitlesText = new()
     {
-        "ass", "ssa", "srt", "sub", "txt", "text", "vtt"
+        "ass", "ssa", "srt", "txt", "text", "vtt"
     };
+
+    public static List<string> ExtensionsSubtitlesBitmap = new()
+    {
+        "sub"
+    };
+
+    public static List<string> ExtensionsSubtitles = [..ExtensionsSubtitlesText, ..ExtensionsSubtitlesBitmap];
 
     public static List<string> ExtensionsVideo = new()
     {

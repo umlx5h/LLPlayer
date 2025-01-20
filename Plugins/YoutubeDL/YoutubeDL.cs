@@ -349,7 +349,6 @@ namespace FlyleafLib.Plugins
                             AddExternalStream(new ExternalSubtitlesStream()
                             {
                                 Downloaded  = true,
-                                Converted   = true,
                                 Protocol    = subtitle.ext,
                                 Language    = lang,
                                 Url         = subtitle.url
@@ -376,7 +375,6 @@ namespace FlyleafLib.Plugins
                                 AddExternalStream(new ExternalSubtitlesStream()
                                 {
                                     Downloaded  = true,
-                                    Converted   = true,
                                     Protocol    = subtitle.ext,
                                     Language    = lang,
                                     Url         = subtitle.url

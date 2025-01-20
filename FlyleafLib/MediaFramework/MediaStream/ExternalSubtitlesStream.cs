@@ -2,7 +2,6 @@
 
 public class ExternalSubtitlesStream : ExternalStream
 {
-    public bool     Converted       { get; set; }
     public bool     Downloaded      { get; set; }
     public Language Language        { get; set; } = Language.Unknown;
     public float    Rating          { get; set; } // 1.0-10.0 (0: not set)
