@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net9.0-windows10.0.18362.0</TargetFrameworks>
+    <LangVersion>preview</LangVersion>
     <UseWindowsForms>true</UseWindowsForms>
     <UseWPF>true</UseWPF>
     <RepositoryUrl></RepositoryUrl>
@@ -49,6 +50,7 @@
 
   <ItemGroup>
     <PackageReference Include="Flyleaf.FFmpeg.Bindings" Version="7.1.0" />
+    <PackageReference Include="SearchPioneer.Lingua" Version="1.0.4" />
     <PackageReference Include="UTF.Unknown" Version="2.5.1" />
     <PackageReference Include="Vortice.D3DCompiler" Version="3.6.2" />
     <PackageReference Include="Vortice.Direct3D11" Version="3.6.2" />

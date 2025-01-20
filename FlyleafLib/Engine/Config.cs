@@ -806,6 +806,11 @@ public class Config : NotifyPropertyChanged
         List<Language> _Languages;
 
         /// <summary>
+        /// Whether to use automatic language detection
+        /// </summary>
+        public bool LanguageAutoDetect { get; set => Set(ref field, value); } = true;
+
+        /// <summary>
         /// Whether to use local search plugins (see also <see cref="SearchLocalOnInputType"/>)
         /// </summary>
         public bool             SearchLocal         { get => _SearchLocal; set => Set(ref _SearchLocal, value); }
