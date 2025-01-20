@@ -29,6 +29,10 @@ public class Language : IEquatable<Language>
 
     [JsonIgnore]
     [XmlIgnore]
+    public string       ISO6391         { get; private set; }
+
+    [JsonIgnore]
+    [XmlIgnore]
     public string       IdSubLanguage   { get; private set; } // Can search for online subtitles with this id
 
     [JsonIgnore]
@@ -72,6 +76,7 @@ public class Language : IEquatable<Language>
 
         lang.TopEnglishName = lang.TopCulture.EnglishName;
         lang.IdSubLanguage = lang.Culture.ThreeLetterISOLanguageName;
+        lang.ISO6391 = lang.Culture.TwoLetterISOLanguageName;
     }
 
     public static Language Get(CultureInfo cult)
