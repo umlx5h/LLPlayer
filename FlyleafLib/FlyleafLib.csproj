@@ -11,7 +11,7 @@
     <Version>3.8.2</Version>
     <Authors>SuRGeoNix</Authors>
     <Copyright>SuRGeoNix © 2024</Copyright>
-    <PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/SuRGeoNix/Flyleaf</PackageProjectUrl>
     <PackageTags>flyleaf flyleaflib video audio media player engine framework download extract ffmpeg vortice directx</PackageTags>
     <IncludeSymbols>true</IncludeSymbols>
