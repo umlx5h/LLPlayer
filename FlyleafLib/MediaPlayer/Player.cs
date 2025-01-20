@@ -176,7 +176,10 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
             }
         }
 
-        Set(ref _CurTime, curTime, true, nameof(CurTime));
+        if (Set(ref _CurTime, curTime, true, nameof(CurTime)))
+        {
+            Raise(nameof(RemainingDuration));
+        }
 
         UpdateBufferedDuration();
     }
@@ -189,10 +192,22 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
         }
     }
 
+    public long         RemainingDuration => Duration - CurTime;
+
     /// <summary>
     /// Input's duration
     /// </summary>
-    public long         Duration            { get => duration;          private set => Set(ref _Duration, value); }
+    public long         Duration
+    {
+        get => duration;
+        private set
+        {
+            if (Set(ref _Duration, value))
+            {
+                Raise(nameof(RemainingDuration));
+            }
+        }
+    }
     long _Duration, duration;
 
     /// <summary>
