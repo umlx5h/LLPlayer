@@ -1992,10 +1992,17 @@ public class FlyleafHost : ContentControl, IHostPlayer, IDisposable
             Surface.LostMouseCapture    += Surface_LostMouseCapture;
             Surface.MouseLeftButtonDown += Surface_MouseLeftButtonDown;
             Surface.MouseLeftButtonUp   += Surface_MouseLeftButtonUp;
-            Surface.MouseWheel          += Surface_MouseWheel;
+            if (PanZoomOnCtrlWheel != AvailableWindows.None ||
+                PanRotateOnShiftWheel != AvailableWindows.None)
+            {
+                Surface.MouseWheel += Surface_MouseWheel;
+            }
             Surface.MouseMove           += Surface_MouseMove;
             Surface.MouseLeave          += Surface_MouseLeave;
-            Surface.MouseDoubleClick    += Surface_MouseDoubleClick;
+            if (ToggleFullScreenOnDoubleClick != AvailableWindows.None)
+            {
+                Surface.MouseDoubleClick += Surface_MouseDoubleClick;
+            }
             isMouseBindingsSubscribedSurface = true;
         }
         else if (isMouseBindingsSubscribedSurface)
@@ -2003,10 +2010,17 @@ public class FlyleafHost : ContentControl, IHostPlayer, IDisposable
             Surface.LostMouseCapture    -= Surface_LostMouseCapture;
             Surface.MouseLeftButtonDown -= Surface_MouseLeftButtonDown;
             Surface.MouseLeftButtonUp   -= Surface_MouseLeftButtonUp;
-            Surface.MouseWheel          -= Surface_MouseWheel;
+            if (PanZoomOnCtrlWheel != AvailableWindows.None ||
+                PanRotateOnShiftWheel != AvailableWindows.None)
+            {
+                Surface.MouseWheel -= Surface_MouseWheel;
+            }
             Surface.MouseMove           -= Surface_MouseMove;
             Surface.MouseLeave          -= Surface_MouseLeave;
-            Surface.MouseDoubleClick    -= Surface_MouseDoubleClick;
+            if (ToggleFullScreenOnDoubleClick != AvailableWindows.None)
+            {
+                Surface.MouseDoubleClick -= Surface_MouseDoubleClick;
+            }
             isMouseBindingsSubscribedSurface = false;
         }
     }
@@ -2020,10 +2034,17 @@ public class FlyleafHost : ContentControl, IHostPlayer, IDisposable
             Overlay.LostMouseCapture    += Overlay_LostMouseCapture;
             Overlay.MouseLeftButtonDown += Overlay_MouseLeftButtonDown;
             Overlay.MouseLeftButtonUp   += Overlay_MouseLeftButtonUp;
-            Overlay.MouseWheel          += Overlay_MouseWheel;
+            if (PanZoomOnCtrlWheel != AvailableWindows.None ||
+                PanRotateOnShiftWheel != AvailableWindows.None)
+            {
+                Overlay.MouseWheel += Overlay_MouseWheel;
+            }
             Overlay.MouseMove           += Overlay_MouseMove;
             Overlay.MouseLeave          += Overlay_MouseLeave;
-            Overlay.MouseDoubleClick    += Overlay_MouseDoubleClick;
+            if (ToggleFullScreenOnDoubleClick != AvailableWindows.None)
+            {
+                Overlay.MouseDoubleClick += Overlay_MouseDoubleClick;
+            }
             isMouseBindingsSubscribedOverlay = true;
         }
         else if (isMouseBindingsSubscribedOverlay)
@@ -2031,10 +2052,18 @@ public class FlyleafHost : ContentControl, IHostPlayer, IDisposable
             Overlay.LostMouseCapture    -= Overlay_LostMouseCapture;
             Overlay.MouseLeftButtonDown -= Overlay_MouseLeftButtonDown;
             Overlay.MouseLeftButtonUp   -= Overlay_MouseLeftButtonUp;
-            Overlay.MouseWheel          -= Overlay_MouseWheel;
+            if (PanZoomOnCtrlWheel != AvailableWindows.None ||
+                PanRotateOnShiftWheel != AvailableWindows.None)
+            {
+                Overlay.MouseWheel -= Overlay_MouseWheel;
+            }
             Overlay.MouseMove           -= Overlay_MouseMove;
             Overlay.MouseLeave          -= Overlay_MouseLeave;
-            Overlay.MouseDoubleClick    -= Overlay_MouseDoubleClick;
+            if (ToggleFullScreenOnDoubleClick != AvailableWindows.None)
+            {
+                Overlay.MouseDoubleClick -= Overlay_MouseDoubleClick;
+            }
+
             isMouseBindingsSubscribedOverlay = false;
         }
     }
