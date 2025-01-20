@@ -91,7 +91,7 @@ public class Activity : NotifyPropertyChanged
         Raise(nameof(Mode));
         player.Log.Trace(mode.ToString());
 
-        if (player.Activity.Mode == ActivityMode.Idle && player.Host != null && player.Host.Player_GetFullScreen() && player.Host.Player_CanHideCursor())
+        if (player.Activity.Mode == ActivityMode.Idle && player.Host != null /*&& player.Host.Player_GetFullScreen() */&& player.Host.Player_CanHideCursor())
         {
             lock (cursorLocker)
             {

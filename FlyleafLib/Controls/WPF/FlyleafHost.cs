@@ -2307,7 +2307,8 @@ public class FlyleafHost : ContentControl, IHostPlayer, IDisposable
         }
     }
 
-    public bool Player_CanHideCursor() => (Surface != null && Surface.IsActive) || (Overlay != null && Overlay.IsActive);
+    public bool Player_CanHideCursor() => (Surface != null && Surface.IsMouseOver) ||
+                                          (Overlay != null && Overlay.IsActive);
     public bool Player_GetFullScreen() => IsFullScreen;
     public void Player_SetFullScreen(bool value) => IsFullScreen = value;
     public void Player_Disposed() => UIInvokeIfRequired(() => Player = null);
