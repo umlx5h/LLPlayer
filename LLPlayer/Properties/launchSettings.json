@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "LLPlayer": {
+      "commandName": "Project"
+    },
+    "LLPlayer native": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}
