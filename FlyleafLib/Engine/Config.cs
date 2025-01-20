@@ -57,15 +57,15 @@ public class Config : NotifyPropertyChanged
 
         return config;
     }
-    public static Config Load(string path)
+    public static Config Load(string path, JsonSerializerOptions jsonOptions = null)
     {
-        Config config       = JsonSerializer.Deserialize<Config>(File.ReadAllText(path));
+        Config config       = JsonSerializer.Deserialize<Config>(File.ReadAllText(path), jsonOptions);
         config.Loaded       = true;
         config.LoadedPath   = path;
 
         return config;
     }
-    public void Save(string path = null)
+    public void Save(string path = null, JsonSerializerOptions jsonOptions = null)
     {
         if (path == null)
         {
@@ -75,7 +75,9 @@ public class Config : NotifyPropertyChanged
             path = LoadedPath;
         }
 
-        File.WriteAllText(path, JsonSerializer.Serialize(this, new JsonSerializerOptions() { WriteIndented = true }));
+        jsonOptions ??= new JsonSerializerOptions { WriteIndented = true };
+
+        File.WriteAllText(path, JsonSerializer.Serialize(this, jsonOptions));
     }
 
     internal void SetPlayer(Player player)
@@ -969,10 +971,11 @@ public class EngineConfig
     /// Loads engine's configuration
     /// </summary>
     /// <param name="path">Absolute or relative path to load the configuraiton</param>
-    /// <returns></returns>
-    public static EngineConfig Load(string path)
+    /// <param name="jsonOptions">JSON serializer options</param>
+    // <returns></returns>
+    public static EngineConfig Load(string path, JsonSerializerOptions jsonOptions = null)
     {
-        EngineConfig config = JsonSerializer.Deserialize<EngineConfig>(File.ReadAllText(path));
+        EngineConfig config = JsonSerializer.Deserialize<EngineConfig>(File.ReadAllText(path), jsonOptions);
         config.Loaded       = true;
         config.LoadedPath   = path;
 
@@ -983,7 +986,8 @@ public class EngineConfig
     /// Saves engine's current configuration
     /// </summary>
     /// <param name="path">Absolute or relative path to save the configuration</param>
-    public void Save(string path = null)
+    /// <param name="jsonOptions">JSON serializer options</param>
+    public void Save(string path = null, JsonSerializerOptions jsonOptions = null)
     {
         if (path == null)
         {
@@ -993,6 +997,8 @@ public class EngineConfig
             path = LoadedPath;
         }
 
-        File.WriteAllText(path, JsonSerializer.Serialize(this, new JsonSerializerOptions() { WriteIndented = true, }));
+        jsonOptions ??= new JsonSerializerOptions { WriteIndented = true };
+
+        File.WriteAllText(path, JsonSerializer.Serialize(this, jsonOptions));
     }
 }
