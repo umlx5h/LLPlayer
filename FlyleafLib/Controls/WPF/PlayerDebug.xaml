@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:FlyleafLib.Controls.WPF"
              mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance local:FlyleafHost}"
              d:DesignHeight="600" d:DesignWidth="800" x:Name="DebugControl" d:Background="White">
 
     <UserControl.Resources>
