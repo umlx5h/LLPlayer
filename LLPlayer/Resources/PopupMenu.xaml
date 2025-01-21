@@ -458,6 +458,7 @@ AncestorType={x:Type MenuItem}}}">
             </MenuItem>
 
             <MenuItem Header="Streams" ItemsSource="{StaticResource MenuSubtitlesStreams}"/>
+            <MenuItem Header="Sub Downloader" Command="{Binding FL.Action.CmdOpenWindowSubsDownloader}" Icon="{materialDesign:PackIcon Kind=Download}"/>
         </MenuItem>
 
         <MenuItem Header="Video" Icon="{materialDesign:PackIcon VideoOutline}">
@@ -565,6 +566,7 @@ AncestorType={x:Type MenuItem}}}">
 
         <Separator />
         <MenuItem Header="Show Debug" IsCheckable="True" IsChecked="{Binding FL.Config.ShowDebug}"/>
+        <MenuItem Header="Cheat Sheet" Command="{Binding FL.Action.CmdOpenWindowCheatSheet}" Icon="{materialDesign:PackIcon Kind=Help}" />
     </ContextMenu>
 
 </ResourceDictionary>

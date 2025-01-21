@@ -2,6 +2,7 @@
 using FlyleafLib.MediaPlayer;
 using LLPlayer.Extensions;
 using LLPlayer.Services;
+using LLPlayer.Views;
 
 namespace LLPlayer.ViewModels;
 
@@ -68,6 +69,11 @@ public class SubtitlesSidebarVM : Bindable
     public DelegateCommand CmdSwapSidebarPosition => field ??= new(() =>
     {
         FL.Config.SidebarLeft = !FL.Config.SidebarLeft;
+    });
+
+    public DelegateCommand CmdShowDownloadSubDialog => field ??= new(() =>
+    {
+        _dialogService.ShowSingleton(nameof(SubtitlesDownloaderDialog), true);
     });
 
     public DelegateCommand<int?> CmdSubPlay => field ??= new((index) =>

@@ -143,6 +143,12 @@
                     Command="{Binding CmdSwapSidebarPosition}"
                     ToolTip="Swap sidebar position"
                     Content="{materialDesign:PackIcon Kind=SwapHorizontal}" />
+
+            <!-- Subtitles Downloader -->
+            <Button Style="{StaticResource IconButton}"
+                    Command="{Binding CmdShowDownloadSubDialog}"
+                    ToolTip="Download subtitles"
+                    Content="{materialDesign:PackIcon Kind=Download}" />
         </ToolBar>
 
         <controls:NonTopmostPopup

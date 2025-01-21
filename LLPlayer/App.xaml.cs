@@ -20,10 +20,14 @@ public partial class App : PrismApplication
     {
         containerRegistry
             .Register<Player>(FlyleafLoader.CreateFlyleafPlayer)
-            .RegisterSingleton<FlyleafManager>();
+            .RegisterSingleton<FlyleafManager>()
+            .RegisterSingleton<IDialogService, ExtendedDialogService>();
+
         containerRegistry.RegisterDialogWindow<MyDialogWindow>();
-        containerRegistry.RegisterSingleton<IDialogService, ExtendedDialogService>();
+
         containerRegistry.RegisterDialog<SettingsDialog>();
+        containerRegistry.RegisterDialog<SubtitlesDownloaderDialog>();
+        containerRegistry.RegisterDialog<CheatSheetDialog>();
         containerRegistry.RegisterDialog<WhisperDownloadDialog>();
         containerRegistry.RegisterDialog<TesseractDownloadDialog>();
     }

@@ -1,0 +1,118 @@
+﻿<UserControl x:Class="LLPlayer.Views.SubtitlesDownloaderDialog"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:LLPlayer.Views"
+             xmlns:vm="clr-namespace:LLPlayer.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:SubtitlesDownloaderDialogVM}"
+             d:Foreground="White"
+             d:Background="Black"
+             d:DesignHeight="450" d:DesignWidth="800">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <Style x:Key="Spinner" TargetType="ProgressBar" BasedOn="{StaticResource MaterialDesignCircularProgressBar}">
+                <Setter Property="IsIndeterminate" Value="True" />
+                <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}" />
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- TODO: L: Add language filter -->
+        <!-- Search Bar -->
+        <Grid
+            Grid.Row="0"
+            Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock
+                Grid.Column="0"
+                FontSize="18"
+                Text="Query:"
+                Foreground="Gray"
+                VerticalAlignment="Center"
+                Margin="0,0,5,0"/>
+            <TextBox
+                Grid.Column="1"
+                FontSize="18"
+                Text="{Binding Query, UpdateSourceTrigger=PropertyChanged}"
+                Padding="2"
+                VerticalAlignment="Center"/>
+
+            <Button
+                Grid.Column="2"
+                IsDefault="True"
+                Command="{Binding CmdSearch}"
+                Content="Search"
+                FontSize="18"
+                Margin="6 0" />
+        </Grid>
+
+        <Grid Grid.Row="1">
+            <DataGrid
+                ItemsSource="{Binding Subs}"
+                SelectedItem="{Binding SelectedSub}"
+                AutoGenerateColumns="False"
+                IsReadOnly="True"
+                SelectionMode="Single"
+                CanUserAddRows="False"
+                Margin="10">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Language" Binding="{Binding LanguageName}" Width="100" SortDirection="Ascending" />
+                    <DataGridTextColumn Header="FileName" Binding="{Binding SubFileName}" Width="*" />
+                    <DataGridTextColumn Header="Format" Binding="{Binding SubFormat}" Width="Auto" />
+                    <DataGridTextColumn Header="Duration" Binding="{Binding SubLastTS}" Width="Auto" />
+                    <DataGridTextColumn Header="DownloadsCnt" Binding="{Binding SubDownloadsCnt}" Width="Auto" />
+                    <DataGridTextColumn Header="Rate" Binding="{Binding SubRating}" Width="Auto" />
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <!--Spinner on DataGrid-->
+            <ProgressBar
+                Visibility="{Binding CmdSearch.IsExecuting, Converter={StaticResource BooleanToVisibilityConv}}"
+                Style="{StaticResource Spinner}"
+                Width="40"
+                Height="40"
+                Foreground="{DynamicResource MaterialDesign.Brush.Primary}" />
+        </Grid>
+
+        <Grid Grid.Row="2">
+            <StackPanel Orientation="Horizontal">
+                <Button
+                    Command="{Binding CmdLoad}"
+                    Margin="0 0 8 0">
+                    <StackPanel Orientation="Horizontal">
+                        <ProgressBar
+                            Visibility="{Binding CmdLoad.IsExecuting, Converter={StaticResource BooleanToVisibilityConv}}"
+                            Style="{StaticResource Spinner}"
+                            Margin="0 0 5 0" />
+                        <TextBlock Text="Load" FontSize="18" />
+                    </StackPanel>
+                </Button>
+
+                <!-- TODO: L: Support for multiple downloads -->
+                <Button
+                    Command="{Binding CmdDownload}">
+                    <StackPanel Orientation="Horizontal">
+                        <ProgressBar
+                            Visibility="{Binding CmdDownload.IsExecuting, Converter={StaticResource BooleanToVisibilityConv}}"
+                            Style="{StaticResource Spinner}" />
+                        <TextBlock Text="Download" FontSize="18" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

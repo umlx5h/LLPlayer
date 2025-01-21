@@ -647,4 +647,22 @@ public static partial class Utils
     public static int GCD(int a, int b) => b == 0 ? a : GCD(b, a % b);
     public static string TicksToTime(long ticks) => new TimeSpan(ticks).ToString();
     public static void Log(string msg) { try { Debug.WriteLine($"[{DateTime.Now:hh.mm.ss.fff}] {msg}"); } catch (Exception) { Debug.WriteLine($"[............] [MediaFramework] {msg}"); } }
+
+    public static string TruncateString(string str, int maxLength, string suffix = "...")
+    {
+        if (string.IsNullOrEmpty(str))
+            return str;
+
+        if (str.Length <= maxLength)
+            return str;
+
+        int availableLength = maxLength - suffix.Length;
+
+        if (availableLength <= 0)
+        {
+            return suffix.Substring(0, Math.Min(maxLength, suffix.Length));
+        }
+
+        return str.Substring(0, availableLength) + suffix;
+    }
 }

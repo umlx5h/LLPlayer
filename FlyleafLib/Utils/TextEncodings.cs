@@ -37,6 +37,25 @@ public class TextEncodings
     }
 
     /// <summary>
+    /// Detect character encoding of text binary files
+    /// </summary>
+    /// <param name="original">text binary</param>
+    /// <param name="maxBytes">Bytes to read</param>
+    /// <returns>Detected Encoding or null</returns>
+    public static Encoding? DetectEncoding(byte[] original, int maxBytes = 1 * 1024 * 1024)
+    {
+        if (maxBytes > original.Length)
+        {
+            maxBytes = original.Length;
+        }
+
+        byte[] data = new byte[maxBytes];
+        Array.Copy(original, data, maxBytes);
+
+        return DetectEncodingInternal(data);
+    }
+
+    /// <summary>
     /// Detect character encoding of text files
     /// </summary>
     /// <param name="path">file path</param>
