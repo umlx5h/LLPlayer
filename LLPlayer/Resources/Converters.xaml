@@ -4,26 +4,41 @@
                     xmlns:flyleaf="clr-namespace:FlyleafLib.Controls.WPF;assembly=FlyleafLib">
 
     <!--Flyleaf Converters-->
+    <flyleaf:StringToRationalConverter x:Key="StringToRationalConv"/>
     <flyleaf:TicksToTimeConverter x:Key="TicksToTimeConv"/>
     <flyleaf:TicksToSecondsConverter x:Key="TicksToSecondsConv" />
     <flyleaf:TicksToTimeSpanConverter x:Key="TicksToTimeSpanConv"/>
     <flyleaf:TicksToMilliSecondsConverter x:Key="TicksToMilliSecondsConv"/>
 
     <!--Flyleaf WPF Converters-->
-    <conv:ColorToHexConverter x:Key="ColorToHexConv"/>
-    <conv:PlaylistItemsConverter x:Key="PlaylistItemsConv"/>
     <conv:QualityToLevelsConverter x:Key="QualityToLevelsConv"/>
-    <conv:SumConverter x:Key="SumConv"/>
     <conv:VolumeToLevelsConverter x:Key="VolumeToLevelsConv"/>
-    <conv:SubIndexToIsEnabledConverter x:Key="SubIndexToIsEnabledConv"/>
+    <conv:SumConverter x:Key="SumConv"/>
+    <conv:PlaylistItemsConverter x:Key="PlaylistItemsConv"/>
+    <conv:ColorToHexConverter x:Key="ColorToHexConv"/>
     <conv:Tuple3Converter x:Key="Tuple3Conv"/>
-    <conv:ChaptersToTickPlacementConverter TickPlacement="TopLeft" x:Key="ChaptersToTickPlacementConv"/>
+    <conv:SubIndexToIsEnabledConverter x:Key="SubIndexToIsEnabledConv"/>
     <conv:ChaptersToTicksConverter x:Key="ChaptersToTicksConv"/>
+    <conv:ChaptersToTickPlacementConverter TickPlacement="TopLeft" x:Key="ChaptersToTickPlacementConv"/>
+    <conv:AspectRatioIsCheckedConverter x:Key="AspectRatioIsCheckedConv"/>
 
     <!--General Converters-->
     <conv:BooleanToVisibilityMiscConverter x:Key="BooleanToVisibilityConv"/>
     <conv:BooleanToVisibilityMiscConverter Invert="True" x:Key="BooleanToVisibilityInvertConv"/>
     <conv:BooleanToVisibilityMiscConverter FalseVisibility="Hidden" x:Key="BooleanToVisibilityHiddenConv"/>
+    <conv:InvertBooleanConverter x:Key="InvertBooleanConv"/>
     <conv:ColorToBrushConverter x:Key="ColorToBrushConv"/>
+    <conv:EnumToStringConverter x:Key="EnumToStringConv"/>
+    <conv:EnumToBooleanConverter x:Key="EnumToBooleanConv" />
+    <conv:KeyToStringConverter x:Key="KeyToStringConv"/>
+    <conv:FileSizeHumanConverter x:Key="FileSizeHumanConv"/>
+    <conv:NullableIntConverter x:Key="NullableIntConv" />
+
+    <!--Subtitle Converters-->
+    <conv:WidthPercentageMultiConverter x:Key="WidthPercentageMultiConv"/>
+    <conv:SubTextMaskConverter x:Key="SubTextMaskConv"/>
+    <conv:ListItemIndexVisibilityConverter x:Key="ListItemIndexVisibilityConv"/>
+    <conv:TimeSpanToStringConverter x:Key="TimeSpanToStringConv"/>
+    <conv:SubBitmapImageSourceConverter x:Key="SubBitmapImageSourceConv"/>
 
 </ResourceDictionary>

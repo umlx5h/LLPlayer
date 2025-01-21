@@ -1,0 +1,272 @@
+﻿<UserControl x:Class="LLPlayer.Controls.Settings.SettingsSubtitlesAction"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:LLPlayer.Controls.Settings"
+             xmlns:helpers="clr-namespace:LLPlayer.Extensions"
+             xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+             xmlns:flyleafServices="clr-namespace:FlyleafLib.MediaPlayer.Translation.Services;assembly=FlyleafLib"
+             xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:services="clr-namespace:LLPlayer.Services"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance local:SettingsSubtitlesActionVM}"
+             d:Foreground="White"
+             d:Background="Black"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <ObjectDataProvider x:Key="TranslateServiceTypeEnum" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="flyleafServices:TranslateServiceType"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+    </UserControl.Resources>
+
+    <ScrollViewer>
+        <StackPanel>
+            <TextBlock
+                Text="Subtitles > Word Action"
+                FontSize="24"
+                FontWeight="Bold"
+                Margin="0 0 0 16" />
+
+            <GroupBox Header="Word Translation Service">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Service" />
+                        <ComboBox
+                            Width="100"
+                            ItemsSource="{Binding Source={StaticResource TranslateServiceTypeEnum}}"
+                            SelectedItem="{Binding FL.PlayerConfig.Subtitles.TranslateWordServiceType}" />
+
+                    </StackPanel>
+                    <TextBlock Text="Please set the parameters in advance in the Translate tab." />
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="Word Actions">
+                <StackPanel>
+                    <CheckBox
+                        IsChecked="{Binding FL.Config.Subs.WordCopyOnSelected}"
+                        Content="Copy words on selected" />
+
+                    <StackPanel
+                        Orientation="Horizontal"
+                        VerticalAlignment="Bottom">
+                        <CheckBox
+                            IsChecked="{Binding FL.Config.Subs.WordLastSearchOnSelected}"
+                            Content="Do last search on selected" />
+                        <TextBlock VerticalAlignment="Center" Text="Modifier:" Margin="10 0 10 0" />
+
+                        <ComboBox
+                            ItemsSource="{Binding ModifierKeys}"
+                            SelectedItem="{Binding FL.Config.Subs.WordLastSearchOnSelectedModifier}"
+                            Width="80">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource EnumToStringConv}}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock VerticalAlignment="Center" Text="Word Click Action:" Margin="0 0 10 0" />
+
+                        <ComboBox
+                            Width="100"
+                            ItemsSource="{Binding WordClickActions}"
+                            SelectedItem="{Binding FL.Config.Subs.WordClickActionMethod, Mode=TwoWay}" />
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="Word Context Menu">
+                <GroupBox.Resources>
+                    <DataTemplate x:Key="SearchTemplate" DataType="{x:Type services:SearchMenuAction}">
+                        <TextBox Text="{Binding Url, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TextAlignment="Left" />
+                    </DataTemplate>
+
+                    <DataTemplate x:Key="ClipboardTemplate" DataType="{x:Type services:ClipboardMenuAction}">
+                        <CheckBox IsChecked="{Binding ToLower, UpdateSourceTrigger=PropertyChanged}" Content="ToLower" />
+                    </DataTemplate>
+
+                    <DataTemplate x:Key="ClipboardAllTemplate" DataType="{x:Type services:ClipboardAllMenuAction}">
+                        <CheckBox IsChecked="{Binding ToLower, UpdateSourceTrigger=PropertyChanged}" Content="ToLower" />
+                    </DataTemplate>
+
+                    <local:MenuActionTemplateSelector
+                        x:Key="MenuActionTemplateSelector"
+                        SearchTemplate="{StaticResource SearchTemplate}"
+                        ClipboardTemplate="{StaticResource ClipboardTemplate}"
+                        ClipboardAllTemplate="{StaticResource ClipboardAllTemplate}" />
+
+                    <Style x:Key="CenterVerticalTextBlockStyle" TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignTextBlock}">
+                        <Setter Property="VerticalAlignment" Value="Center"/>
+                    </Style>
+                    <Style x:Key="CenterVerticalTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource MaterialDesignTextBox}">
+                        <Setter Property="VerticalContentAlignment" Value="Center"/>
+                    </Style>
+                </GroupBox.Resources>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <DataGrid
+                        Grid.Row="0"
+                        ItemsSource="{Binding MenuActions}"
+                        VerticalContentAlignment="Center"
+                        ScrollViewer.CanContentScroll="False"
+                        VerticalScrollBarVisibility="Disabled"
+                        CanUserSortColumns="False"
+                        SelectionMode="Single"
+                        AutoGenerateColumns="False">
+
+                        <!-- Set Behavior to enable line swapping by dragging -->
+                        <i:Interaction.Behaviors>
+                            <local:DataGridRowOrderBehaviorMenuAction
+                            ItemsSource="{Binding MenuActions}"
+                            DragTargetName="DragHandleBorder" />
+
+                            <!-- Disable scroll event -->
+                            <helpers:ScrollParentWhenAtMax />
+                        </i:Interaction.Behaviors>
+
+                        <DataGrid.Columns>
+                            <!-- Order Column -->
+                            <DataGridTemplateColumn Header="Order" Width="70" IsReadOnly="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border
+                                            x:Name="DragHandleBorder"
+                                            VerticalAlignment="Center"
+                                            HorizontalAlignment="Center"
+                                            Cursor="Hand"
+                                            Background="#01000000">
+
+                                            <materialDesign:PackIcon
+                                                Kind="Menu"
+                                                Width="24"
+                                                Height="24"
+                                                IsHitTestVisible="False"
+                                                Foreground="{DynamicResource MaterialDesign.Brush.Secondary}" />
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <!-- Enabled Column -->
+                            <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding IsEnabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="80" />
+
+                            <!-- Type Column -->
+                            <DataGridTextColumn
+                                Header="Type"
+                                Binding="{Binding Type}"
+                                ElementStyle="{StaticResource CenterVerticalTextBlockStyle}"
+                                IsReadOnly="True"
+                                Width="80" />
+
+                            <!-- Title Column -->
+                            <DataGridTextColumn
+                                Header="Title"
+                                Binding="{Binding Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                ElementStyle="{StaticResource CenterVerticalTextBlockStyle}"
+                                EditingElementStyle="{StaticResource CenterVerticalTextBoxStyle}"
+                                Width="140" />
+
+                            <!-- Detail Column -->
+                            <!-- Use TemplateSelector to change display items according to Action -->
+                            <DataGridTemplateColumn
+                                Width="*"
+                                CellTemplateSelector="{StaticResource MenuActionTemplateSelector}">
+                                <DataGridTemplateColumn.Header>
+                                    <StackPanel
+                                        Background="#01000000"
+                                        Cursor="Help"
+                                        Orientation="Horizontal">
+                                        <StackPanel.ToolTip>
+                                            <ToolTip xml:space="preserve">The following placeholder will be embedded in the URL.
+
+[%w]  selected words
+[%lw] selected words (lower case)
+[%s]  current sentence</ToolTip>
+                                        </StackPanel.ToolTip>
+                                        <TextBlock Text="Details" Margin="0 0 5 0" />
+                                        <materialDesign:PackIcon
+                                            VerticalAlignment="Center"
+                                            Kind="TooltipHelp"/>
+                                    </StackPanel>
+                                </DataGridTemplateColumn.Header>
+                            </DataGridTemplateColumn>
+
+                            <!-- Delete Column -->
+                            <DataGridTemplateColumn Header="Delete" Width="80">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+
+                                        <Button
+                                            ToolTip="Delete"
+                                            Style="{StaticResource MaterialDesignIconButton}"
+                                            HorizontalAlignment="Center"
+                                            Width="30"
+                                            Height="30"
+                                            Command="{Binding DataContext.CmdRemoveAction, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                            CommandParameter="{Binding}">
+                                            <materialDesign:PackIcon Kind="Delete" />
+                                        </Button>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <Grid Grid.Row="1" Margin="0 10 0 0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Orientation="Horizontal">
+                            <Button
+                                Content="Add Search"
+                                Command="{Binding CmdAddSearchAction}"
+                                Margin="0 0 8 0" />
+                            <Button
+                                Content="Add Clipboard"
+                                Command="{Binding CmdAddClipboardAction}"
+                                Margin="0 0 8 0" />
+                            <Button
+                                Content="Add ClipboardAll"
+                                Command="{Binding CmdAddClipboardAllAction}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Button
+                                Content="Apply"
+                                Command="{Binding CmdApplyContextMenu}"
+                                Style="{StaticResource MaterialDesignRaisedSecondaryButton}"
+                                Margin="0 0 8 0" />
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </GroupBox>
+
+            <GroupBox Header="Word Special Actions">
+                <StackPanel>
+                    <DockPanel>
+                        <TextBlock
+                            Width="180"
+                            Text="PDIC Executable Path (for Japanese users)" />
+                        <TextBox
+                            HorizontalContentAlignment="Left"
+                            Text="{Binding FL.Config.Subs.PDICPipeExecutablePath}" />
+                    </DockPanel>
+                </StackPanel>
+            </GroupBox>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

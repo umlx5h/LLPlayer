@@ -11,6 +11,8 @@ public class FlyleafManager
     public Config PlayerConfig => Player.Config;
     public FlyleafHost? FlyleafHost => Player.Host as FlyleafHost;
     public AppConfig Config { get; }
+    public AppActions Action { get; }
+
     public AudioEngine AudioEngine => Engine.Audio;
     public EngineConfig ConfigEngine => Engine.Config;
 
@@ -20,6 +22,7 @@ public class FlyleafManager
 
         // Load app configuration at this time
         Config = LoadAppConfig();
+        Action = new AppActions(Player, Config, dialogService);
     }
 
     private AppConfig LoadAppConfig()

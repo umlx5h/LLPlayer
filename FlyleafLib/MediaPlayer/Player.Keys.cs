@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
+using System.Text.Json.Serialization;
 using System.Windows.Input;
-
 using static FlyleafLib.Logger;
 
 namespace FlyleafLib.MediaPlayer;
@@ -81,7 +82,7 @@ partial class Player
         List<KeyBinding> keysList = new();
         var spanList = CollectionsMarshal.AsSpan(player.Config.Player.KeyBindings.Keys); // should create dictionary here with key+alt+ctrl+shift hash
         foreach(var binding in spanList)
-            if (binding.Key == key)
+            if (binding.Key == key && binding.IsEnabled)
                 keysList.Add(binding);
 
         if (keysList.Count == 0)
@@ -95,7 +96,7 @@ partial class Player
         var spanList2 = CollectionsMarshal.AsSpan(keysList);
         foreach(var binding in spanList2)
         {
-            if (binding.Alt == alt && binding.Ctrl == ctrl && binding.Shift == shift)
+            if (binding.Alt == alt && binding.Ctrl == ctrl && binding.Shift == shift && binding.IsEnabled)
             {
                 if (binding.IsKeyUp)
                     player.onKeyUpBinding = new(binding, DateTime.UtcNow.Ticks);
@@ -352,7 +353,7 @@ public class KeysConfig
         Add(Key.Q,                  KeyBindingAction.Stop, false, true, false);
     }
 
-    private Action GetKeyBindingAction(KeyBindingAction action)
+    public Action GetKeyBindingAction(KeyBindingAction action)
     {
         switch (action)
         {
@@ -553,13 +554,20 @@ public class KeysConfig
 }
 public class KeyBinding
 {
+    public bool             IsEnabled       { get; set; } = true;
     public bool             Alt             { get; set; }
     public bool             Ctrl            { get; set; }
     public bool             Shift           { get; set; }
     public Key              Key             { get; set; }
     public KeyBindingAction Action          { get; set; }
-    public string           ActionName      { get => Action == KeyBindingAction.Custom ? actionName : Action.ToString(); set => actionName = value; }
-    string actionName;
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string ActionName
+    {
+        get => Action == KeyBindingAction.Custom ? field : null;
+        set;
+    }
+
     public bool             IsKeyUp         { get; set; }
 
     /// <summary>
@@ -573,34 +581,147 @@ public class KeyBinding
         IsKeyUp = isKeyUp;
     }
 
-    internal Action ActionInternal;
+    [JsonIgnore]
+    public Action ActionInternal { get; internal set; }
 }
 
 public enum KeyBindingAction
 {
+    [Description("Custom Action defined in application")]
     Custom,
-    ForceIdle, ForceActive, ForceFullActive,
+    [Description("Set Activity to Idle forcibly")]
+    ForceIdle,
+    [Description("Set Activity to Active forcibly")]
+    ForceActive,
+    [Description("Set Activity to FullActive forcibly")]
+    ForceFullActive,
 
-    AudioDelayAdd, AudioDelayAdd2, AudioDelayRemove, AudioDelayRemove2, ToggleMute, VolumeUp, VolumeDown,
-    SubsDelayAddPrimary, SubsDelayAdd2Primary, SubsDelayRemovePrimary, SubsDelayRemove2Primary,
-    SubsDelayAddSecondary, SubsDelayAdd2Secondary, SubsDelayRemoveSecondary, SubsDelayRemove2Secondary,
-    SubsPrevSeek, SubsCurSeek, SubsNextSeek, SubsPrevSeekFallback, SubsNextSeekFallback,
+    [Description("Increase Audio Delay (S)")]
+    AudioDelayAdd,
+    [Description("Increase Audio Delay (M)")]
+    AudioDelayAdd2,
+    [Description("Decrease Audio Delay (S)")]
+    AudioDelayRemove,
+    [Description("Decrease Audio Delay (M)")]
+    AudioDelayRemove2,
 
-    CopyToClipboard, CopyItemToClipboard, OpenFromClipboard, OpenFromFileDialog,
-    Stop, Pause, Play, TogglePlayPause, ToggleReversePlayback, Flush,
+    [Description("Toggle Audio Mute/Unmute")]
+    ToggleMute,
+    [Description("Volume Up")]
+    VolumeUp,
+    [Description("Volume Down")]
+    VolumeDown,
+
+    // TODO: L: Make units customizable
+    [Description("Increase Primary Subtitles Delay (S)")]
+    SubsDelayAddPrimary,
+    [Description("Increase Primary Subtitles Delay (M)")]
+    SubsDelayAdd2Primary,
+    [Description("Decrease Primary Subtitles Delay (S)")]
+    SubsDelayRemovePrimary,
+    [Description("Decrease Primary Subtitles Delay (M)")]
+    SubsDelayRemove2Primary,
+    [Description("Increase Secondary Subtitles Delay (S)")]
+    SubsDelayAddSecondary,
+    [Description("Increase Secondary Subtitles Delay (M)")]
+    SubsDelayAdd2Secondary,
+    [Description("Decrease Secondary Subtitles Delay (S)")]
+    SubsDelayRemoveSecondary,
+    [Description("Decrease Secondary Subtitles Delay (M)")]
+    SubsDelayRemove2Secondary,
+
+    [Description(nameof(CopyToClipboard))]
+    CopyToClipboard,
+    [Description(nameof(CopyItemToClipboard))]
+    CopyItemToClipboard,
+    [Description("Open a media from clipboard")]
+    OpenFromClipboard,
+    [Description("Open a media from file dialog")]
+    OpenFromFileDialog,
+
+    [Description("Stop playback")]
+    Stop,
+    [Description("Pause playback")]
+    Pause,
+    [Description("Play playback")]
+    Play,
+    [Description("Toggle play playback")]
+    TogglePlayPause,
+
+    [Description("Toggle reverse playback")]
+    ToggleReversePlayback,
+    [Description(nameof(Flush))]
+    Flush,
+    [Description("Take snapshot")]
     TakeSnapshot,
-    NormalScreen, FullScreen, ToggleFullScreen,
+    [Description("Change to NormalScreen")]
+    NormalScreen,
+    [Description("Change to FullScreen")]
+    FullScreen,
+    [Description("Toggle NormalScreen / FullScreen")]
+    ToggleFullScreen,
 
-    ToggleAudio, ToggleVideo,
-    ToggleSubtitlesVisibility, ToggleSubtitlesVisibilityPrimary, ToggleSubtitlesVisibilitySecondary,
+    [Description("Toggle Audio Enabled")]
+    ToggleAudio,
+    [Description("Toggle Video Enabled")]
+    ToggleVideo,
 
+    [Description("Toggle All Subtitles Visibility")]
+    ToggleSubtitlesVisibility,
+    [Description("Toggle Primary Subtitles Visibility")]
+    ToggleSubtitlesVisibilityPrimary,
+    [Description("Toggle Secondary Subtitles Visibility")]
+    ToggleSubtitlesVisibilitySecondary,
+
+    [Description(nameof(ToggleKeepRatio))]
     ToggleKeepRatio,
+    [Description("Toggle Video Acceleration")]
     ToggleVideoAcceleration,
+    [Description(nameof(ToggleRecording))]
     ToggleRecording,
-    ToggleSeekAccurate, SeekForward, SeekBackward, SeekForward2, SeekBackward2,
-    SpeedAdd, SpeedAdd2, SpeedRemove, SpeedRemove2,
-    ShowNextFrame, ShowPrevFrame,
+    [Description(nameof(ToggleSeekAccurate))]
+    ToggleSeekAccurate,
 
+    [Description("Seek forwards (S)")]
+    SeekForward,
+    [Description("Seek backwards (S)")]
+    SeekBackward,
+    [Description("Seek forwards (M)")]
+    SeekForward2,
+    [Description("Seek backwards (M)")]
+    SeekBackward2,
+    [Description("Seek to the previous subtitle")]
+    SubsPrevSeek,
+    [Description("Seek to the current subtitle")]
+    SubsCurSeek,
+    [Description("Seek to the next subtitle")]
+    SubsNextSeek,
+    [Description("Seek to the previous subtitle or seek backwards")]
+    SubsPrevSeekFallback,
+    [Description("Seek to the next subtitle or seek forwards")]
+    SubsNextSeekFallback,
+
+    [Description("Speed up (S)")]
+    SpeedAdd,
+    [Description("Speed up (M)")]
+    SpeedAdd2,
+
+    [Description("Speed down (S)")]
+    SpeedRemove,
+    [Description("Speed down (M)")]
+    SpeedRemove2,
+
+    [Description("Show Next Frame")]
+    ShowNextFrame,
+    [Description("Show Previous Frame")]
+    ShowPrevFrame,
+
+    // TODO: L: Add key to reset individually
+    [Description("Reset Zoom Ratio & Speed up")]
     ResetAll,
-    ZoomIn, ZoomOut,
+
+    [Description("Zoom in")]
+    ZoomIn,
+    [Description("Zoom out")]
+    ZoomOut,
 }

@@ -1,5 +1,7 @@
-﻿using System.Windows;
+﻿using System.Diagnostics;
+using System.Windows;
 using System.Windows.Controls;
+using FlyleafLib.MediaPlayer;
 using LLPlayer.Services;
 
 namespace LLPlayer.Controls;
@@ -28,6 +30,28 @@ public partial class SubtitlesControl : UserControl
             {
                 FL.Config.Subs.SubsPanelSize = e.NewSize;
             }
+        }
+    }
+
+    private async void SelectableSubtitleText_OnWordClicked(object sender, WordClickedEventArgs e)
+    {
+        try
+        {
+            await WordPopupControl.OnWordClicked(e);
+        }
+        catch (Exception ex)
+        {
+            // TODO: L: handle exception
+            Debug.Fail(ex.Message);
+        }
+    }
+
+    private void SubtitlePrimaryText_OnWordClickedDown(object? sender, EventArgs e)
+    {
+        // Assume drag and stop playback.
+        if (FL.Player.Status == Status.Playing)
+        {
+            FL.Player.Pause();
         }
     }
 }

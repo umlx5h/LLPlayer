@@ -126,6 +126,7 @@
                     <ColumnDefinition Width="auto"/>
                     <ColumnDefinition Width="auto"/>
                     <ColumnDefinition Width="auto"/>
+                    <ColumnDefinition Width="auto"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- Play / Pause Button -->
@@ -304,10 +305,13 @@
                 <Slider Grid.Column="8" Style="{DynamicResource FlyleafSlider}" Foreground="{DynamicResource MaterialDesignBody}" Focusable="False" Margin="0,0,6,6" Width="100" VerticalAlignment="Bottom" Minimum="0" Maximum="{Binding FL.PlayerConfig.Player.VolumeMax, Mode=OneWay}" d:Maximum="150" d:Value="75" Value="{Binding FL.Player.Audio.Volume}"/>
 
                 <!-- Open Settings Button -->
-                <Button Grid.Column="9" Style="{StaticResource IconButton}" Content="{materialDesign:PackIcon Kind=SettingsOutline}" ToolTip="Open Settings"/>
+                <Button Grid.Column="9" Style="{StaticResource IconButton}" Content="{materialDesign:PackIcon Kind=SettingsOutline}" Command="{Binding FL.Action.CmdOpenWindowSettings}" ToolTip="Open Settings"/>
+
+                <!-- Toggle Sub Sidebar -->
+                <Button Grid.Column="10" Style="{StaticResource IconButton}" Content="{materialDesign:PackIcon Kind=DockRight}" Command="{Binding FL.Action.CmdToggleSidebar}" ToolTip="Toggle Sub Sidebar"/>
 
                 <!-- Toggle Fullscreen Button -->
-                <ToggleButton Grid.Column="10" Style="{StaticResource MaterialDesignActionToggleButton}" Foreground="{DynamicResource MaterialDesign.Brush.Primary}" Background="Transparent" Focusable="False" IsChecked="{Binding FL.Player.Host.IsFullScreen}" Content="{materialDesign:PackIcon Kind=Fullscreen, Size=28}" materialDesign:ToggleButtonAssist.OnContent="{materialDesign:PackIcon Kind=FullscreenExit, Size=28}" ToolTip="Toggle Fullscreen"/>
+                <ToggleButton Grid.Column="11" Style="{StaticResource MaterialDesignActionToggleButton}" Foreground="{DynamicResource MaterialDesign.Brush.Primary}" Background="Transparent" Focusable="False" IsChecked="{Binding FL.Player.Host.IsFullScreen}" Content="{materialDesign:PackIcon Kind=Fullscreen, Size=28}" materialDesign:ToggleButtonAssist.OnContent="{materialDesign:PackIcon Kind=FullscreenExit, Size=28}" ToolTip="Toggle Fullscreen"/>
             </Grid>
         </Grid>
     </materialDesign:Card>

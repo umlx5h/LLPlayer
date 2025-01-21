@@ -114,6 +114,9 @@ public class FlyleafOverlayVM : Bindable
 
     private void FlyleafOnMouseWheel(object sender, MouseWheelEventArgs e)
     {
+        // CTRL + Wheel  : Zoom in / out
+        // SHIFT + Wheel : Subtitles Up / Down
+        // CTRL + SHIFT + Wheel : Subtitles Size Increase / Decrease
         if (e.Delta == 0)
         {
             return;
@@ -122,8 +125,20 @@ public class FlyleafOverlayVM : Bindable
         Window surface = FL.FlyleafHost!.Surface;
 
         bool ctrlDown = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl);
+        bool shiftDown = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
 
-        if (ctrlDown)
+        if (ctrlDown && shiftDown)
+        {
+            if (e.Delta > 0)
+            {
+                FL.Action.CmdSubsSizeIncrease.Execute();
+            }
+            else
+            {
+                FL.Action.CmdSubsSizeDecrease.Execute();
+            }
+        }
+        else if (ctrlDown)
         {
             Point cur = e.GetPosition(surface);
             Point curDpi = new(cur.X * DpiX, cur.Y * DpiY);
@@ -134,6 +149,17 @@ public class FlyleafOverlayVM : Bindable
             else
             {
                 FL.Player.ZoomOut(curDpi);
+            }
+        }
+        else if (shiftDown)
+        {
+            if (e.Delta > 0)
+            {
+                FL.Action.CmdSubsPositionUp.Execute();
+            }
+            else
+            {
+                FL.Action.CmdSubsPositionDown.Execute();
             }
         }
 

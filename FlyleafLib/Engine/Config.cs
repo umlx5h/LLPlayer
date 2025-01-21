@@ -1090,6 +1090,11 @@ public class Config : NotifyPropertyChanged
         public TranslateServiceType TranslateServiceType { get; set => Set(ref field, value); } = TranslateServiceType.GoogleV1;
 
         /// <summary>
+        /// Translation Word Service Type
+        /// </summary>
+        public TranslateServiceType TranslateWordServiceType { get; set => Set(ref field, value); } = TranslateServiceType.GoogleV1;
+
+        /// <summary>
         /// Translation Service Type Settings
         /// </summary>
         public Dictionary<TranslateServiceType, ITranslateSettings> TranslateServiceSettings { get; set => Set(ref field, value); } = new();

@@ -220,6 +220,12 @@ public class OutlinedTextBlock : FrameworkElement
 
     #endregion
 
+    #region PDIC
+
+    public int WordOffset { get; set; }
+
+    #endregion
+
     private void UpdatePen()
     {
         _Pen = new Pen(Stroke, StrokeThickness)

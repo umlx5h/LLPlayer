@@ -1,0 +1,188 @@
+﻿<UserControl x:Class="LLPlayer.Controls.Settings.SettingsSubtitlesTrans"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:LLPlayer.Controls.Settings"
+             xmlns:helpers="clr-namespace:LLPlayer.Extensions"
+             xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+             xmlns:flyleafServices="clr-namespace:FlyleafLib.MediaPlayer.Translation.Services;assembly=FlyleafLib"
+             xmlns:flyleafTranslate="clr-namespace:FlyleafLib.MediaPlayer.Translation;assembly=FlyleafLib"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance local:SettingsSubtitlesTransVM}"
+             d:Foreground="White"
+             d:Background="Black"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <ObjectDataProvider x:Key="TranslateServiceTypeEnum" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="flyleafServices:TranslateServiceType"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+
+        <ObjectDataProvider x:Key="TranslateTargetLanguageEnum" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="flyleafTranslate:TargetLanguage"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+
+        <local:TargetLanguageEnumToStringConverter x:Key="TargetLanguageEnumToStringConv" />
+        <local:TargetLanguageEnumToSupportedTranslateServiceConverter x:Key="TargetLanguageEnumToSupportedTranslateServiceConv" />
+
+        <!-- GoogleV1 -->
+        <DataTemplate DataType="{x:Type flyleafServices:GoogleV1TranslateSettings}">
+            <StackPanel>
+                <DockPanel Margin="0 0 0 8">
+                    <TextBlock
+                        Width="180"
+                        Text="Google Endpoint" />
+                    <TextBox
+                        HorizontalContentAlignment="Left"
+                        Text="{Binding Endpoint}" />
+                </DockPanel>
+
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock
+                        Width="180"
+                        Text="" />
+                    <Button
+                        Content="Set Default Endpoint"
+                        Command="{Binding CmdSetDefaultEndpoint}" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock
+                        Width="180"
+                        Text="Source Language Region" />
+
+                    <ListView
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        ItemsSource="{Binding LanguageRegions}" Margin="10">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding Name}" Width="100" VerticalAlignment="Center"/>
+                                    <ComboBox
+                                        ItemsSource="{Binding Regions}"
+                                        SelectedItem="{Binding SelectedRegionMember, Mode=TwoWay}"
+                                        DisplayMemberPath="Name"
+                                        Width="150"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- DeepL -->
+        <DataTemplate DataType="{x:Type flyleafServices:DeepLTranslateSettings}">
+            <StackPanel>
+                <DockPanel>
+                    <TextBlock
+                        Width="180"
+                        Text="DeepL API Key" />
+                    <TextBox
+                        HorizontalContentAlignment="Left"
+                        Text="{Binding ApiKey}" />
+                </DockPanel>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- DeepLX -->
+        <DataTemplate DataType="{x:Type flyleafServices:DeepLXTranslateSettings}">
+            <StackPanel>
+                <DockPanel>
+                    <TextBlock
+                        Width="180"
+                        Text="DeepLX Endpoint" />
+                    <TextBox
+                        HorizontalContentAlignment="Left"
+                        Text="{Binding Endpoint}" />
+                </DockPanel>
+            </StackPanel>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <ScrollViewer>
+        <StackPanel>
+            <TextBlock
+                Text="Subtitles > Translate"
+                FontSize="24"
+                FontWeight="Bold"
+                Margin="0 0 0 16" />
+
+            <GroupBox Header="Translation Language">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Target Language" />
+
+                        <ComboBox
+                            Width="180"
+                            ItemsSource="{Binding Source={StaticResource TranslateTargetLanguageEnum}}"
+                            SelectedItem="{Binding FL.PlayerConfig.Subtitles.TranslateTargetLanguage}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource TargetLanguageEnumToStringConv}}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Supported Service" />
+
+                        <TextBlock
+                            Width="180"
+                            Text="{Binding FL.PlayerConfig.Subtitles.TranslateTargetLanguage, Converter={StaticResource TargetLanguageEnumToSupportedTranslateServiceConv}}" />
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="Translation Service">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Service" />
+                        <ComboBox
+                            Width="100"
+                            ItemsSource="{Binding Source={StaticResource TranslateServiceTypeEnum}}"
+                            SelectedItem="{Binding SelectedTranslateServiceType}" />
+                    </StackPanel>
+
+                    <ContentControl Content="{Binding SelectedServiceSettings}" />
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="Translation Parameters">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Max Translate Count" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.PlayerConfig.Subtitles.TranslateCount}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Max Translate Concurrency" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.PlayerConfig.Subtitles.TranslateMaxConcurrent}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

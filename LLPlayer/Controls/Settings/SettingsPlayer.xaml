@@ -1,0 +1,148 @@
+﻿<UserControl x:Class="LLPlayer.Controls.Settings.SettingsPlayer"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:LLPlayer.Controls.Settings"
+             xmlns:ffmpeg="clr-namespace:Flyleaf.FFmpeg;assembly=Flyleaf.FFmpeg.Bindings"
+             xmlns:flyleaf="clr-namespace:FlyleafLib;assembly=FlyleafLib"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             xmlns:vm="clr-namespace:LLPlayer.ViewModels"
+             xmlns:helpers="clr-namespace:LLPlayer.Extensions"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:SettingsDialogVM}"
+             d:Foreground="White"
+             d:Background="Black"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <ObjectDataProvider x:Key="LogLevelEnum" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="flyleaf:LogLevel"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+
+        <ObjectDataProvider x:Key="FFmpegLogLevelEnum" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="ffmpeg:LogLevel"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+    </UserControl.Resources>
+    <ScrollViewer>
+        <StackPanel>
+            <TextBlock
+                Text="Player"
+                FontSize="24"
+                FontWeight="Bold"
+                Margin="0 0 0 16" />
+
+            <GroupBox Header="Player">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Idle Timeout (ms)" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.Config.ActivityTimeout}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Read Timeout (ms)" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.PlayerConfig.Demuxer.ReadTimeout, Converter={StaticResource TicksToMilliSecondsConv}}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Buffer Duration Min (ms)" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.PlayerConfig.Player.MinBufferDuration, Converter={StaticResource TicksToMilliSecondsConv}}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Buffer Duration Max (ms)" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.PlayerConfig.Demuxer.BufferDuration, Converter={StaticResource TicksToMilliSecondsConv}}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Audio Frames Max" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.PlayerConfig.Decoder.MaxAudioFrames}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Video Frames Max" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.PlayerConfig.Decoder.MaxVideoFrames}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Vertical Resolution Max" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.PlayerConfig.Video.MaxVerticalResolutionCustom}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint"
+                            ToolTip="0 for Auto" />
+                    </StackPanel>
+
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="Logging">
+                <StackPanel>
+                    <DockPanel>
+                        <TextBlock
+                            Width="180"
+                            Text="Log File" />
+                        <TextBox
+                            HorizontalContentAlignment="Left"
+                            Text="{Binding FL.ConfigEngine.LogOutput}" />
+                    </DockPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Log Level" />
+                        <ComboBox
+                            Width="100"
+                            ItemsSource="{Binding Source={StaticResource LogLevelEnum}}"
+                            SelectedItem="{Binding FL.ConfigEngine.LogLevel}" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Log Level (ffmpeg)" />
+                        <ComboBox
+                            Width="100"
+                            ItemsSource="{Binding Source={StaticResource FFmpegLogLevelEnum}}"
+                            SelectedItem="{Binding FL.ConfigEngine.FFmpegLogLevel}" />
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -10,6 +10,20 @@
              d:Background="Black"
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
+        <local:NonTopmostPopup
+            Placement="Relative"
+            PlacementTarget="{Binding ElementName=SubtitlePrimaryText}"
+            PopupAnimation="None"
+            AllowsTransparency="True"
+            HorizontalOffset="{Binding PopupHorizontalOffset, ElementName=WordPopupControl}"
+            VerticalOffset="{Binding PopupVerticalOffset, ElementName=WordPopupControl}"
+            IsOpen="{Binding IsOpen, ElementName=WordPopupControl}"
+            StaysOpen="True">
+            <local:WordPopup
+                x:Name="WordPopupControl"
+                IsSidebar="False" />
+        </local:NonTopmostPopup>
+
         <!-- Absolute bitmap -->
         <Grid x:Name="SubtitleAbsoluteBitmap">
             <!-- Absolute bitmap (Primary) -->
@@ -59,7 +73,7 @@
             <!-- Primary -->
             <Grid
                 Visibility="{Binding FL.Player.Subtitles[0].Data.IsVisible, Converter={StaticResource BooleanToVisibilityConv}, FallbackValue=Collapsed, TargetNullValue=Collapsed}" >
-                <local:OutlinedTextBlock
+                <local:SelectableSubtitleText
                     x:Name="SubtitlePrimaryText"
                     FontFamily="{Binding FL.Config.Subs.SubsFontFamily}"
                     FontSizeInitial="{Binding FL.Config.Subs.SubsFontSize}"
@@ -69,7 +83,11 @@
                     Fill="{Binding FL.Config.Subs.SubsFontColor, Converter={StaticResource ColorToBrushConv}}"
                     Stroke="{Binding FL.Config.Subs.SubsStrokeColor, Converter={StaticResource ColorToBrushConv}}"
                     StrokeThicknessInitial="{Binding FL.Config.Subs.SubsStrokeThickness}"
-                    Text="{Binding FL.Player.Subtitles[0].Data.Text}" />
+                    WidthPercentage="{Binding FL.Config.Subs.SubsWidthPercentage}"
+                    IgnoreLineBreak="{Binding FL.Config.Subs.SubsIgnoreLineBreak}"
+                    Text="{Binding FL.Player.Subtitles[0].Data.Text}"
+                    WordClickedDown="SubtitlePrimaryText_OnWordClickedDown"
+                    WordClicked="SelectableSubtitleText_OnWordClicked" />
 
                 <Border
                     Visibility="{Binding FL.Player.Subtitles[0].Data.IsAbsolute, Converter={StaticResource BooleanToVisibilityInvertConv}, FallbackValue=Collapsed, TargetNullValue=Collapsed}"
@@ -98,7 +116,7 @@
             <!-- Secondary -->
             <Grid
                 Visibility="{Binding FL.Player.Subtitles[1].Data.IsVisible, Converter={StaticResource BooleanToVisibilityConv}, FallbackValue=Collapsed, TargetNullValue=Collapsed}" >
-                <local:OutlinedTextBlock
+                <local:SelectableSubtitleText
                     FontFamily="{Binding FL.Config.Subs.SubsFontFamily}"
                     FontSizeInitial="{Binding FL.Config.Subs.SubsFontSize2}"
                     FontWeight="{Binding FL.Config.Subs.SubsFontWeight}"
@@ -107,6 +125,8 @@
                     Fill="{Binding FL.Config.Subs.SubsFontColor, Converter={StaticResource ColorToBrushConv}}"
                     Stroke="{Binding FL.Config.Subs.SubsStrokeColor, Converter={StaticResource ColorToBrushConv}}"
                     StrokeThicknessInitial="{Binding FL.Config.Subs.SubsStrokeThickness}"
+                    WidthPercentage="{Binding FL.Config.Subs.SubsWidthPercentage}"
+                    IgnoreLineBreak="{Binding FL.Config.Subs.SubsIgnoreLineBreak}"
                     Text="{Binding FL.Player.Subtitles[1].Data.Text}" />
 
                 <Border

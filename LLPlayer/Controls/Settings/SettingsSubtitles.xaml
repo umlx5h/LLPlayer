@@ -1,0 +1,233 @@
+﻿<UserControl x:Class="LLPlayer.Controls.Settings.SettingsSubtitles"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:LLPlayer.Controls.Settings"
+             xmlns:vm="clr-namespace:LLPlayer.ViewModels"
+             xmlns:helpers="clr-namespace:LLPlayer.Extensions"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance local:SettingsSubtitlesVM}"
+             d:Foreground="White"
+             d:Background="Black"
+             d:DesignHeight="450" d:DesignWidth="800">
+
+    <ScrollViewer>
+        <StackPanel>
+            <TextBlock
+                Text="Subtitles"
+                FontSize="24"
+                FontWeight="Bold"
+                Margin="0 0 0 16" />
+
+            <GroupBox Header="Subtitles">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Enabled" />
+                        <ToggleButton
+                            IsChecked="{Binding FL.PlayerConfig.Subtitles.Enabled}" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Search Local" />
+                        <ToggleButton
+                            IsChecked="{Binding FL.PlayerConfig.Subtitles.SearchLocal}" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Enabled Cached" />
+                        <ToggleButton
+                            IsChecked="{Binding FL.PlayerConfig.Subtitles.EnabledCached}" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Delay Primary (ms)" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.PlayerConfig.Subtitles[0].Delay, Converter={StaticResource TicksToMilliSecondsConv}}"
+                            helpers:TextBoxHelper.OnlyNumeric="Int"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Delay Secondary (ms)" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.PlayerConfig.Subtitles[1].Delay, Converter={StaticResource TicksToMilliSecondsConv}}"
+                            helpers:TextBoxHelper.OnlyNumeric="Int"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="FontStrokeThickness" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.Config.Subs.SubsStrokeThickness}"
+                            helpers:TextBoxHelper.OnlyNumeric="Double"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0 16 0 0">
+                        <TextBlock
+                            Width="180"
+                            Text="Fonts" />
+
+                        <Button
+                            Height="auto"
+                            MaxHeight="100"
+                            Command="{Binding FL.Action.CmdSetSubtitlesFont}">
+                            <StackPanel
+                                Orientation="Horizontal"
+                                Margin="3">
+                                <Rectangle
+                                    Margin=" 0 0 10 0"
+                                    Width="18"
+                                    Height="18"
+                                    Fill="{Binding FL.Config.Subs.SubsFontColor, Converter={StaticResource ColorToBrushConv}}"/>
+                                <TextBlock TextWrapping="Wrap" MaxWidth="200" VerticalAlignment="Center">
+                                    <Run Text="{Binding FL.Config.Subs.SubsFontFamily}"/>
+                                    <Run Text="("/>
+                                    <Run Text="{Binding FL.Config.Subs.SubsFontWeight}"/>
+                                    <Run Text="), "/>
+                                    <Run Text="{Binding FL.Config.Subs.SubsFontSize}"/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="Subtitles Language">
+                <StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                        Width="180"
+                        Text="Auto Language Detection" />
+                        <ToggleButton
+                        IsChecked="{Binding FL.PlayerConfig.Subtitles.LanguageAutoDetect}" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                        Width="180"
+                        Text="Fallback Source Language (Primary)" />
+
+                        <ComboBox
+                            Width="180"
+                            ItemsSource="{Binding Languages}"
+                            DisplayMemberPath="Name"
+                            SelectedItem="{Binding SelectedPrimaryLanguage}" />
+                    </StackPanel>
+
+                    <!--TODO: L: Support for forced settings instead of fallback -->
+                    <!--TODO: L: Display various language settings in the debug window-->
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                        Width="180"
+                        Text="Fallback Source Language (Secondary)" />
+
+                        <ComboBox
+                            Width="180"
+                            ItemsSource="{Binding Languages}"
+                            IsEnabled="{Binding FL.PlayerConfig.Subtitles.LanguageFallbackSecondarySame, Converter={StaticResource InvertBooleanConv}}"
+                            DisplayMemberPath="Name"
+                            SelectedItem="{Binding SelectedSecondaryLanguage}" />
+
+                        <CheckBox
+                            Margin="15 0 0 0"
+                            IsChecked="{Binding FL.PlayerConfig.Subtitles.LanguageFallbackSecondarySame}"
+                            Content="Same as Primary" />
+
+                    </StackPanel>
+                </StackPanel>
+
+            </GroupBox>
+
+            <GroupBox Header="Subtitles Sidebar">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Show Sidebar" />
+                        <ToggleButton
+                            IsChecked="{Binding FL.Config.ShowSidebar}" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Sidebar Width" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.Config.SidebarWidth}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Sidebar Left" />
+                        <ToggleButton
+                            IsChecked="{Binding FL.Config.SidebarLeft}" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Mask subtitles after current (to prevent spoiler)" />
+                        <ToggleButton
+                            IsChecked="{Binding FL.Config.SidebarTextMask}" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Show Original Text when translating enabled" />
+                        <ToggleButton
+                            IsChecked="{Binding FL.Config.SidebarShowOriginalText}" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Subtitle Padding" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.Config.SidebarSubPadding}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0 16 0 0">
+                        <TextBlock
+                            Width="180"
+                            Text="Fonts" />
+
+                        <Button
+                            Height="auto"
+                            MaxHeight="100"
+                            Command="{Binding FL.Action.CmdSetSubtitlesFontSidebar}">
+                            <TextBlock TextWrapping="Wrap" MaxWidth="200" VerticalAlignment="Center">
+                                <Run Text="{Binding FL.Config.SidebarFontFamily}"/>
+                                <Run Text="("/>
+                                <Run Text="{Binding FL.Config.SidebarFontWeight}"/>
+                                <Run Text="), "/>
+                                <Run Text="{Binding FL.Config.SidebarFontSize}"/>
+                            </TextBlock>
+                        </Button>
+                    </StackPanel>
+
+                </StackPanel>
+            </GroupBox>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

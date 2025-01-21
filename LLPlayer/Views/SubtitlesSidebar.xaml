@@ -1,0 +1,306 @@
+﻿<UserControl x:Class="LLPlayer.Views.SubtitlesSidebar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:controls="clr-namespace:LLPlayer.Controls"
+             xmlns:vm="clr-namespace:LLPlayer.ViewModels"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:SubtitlesSidebarVM}"
+             d:Foreground="White"
+             d:Background="Black"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary>
+                    <Style x:Key="IconButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignIconButton}">
+                        <Setter Property="Width" Value="24" />
+                        <Setter Property="Height" Value="24" />
+                        <Setter Property="Margin" Value="6 0 6 0" />
+                        <Setter Property="Background" Value="#01000000" />
+                        <Setter Property="Focusable" Value="False" />
+                        <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}" />
+                    </Style>
+
+                    <Style x:Key="ToggleButton" TargetType="ToggleButton" BasedOn="{StaticResource MaterialDesignActionToggleButton}">
+                        <Setter Property="Width" Value="24" />
+                        <Setter Property="Height" Value="24" />
+                        <Setter Property="Margin" Value="6 0 6 0" />
+                        <Setter Property="Background" Value="#01000000" />
+                        <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}" />
+                    </Style>
+
+                    <Style x:Key="SubIconButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignIconButton}">
+                        <Setter Property="Width" Value="20" />
+                        <Setter Property="Height" Value="20" />
+                        <Setter Property="Margin" Value="0 0 4 0" />
+                        <Setter Property="Focusable" Value="False" />
+                        <Setter Property="Foreground" Value="{x:Null}" />
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Secondary}" />
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+
+                    <Style x:Key="SubPlayIconButton" TargetType="Button" BasedOn="{StaticResource SubIconButton}">
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Primary}" />
+                            </Trigger>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem, Mode=FindAncestor}}" Value="True" />
+                                    <Condition Binding="{Binding DataContext.SubManager.IsDisplaying, RelativeSource={RelativeSource AncestorType=ListBox, Mode=FindAncestor}}" Value="True" />
+                                </MultiDataTrigger.Conditions>
+                                <MultiDataTrigger.Setters>
+                                    <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Primary}" />
+                                </MultiDataTrigger.Setters>
+                            </MultiDataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ResourceDictionary>
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.PopupBox.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid Background="{DynamicResource MaterialDesignToolBarBackground}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <ToolBar
+            Grid.Row="0"
+            Margin="5">
+
+            <!-- Primary Secondary Toggle -->
+            <ToggleButton
+                Style="{StaticResource ToggleButton}"
+                materialDesign:ToggleButtonAssist.OnContent="{materialDesign:PackIcon Kind=Numeric1BoxMultipleOutline}"
+                Content="{materialDesign:PackIcon Kind=Numeric2BoxMultipleOutline}"
+                ToolTip="Toggle Primary / Secondary"
+                Command="{Binding CmdSubIndexToggle}"
+                IsChecked="{Binding IsPrimary, Mode=OneWay}" />
+
+            <!-- Font Size -->
+            <materialDesign:PopupBox
+                PlacementMode="BottomAndAlignCentres"
+                Margin="6 0"
+                Width="20"
+                Background="{x:Null}"
+                Height="20"
+                BorderBrush="{DynamicResource MaterialDesignBody}"
+                StaysOpen="True"
+                Style="{StaticResource MaterialDesignMultiFloatingActionPopupBox}"
+                ToolTip="Change Font Size"
+                ToolTipService.Placement="Right">
+                <materialDesign:PopupBox.ToggleContent>
+                    <materialDesign:PackIcon
+                        Width="16"
+                        Height="16"
+                        Foreground="{DynamicResource MaterialDesignBody}"
+                        Kind="FormatText" />
+                </materialDesign:PopupBox.ToggleContent>
+
+                <StackPanel Orientation="Horizontal">
+                    <Button Style="{StaticResource IconButton}"
+                            Command="{Binding CmdSubFontSizeChange}"
+                            CommandParameter="-1"
+                            ToolTip="Font size decrease"
+                            Content="{materialDesign:PackIcon Kind=FormatFontSizeDecrease}" />
+
+                    <Button Style="{StaticResource IconButton}"
+                            Command="{Binding CmdSubFontSizeChange}"
+                            CommandParameter="1"
+                            ToolTip="Font size increase"
+                            Content="{materialDesign:PackIcon Kind=FormatFontSizeIncrease}" />
+                </StackPanel>
+            </materialDesign:PopupBox>
+
+            <!-- Prevent Spoiler Toggle -->
+            <ToggleButton
+                Style="{StaticResource ToggleButton}"
+                materialDesign:ToggleButtonAssist.OnContent="{materialDesign:PackIcon Kind=EyeOffOutline}"
+                Content="{materialDesign:PackIcon Kind=EyeOutline}"
+                ToolTip="Toggle hiding after current subtitles"
+                Command="{Binding CmdSubTextMaskToggle}"
+                IsChecked="{Binding FL.Config.SidebarTextMask, Mode=OneWay}" />
+
+            <!-- Translation Display Toggle -->
+            <ToggleButton
+                Style="{StaticResource ToggleButton}"
+                materialDesign:ToggleButtonAssist.OnContent="{materialDesign:PackIcon Kind=TranslateOff}"
+                Content="{materialDesign:PackIcon Kind=Translate}"
+                ToolTip="Toggle to show original text when translating enabled"
+                Command="{Binding CmdShowOriginalTextToggle}"
+                IsChecked="{Binding FL.Config.SidebarShowOriginalText, Mode=OneWay}" />
+
+            <!-- Sidebar Left Toggle -->
+            <Button Style="{StaticResource IconButton}"
+                    Command="{Binding CmdSwapSidebarPosition}"
+                    ToolTip="Swap sidebar position"
+                    Content="{materialDesign:PackIcon Kind=SwapHorizontal}" />
+        </ToolBar>
+
+        <controls:NonTopmostPopup
+            Grid.Row="0"
+            Placement="Relative"
+            PlacementTarget="{Binding PopupPlacementTarget, ElementName=WordPopupControl}"
+            PopupAnimation="None"
+            AllowsTransparency="True"
+            HorizontalOffset="{Binding PopupHorizontalOffset, ElementName=WordPopupControl}"
+            VerticalOffset="{Binding PopupVerticalOffset, ElementName=WordPopupControl}"
+            IsOpen="{Binding IsOpen, ElementName=WordPopupControl}"
+            StaysOpen="True">
+            <controls:WordPopup
+                x:Name="WordPopupControl"
+                IsSidebar="True"
+                SidebarLeft="{Binding FL.Config.SidebarLeft}" />
+        </controls:NonTopmostPopup>
+
+        <ListBox
+            x:Name="SubtitleListBox"
+            Grid.Row="1"
+            FontSize="{Binding FL.Config.SidebarFontSize}"
+            FontFamily="{Binding FL.Config.SidebarFontFamily}"
+            BorderThickness="0"
+            Foreground="{DynamicResource MaterialDesignBody}"
+            VirtualizingStackPanel.VirtualizationMode="Recycling"
+            VerticalContentAlignment="Top"
+            ItemsSource="{Binding SubManager.Subs}"
+            SelectedIndex="{Binding SubManager.CurrentIndex, Mode=OneWay}"
+            SelectionChanged="SubtitleListBox_SelectionChanged"
+            ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem" BasedOn="{StaticResource MaterialDesignListBoxItem}">
+                    <!-- Set to non-selectable list -->
+                    <Setter Property="Focusable" Value="False" />
+                    <!-- Ensure that the right-most icon is aligned to the far right -->
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    <Setter Property="materialDesign:RippleAssist.IsDisabled" Value="True" />
+                    <Setter Property="Padding">
+                        <Setter.Value>
+                            <Binding Path="DataContext.FL.Config.SidebarSubPadding" RelativeSource="{RelativeSource AncestorType=ListBox}" />
+                        </Setter.Value>
+                    </Setter>
+                    <Style.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Background" Value="#444444" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </ListBox.ItemContainerStyle>
+
+            <!-- TODO: L: want to implement a secondary subtitle pop-up (like Language reactor) -->
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <DataTemplate.Resources>
+                        <!--Text Subtitles-->
+                        <DataTemplate x:Key="SubTextTemplate">
+                            <controls:SelectableTextBox
+                                TextAlignment="Left"
+                                VerticalAlignment="Center"
+                                Foreground="{DynamicResource MaterialDesignBody}"
+                                WordClicked="SelectableTextBox_OnWordClicked"
+                                materialDesign:TextFieldAssist.TextFieldCornerRadius="10"
+                                materialDesign:TextFieldAssist.DecorationVisibility="Hidden">
+
+                                <controls:SelectableTextBox.Text>
+                                    <MultiBinding Converter="{StaticResource SubTextMaskConv}" Mode="OneWay">
+                                        <Binding Path="Index" />
+                                        <Binding Path="DisplayText" />
+                                        <Binding Path="Text" />
+                                        <Binding Path="SelectedIndex"
+                                                 RelativeSource="{RelativeSource AncestorType=ListBox}" />
+                                        <Binding Path="DataContext.FL.Config.SidebarTextMask"
+                                                 RelativeSource="{RelativeSource AncestorType=ListBox}" />
+                                        <Binding Path="DataContext.FL.Config.SidebarShowOriginalText"
+                                                 RelativeSource="{RelativeSource AncestorType=ListBox}" />
+                                    </MultiBinding>
+                                </controls:SelectableTextBox.Text>
+                            </controls:SelectableTextBox>
+                        </DataTemplate>
+
+                        <!-- Bitmap Subtitles -->
+                        <DataTemplate x:Key="SubBitmapTemplate">
+                            <Image
+                                HorizontalAlignment="Left"
+                                Stretch="Uniform"
+                                StretchDirection="DownOnly"
+                                Source="{Binding Converter={StaticResource SubBitmapImageSourceConv}}">
+                                <Image.Visibility>
+                                    <MultiBinding Converter="{StaticResource ListItemIndexVisibilityConv}" Mode="OneWay">
+                                        <Binding Path="Index" />
+                                        <Binding Path="SelectedIndex"
+                                                 RelativeSource="{RelativeSource AncestorType=ListBox}" />
+                                        <Binding Path="DataContext.FL.Config.SidebarTextMask"
+                                                 RelativeSource="{RelativeSource AncestorType=ListBox}" />
+                                    </MultiBinding>
+                                </Image.Visibility>
+                            </Image>
+                        </DataTemplate>
+                    </DataTemplate.Resources>
+
+                    <Grid Margin="0 5 1 5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Button
+                            x:Name="PlayButton"
+                            Grid.Column="0"
+                            ToolTipService.Placement="Left"
+                            ToolTipService.InitialShowDelay="200"
+                            ToolTip="{Binding StartTime, Converter={StaticResource TimeSpanToStringConv}}"
+                            Command="{Binding DataContext.CmdSubPlay,
+                                RelativeSource={RelativeSource AncestorType=ListBox}}"
+                            CommandParameter="{Binding Index}"
+                            materialDesign:RippleAssist.Feedback="Transparent"
+                            Style="{StaticResource SubPlayIconButton}"
+                        >
+                            <materialDesign:PackIcon Kind="Play"
+                                Width="20"
+                                Height="20" />
+                        </Button>
+
+                        <!-- Can use ContentTemplateSelecter?-->
+                        <!-- Display text or bitmap -->
+                        <ContentControl Grid.Column="1" Content="{Binding}">
+                            <ContentControl.Style>
+                                <Style TargetType="ContentControl">
+                                    <Setter Property="ContentTemplate" Value="{StaticResource SubTextTemplate}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsText}" Value="False">
+                                            <Setter Property="ContentTemplate" Value="{StaticResource SubBitmapTemplate}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ContentControl.Style>
+                        </ContentControl>
+
+                        <!-- Sync subtitles -->
+                        <Button
+                            x:Name="SubSyncButton"
+                            Grid.Column="2"
+                            ToolTip="Adjust the delay so that this subtitle is currently playing."
+                            Command="{Binding DataContext.CmdSubSync,
+                                RelativeSource={RelativeSource AncestorType=ListBox}}"
+                            CommandParameter="{Binding Index}"
+                            materialDesign:RippleAssist.Feedback="Transparent"
+                            Style="{StaticResource SubIconButton}">
+                            <materialDesign:PackIcon Kind="Sync"
+                                Width="20"
+                                Height="20" />
+                        </Button>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
+</UserControl>

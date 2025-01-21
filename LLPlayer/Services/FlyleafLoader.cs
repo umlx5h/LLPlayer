@@ -30,6 +30,7 @@ public static class FlyleafLoader
     public static Player CreateFlyleafPlayer()
     {
         Config? config = null;
+        bool useConfig = false;
 
         // Load Player's Config
         if (File.Exists(App.PlayerConfigPath))
@@ -37,6 +38,7 @@ public static class FlyleafLoader
             try
             {
                 config = Config.Load(App.PlayerConfigPath, AppConfig.GetJsonSerializerOptions());
+                useConfig = true;
             }
             catch
             {
@@ -47,6 +49,15 @@ public static class FlyleafLoader
 
         config ??= DefaultConfig();
         Player player = new(config);
+
+        if (!useConfig)
+        {
+            // Initialize default key bindings for custom keys for new config.
+            foreach (var binding in AppActions.DefaultCustomActionsMap())
+            {
+                config.Player.KeyBindings.Keys.Add(binding);
+            }
+        }
 
         return player;
     }

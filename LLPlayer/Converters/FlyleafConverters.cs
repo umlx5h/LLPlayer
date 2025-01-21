@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Media;
+using FlyleafLib;
 using static FlyleafLib.MediaFramework.MediaDemuxer.Demuxer;
 
 namespace LLPlayer.Converters;
@@ -153,7 +154,6 @@ public class SubIndexToIsEnabledConverter : IMultiValueConverter
         bool isPrimaryEnabled = (bool)values[1];
         bool isSecondaryEnabled = (bool)values[2];
 
-        // indexが0ならIsPrimaryEnabled、1ならIsSecondaryEnabledを返す
         return index == 0 ? isPrimaryEnabled : isSecondaryEnabled;
     }
 
@@ -170,7 +170,7 @@ public class ChaptersToTicksConverter : IValueConverter
     {
         if (value is IEnumerable<Chapter> chapters)
         {
-            // tick count を 秒に変換
+            // Convert tick count to seconds
             List<double> secs = chapters.Select(c => c.StartTime / 10000000.0).ToList();
             if (secs.Count <= 1)
             {
@@ -205,6 +205,29 @@ public class ChaptersToTickPlacementConverter : IValueConverter
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public class AspectRatioIsCheckedConverter : IMultiValueConverter
+{
+    // values[0]: SelectedAspectRatio, values[1]: current AspectRatio
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (values.Length < 2)
+        {
+            return false;
+        }
+
+        if (values[0] is AspectRatio selected && values[1] is AspectRatio current)
+        {
+            return selected.Equals(current);
+        }
+        return false;
+    }
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
     {
         throw new NotImplementedException();
     }

@@ -2,6 +2,7 @@
 using System.IO;
 using System.Windows;
 using FlyleafLib.MediaPlayer;
+using LLPlayer.Extensions;
 using LLPlayer.Services;
 using LLPlayer.Views;
 
@@ -20,6 +21,11 @@ public partial class App : PrismApplication
         containerRegistry
             .Register<Player>(FlyleafLoader.CreateFlyleafPlayer)
             .RegisterSingleton<FlyleafManager>();
+        containerRegistry.RegisterDialogWindow<MyDialogWindow>();
+        containerRegistry.RegisterSingleton<IDialogService, ExtendedDialogService>();
+        containerRegistry.RegisterDialog<SettingsDialog>();
+        containerRegistry.RegisterDialog<WhisperDownloadDialog>();
+        containerRegistry.RegisterDialog<TesseractDownloadDialog>();
     }
 
     protected override Window CreateShell()

@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FlyleafLib\FlyleafLib.csproj" />
+    <ProjectReference Include="..\WpfColorFontDialog\WpfColorFontDialog.csproj" />
   </ItemGroup>
 
 </Project>

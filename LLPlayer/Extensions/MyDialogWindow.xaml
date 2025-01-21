@@ -1,0 +1,12 @@
+﻿<Window x:Class="LLPlayer.Extensions.MyDialogWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Foreground="{DynamicResource MaterialDesignBody}"
+        Background="#444444"
+        Style="{StaticResource MaterialDesignWindow}"
+        Width="{Binding WindowWidth, Mode=TwoWay}"
+        Height="{Binding WindowHeight, Mode=TwoWay}"
+        Title="{Binding Title}"
+        SizeToContent="Manual"
+        WindowStartupLocation="CenterOwner">
+</Window>

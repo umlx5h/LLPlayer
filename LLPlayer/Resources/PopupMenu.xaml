@@ -10,7 +10,8 @@
                     d:DataContext="{d:DesignInstance vm:FlyleafOverlayVM}"
                     mc:Ignorable="d"
                     xmlns:flyleaf="clr-namespace:FlyleafLib;assembly=FlyleafLib"
-                    xmlns:mediaStream="clr-namespace:FlyleafLib.MediaFramework.MediaStream;assembly=FlyleafLib">
+                    xmlns:mediaStream="clr-namespace:FlyleafLib.MediaFramework.MediaStream;assembly=FlyleafLib"
+                    xmlns:services="clr-namespace:LLPlayer.Services">
 
     <!--Popup Menu-->
     <collections:ArrayList x:Key="MenuAudioStreams">
@@ -378,6 +379,7 @@ AncestorType={x:Type MenuItem}}}">
 
         <MenuItem Header="Subtitles" Icon="{materialDesign:PackIcon Kind=CcOutline}">
             <MenuItem Header="Enabled" IsCheckable="True" IsChecked="{Binding FL.PlayerConfig.Subtitles.Enabled}"/>
+            <MenuItem Header="Fonts..." Command="{Binding FL.Action.CmdSetSubtitlesFont}" Icon="{materialDesign:PackIcon Kind=FormatTextVariantOutline}"/>
             <MenuItem Header="{Binding FL.PlayerConfig.Subtitles[0].Delay, Converter={StaticResource TicksToMilliSecondsConv}}" HeaderStringFormat="Delay 1st ({0})">
                 <MenuItem Header="Reset..." CommandParameter="0" Command="{Binding FL.Player.Commands.SubtitlesDelaySetPrimary}"/>
                 <Separator />
@@ -405,6 +407,51 @@ AncestorType={x:Type MenuItem}}}">
                 <MenuItem Header="+   10"   CommandParameter="10"       Command="{Binding FL.Player.Commands.SubtitlesDelaySet2Secondary}"/>
             </MenuItem>
 
+            <MenuItem Header="{Binding FL.Config.Subs.SubsPosition}" HeaderStringFormat="Position ({0})">
+                <MenuItem Header="Reset..." Command="{Binding FL.Action.CmdResetSubsPosition}" Icon="{materialDesign:PackIcon Kind=BackupRestore}"/>
+                <Separator />
+                <MenuItem Header="Up"   Command="{Binding FL.Action.CmdSubsPositionUp}"   Icon="{materialDesign:PackIcon Kind=ArrowUp}"/>
+                <MenuItem Header="Down" Command="{Binding FL.Action.CmdSubsPositionDown}" Icon="{materialDesign:PackIcon Kind=ArrowDown}"/>
+            </MenuItem>
+
+            <MenuItem Header="{Binding FL.Config.Subs.SubsFontSize}" HeaderStringFormat="Size ({0})">
+                <MenuItem Header="Increase" Command="{Binding FL.Action.CmdSubsSizeIncrease}" Icon="{materialDesign:PackIcon Kind=Plus}"/>
+                <MenuItem Header="Decrease" Command="{Binding FL.Action.CmdSubsSizeDecrease}" Icon="{materialDesign:PackIcon Kind=Minus}"/>
+            </MenuItem>
+
+            <MenuItem Header="{Binding FL.Config.Subs.SubsFontSize}" HeaderStringFormat="Size 1st ({0})">
+                <MenuItem Header="Increase" Command="{Binding FL.Action.CmdSubsPrimarySizeIncrease}" Icon="{materialDesign:PackIcon Kind=Plus}"/>
+                <MenuItem Header="Decrease" Command="{Binding FL.Action.CmdSubsPrimarySizeDecrease}" Icon="{materialDesign:PackIcon Kind=Minus}"/>
+            </MenuItem>
+
+            <MenuItem Header="{Binding FL.Config.Subs.SubsFontSize2}" HeaderStringFormat="Size 2nd ({0})">
+                <MenuItem Header="Increase" Command="{Binding FL.Action.CmdSubsSecondarySizeIncrease}" Icon="{materialDesign:PackIcon Kind=Plus}"/>
+                <MenuItem Header="Decrease" Command="{Binding FL.Action.CmdSubsSecondarySizeDecrease}" Icon="{materialDesign:PackIcon Kind=Minus}"/>
+            </MenuItem>
+
+            <MenuItem Header="{Binding FL.Config.Subs.SubsDistanceInitial}" HeaderStringFormat="Distance ({0})">
+                <MenuItem Header="Increase" Command="{Binding FL.Action.CmdSubsDistanceIncrease}" Icon="{materialDesign:PackIcon Kind=Plus}"/>
+                <MenuItem Header="Decrease" Command="{Binding FL.Action.CmdSubsDistanceDecrease}" Icon="{materialDesign:PackIcon Kind=Minus}"/>
+            </MenuItem>
+
+            <MenuItem Header="Alignment">
+                <MenuItem Header="Top"
+                          IsCheckable="True"
+                          IsChecked="{Binding FL.Config.Subs.SubsPositionAlignment, Converter={StaticResource EnumToBooleanConv}, ConverterParameter={x:Static services:SubPositionAlignment.Top}}"
+                          Command="{Binding FL.Action.CmdSetSubPositionAlignment}"
+                          CommandParameter="{x:Static services:SubPositionAlignment.Top}" />
+                <MenuItem Header="Center"
+                          IsCheckable="True"
+                          IsChecked="{Binding FL.Config.Subs.SubsPositionAlignment, Converter={StaticResource EnumToBooleanConv}, ConverterParameter={x:Static services:SubPositionAlignment.Center}}"
+                          Command="{Binding FL.Action.CmdSetSubPositionAlignment}"
+                          CommandParameter="{x:Static services:SubPositionAlignment.Center}" />
+                <MenuItem Header="Bottom"
+                          IsCheckable="True"
+                          IsChecked="{Binding FL.Config.Subs.SubsPositionAlignment, Converter={StaticResource EnumToBooleanConv}, ConverterParameter={x:Static services:SubPositionAlignment.Bottom}}"
+                          Command="{Binding FL.Action.CmdSetSubPositionAlignment}"
+                          CommandParameter="{x:Static services:SubPositionAlignment.Bottom}" />
+            </MenuItem>
+
             <MenuItem Header="Visibility">
                 <MenuItem Header="1st Visible" IsCheckable="True" IsChecked="{Binding FL.PlayerConfig.Subtitles[0].Visible}"/>
                 <MenuItem Header="2nd Visible" IsCheckable="True" IsChecked="{Binding FL.PlayerConfig.Subtitles[1].Visible}"/>
@@ -415,6 +462,28 @@ AncestorType={x:Type MenuItem}}}">
 
         <MenuItem Header="Video" Icon="{materialDesign:PackIcon VideoOutline}">
             <MenuItem Header="Enabled" IsCheckable="True" IsChecked="{Binding FL.PlayerConfig.Video.Enabled}"/>
+
+            <MenuItem Header="Aspect Ratio" ItemsSource="{x:Static flyleaf:AspectRatio.AspectRatios}">
+                <MenuItem.ItemContainerStyle>
+                    <Style TargetType="MenuItem" BasedOn="{StaticResource MaterialDesignMenuItem}">
+                        <!--TODO: L: Display aspect ratio when Custom-->
+                        <Setter Property="Header" Value="{Binding}" />
+                        <Setter Property="IsCheckable" Value="True" />
+                        <Setter Property="IsChecked">
+                            <Setter.Value>
+                                <MultiBinding Converter="{StaticResource AspectRatioIsCheckedConv}" Mode="OneWay">
+                                    <Binding Path="DataContext.FL.PlayerConfig.Video.AspectRatio"
+                                             RelativeSource="{RelativeSource AncestorType=MenuItem}" />
+                                    <Binding />
+                                </MultiBinding>
+                            </Setter.Value>
+                        </Setter>
+                        <Setter Property="Command"
+                                Value="{Binding DataContext.FL.Action.CmdChangeAspectRatio, RelativeSource={RelativeSource AncestorType=MenuItem}}" />
+                        <Setter Property="CommandParameter" Value="{Binding}" />
+                    </Style>
+                </MenuItem.ItemContainerStyle>
+            </MenuItem>
 
             <MenuItem Header="Chapters" ItemsSource="{Binding FL.Player.Chapters}">
                 <MenuItem.ItemContainerStyle>
@@ -486,6 +555,12 @@ AncestorType={x:Type MenuItem}}}">
                 <MenuItem Header="Zoom In"   Command="{Binding FL.Player.Commands.ZoomIn}" Icon="{materialDesign:PackIcon Kind=ZoomIn}"/>
                 <MenuItem Header="Zoom out"  Command="{Binding FL.Player.Commands.ZoomOut}" Icon="{materialDesign:PackIcon Kind=ZoomOut}"/>
             </MenuItem>
+        </MenuItem>
+
+        <MenuItem Header="App" Icon="{materialDesign:PackIcon ApplicationExport}">
+            <MenuItem Header="Launch New App" Command="{Binding FL.Action.CmdAppNew}" Icon="{materialDesign:PackIcon Kind=Launch}"/>
+            <MenuItem Header="Exit App" Command="{Binding FL.Action.CmdAppExit}" Icon="{materialDesign:PackIcon Kind=ExitToApp}"/>
+            <MenuItem Header="Restart App" Command="{Binding FL.Action.CmdAppRestart}" Icon="{materialDesign:PackIcon Kind=Restart}"/>
         </MenuItem>
 
         <Separator />

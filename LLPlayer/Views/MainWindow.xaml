@@ -27,6 +27,42 @@
     </i:Interaction.Triggers>
 
     <Grid>
+        <!-- Swap Sidebar Left/Right -->
+        <Grid.Style>
+            <Style TargetType="Grid">
+                <Setter Property="FlowDirection" Value="LeftToRight" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding FL.Config.SidebarLeft}" Value="True">
+                        <Setter Property="FlowDirection" Value="RightToLeft" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </Grid.Style>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+
+            <!-- Collapseable ColumnDefinition even with GridSplitter -->
+            <!--ref: https://stackoverflow.com/questions/12483017/wpf-collapse-gridsplitter-->
+            <ColumnDefinition>
+                <ColumnDefinition.Style>
+                    <Style TargetType="{x:Type ColumnDefinition}">
+                        <Style.Setters>
+                            <Setter Property="Width" Value="{Binding FL.Config.SidebarWidth}"/>
+                        </Style.Setters>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding FL.Config.ShowSidebar}" Value="False">
+                                <DataTrigger.Setters>
+                                    <Setter Property="Width" Value="0"/>
+                                    <Setter Property="MaxWidth" Value="0"/>
+                                </DataTrigger.Setters>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ColumnDefinition.Style>
+            </ColumnDefinition>
+        </Grid.ColumnDefinitions>
+
         <!-- Main Video View -->
         <flyleaf:FlyleafHost
             Grid.Column="0"
@@ -38,5 +74,40 @@
             ToggleFullScreenOnDoubleClick="None">
             <view:FlyleafOverlay />
         </flyleaf:FlyleafHost>
+
+        <!-- GridSplitter -->
+        <GridSplitter
+            Grid.Column="1"
+            FlowDirection="LeftToRight"
+            Visibility="{Binding FL.Config.ShowSidebar, Converter={StaticResource BooleanToVisibilityConv}}"
+            Width="3"
+            Background="#302D2B"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Stretch"
+            ShowsPreview="False" />
+
+        <!-- Subtitles Sidebar (can toggle) -->
+        <ContentControl
+            Grid.Column="2"
+            FlowDirection="LeftToRight">
+            <ContentControl.Style>
+                <Style TargetType="ContentControl">
+                    <Setter Property="ContentTemplate" Value="{x:Null}" />
+                    <Style.Triggers>
+                        <DataTrigger
+                            Binding="{Binding FL.Config.ShowSidebar}"
+                            Value="True">
+                            <Setter Property="ContentTemplate">
+                                <Setter.Value>
+                                    <DataTemplate>
+                                        <view:SubtitlesSidebar />
+                                    </DataTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ContentControl.Style>
+        </ContentControl>
     </Grid>
 </Window>
