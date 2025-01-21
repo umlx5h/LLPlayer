@@ -411,6 +411,27 @@ partial class Player
         });
     }
 
+    public void SubtitleDisplay(SubtitleBitmapData bitmapData, int subIndex)
+    {
+        if (bitmapData.Sub.num_rects == 0)
+        {
+            return;
+        }
+
+        (byte[] data, AVSubtitleRect rect) = bitmapData.SubToBitmap(false);
+
+        SubtitlesFrameBitmap bitmap = new()
+        {
+            data = data,
+            width = rect.w,
+            height = rect.h,
+            x = rect.x,
+            y = rect.y,
+        };
+
+        SubtitleDisplay(bitmap, subIndex);
+    }
+
     /// <summary>
     /// Update bitmap format subtitle display
     /// </summary>

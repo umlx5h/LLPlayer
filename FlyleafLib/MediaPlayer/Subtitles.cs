@@ -1,5 +1,4 @@
 ﻿using System.Collections.ObjectModel;
-
 using FlyleafLib.MediaFramework.MediaContext;
 using FlyleafLib.MediaFramework.MediaStream;
 using System.ComponentModel;
@@ -434,6 +433,7 @@ public class Subtitle : NotifyPropertyChanged
     private readonly Player _player;
     private readonly int _subIndex;
 
+    private Config Config => _player.Config;
     private DecoderContext Decoder => _player?.decoder;
 
     public Subtitle(int subIndex, Player player)
@@ -543,7 +543,7 @@ public class Subtitle : NotifyPropertyChanged
     internal void Load()
     {
         // Do not cache for original secondary subtitles
-        if (_subIndex > 0 && SubtitlesSelectedHelper.SecondaryMethod == SelectSubMethod.Original)
+        if (!Config.Subtitles.EnabledCached && _subIndex > 0 && SubtitlesSelectedHelper.SecondaryMethod == SelectSubMethod.Original)
         {
             return;
         }
@@ -552,7 +552,7 @@ public class Subtitle : NotifyPropertyChanged
         bool isExternal = stream.ExternalStream != null;
         ExternalSubtitlesStream extStream = (ExternalSubtitlesStream)stream.ExternalStream;
 
-        bool useBitmap = SubtitlesSelectedHelper.GetMethod(_subIndex) == SelectSubMethod.OCR;
+        bool useBitmap = Config.Subtitles.EnabledCached || SubtitlesSelectedHelper.GetMethod(_subIndex) == SelectSubMethod.OCR;
 
         if (isExternal)
         {

@@ -673,6 +673,41 @@ unsafe partial class Player
                 }
             }
 
+            if (Config.Subtitles.EnabledCached)
+            {
+                // Display from cache to ensure that even internal subtitles are displayed at seek time
+                for (int i = 0; i < subNum; i++)
+                {
+                    SubtitleData cur = SubtitlesManager[i].GetCurrent();
+
+                    if (cur != null &&
+                        // Prevent duplicate display
+                        (sFramesPrev[i] == null || sFramesPrev[i].timestamp != cur.StartTime.Ticks + Config.Subtitles[i].Delay))
+                    {
+                        bool display = false;
+                        if (!string.IsNullOrEmpty(cur.Text))
+                        {
+                            SubtitleDisplay(cur.DisplayText, i);
+                            display = true;
+                        }
+                        else if (cur.IsBitmap && cur.Bitmap != null)
+                        {
+                            SubtitleDisplay(cur.Bitmap, i);
+                            display = true;
+                        }
+
+                        if (display)
+                        {
+                            // Need this to clear the subtitles that are displayed when seeking
+                            sFramesPrev[i] = new SubtitlesFrame
+                            {
+                                timestamp = cur.StartTime.Ticks + Config.Subtitles[i].Delay,
+                                duration = (uint)cur.Duration.TotalMilliseconds
+                            };
+                        }
+                    }
+                }
+            }
             if (dFrame != null)
             {
                 if (Math.Abs(dDistanceMs - sleepMs) < 30 || (dDistanceMs < -30))

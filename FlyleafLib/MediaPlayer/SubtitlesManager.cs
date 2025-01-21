@@ -11,7 +11,10 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
+using System.Windows;
 using System.Windows.Data;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace FlyleafLib.MediaPlayer;
 
@@ -762,7 +765,7 @@ public unsafe class SubtitleReader : IDisposable
 
                     if (useBitmap)
                     {
-                        // Save subtitle data for OCR later
+                        // Save subtitle data for (OCR or subtitle cache)
                         subData.Bitmap = new SubtitleBitmapData(sub);
                     }
                     else
@@ -850,6 +853,27 @@ public class SubtitleBitmapData : IDisposable
     private bool _isDisposed;
 
     public AVSubtitle Sub;
+
+    public WriteableBitmap SubToWritableBitmap(bool isGrey)
+    {
+        (byte[] data, AVSubtitleRect rect) = SubToBitmap(isGrey);
+
+        WriteableBitmap wb = new(
+            rect.w, rect.h,
+            Utils.NativeMethods.DpiXSource, Utils.NativeMethods.DpiYSource,
+            PixelFormats.Bgra32, null
+        );
+        Int32Rect dirtyRect = new(0, 0, rect.w, rect.h);
+        wb.Lock();
+
+        Marshal.Copy(data, 0, wb.BackBuffer, data.Length);
+
+        wb.AddDirtyRect(dirtyRect);
+        wb.Unlock();
+        wb.Freeze();
+
+        return wb;
+    }
 
     public unsafe (byte[] data, AVSubtitleRect rect) SubToBitmap(bool isGrey)
     {

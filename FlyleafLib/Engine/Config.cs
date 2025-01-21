@@ -888,6 +888,14 @@ public class Config : NotifyPropertyChanged
         public int Max { get; set => Set(ref field, value); } = 2;
 
         /// <summary>
+        /// Whether to cache internal subtitles on memory
+        /// Memory usage is larger since all subtitles are read, but has the following advantages
+        /// 1. Internal subtitles (text & bitmap) can be displayed in the sidebar
+        /// 2. Can display subtitles during playback when seeking with internal subtitles (mpv: can, VLC: cannot)
+        /// </summary>
+        public bool EnabledCached { get; set => Set(ref field, value); } = true;
+
+        /// <summary>
         /// Subtitle languages preference by priority
         /// </summary>
         public List<Language>   Languages           { get { _Languages ??= GetSystemLanguages(); return _Languages; } set => _Languages = value; }
