@@ -719,6 +719,29 @@ unsafe partial class Player
                     }
                 }
             }
+
+            // ASR subtitle
+            if (SubtitlesASR.SubIndex != null)
+            {
+                int i = SubtitlesASR.SubIndex.Value;
+
+                SubtitleData cur = SubtitlesManager[i].GetCurrent();
+                if (cur != null &&
+                    (sFramesPrev[i] == null || sFramesPrev[i].timestamp != cur.StartTime.Ticks + Config.Subtitles[i].Delay))
+                {
+                    if (!string.IsNullOrEmpty(cur.DisplayText))
+                    {
+                        SubtitleDisplay(cur.DisplayText, i);
+
+                        sFramesPrev[i] = new SubtitlesFrame
+                        {
+                            timestamp = cur.StartTime.Ticks + Config.Subtitles[i].Delay,
+                            duration = (uint)cur.Duration.TotalMilliseconds
+                        };
+                    }
+                }
+            }
+
             if (dFrame != null)
             {
                 if (Math.Abs(dDistanceMs - sleepMs) < 30 || (dDistanceMs < -30))
@@ -896,6 +919,24 @@ unsafe partial class Player
                 }
 
                 continue;
+            }
+
+            // Support only ASR subtitle for audio
+            if (SubtitlesASR.SubIndex != null)
+            {
+                int i = SubtitlesASR.SubIndex.Value;
+
+                SubtitlesManager[i].SetCurrentTime(new TimeSpan(curTime));
+
+                var cur = SubtitlesManager[i].GetCurrent();
+                if (cur != null && !string.IsNullOrEmpty(cur.Text))
+                {
+                    SubtitleDisplay(cur.Text, i);
+                }
+                else
+                {
+                    SubtitleClear(i);
+                }
             }
 
             bufferedDuration = Audio.GetBufferedDuration();

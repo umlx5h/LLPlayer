@@ -14,7 +14,7 @@ using FlyleafLib.MediaPlayer;
 using FlyleafLib.MediaPlayer.Translation;
 using FlyleafLib.MediaPlayer.Translation.Services;
 using FlyleafLib.Plugins;
-
+using Whisper.net.LibraryLoader;
 using static FlyleafLib.Utils;
 
 namespace FlyleafLib;
@@ -1016,6 +1016,57 @@ public class Config : NotifyPropertyChanged
         public Action<SubtitlesFrame>
                                 Parser              { get; set; } = ParseSubtitles.Parse;
 
+        #region ASR
+        // TODO: L: Consider whether to have one for primary and one for secondary in the future,
+        // but currently not possible to run concurrently, so they should be shared.
+        /// <summary>
+        /// ASR Whisper model
+        /// </summary>
+        public WhisperModel WhisperModel
+        {
+            get;
+            // When binding in the configuration GUI, the check is set to false to update the current size.
+            set => Set(ref field, value, false);
+        }
+
+        /// <summary>
+        /// ASR Whisper runtime option (hardware integration)
+        /// </summary>
+        public List<RuntimeLibrary> WhisperRuntimeLibraries { get; set => Set(ref field, value); }
+            = [RuntimeLibrary.Cpu, RuntimeLibrary.CpuNoAvx];
+
+        /// <summary>
+        /// ASR Whisper runtime option (hardware integration)
+        /// </summary>
+        public WhisperParameters WhisperParameters { get; set => Set(ref field, value); } = WhisperParameters.DefaultParameters();
+
+        /// <summary>
+        /// Chunk size (MB) when processing ASR with audio stream
+        /// Increasing size will increase memory usage but may result in more natural subtitle breaks
+        /// </summary>
+        public int ASRChunkSizeMB
+        {
+            get;
+            set
+            {
+                if (Set(ref field, value))
+                {
+                    Raise(nameof(ASRChunkSize));
+                }
+            }
+        } = 20;
+
+        [JsonIgnore]
+        public long ASRChunkSize => ASRChunkSizeMB * 1024 * 1024;
+
+        /// <summary>
+        /// Chunk seconds when processing ASR with audio stream
+        /// In the case of network streams, etc., the size is small and can be divided by specifying the number of seconds.
+        /// </summary>
+        public int ASRChunkSeconds { get; set => Set(ref field, value); } = 15;
+        #endregion
+
+        #region OCR
         /// <summary>
         /// OCR Tesseract Region Settings (key: iso6391, value: LangCode)
         /// </summary>
@@ -1025,6 +1076,7 @@ public class Config : NotifyPropertyChanged
         /// OCR Microsoft Region Settings (key: iso6391, value: LanguageTag (BCP-47)
         /// </summary>
         public Dictionary<string, string> MsOcrRegions { get; set => Set(ref field, value); } = new();
+        #endregion
 
         #region Translation
         /// <summary>

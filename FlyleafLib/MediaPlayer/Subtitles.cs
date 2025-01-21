@@ -444,6 +444,20 @@ public class Subtitle : NotifyPropertyChanged
         Data = new SubsData(_player, _subIndex);
     }
 
+    public bool EnabledASR
+    {
+        get;
+        internal set
+        {
+            if (Set(ref field, value))
+            {
+                // Synchronize as it is updated from outside
+                _enabledASR = value;
+            }
+        }
+    }
+    private bool _enabledASR;
+
     /// <summary>
     /// Whether the input has subtitles and it is configured
     /// </summary>
@@ -456,7 +470,7 @@ public class Subtitle : NotifyPropertyChanged
     public bool IsBitmap { get; private set => Set(ref field, value); }
     private bool _isBitmap;
 
-    public bool Enabled => IsOpened;
+    public bool Enabled => IsOpened || EnabledASR;
 
     public SubsData Data { get; }
 
@@ -467,6 +481,7 @@ public class Subtitle : NotifyPropertyChanged
             IsOpened = _isOpened;
             Codec = _codec;
             IsBitmap = _isBitmap;
+            EnabledASR = _enabledASR;
         });
     }
 
@@ -478,7 +493,9 @@ public class Subtitle : NotifyPropertyChanged
         _player.sFramesPrev[_subIndex] = null;
         // TODO: L: Here it may be null when switching subs while displaying.
         _player.sFrames[_subIndex] = null;
+        _enabledASR = false;
 
+        _player.SubtitlesASR.Reset(_subIndex);
         _player.SubtitlesOCR.Reset(_subIndex);
         _player.SubtitlesManager[_subIndex].Reset();
 
@@ -524,6 +541,8 @@ public class Subtitle : NotifyPropertyChanged
         _player.SubtitleClear(_subIndex);
         //player.renderer?.ClearOverlayTexture();
 
+        _enabledASR = false;
+        _player.SubtitlesASR.Reset(_subIndex);
         _player.SubtitlesOCR.Reset(_subIndex);
         _player.SubtitlesManager[_subIndex].Reset();
 
@@ -610,6 +629,23 @@ public class Subtitle : NotifyPropertyChanged
     private void RendererOnViewportChanged(object sender, EventArgs e)
     {
         Data.BitmapPosition?.Calculate();
+    }
+
+    public void EnableASR()
+    {
+        _enabledASR = true;
+
+        var url = _player.AudioDecoder.Demuxer.Url;
+        var streamIndex = _player.AudioDecoder.AudioStream.StreamIndex;
+
+        TimeSpan curTime = new(_player.CurTime);
+
+        Task.Factory.StartNew(() =>
+        {
+            _player.SubtitlesASR.Open(_subIndex, url, streamIndex, curTime);
+        }, TaskCreationOptions.LongRunning);
+
+        UpdateUI();
     }
 }
 

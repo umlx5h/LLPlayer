@@ -31,6 +31,7 @@ public class Commands
     public ICommand SubtitlesDelayRemove2Secondary { get; set; }
 
     public ICommand OpenSubtitles           { get; set; }
+    public ICommand OpenSubtitlesASR        { get; set; }
     public ICommand SubtitlesOff            { get; set; }
 
     public ICommand Open                    { get; set; }
@@ -165,6 +166,7 @@ public class Commands
         SubtitlesDelayRemove2Secondary = new RelayCommandSimple(player.Subtitles.DelayRemove2Secondary);
 
         OpenSubtitles           = new RelayCommand(OpenSubtitlesAction);
+        OpenSubtitlesASR        = new RelayCommand(OpenSubtitlesASRAction);
         SubtitlesOff            = new RelayCommand(SubtitlesOffAction);
 
         ForceIdle               = new RelayCommandSimple(player.Activity.ForceIdle);
@@ -248,6 +250,28 @@ public class Commands
         }
 
         OpenAction(tuple.Item2);
+    }
+
+    public void OpenSubtitlesASRAction(object input)
+    {
+        if (!int.TryParse(input.ToString(), out var subIndex))
+        {
+            return;
+        }
+
+        // TODO: L: validation asr model
+
+        SubtitlesSelectedHelper.CurIndex = subIndex;
+
+        int otherIndex = (subIndex + 1) % 2;
+
+        // First, turn off existing subtitles
+        player.Subtitles[subIndex].Disable();
+
+        // Cancel one of the ASRs since simultaneous ASR execution is not allowed
+        // (actual cancellation is done in SubtitlesASR)
+        player.Subtitles[otherIndex].EnabledASR = false;
+        player.Subtitles[subIndex].EnableASR();
     }
 
     public void SubtitlesOffAction(object input)

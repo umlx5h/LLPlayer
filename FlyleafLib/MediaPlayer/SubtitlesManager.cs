@@ -352,11 +352,47 @@ public class SubManager : INotifyPropertyChanged
         }
     }
 
+    public void DeleteAfter(TimeSpan time)
+    {
+        lock (_subsLocker)
+        {
+            if (Subs.Count == 0)
+                return;
+
+            int index = Subs.BinarySearch(new SubtitleData() { EndTime = time }, new SubtitleTimeEndComparer());
+
+            if (index < 0)
+            {
+                index = ~index;
+            }
+
+            if (index < Subs.Count)
+            {
+                var newSubs = Subs.GetRange(0, index).ToList();
+                var deleteSubs = Subs.GetRange(index, Subs.Count - index).ToList();
+                Load(newSubs);
+
+                foreach (var sub in deleteSubs)
+                {
+                    sub.Dispose();
+                }
+            }
+        }
+    }
+
     private class SubtitleTimeComparer : IComparer<SubtitleData>
     {
         public int Compare(SubtitleData x, SubtitleData y)
         {
             return x.StartTime.CompareTo(y.StartTime);
+        }
+    }
+
+    private class SubtitleTimeEndComparer : IComparer<SubtitleData>
+    {
+        public int Compare(SubtitleData x, SubtitleData y)
+        {
+            return x.EndTime.CompareTo(y.EndTime);
         }
     }
 
@@ -589,7 +625,7 @@ public unsafe class SubtitleReader : IDisposable
                                _fmtCtx->streams[streamIndex]->codecpar->codec_type == AVMediaType.Subtitle;
             if (!streamFound)
             {
-                throw new InvalidOperationException("No subtitle stream was found for the corresponding indexs");
+                throw new InvalidOperationException($"No subtitle stream was found for the streamIndex:{streamIndex}");
             }
 
             _stream = _fmtCtx->streams[streamIndex];
@@ -979,6 +1015,10 @@ public class SubtitleData : IDisposable, INotifyPropertyChanged
     public List<SubStyle> SubStyles;
     public TimeSpan StartTime { get; set; }
     public TimeSpan EndTime { get; set; }
+#if DEBUG
+    public TimeSpan StartTimeChunk { get; set; }
+    public TimeSpan EndTimeChunk { get; set; }
+#endif
     public TimeSpan Duration => EndTime - StartTime;
 
     public SubtitleBitmapData? Bitmap { get; set; }
