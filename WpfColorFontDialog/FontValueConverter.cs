@@ -31,7 +31,10 @@ namespace WpfColorFontDialog
 
                 return font.Source;
             }
-            throw new NotSupportedException();
+
+            // Avoid reaching here and getting an error.
+            return string.Empty;
+            //throw new NotSupportedException();
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

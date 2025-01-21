@@ -38,6 +38,9 @@ namespace WpfColorFontDialog
         }
         public ColorFontDialog(bool previewFontInFontList = true, bool allowArbitraryFontSizes = true, bool showColorPicker = true)
         {
+            // Disable style inheritance from parents and apply standard styles
+            InheritanceBehavior = InheritanceBehavior.SkipToThemeNext;
+
             InitializeComponent();
             I18NUtil.SetLanguage(Resources);
             this.colorFontChooser.PreviewFontInFontList = previewFontInFontList;
