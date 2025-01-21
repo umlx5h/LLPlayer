@@ -1,0 +1,51 @@
+﻿<Window x:Class="WpfColorFontDialog.ColorFontDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{DynamicResource WindowTitle}"
+        Height="407"
+        Width="510"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Icon="Resources/colorfont_icon.png"
+        xmlns:local="clr-namespace:WpfColorFontDialog"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        Loaded="Window_Loaded_1">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="I18n/en-US.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <local:ColorFontChooser x:Name="colorFontChooser"
+                                Grid.Row="0"
+                                Margin="2,0" />
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="406" />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0"
+                        Grid.ColumnSpan="2"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right">
+                <Button Name="btnOk"
+                        Width="85"
+                        Margin="4,8"
+                        Content="{DynamicResource Ok}"
+                        IsDefault="True"
+                        Click="btnOk_Click" />
+                <Button Width="70"
+                        Margin="4,8"
+                        Content="{DynamicResource Cancel}"
+                        IsCancel="True" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

@@ -1,0 +1,157 @@
+﻿<!-- Original code by Norris Cheng
+    http://blogs.msdn.com/b/text/archive/2006/06/20/592777.aspx -->
+<UserControl x:Class="WpfColorFontDialog.ColorFontChooser"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             Height="332"
+             x:Name="ColorFontChooserControl"
+             xmlns:local="clr-namespace:WpfColorFontDialog"
+             xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase"
+             xmlns:sysCollection="clr-namespace:System.Collections;assembly=mscorlib">
+    <UserControl.Resources>
+        <local:FontValueConverter x:Key="FontValueConverter" />
+            <DataTemplate x:Key="fontFamilyData">
+                <TextBlock TextBlock.FontSize="16"
+                           Text="{Binding Converter={StaticResource FontValueConverter}}"
+                           TextBlock.FontFamily="{Binding}"
+                           ToolTip="{Binding Source}" />
+            </DataTemplate>
+            <DataTemplate x:Key="fontFamilyDataWithoutPreview">
+                <TextBlock Text="{Binding Converter={StaticResource FontValueConverter}}"
+                           ToolTip="{Binding Source}" />
+            </DataTemplate>
+            <DataTemplate x:Key="{DataTemplateKey {x:Type FamilyTypeface}}"
+                          DataType="{x:Type FamilyTypeface}">
+                <WrapPanel>
+                    <TextBlock Text="{Binding Style}"
+                               TextBlock.FontStyle="{Binding Style}" />
+                    <TextBlock Text="-" />
+                    <TextBlock Text="{Binding Weight}"
+                               TextBlock.FontWeight="{Binding Weight}" />
+                </WrapPanel>
+            </DataTemplate>
+            <CollectionViewSource x:Key="familyCollection"
+                                  Source="{Binding Source={x:Static Fonts.SystemFontFamilies}}">
+                <CollectionViewSource.SortDescriptions>
+                    <scm:SortDescription PropertyName="Source"
+                                         Direction="Ascending" />
+                </CollectionViewSource.SortDescriptions>
+            </CollectionViewSource>
+            <local:FontSizeListBoxItemToDoubleConverter x:Key="FontSizeListBoxItemToDoubleConverter" />
+    </UserControl.Resources>
+    <Grid>
+        <Grid DataContext="{StaticResource familyCollection}"
+              Margin="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="0.5*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="250" />
+                <ColumnDefinition Width="160" />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <GroupBox Grid.RowSpan="3">
+                <GroupBox.Header>
+					<TextBlock Text="{DynamicResource FontFamily}"
+                               FontStyle="Italic" />
+                </GroupBox.Header>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <ListBox Name="lstFamily"
+                             Margin="5"
+                             FontStyle="Normal"
+                             ItemTemplate="{StaticResource fontFamilyData}"
+                             ItemsSource="{Binding}">
+                        <ListBox.Resources>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}">LightBlue</SolidColorBrush>
+                        </ListBox.Resources>
+                    </ListBox>
+                </Grid>
+            </GroupBox>
+            <GroupBox Grid.Column="1">
+                <GroupBox.Header>
+                    <TextBlock Text="{DynamicResource StyleWeight}"
+                               FontStyle="Italic" />
+                </GroupBox.Header>
+                <ListBox Name="lstTypefaces"
+                         Margin="5"
+                         ItemsSource="{Binding FamilyTypefaces}">
+                    <ListBox.Resources>
+                        <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}">LightBlue</SolidColorBrush>
+                    </ListBox.Resources>
+                </ListBox>
+            </GroupBox>
+            <GroupBox Grid.Column="2">
+                <GroupBox.Header>
+                    <TextBlock Text="{DynamicResource FontSize}" />
+                </GroupBox.Header>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <ListBox Name="lstFontSizes"
+                             Margin="5"
+                             SelectionChanged="lstFontSizes_SelectionChanged">
+                        <ListBox.Resources>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}">LightBlue</SolidColorBrush>
+                        </ListBox.Resources>
+                    </ListBox>
+                    <TextBox x:Name="tbFontSize"
+                             Margin="5,0,5,0"
+                             Grid.Row="1"
+                             PreviewTextInput="tbFontSize_PreviewTextInput"
+                             DataObject.Pasting="tbFontSize_Pasting"
+                             LostFocus="tbFontSize_LostFocus"
+                             TextChanged="tbFontSize_TextChanged"
+                             Text="10"/>
+                </Grid>
+            </GroupBox>
+            <GroupBox Grid.Row="1"
+                      Grid.ColumnSpan="2"
+                      Grid.Column="1"
+                      Margin="5,0,0,0">
+                <GroupBox.Header>
+                    <TextBlock Text="{DynamicResource SampleText}"
+                               FontStyle="Italic" />
+                </GroupBox.Header>
+                <TextBox Name="txtSampleText"
+                         BorderThickness="0"
+                         Grid.Row="1"
+                         AcceptsReturn="True"
+                         TextAlignment="Center"
+                         TextWrapping="Wrap"
+                         VerticalContentAlignment="Center"
+                         Text="The quick brown fox jumps over the lazy dog"
+                         Margin="0"
+                         FontFamily="{Binding Source, Source={StaticResource familyCollection}}"
+                         FontWeight="{Binding SelectedItem.Weight, ElementName=lstTypefaces}"
+                         FontStretch="{Binding SelectedItem.Stretch, ElementName=lstTypefaces}"
+                         FontStyle="{Binding SelectedItem.Style, ElementName=lstTypefaces}"
+                         FontSize="{Binding Text, Converter={StaticResource FontSizeListBoxItemToDoubleConverter}, ElementName=tbFontSize}"
+                         Background="{x:Null}" />
+            </GroupBox>
+            <GroupBox Grid.Column="1"
+                      Grid.ColumnSpan="2"
+                      x:Name="groupBoxColorPicker"
+                      Grid.Row="2">
+                <GroupBox.Header>
+                    <TextBlock Text="{DynamicResource FontColor}"
+                               FontStyle="Italic" />
+                </GroupBox.Header>
+                <local:ColorPicker x:Name="colorPicker"
+                                   ColorChanged="colorPicker_ColorChanged"
+                                   Grid.Row="1"
+                                   Margin="10" />
+            </GroupBox>
+        </Grid>
+    </Grid>
+</UserControl>

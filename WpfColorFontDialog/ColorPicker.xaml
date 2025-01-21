@@ -1,0 +1,42 @@
+﻿<!-- Original code from Muhammed Sudheer
+    http://www.codeproject.com/Articles/140521/Color-Picker-using-WPF-Combobox-->
+    <UserControl x:Class="WpfColorFontDialog.ColorPicker"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib">
+    <Grid>
+        <ComboBox Name="superCombo"
+               
+                  IsSynchronizedWithCurrentItem="True"
+                  ItemsSource="{Binding Path=FontColors}"
+                  SelectedValue="{Binding Path=SelectedFontColor}"
+                  DropDownClosed="superCombo_DropDownClosed"
+                  Loaded="superCombo_Loaded">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid Width="{Binding ElementName=superCombo,Path=ActualWidth}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="0.15*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Rectangle Margin="2,2,5,2"
+                                   x:Name="ColorRect"
+                                   VerticalAlignment="Center"
+                                   Fill="{Binding Name}"
+                                   Height="{Binding ActualWidth, Mode=OneWay, RelativeSource={RelativeSource Self}}" />
+                        <TextBlock Margin="2"
+                                   Grid.Column="1"
+                                   VerticalAlignment="Center"
+                                   Text="{Binding Name}" />
+                    </Grid>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+    </Grid>
+</UserControl>
