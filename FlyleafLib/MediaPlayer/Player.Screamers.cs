@@ -680,6 +680,17 @@ unsafe partial class Player
                 {
                     SubtitleData cur = SubtitlesManager[i].GetCurrent();
 
+                    // If the subtitle currently playing is not translated, change to the translated for display
+                    if (Config.Subtitles[i].EnabledTranslated &&
+                        cur != null &&
+                        sFramesPrev[i] != null &&
+                        sFramesPrev[i].timestamp == cur.StartTime.Ticks + Config.Subtitles[i].Delay &&
+                        sFramesPrev[i].text != cur.DisplayText)
+                    {
+                        SubtitleDisplay(cur.DisplayText, i);
+                        continue;
+                    }
+
                     if (cur != null &&
                         // Prevent duplicate display
                         (sFramesPrev[i] == null || sFramesPrev[i].timestamp != cur.StartTime.Ticks + Config.Subtitles[i].Delay))

@@ -11,6 +11,8 @@ using FlyleafLib.MediaFramework.MediaDecoder;
 using FlyleafLib.MediaFramework.MediaFrame;
 using FlyleafLib.MediaFramework.MediaRenderer;
 using FlyleafLib.MediaPlayer;
+using FlyleafLib.MediaPlayer.Translation;
+using FlyleafLib.MediaPlayer.Translation.Services;
 using FlyleafLib.Plugins;
 
 using static FlyleafLib.Utils;
@@ -792,6 +794,35 @@ public class Config : NotifyPropertyChanged
         [JsonIgnore]
         public int SubIndex { get; set => Set(ref field, value); }
 
+        [JsonIgnore]
+        public bool EnabledTranslated
+        {
+            get;
+            set
+            {
+                if (Set(ref field, value))
+                {
+                    if (player == null)
+                    {
+                        return;
+                    }
+
+                    // Clear once to update the subtitle being displayed.
+                    player.sFramesPrev[SubIndex] = null;
+                    player.SubtitleClear(SubIndex);
+
+                    // Switching the display while leaving the translated text itself
+                    foreach (SubtitleData sub in player.SubtitlesManager[SubIndex].Subs)
+                    {
+                        sub.EnabledTranslated = field;
+                    }
+
+                    // Update text in sidebar
+                    player.SubtitlesManager[SubIndex].Subs.Refresh();
+                }
+            }
+        } = false;
+
         /// <summary>
         /// Subtitle delay ticks (will be reset to 0 for every new subtitle stream)
         /// </summary>
@@ -994,6 +1025,34 @@ public class Config : NotifyPropertyChanged
         /// OCR Microsoft Region Settings (key: iso6391, value: LanguageTag (BCP-47)
         /// </summary>
         public Dictionary<string, string> MsOcrRegions { get; set => Set(ref field, value); } = new();
+
+        #region Translation
+        /// <summary>
+        /// Language to be translated to
+        /// </summary>
+        public TargetLanguage TranslateTargetLanguage { get; set => Set(ref field, value); } = TargetLanguage.EnglishAmerican;
+
+        /// <summary>
+        /// Translation Service Type
+        /// </summary>
+        public TranslateServiceType TranslateServiceType { get; set => Set(ref field, value); } = TranslateServiceType.GoogleV1;
+
+        /// <summary>
+        /// Translation Service Type Settings
+        /// </summary>
+        public Dictionary<TranslateServiceType, ITranslateSettings> TranslateServiceSettings { get; set => Set(ref field, value); } = new();
+
+        /// <summary>
+        /// Maximum count backward
+        /// TODO: L: Have each count before and after
+        /// </summary>
+        public int TranslateCount { get; set => Set(ref field, value); } = 8;
+
+        /// <summary>
+        /// Number of concurrent requests to translation services
+        /// </summary>
+        public int TranslateMaxConcurrent { get; set => Set(ref field, value); } = 4;
+        #endregion
     }
     public class DataConfig : NotifyPropertyChanged
     {

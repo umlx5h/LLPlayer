@@ -1,0 +1,249 @@
+﻿using FlyleafLib.MediaPlayer.Translation.Services;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows;
+
+namespace FlyleafLib.MediaPlayer.Translation;
+
+#nullable enable
+
+public class SubTranslator
+{
+    private readonly SubManager _subManager;
+    private readonly Config.SubtitlesConfig _config;
+    private readonly int _subIndex;
+
+    private readonly HashSet<int> _translationInProgress = new();
+    private readonly SemaphoreSlim _translationSemaphore = new(1);
+    private SemaphoreSlim? _concurrentLimiter;
+    private ITranslateService? _translateService;
+    private CancellationTokenSource? _translationCancellation;
+    private readonly TranslateServiceFactory _translateServiceFactory;
+    private bool IsEnabled => _config[_subIndex].EnabledTranslated;
+
+    public SubTranslator(SubManager subManager, Config.SubtitlesConfig config, int subIndex)
+    {
+        _subManager = subManager;
+        _config = config;
+        _subIndex = subIndex;
+
+        _subManager.PropertyChanged += SubManager_OnPropertyChanged;
+        _config.PropertyChanged += Config_OnPropertyChanged;
+
+        _translateServiceFactory = new TranslateServiceFactory(config);
+    }
+
+    private void SubManager_OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        switch (e.PropertyName)
+        {
+            case nameof(SubManager.CurrentIndex):
+                _ = UpdateCurrentIndexAsync(_subManager.CurrentIndex);
+                break;
+            case nameof(SubManager.Language):
+                _ = Reset();
+                break;
+        }
+    }
+
+    private void Config_OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        string languageFallbackPropName = _subIndex == 0 ?
+            nameof(Config.SubtitlesConfig.LanguageFallbackPrimary) :
+            nameof(Config.SubtitlesConfig.LanguageFallbackSecondary);
+
+        if (e.PropertyName is
+            nameof(Config.SubtitlesConfig.TranslateServiceType) or
+            nameof(Config.SubtitlesConfig.TranslateTargetLanguage) ||
+            e.PropertyName == languageFallbackPropName)
+        {
+            // Apply translating config changes
+            _ = Reset();
+        }
+    }
+
+    public async Task Reset()
+    {
+        try
+        {
+            _translationCancellation?.Cancel();
+            _translationCancellation?.Dispose();
+        }
+        catch
+        {
+            // ignored
+        }
+
+        // Wait until it is not used before setting it to null.
+        await _translationSemaphore.WaitAsync();
+        _translateService = null;
+        _translationSemaphore.Release();
+    }
+
+    public async Task UpdateCurrentIndexAsync(int newIndex)
+    {
+        if (!IsEnabled)
+        {
+            return;
+        }
+
+        if (newIndex != -1 && _subManager.Subs.Any())
+        {
+            await TranslateAheadAsync(newIndex, _config.TranslateCount);
+        }
+    }
+
+    // initialize TranslateService lazily
+    private async Task<bool> InitializeTranslationService(Language srcLang)
+    {
+        try
+        {
+            await _translationSemaphore.WaitAsync();
+
+            if (_translateService != null)
+                return true;
+
+            _translateService = _translateServiceFactory.GetService(_config.TranslateServiceType);
+            _concurrentLimiter = new SemaphoreSlim(_config.TranslateMaxConcurrent);
+
+            try
+            {
+                _translateService.Initialize(srcLang, _config.TranslateTargetLanguage);
+            }
+            catch (ArgumentException ex)
+            {
+                // TODO: L: Make it an event and display the dialog on the app side, or toast display?
+                Utils.UI(() =>
+                {
+                    MessageBox.Show(ex.Message);
+                });
+
+                return false;
+            }
+
+            return true;
+        }
+        finally
+        {
+            _translationSemaphore.Release();
+        }
+
+    }
+
+    // TODO: L: Is it possible to retain the context of the previous subtitle and translate it?
+    // https://stackoverflow.com/questions/41169814/translating-parts-of-sentences-based-on-its-context
+    private async Task TranslateAheadAsync(int currentIndex, int count)
+    {
+        var srcLang = _subManager.Language;
+        if (_subManager.Subs.Count == 0 || srcLang == null)
+        {
+            return;
+        }
+
+        if (_translateService == null)
+        {
+            if (!await InitializeTranslationService(srcLang))
+            {
+                return;
+            }
+        }
+
+        try
+        {
+            await _translationSemaphore.WaitAsync();
+
+            try
+            {
+                _translationCancellation?.Cancel();
+                _translationCancellation?.Dispose();
+            }
+            catch
+            {
+                // ignored
+            }
+
+            _translationCancellation = new CancellationTokenSource();
+
+            var token = _translationCancellation.Token;
+            int start = currentIndex;
+            if (start == -1)
+            {
+                start = 0;
+            }
+
+            int end = Math.Min(start + count - 1, _subManager.Subs.Count - 1);
+
+            List<Task> translationTasks = new();
+
+            for (int i = start; i <= end; i++)
+            {
+                if (token.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                // TODO: L: Out of bounds may occur at this point, for example, at the end of the session (because the lock is not taken).k
+                if (i >= _subManager.Subs.Count)
+                {
+                    break;
+                }
+
+                var sub = _subManager.Subs[i];
+
+                if (_translationInProgress.Contains(sub.Index))
+                {
+                    // running translation
+                    return;
+                }
+
+                if (!string.IsNullOrWhiteSpace(sub.Text) && !sub.IsTranslated)
+                {
+                    _translationInProgress.Add(sub.Index);
+                    await _concurrentLimiter!.WaitAsync(token);
+
+                    Task task = TranslateSubAsync(sub, token).ContinueWith((_) =>
+                    {
+                        _translationInProgress.Remove(sub.Index);
+                        _concurrentLimiter.Release();
+                    }, token);
+                    translationTasks.Add(task);
+                }
+            }
+
+            if (translationTasks.Any())
+            {
+                await Task.WhenAll(translationTasks);
+            }
+        }
+
+        finally
+        {
+            _translationSemaphore.Release();
+        }
+    }
+
+    private async Task TranslateSubAsync(SubtitleData sub, CancellationToken token)
+    {
+        if (_translateService == null)
+            return;
+
+        try
+        {
+            long start = Stopwatch.GetTimestamp();
+            string text = sub.Text!.ReplaceLineEndings(" ");
+            string translated = await _translateService.TranslateAsync(text, token);
+            sub.TranslatedText = translated;
+
+            TimeSpan elapsed = Stopwatch.GetElapsedTime(start);
+            Debug.WriteLine($"Translation {sub.Index} in {elapsed.TotalMilliseconds} - {translated}");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Translation failed for index {sub.Index}: {ex.Message}");
+        }
+    }
+}

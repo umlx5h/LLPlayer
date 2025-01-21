@@ -1,5 +1,6 @@
 ﻿using FlyleafLib.MediaFramework.MediaFrame;
 using FlyleafLib.MediaFramework.MediaRenderer;
+using FlyleafLib.MediaPlayer.Translation;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -120,11 +121,14 @@ public class SubManager : INotifyPropertyChanged
     private readonly object _subsLocker = new();
     private readonly Config.SubtitlesConfig _config;
     private readonly int _subIndex;
+    private readonly SubTranslator _subTranslator;
 
     public SubManager(Config.SubtitlesConfig config, int subIndex, bool enableSync = true)
     {
         _config = config;
         _subIndex = subIndex;
+        // TODO: L: Review whether to initialize it here.
+        _subTranslator = new SubTranslator(this, config, subIndex);
 
         if (enableSync)
         {
@@ -949,9 +953,28 @@ public class SubtitleData : IDisposable, INotifyPropertyChanged
         }
     }
 
+    public string? TranslatedText
+    {
+        get;
+        set
+        {
+            var prevIsTranslated = IsTranslated;
+            if (Set(ref field, value))
+            {
+                if (prevIsTranslated != IsTranslated)
+                    OnPropertyChanged(nameof(IsTranslated));
+                OnPropertyChanged(nameof(DisplayText));
+            }
+        }
+    }
+
     public bool IsText => !string.IsNullOrEmpty(Text);
 
-    public string? DisplayText => Text;
+    public bool IsTranslated => TranslatedText != null;
+
+    public bool EnabledTranslated = true;
+
+    public string? DisplayText => EnabledTranslated && IsTranslated ? TranslatedText : Text;
 
     public List<SubStyle> SubStyles;
     public TimeSpan StartTime { get; set; }

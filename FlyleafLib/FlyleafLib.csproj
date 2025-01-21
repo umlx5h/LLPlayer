@@ -49,6 +49,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="DeepL.net" Version="1.12.0" />
     <PackageReference Include="Flyleaf.FFmpeg.Bindings" Version="7.1.0" />
     <PackageReference Include="SearchPioneer.Lingua" Version="1.0.4" />
     <PackageReference Include="TesseractOCR" Version="5.4.2" />
