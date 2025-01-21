@@ -1,0 +1,119 @@
+﻿<UserControl x:Class="LLPlayer.Views.FlyleafOverlay"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+             xmlns:vm="clr-namespace:LLPlayer.ViewModels"
+             xmlns:flyleaf="clr-namespace:FlyleafLib.Controls.WPF;assembly=FlyleafLib"
+             xmlns:controls="clr-namespace:LLPlayer.Controls"
+             xmlns:prism="http://prismlibrary.com/"
+             mc:Ignorable="d"
+             SizeChanged="FlyleafOverlay_OnSizeChanged"
+             d:DataContext="{d:DesignInstance vm:FlyleafOverlayVM}"
+             d:Foreground="White"
+             d:Background="Black"
+             d:DesignHeight="450" d:DesignWidth="800">
+
+    <i:Interaction.Triggers>
+        <i:EventTrigger EventName="Loaded">
+            <prism:InvokeCommandAction Command="{Binding CmdOnLoaded}" />
+        </i:EventTrigger>
+    </i:Interaction.Triggers>
+
+    <Grid>
+        <controls:SubtitlesControl />
+
+        <Grid Margin="6 4 6 4">
+            <!-- timestamp display in upper left corner -->
+            <TextBlock VerticalAlignment="Top" HorizontalAlignment="Left" Padding="4" Margin="10 5 0 0" d:Text="00:00:00.000 / 01:42:23.913" FontWeight="Bold" FontSize="15" Foreground="{DynamicResource MaterialDesignBody}">
+                <TextBlock.Background>
+                    <SolidColorBrush Color="{Binding FL.PlayerConfig.Video.BackgroundColor}" Opacity="0.15" />
+                </TextBlock.Background>
+                <TextBlock.Style>
+                    <Style TargetType="{x:Type TextBlock}">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding FL.Player.Activity.Mode}" Value="Active" d:Value="{x:Null}">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+                <Run Text="{Binding FL.Player.CurTime, Mode=OneWay, Converter={StaticResource TicksToTimeSpanConv}, StringFormat={}{0:hh\\:mm\\:ss\\.fff}}" />
+                <Run Text="/" />
+                <Run Text="{Binding FL.Player.Duration, Mode=OneWay, Converter={StaticResource TicksToTimeSpanConv}, StringFormat={}{0:hh\\:mm\\:ss\\.fff}}" />
+            </TextBlock>
+
+            <!-- Play/Pause indicator in upper right corner -->
+            <TextBlock VerticalAlignment="Top" HorizontalAlignment="Right" Padding="4" Margin="0 5 10 0" FontWeight="Bold" d:Text="Playing" FontSize="18" Text="{Binding FL.Player.Status}" Foreground="{DynamicResource MaterialDesignBody}">
+                <TextBlock.Background>
+                    <SolidColorBrush Color="{Binding FL.PlayerConfig.Video.BackgroundColor}" Opacity="0.15" />
+                </TextBlock.Background>
+                <TextBlock.Style>
+                    <Style TargetType="{x:Type TextBlock}">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding FL.Player.Activity.Mode}" Value="Active" d:Value="{x:Null}">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+
+            <!-- Volume display below upper right, etc. -->
+            <TextBlock VerticalAlignment="Top" HorizontalAlignment="Right" Padding="4" Margin="0 50 10 0" FontWeight="Bold" d:Text="Volume 50%" FontSize="16" Text="{Binding OSDMessage}" Foreground="{DynamicResource MaterialDesignBody}">
+                <TextBlock.Background>
+                    <SolidColorBrush Color="{Binding FL.PlayerConfig.Video.BackgroundColor}" Opacity="0.15" />
+                </TextBlock.Background>
+                <TextBlock.Style>
+                    <Style TargetType="{x:Type TextBlock}">
+                        <Setter Property="Visibility" Value="Visible" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding FL.Player.Activity.Mode}" Value="Idle" d:Value="{x:Null}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                            <Trigger Property="Text" Value="">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+
+            <!-- Debug Info -->
+            <!-- TODO: L: make it dedicated window -->
+            <flyleaf:PlayerDebug DataContext="{Binding FL}" VerticalAlignment="Center" HorizontalAlignment="Center" Player="{Binding Player}" BoxColor="#AA000000" HeaderColor="White" InfoColor="{DynamicResource MaterialDesign.Brush.Primary.Light}" ValueColor="{DynamicResource MaterialDesign.Brush.Secondary.Light}" Visibility="{Binding Config.ShowDebug, Converter={StaticResource BooleanToVisibilityConv}, FallbackValue=Collapsed, TargetNullValue=Collapsed}" />
+
+            <!--Loading Spinner-->
+            <ProgressBar
+                IsIndeterminate="True"
+                Width="50"
+                Height="50"
+                Style="{StaticResource MaterialDesignCircularProgressBar}"
+                Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
+                Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConv}}" />
+
+            <!--Error Message-->
+            <TextBox VerticalAlignment="Center" HorizontalAlignment="Center" Margin="10" d:Text="Error Message" FontSize="16" IsReadOnly="True" BorderThickness="0" Text="{Binding FL.Player.LastError}" Foreground="{DynamicResource MaterialDesign.Brush.Primary}" TextWrapping="Wrap">
+                <TextBox.Background>
+                    <SolidColorBrush Color="{Binding FL.PlayerConfig.Video.BackgroundColor}" Opacity="0.15" />
+                </TextBox.Background>
+                <TextBox.Style>
+                    <Style TargetType="{x:Type TextBox}">
+                        <Setter Property="Visibility" Value="Visible" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding FL.Player.LastError}" Value="{x:Null}" d:Value="notnull">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBox.Style>
+            </TextBox>
+
+            <!--Flyleaf Bar-->
+            <controls:FlyleafBar />
+        </Grid>
+    </Grid>
+</UserControl>

@@ -1,0 +1,495 @@
+﻿<ResourceDictionary x:Class="LLPlayer.Resources.PopupMenu"
+                    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:collections="clr-namespace:System.Collections;assembly=mscorlib"
+                    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+                    xmlns:devices="clr-namespace:FlyleafLib.MediaFramework.MediaDevice;assembly=FlyleafLib"
+                    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                    xmlns:vm="clr-namespace:LLPlayer.ViewModels"
+                    d:DataContext="{d:DesignInstance vm:FlyleafOverlayVM}"
+                    mc:Ignorable="d"
+                    xmlns:flyleaf="clr-namespace:FlyleafLib;assembly=FlyleafLib"
+                    xmlns:mediaStream="clr-namespace:FlyleafLib.MediaFramework.MediaStream;assembly=FlyleafLib">
+
+    <!--Popup Menu-->
+    <collections:ArrayList x:Key="MenuAudioStreams">
+        <MenuItem Header="Embedded" ItemsSource="{Binding FL.Player.Audio.Streams}">
+            <MenuItem.ItemContainerStyle>
+                <Style TargetType="{x:Type MenuItem}" BasedOn="{StaticResource MaterialDesignMenuItem}">
+                    <Setter Property="Command" Value="{Binding DataContext.FL.Player.Commands.Open, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type MenuItem}}}"/>
+                    <Setter Property="CommandParameter" Value="{Binding DataContext, RelativeSource={RelativeSource Self}}"/>
+                    <Setter Property="IsCheckable" Value="True"/>
+                    <Setter Property="IsChecked" Value="{Binding Enabled, Mode=OneWay}"/>
+                </Style>
+            </MenuItem.ItemContainerStyle>
+            <MenuItem.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock>
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat=" #{0} ({1}) {2} @{3}Hz [CH: {4}] [Bits: {5}]">
+                                <Binding Path="StreamIndex"/>
+                                <Binding Path="Language"/>
+                                <Binding Path="SampleFormatStr"/>
+                                <Binding Path="SampleRate"/>
+                                <Binding Path="Channels"/>
+                                <Binding Path="Bits"/>
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                </DataTemplate>
+            </MenuItem.ItemTemplate>
+        </MenuItem>
+        <MenuItem Header="External" ItemsSource="{Binding FL.Player.Playlist.Selected.ExternalAudioStreams}">
+            <MenuItem.ItemContainerStyle>
+                <Style TargetType="{x:Type MenuItem}" BasedOn="{StaticResource MaterialDesignMenuItem}">
+                    <Setter Property="Command" Value="{Binding DataContext.FL.Player.Commands.Open, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type MenuItem}}}"/>
+                    <Setter Property="CommandParameter" Value="{Binding DataContext, RelativeSource={RelativeSource Self}}"/>
+                    <Setter Property="IsCheckable" Value="True"/>
+                    <Setter Property="IsChecked" Value="{Binding Enabled, Mode=OneWay}"/>
+                </Style>
+            </MenuItem.ItemContainerStyle>
+            <MenuItem.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock>
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat=" ({0}) {1} [BitRate: {2}] [{3}]">
+                                <Binding Path="Language"/>
+                                <Binding Path="Codec"/>
+                                <Binding Path="BitRate"/>
+                                <Binding Path="Protocol"/>
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                </DataTemplate>
+            </MenuItem.ItemTemplate>
+        </MenuItem>
+    </collections:ArrayList>
+    <collections:ArrayList x:Key="MenuVideoStreams" x:Shared="False">
+        <MenuItem Header="Embedded" ItemsSource="{Binding FL.Player.Video.Streams}">
+            <MenuItem.ItemContainerStyle>
+                <Style TargetType="{x:Type MenuItem}" BasedOn="{StaticResource MaterialDesignMenuItem}">
+                    <Setter Property="Command" Value="{Binding DataContext.FL.Player.Commands.Open, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type MenuItem}}}"/>
+                    <Setter Property="CommandParameter" Value="{Binding DataContext, RelativeSource={RelativeSource Self}}"/>
+                    <Setter Property="IsCheckable" Value="True"/>
+                    <Setter Property="IsChecked" Value="{Binding Enabled, Mode=OneWay}"/>
+                </Style>
+            </MenuItem.ItemContainerStyle>
+            <MenuItem.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock>
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat=" {0}x{1} @{2:#,#.00} ({3}/{4})">
+                                <Binding Path="Width"/>
+                                <Binding Path="Height"/>
+                                <Binding Path="FPS"/>
+                                <Binding Path="Codec"/>
+                                <Binding Path="PixelFormatStr"/>
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                </DataTemplate>
+            </MenuItem.ItemTemplate>
+        </MenuItem>
+        <MenuItem Header="External" ItemsSource="{Binding FL.Player.Playlist.Selected.ExternalVideoStreams}">
+            <MenuItem.ItemContainerStyle>
+                <Style TargetType="{x:Type MenuItem}" BasedOn="{StaticResource MaterialDesignMenuItem}">
+                    <Setter Property="Command" Value="{Binding DataContext.FL.Player.Commands.Open, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type MenuItem}}}"/>
+                    <Setter Property="CommandParameter" Value="{Binding DataContext, RelativeSource={RelativeSource Self}}"/>
+                    <Setter Property="IsCheckable" Value="True"/>
+                    <Setter Property="IsChecked" Value="{Binding Enabled, Mode=OneWay}"/>
+                </Style>
+            </MenuItem.ItemContainerStyle>
+            <MenuItem.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock>
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat=" {0}x{1} @{2} ({3}) [{4}]">
+                                <Binding Path="Width"/>
+                                <Binding Path="Height"/>
+                                <Binding Path="FPS"/>
+                                <Binding Path="Codec"/>
+                                <Binding Path="Protocol"/>
+                                <!--<Binding Path="HasAudio"/>-->
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                </DataTemplate>
+            </MenuItem.ItemTemplate>
+        </MenuItem>
+    </collections:ArrayList>
+
+    <HierarchicalDataTemplate x:Key="MenuSubtitlesStreamsItemTemplate" ItemsSource="{Binding SelectedSubMethods}">
+        <HierarchicalDataTemplate.ItemContainerStyle>
+            <Style TargetType="{x:Type MenuItem}" BasedOn="{StaticResource MaterialDesignMenuItem}">
+                <Setter Property="Command" Value="{Binding DataContext.FL.Player.Commands.OpenSubtitles, RelativeSource={RelativeSource FindAncestor, AncestorLevel=2, AncestorType={x:Type MenuItem}}}"/>
+                <Setter Property="CommandParameter">
+                    <Setter.Value>
+                        <MultiBinding Converter="{StaticResource Tuple3Conv}">
+                            <!-- Tag = SubIndex -->
+                            <Binding
+                                    Path="Tag"
+                                    RelativeSource="{RelativeSource AncestorLevel=2, AncestorType={x:Type MenuItem}}" />
+                            <Binding
+                                    Path="DataContext"
+                                    RelativeSource="{RelativeSource AncestorType={x:Type MenuItem}}" />
+                            <Binding
+                                    Path="SelectSubMethod" />
+                        </MultiBinding>
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="IsCheckable" Value="True"/>
+                <!--<Setter Property="IsChecked" Value="{Binding IsPrimaryEnabled, Mode=OneWay}"/>-->
+                <Setter Property="IsChecked">
+                    <Setter.Value>
+                        <MultiBinding Mode="OneWay" Converter="{StaticResource SubIndexToIsEnabledConv}">
+                            <Binding Path="Tag" RelativeSource="{RelativeSource AncestorLevel=2, AncestorType={x:Type MenuItem}}" />
+                            <Binding Path="IsPrimaryEnabled" />
+                            <Binding Path="IsSecondaryEnabled" />
+                        </MultiBinding>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </HierarchicalDataTemplate.ItemContainerStyle>
+
+        <HierarchicalDataTemplate.ItemTemplate>
+            <DataTemplate DataType="{x:Type mediaStream:SelectedSubMethod}">
+                <TextBlock Text="{Binding SelectSubMethod}" />
+            </DataTemplate>
+        </HierarchicalDataTemplate.ItemTemplate>
+
+        <!-- TODO: L: Fix Binding error when selecting OCR -->
+        <!-- TODO: L: Fix click bounds -->
+        <TextBlock
+                VerticalAlignment="Center"
+                Padding="0 30"
+                Text="{Binding DisplayMember}">
+            <TextBlock.InputBindings>
+                <MouseBinding
+                        MouseAction="LeftClick"
+                        Command="{Binding DataContext.FL.Player.Commands.OpenSubtitles,
+RelativeSource={RelativeSource AncestorLevel=2,
+AncestorType={x:Type MenuItem}}}">
+                    <MouseBinding.CommandParameter>
+                        <MultiBinding Converter="{StaticResource Tuple3Conv}">
+                            <Binding
+                                    Path="Tag"
+                                    RelativeSource="{RelativeSource AncestorLevel=2, AncestorType={x:Type MenuItem}}" />
+                            <Binding
+                                    Path="." />
+                            <Binding Source="{x:Static mediaStream:SelectSubMethod.Original}"  />
+                        </MultiBinding>
+                    </MouseBinding.CommandParameter>
+                </MouseBinding>
+                <!-- Copy form LeftClick -->
+                <MouseBinding
+                    MouseAction="RightClick"
+                    Command="{Binding DataContext.FL.Player.Commands.OpenSubtitles,
+RelativeSource={RelativeSource AncestorLevel=2,
+AncestorType={x:Type MenuItem}}}">
+                    <MouseBinding.CommandParameter>
+                        <MultiBinding Converter="{StaticResource Tuple3Conv}">
+                            <Binding
+                                Path="Tag"
+                                RelativeSource="{RelativeSource AncestorLevel=2, AncestorType={x:Type MenuItem}}" />
+                            <Binding
+                                Path="." />
+                            <Binding Source="{x:Static mediaStream:SelectSubMethod.Original}"  />
+                        </MultiBinding>
+                    </MouseBinding.CommandParameter>
+                </MouseBinding>
+            </TextBlock.InputBindings>
+        </TextBlock>
+    </HierarchicalDataTemplate>
+
+    <Style x:Key="MenuSubtitlesStreamsItemContainerStyle" TargetType="{x:Type MenuItem}" BasedOn="{StaticResource MaterialDesignMenuItem}">
+        <Style.Triggers>
+            <Trigger Property="IsChecked" Value="True">
+                <Setter Property="FontWeight" Value="Bold" />
+                <Setter Property="Icon" Value="{materialDesign:PackIcon Check}" />
+            </Trigger>
+        </Style.Triggers>
+
+        <!-- command cannot be used because it does not fire when the parent menu is clicked, use InputBindings instead. -->
+        <!--<Setter Property="Command" Value="{Binding DataContext.FL.Player.Commands.OpenSubtitlesPrimary, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type MenuItem}}}"/>
+                <Setter Property="CommandParameter" Value="{Binding DataContext, RelativeSource={RelativeSource Self}}"/>-->
+
+        <!-- NOTE: If IsCheckable is enabled, the child menu will not appear! -->
+        <!--https://stackoverflow.com/questions/5112880/checkable-menuitem-with-sub-menus-->
+        <!--<Setter Property="IsCheckable" Value="True"/>-->
+        <!--<Setter Property="IsChecked" Value="{Binding EnabledPrimarySubtitle, Mode=OneWay}"/>-->
+        <Setter Property="IsChecked">
+            <Setter.Value>
+                <MultiBinding Mode="OneWay" Converter="{StaticResource SubIndexToIsEnabledConv}">
+                    <Binding Path="Tag" RelativeSource="{RelativeSource AncestorType={x:Type MenuItem}}" />
+                    <Binding Path="EnabledPrimarySubtitle" />
+                    <Binding Path="EnabledSecondarySubtitle" />
+                </MultiBinding>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Primary Subtitle -->
+    <collections:ArrayList x:Key="MenuSubtitlesStreams" x:Shared="False">
+        <MenuItem Header="Embedded"
+                  Tag="0"
+                  ItemsSource="{Binding FL.Player.Subtitles.Streams}"
+                  ItemTemplate="{StaticResource MenuSubtitlesStreamsItemTemplate}"
+                  ItemContainerStyle="{StaticResource MenuSubtitlesStreamsItemContainerStyle}" />
+
+        <MenuItem Header="External"
+                  Tag="0"
+                  ItemsSource="{Binding FL.Player.Playlist.Selected.ExternalSubtitlesStreamsAll}"
+                  ItemTemplate="{StaticResource MenuSubtitlesStreamsItemTemplate}"
+                  ItemContainerStyle="{StaticResource MenuSubtitlesStreamsItemContainerStyle}" />
+
+        <MenuItem Header="{Binding FL.PlayerConfig.Subtitles.WhisperParameters.LanguageName}"
+                  HeaderStringFormat="ASR ({0})"
+                  Command="{Binding FL.Player.Commands.OpenSubtitlesASR}"
+                  CommandParameter="0"
+                  IsCheckable="True"
+                  IsChecked="{Binding FL.Player.Subtitles[0].EnabledASR, Mode=OneWay}" />
+
+        <MenuItem Header="Off"
+                  Command="{Binding FL.Player.Commands.SubtitlesOff}"
+                  CommandParameter="0"/>
+
+        <Separator />
+
+        <MenuItem Header="Auto-Translate"
+                  IsCheckable="True"
+                  IsChecked="{Binding FL.PlayerConfig.Subtitles[0].EnabledTranslated}"/>
+
+    </collections:ArrayList>
+
+    <!-- Secondary Subtitle -->
+    <collections:ArrayList x:Key="MenuSubtitlesStreams2" x:Shared="False">
+        <MenuItem Header="Embedded"
+                  Tag="1"
+                  ItemsSource="{Binding FL.Player.Subtitles.Streams}"
+                  ItemTemplate="{StaticResource MenuSubtitlesStreamsItemTemplate}"
+                  ItemContainerStyle="{StaticResource MenuSubtitlesStreamsItemContainerStyle}" />
+
+        <MenuItem Header="External"
+                  Tag="1"
+                  ItemsSource="{Binding FL.Player.Playlist.Selected.ExternalSubtitlesStreamsAll}"
+                  ItemTemplate="{StaticResource MenuSubtitlesStreamsItemTemplate}"
+                  ItemContainerStyle="{StaticResource MenuSubtitlesStreamsItemContainerStyle}" />
+
+        <MenuItem Header="{Binding FL.PlayerConfig.Subtitles.WhisperParameters.LanguageName}"
+                  HeaderStringFormat="ASR ({0})"
+                  CommandParameter="1"
+                  IsCheckable="True"
+                  IsChecked="{Binding FL.Player.Subtitles[1].EnabledASR, Mode=OneWay}" />
+
+        <MenuItem Header="Off"
+                  Command="{Binding FL.Player.Commands.SubtitlesOff}"
+                  CommandParameter="1"/>
+
+        <Separator />
+
+        <MenuItem Header="Auto-translate"
+                  IsCheckable="True"
+                  IsChecked="{Binding FL.PlayerConfig.Subtitles[1].EnabledTranslated}"/>
+    </collections:ArrayList>
+
+    <HierarchicalDataTemplate x:Key="DeviceMenuHierarchyTemplate" DataType="{x:Type devices:DeviceBase}" ItemsSource="{Binding Streams}">
+        <TextBlock Text="{Binding FriendlyName}">
+            <TextBlock.InputBindings>
+                <MouseBinding
+                    Command="{Binding DataContext.FL.Player.Commands.Open, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ContextMenu}}}"
+                    CommandParameter="{Binding Url}"
+                    MouseAction="LeftClick"/>
+            </TextBlock.InputBindings>
+        </TextBlock>
+        <HierarchicalDataTemplate.ItemTemplate>
+            <DataTemplate DataType="{x:Type devices:DeviceStreamBase}">
+                <TextBlock Text="{Binding}" >
+                    <TextBlock.InputBindings>
+                        <MouseBinding
+                            Command="{Binding DataContext.FL.Player.Commands.Open, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ContextMenu}}}"
+                            CommandParameter="{Binding Url}"
+                            MouseAction="LeftClick"/>
+                    </TextBlock.InputBindings>
+                </TextBlock>
+            </DataTemplate>
+        </HierarchicalDataTemplate.ItemTemplate>
+    </HierarchicalDataTemplate>
+
+    <ContextMenu x:Key="PopUpMenu" Style="{StaticResource FlyleafContextMenu}" Opened="PopUpMenu_OnOpened" Closed="PopUpMenu_OnClosed">
+        <MenuItem Header="Open File" Command="{Binding FL.Player.Commands.OpenFromFileDialog}" Icon="{materialDesign:PackIcon FolderOutline}" />
+
+        <MenuItem x:Name="MenuPasteUrl" Header="Paste Url" Command="{Binding FL.Player.Commands.OpenFromClipboard}" Icon="{materialDesign:PackIcon ContentPaste}" />
+        <Separator />
+
+        <MenuItem ItemsSource="{Binding FL.Player.Playlist.Items}" Icon="{materialDesign:PackIcon ViewList}">
+            <MenuItem.Header>
+                <MultiBinding Converter="{StaticResource PlaylistItemsConv}">
+                    <Binding Path="FL.Player.Playlist.Items.Count" />
+                    <Binding Path="FL.Player.Playlist.ExpectingItems"/>
+                </MultiBinding>
+            </MenuItem.Header>
+
+            <MenuItem.ItemContainerStyle>
+                <Style TargetType="{x:Type MenuItem}" BasedOn="{StaticResource MaterialDesignMenuItem}">
+                    <Setter Property="Command" Value="{Binding DataContext.FL.Player.Commands.Reopen, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type MenuItem}}}"/>
+                    <Setter Property="CommandParameter" Value="{Binding DataContext, RelativeSource={RelativeSource Self}}"/>
+                    <Setter Property="IsCheckable" Value="True"/>
+                    <Setter Property="IsChecked" Value="{Binding Enabled, Mode=OneWay}"/>
+                    <Setter Property="Header" Value="{Binding Title}"/>
+                </Style>
+            </MenuItem.ItemContainerStyle>
+        </MenuItem>
+
+        <Separator />
+
+        <MenuItem Header="Audio" Icon="{materialDesign:PackIcon Kind=VolumeMedium}">
+            <MenuItem Header="Enabled" IsCheckable="True" IsChecked="{Binding FL.PlayerConfig.Audio.Enabled}"/>
+            <MenuItem Header="{Binding FL.PlayerConfig.Audio.Delay, Converter={StaticResource TicksToMilliSecondsConv}}" HeaderStringFormat="Delay ({0})">
+                <MenuItem Header="Reset..." CommandParameter="0" Command="{Binding FL.Player.Commands.AudioDelaySet}"/>
+                <Separator />
+                <MenuItem Header="-   10"   CommandParameter="-10"      Command="{Binding FL.Player.Commands.AudioDelaySet2}"/>
+                <MenuItem Header="-  100"   CommandParameter="-100"     Command="{Binding FL.Player.Commands.AudioDelaySet2}"/>
+                <MenuItem Header="- 1000"   CommandParameter="-1000"    Command="{Binding FL.Player.Commands.AudioDelaySet2}"/>
+                <MenuItem Header="-10000"   CommandParameter="-10000"   Command="{Binding FL.Player.Commands.AudioDelaySet2}"/>
+                <Separator />
+                <MenuItem Header="+10000"   CommandParameter="10000"    Command="{Binding FL.Player.Commands.AudioDelaySet2}"/>
+                <MenuItem Header="+ 1000"   CommandParameter="1000"     Command="{Binding FL.Player.Commands.AudioDelaySet2}"/>
+                <MenuItem Header="+  100"   CommandParameter="100"      Command="{Binding FL.Player.Commands.AudioDelaySet2}"/>
+                <MenuItem Header="+   10"   CommandParameter="10"       Command="{Binding FL.Player.Commands.AudioDelaySet2}"/>
+            </MenuItem>
+            <MenuItem Header="Devices" ItemsSource="{Binding CapDevices, Source={x:Static flyleaf:Engine.Audio}}" ItemTemplate="{StaticResource DeviceMenuHierarchyTemplate}">
+                <MenuItem.Style>
+                    <Style TargetType="MenuItem" BasedOn="{StaticResource MaterialDesignMenuItem}">
+                        <Setter Property="Visibility" Value="Visible"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding CapDevices, Source={x:Static flyleaf:Engine.Audio}}" Value="{x:Null}">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding CapDevices.Count, Source={x:Static flyleaf:Engine.Audio}}" Value="0">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </MenuItem.Style>
+            </MenuItem>
+            <MenuItem Header="Streams" ItemsSource="{StaticResource MenuAudioStreams}"/>
+        </MenuItem>
+
+        <MenuItem Header="Subtitles" Icon="{materialDesign:PackIcon Kind=CcOutline}">
+            <MenuItem Header="Enabled" IsCheckable="True" IsChecked="{Binding FL.PlayerConfig.Subtitles.Enabled}"/>
+            <MenuItem Header="{Binding FL.PlayerConfig.Subtitles[0].Delay, Converter={StaticResource TicksToMilliSecondsConv}}" HeaderStringFormat="Delay 1st ({0})">
+                <MenuItem Header="Reset..." CommandParameter="0" Command="{Binding FL.Player.Commands.SubtitlesDelaySetPrimary}"/>
+                <Separator />
+                <MenuItem Header="-   10"   CommandParameter="-10"      Command="{Binding FL.Player.Commands.SubtitlesDelaySet2Primary}"/>
+                <MenuItem Header="-  100"   CommandParameter="-100"     Command="{Binding FL.Player.Commands.SubtitlesDelaySet2Primary}"/>
+                <MenuItem Header="- 1000"   CommandParameter="-1000"    Command="{Binding FL.Player.Commands.SubtitlesDelaySet2Primary}"/>
+                <MenuItem Header="-10000"   CommandParameter="-10000"   Command="{Binding FL.Player.Commands.SubtitlesDelaySet2Primary}"/>
+                <Separator />
+                <MenuItem Header="+10000"   CommandParameter="10000"    Command="{Binding FL.Player.Commands.SubtitlesDelaySet2Primary}"/>
+                <MenuItem Header="+ 1000"   CommandParameter="1000"     Command="{Binding FL.Player.Commands.SubtitlesDelaySet2Primary}"/>
+                <MenuItem Header="+  100"   CommandParameter="100"      Command="{Binding FL.Player.Commands.SubtitlesDelaySet2Primary}"/>
+                <MenuItem Header="+   10"   CommandParameter="10"       Command="{Binding FL.Player.Commands.SubtitlesDelaySet2Primary}"/>
+            </MenuItem>
+            <MenuItem Header="{Binding FL.PlayerConfig.Subtitles[1].Delay, Converter={StaticResource TicksToMilliSecondsConv}}" HeaderStringFormat="Delay 2nd ({0})">
+                <MenuItem Header="Reset..." CommandParameter="0" Command="{Binding FL.Player.Commands.SubtitlesDelaySetSecondary}"/>
+                <Separator />
+                <MenuItem Header="-   10"   CommandParameter="-10"      Command="{Binding FL.Player.Commands.SubtitlesDelaySet2Secondary}"/>
+                <MenuItem Header="-  100"   CommandParameter="-100"     Command="{Binding FL.Player.Commands.SubtitlesDelaySet2Secondary}"/>
+                <MenuItem Header="- 1000"   CommandParameter="-1000"    Command="{Binding FL.Player.Commands.SubtitlesDelaySet2Secondary}"/>
+                <MenuItem Header="-10000"   CommandParameter="-10000"   Command="{Binding FL.Player.Commands.SubtitlesDelaySet2Secondary}"/>
+                <Separator />
+                <MenuItem Header="+10000"   CommandParameter="10000"    Command="{Binding FL.Player.Commands.SubtitlesDelaySet2Secondary}"/>
+                <MenuItem Header="+ 1000"   CommandParameter="1000"     Command="{Binding FL.Player.Commands.SubtitlesDelaySet2Secondary}"/>
+                <MenuItem Header="+  100"   CommandParameter="100"      Command="{Binding FL.Player.Commands.SubtitlesDelaySet2Secondary}"/>
+                <MenuItem Header="+   10"   CommandParameter="10"       Command="{Binding FL.Player.Commands.SubtitlesDelaySet2Secondary}"/>
+            </MenuItem>
+
+            <MenuItem Header="Visibility">
+                <MenuItem Header="1st Visible" IsCheckable="True" IsChecked="{Binding FL.PlayerConfig.Subtitles[0].Visible}"/>
+                <MenuItem Header="2nd Visible" IsCheckable="True" IsChecked="{Binding FL.PlayerConfig.Subtitles[1].Visible}"/>
+            </MenuItem>
+
+            <MenuItem Header="Streams" ItemsSource="{StaticResource MenuSubtitlesStreams}"/>
+        </MenuItem>
+
+        <MenuItem Header="Video" Icon="{materialDesign:PackIcon VideoOutline}">
+            <MenuItem Header="Enabled" IsCheckable="True" IsChecked="{Binding FL.PlayerConfig.Video.Enabled}"/>
+
+            <MenuItem Header="Chapters" ItemsSource="{Binding FL.Player.Chapters}">
+                <MenuItem.ItemContainerStyle>
+                    <Style TargetType="{x:Type MenuItem}" BasedOn="{StaticResource MaterialDesignMenuItem}">
+                        <Setter Property="Command" Value="{Binding DataContext.FL.Player.Commands.SeekToChapter, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type MenuItem}}}"/>
+                        <Setter Property="CommandParameter" Value="{Binding DataContext, RelativeSource={RelativeSource Self}}"/>
+                    </Style>
+                </MenuItem.ItemContainerStyle>
+                <MenuItem.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock>
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat=" [{0}] {1}">
+                                    <Binding Path="StartTime" Converter="{StaticResource TicksToTimeConv}"/>
+                                    <Binding Path="Title"/>
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                    </DataTemplate>
+                </MenuItem.ItemTemplate>
+            </MenuItem>
+            <MenuItem Header="Devices" ItemsSource="{Binding CapDevices, Source={x:Static flyleaf:Engine.Video}}" ItemTemplate="{StaticResource DeviceMenuHierarchyTemplate}">
+                <MenuItem.Style>
+                    <Style TargetType="MenuItem" BasedOn="{StaticResource MaterialDesignMenuItem}">
+                        <Setter Property="Visibility" Value="Visible"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding CapDevices, Source={x:Static flyleaf:Engine.Video}}" Value="{x:Null}">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding CapDevices.Count, Source={x:Static flyleaf:Engine.Video}}" Value="0">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </MenuItem.Style>
+            </MenuItem>
+            <MenuItem Header="HW Acceleration" IsCheckable="True" IsChecked="{Binding FL.PlayerConfig.Video.VideoAcceleration}"/>
+            <MenuItem Header="Record" IsCheckable="True" IsChecked="{Binding FL.Player.IsRecording, Mode=OneWay}" Command="{Binding FL.Player.Commands.ToggleRecording}"/>
+            <MenuItem Header="{Binding FL.Player.Rotation}" HeaderStringFormat="Rotation ({0}°)">
+                <MenuItem Header="0°"       CommandParameter="0"    Command="{Binding FL.Player.Commands.RotationSet}"/>
+                <MenuItem Header="90°"      CommandParameter="90"   Command="{Binding FL.Player.Commands.RotationSet}"/>
+                <MenuItem Header="180°"     CommandParameter="180"  Command="{Binding FL.Player.Commands.RotationSet}"/>
+                <MenuItem Header="270°"     CommandParameter="270"  Command="{Binding FL.Player.Commands.RotationSet}"/>
+            </MenuItem>
+
+            <MenuItem Header="Flip">
+                <MenuItem Header="Horizontal Flip" IsCheckable="True" IsChecked="{Binding FL.Player.renderer.HFlip}"/>
+                <MenuItem Header="Vertical Flip" IsCheckable="True" IsChecked="{Binding FL.Player.renderer.VFlip}"/>
+            </MenuItem>
+
+            <MenuItem Header="Reverse Playback" IsCheckable="True" IsChecked="{Binding FL.Player.ReversePlayback}"/>
+            <MenuItem Header="{Binding FL.Player.Speed}" HeaderStringFormat="Speed (x{0})">
+                <MenuItem Header=" x 8"     CommandParameter="8"    Command="{Binding FL.Player.Commands.SpeedSet}"/>
+                <MenuItem Header=" x 4"     CommandParameter="4"    Command="{Binding FL.Player.Commands.SpeedSet}"/>
+                <MenuItem Header=" x 2"     CommandParameter="2"    Command="{Binding FL.Player.Commands.SpeedSet}"/>
+                <MenuItem Header=" x 1.75"  CommandParameter="1.75" Command="{Binding FL.Player.Commands.SpeedSet}"/>
+                <MenuItem Header=" x 1.50"  CommandParameter="1.50" Command="{Binding FL.Player.Commands.SpeedSet}"/>
+                <MenuItem Header=" x 1.25"  CommandParameter="1.25" Command="{Binding FL.Player.Commands.SpeedSet}"/>
+                <MenuItem Header=" x 1"     CommandParameter="1"    Command="{Binding FL.Player.Commands.SpeedSet}"/>
+                <MenuItem Header=" x 0.75"  CommandParameter="0.75" Command="{Binding FL.Player.Commands.SpeedSet}"/>
+                <MenuItem Header=" x 0.50"  CommandParameter="0.50" Command="{Binding FL.Player.Commands.SpeedSet}"/>
+            </MenuItem>
+            <MenuItem Header="Streams" ItemsSource="{StaticResource MenuVideoStreams}"/>
+
+            <MenuItem Header="Take a Snapshot" Command="{Binding FL.Player.Commands.TakeSnapshot}" Icon="{materialDesign:PackIcon Kind=PhotoCamera}"/>
+            <MenuItem Header="V.Sync" IsCheckable="True" IsChecked="{Binding FL.PlayerConfig.Video.VSync}"/>
+            <MenuItem Header="{Binding FL.Player.Zoom}" HeaderStringFormat="Zoom ({0}%)">
+                <MenuItem Header="Reset ..." Command="{Binding FL.Player.Commands.ResetAll}"/>
+                <MenuItem Header="Zoom In"   Command="{Binding FL.Player.Commands.ZoomIn}" Icon="{materialDesign:PackIcon Kind=ZoomIn}"/>
+                <MenuItem Header="Zoom out"  Command="{Binding FL.Player.Commands.ZoomOut}" Icon="{materialDesign:PackIcon Kind=ZoomOut}"/>
+            </MenuItem>
+        </MenuItem>
+
+        <Separator />
+        <MenuItem Header="Show Debug" IsCheckable="True" IsChecked="{Binding FL.Config.ShowDebug}"/>
+    </ContextMenu>
+
+</ResourceDictionary>

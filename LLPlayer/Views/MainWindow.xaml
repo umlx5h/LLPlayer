@@ -1,0 +1,42 @@
+﻿<Window x:Class="LLPlayer.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:prism="http://prismlibrary.com/"
+        xmlns:vm="clr-namespace:LLPlayer.ViewModels"
+        xmlns:view="clr-namespace:LLPlayer.Views"
+        xmlns:flyleaf="clr-namespace:FlyleafLib.Controls.WPF;assembly=FlyleafLib"
+        mc:Ignorable="d"
+        Width="1280"
+        Height="720"
+        Style="{StaticResource MaterialDesignWindow}"
+        d:DataContext="{d:DesignInstance vm:MainWindowVM}"
+        d:Foreground="White"
+        d:Background="Black"
+        Title="{Binding Title}">
+
+    <i:Interaction.Triggers>
+        <i:EventTrigger EventName="Loaded">
+            <prism:InvokeCommandAction Command="{Binding CmdOnLoaded}" />
+        </i:EventTrigger>
+        <i:EventTrigger EventName="Closing">
+            <prism:InvokeCommandAction Command="{Binding CmdOnClosing}" />
+        </i:EventTrigger>
+    </i:Interaction.Triggers>
+
+    <Grid>
+        <!-- Main Video View -->
+        <flyleaf:FlyleafHost
+            Grid.Column="0"
+            FlowDirection="LeftToRight"
+            Player="{Binding FL.Player}"
+            KeyBindings="Both"
+            PanRotateOnShiftWheel="None"
+            PanZoomOnCtrlWheel="None"
+            ToggleFullScreenOnDoubleClick="None">
+            <view:FlyleafOverlay />
+        </flyleaf:FlyleafHost>
+    </Grid>
+</Window>
