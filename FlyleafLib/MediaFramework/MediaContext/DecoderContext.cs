@@ -77,6 +77,9 @@ public unsafe partial class DecoderContext : PluginHandler
     public Demuxer              VideoDemuxer        { get; private set; }
     public Demuxer[]            SubtitlesDemuxers   { get; private set; }
     public SubtitlesManager     SubtitlesManager    { get; private set; }
+
+    public SubtitlesOCR         SubtitlesOCR        { get; private set; }
+
     public Demuxer              DataDemuxer         { get; private set; }
 
     // Decoders
@@ -152,6 +155,7 @@ public unsafe partial class DecoderContext : PluginHandler
         DataDemuxer         = new Demuxer(Config.Demuxer, MediaType.Data, UniqueId, EnableDecoding);
 
         SubtitlesManager    = new SubtitlesManager(Config.Subtitles, subNum);
+        SubtitlesOCR        = new SubtitlesOCR(Config.Subtitles, subNum);
 
         Recorder            = new Remuxer(UniqueId);
 

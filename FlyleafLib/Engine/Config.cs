@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
@@ -819,6 +820,11 @@ public class Config : NotifyPropertyChanged
         /// </summary>
         [JsonIgnore]
         public bool Visible { get; set => Set(ref field, value); } = true;
+
+        /// <summary>
+        /// OCR Engine Type
+        /// </summary>
+        public SubOCREngineType OCREngine { get; set => Set(ref field, value); } = SubOCREngineType.Tesseract;
     }
 
     public class SubtitlesConfig : NotifyPropertyChanged
@@ -893,6 +899,53 @@ public class Config : NotifyPropertyChanged
         public bool LanguageAutoDetect { get; set => Set(ref field, value); } = true;
 
         /// <summary>
+        /// Language to be used when source language was unknown (primary)
+        /// </summary>
+        public Language LanguageFallbackPrimary
+        {
+            get
+            {
+                field ??= Languages.FirstOrDefault();
+                return field;
+            }
+            set => Set(ref field, value);
+        }
+
+        /// <summary>
+        /// Language to be used when source language was unknown (secondary)
+        /// </summary>
+        public Language LanguageFallbackSecondary
+        {
+            get
+            {
+                if (LanguageFallbackSecondarySame)
+                {
+                    return LanguageFallbackPrimary;
+                }
+
+                field ??= LanguageFallbackPrimary;
+
+                return field;
+            }
+            set => Set(ref field, value);
+        }
+
+        /// <summary>
+        /// Whether to use LanguageFallbackPrimary for secondary subtitles
+        /// </summary>
+        public bool LanguageFallbackSecondarySame
+        {
+            get;
+            set
+            {
+                if (Set(ref field, value))
+                {
+                    Raise(nameof(LanguageFallbackSecondary));
+                }
+            }
+        } = true;
+
+        /// <summary>
         /// Whether to use local search plugins (see also <see cref="SearchLocalOnInputType"/>)
         /// </summary>
         public bool             SearchLocal         { get => _SearchLocal; set => Set(ref _SearchLocal, value); }
@@ -923,6 +976,16 @@ public class Config : NotifyPropertyChanged
         [JsonIgnore]
         public Action<SubtitlesFrame>
                                 Parser              { get; set; } = ParseSubtitles.Parse;
+
+        /// <summary>
+        /// OCR Tesseract Region Settings (key: iso6391, value: LangCode)
+        /// </summary>
+        public Dictionary<string, string> TesseractOcrRegions { get; set => Set(ref field, value); } = new();
+
+        /// <summary>
+        /// OCR Microsoft Region Settings (key: iso6391, value: LanguageTag (BCP-47)
+        /// </summary>
+        public Dictionary<string, string> MsOcrRegions { get; set => Set(ref field, value); } = new();
     }
     public class DataConfig : NotifyPropertyChanged
     {

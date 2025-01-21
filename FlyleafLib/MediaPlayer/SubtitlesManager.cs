@@ -1,4 +1,5 @@
 ﻿using FlyleafLib.MediaFramework.MediaFrame;
+using FlyleafLib.MediaFramework.MediaRenderer;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -38,11 +39,12 @@ public class SubtitlesManager
     /// <param name="subIndex">0: Primary, 1: Secondary</param>
     /// <param name="url">subtitle file path or video file path</param>
     /// <param name="streamIndex">-1: subtitle file, >=0: streamIndex of internal subtitle</param>
+    /// <param name="useBitmap">Use bitmap subtitles or immediately release bitmap if not used</param>
     /// <param name="lang">subtitle language</param>
-    public void Open(int subIndex, string url, int streamIndex, Language lang)
+    public void Open(int subIndex, string url, int streamIndex, bool useBitmap, Language lang)
     {
         // TODO: L: Add caching subtitle data for the same stream and URL?
-        this[subIndex].Open(url, streamIndex, lang);
+        this[subIndex].Open(url, streamIndex, useBitmap, lang);
     }
 
     public void SetCurrentTime(TimeSpan currentTime)
@@ -85,10 +87,31 @@ public class SubManager : INotifyPropertyChanged
     /// </summary>
     public BulkObservableCollection<SubtitleData> Subs { get; } = new();
 
+    // LanguageSource with fallback
     public Language? Language
     {
+        get
+        {
+            if (LanguageSource == Language.Unknown)
+            {
+                // fallback to user set language
+                return _subIndex == 0 ? _config.LanguageFallbackPrimary : _config.LanguageFallbackSecondary;
+            }
+
+            return LanguageSource;
+        }
+    }
+
+    public Language? LanguageSource
+    {
         get;
-        set => Set(ref field, value);
+        set
+        {
+            if (Set(ref field, value))
+            {
+                OnPropertyChanged(nameof(Language));
+            }
+        }
     }
 
     private readonly object _subsLocker = new();
@@ -330,7 +353,7 @@ public class SubManager : INotifyPropertyChanged
         }
     }
 
-    public void Open(string url, int streamIndex, Language lang)
+    public void Open(string url, int streamIndex, bool useBitmap, Language lang)
     {
         // Asynchronously read subtitle timestamps and text
 
@@ -355,13 +378,13 @@ public class SubManager : INotifyPropertyChanged
                 Stopwatch refreshSw = new();
                 refreshSw.Start();
 
-                reader.ReadAll(data =>
+                reader.ReadAll(useBitmap, data =>
                 {
                     if (isFirst)
                     {
                         isFirst = false;
                         // Set the language at the timing of the first subtitle data set.
-                        Language = lang;
+                        LanguageSource = lang;
                     }
 
                     data.Index = subCnt++;
@@ -417,7 +440,7 @@ public class SubManager : INotifyPropertyChanged
         Clear();
 
         State = PositionState.First;
-        Language = null;
+        LanguageSource = null;
     }
 
     public void Reset()
@@ -598,10 +621,11 @@ public unsafe class SubtitleReader : IDisposable
     /// <summary>
     /// Read subtitle stream to the end and get all subtitle data
     /// </summary>
+    /// <param name="useBitmap"></param>
     /// <param name="addSub"></param>
     /// <param name="token"></param>
     /// <exception cref="OperationCanceledException">The token has had cancellation requested.</exception>
-    public void ReadAll(Action<SubtitleData> addSub, CancellationToken token = default)
+    public void ReadAll(bool useBitmap, Action<SubtitleData> addSub, CancellationToken token = default)
     {
         int ret = 0;
 
@@ -736,8 +760,16 @@ public unsafe class SubtitleReader : IDisposable
                 case AVSubtitleType.Bitmap:
                     subData.IsBitmap = true;
 
-                    // Only subtitle timestamp information is used, so bitmap is released
-                    avsubtitle_free(&sub);
+                    if (useBitmap)
+                    {
+                        // Save subtitle data for OCR later
+                        subData.Bitmap = new SubtitleBitmapData(sub);
+                    }
+                    else
+                    {
+                        // Only subtitle timestamp information is used, so bitmap is released
+                        avsubtitle_free(&sub);
+                    }
 
                     break;
             }
@@ -807,14 +839,72 @@ public unsafe class SubtitleReader : IDisposable
     }
 }
 
+public class SubtitleBitmapData : IDisposable
 {
-
+    public SubtitleBitmapData(AVSubtitle sub)
     {
+        Sub = sub;
+    }
+
+    private readonly ReaderWriterLockSlim _rwLock = new();
+    private bool _isDisposed;
+
+    public AVSubtitle Sub;
+
+    public unsafe (byte[] data, AVSubtitleRect rect) SubToBitmap(bool isGrey)
+    {
+        if (_isDisposed)
+            throw new InvalidOperationException("already disposed");
+
+        try
         {
-            {
-            }
+            // Prevent from disposing
+            _rwLock.EnterReadLock();
+
+            AVSubtitleRect rect = *Sub.rects[0];
+            byte[] data = Renderer.ConvertBitmapSub(Sub, isGrey);
+
+            return (data, rect);
+        }
+        finally
+        {
+            _rwLock.ExitReadLock();
         }
     }
+
+    public void Dispose()
+    {
+        if (_isDisposed)
+            return;
+
+        _rwLock.EnterWriteLock();
+
+        if (Sub.num_rects > 0)
+        {
+            unsafe
+            {
+                fixed (AVSubtitle* subPtr = &Sub)
+                {
+                    avsubtitle_free(subPtr);
+                }
+            }
+        }
+
+        _isDisposed = true;
+        _rwLock.ExitWriteLock();
+
+#if DEBUG
+        GC.SuppressFinalize(this);
+#endif
+    }
+
+#if DEBUG
+    ~SubtitleBitmapData()
+    {
+        System.Diagnostics.Debug.Fail("Dispose is not called");
+    }
+#endif
+}
 
 public class SubtitleData : IDisposable, INotifyPropertyChanged
 {
@@ -844,6 +934,8 @@ public class SubtitleData : IDisposable, INotifyPropertyChanged
     public TimeSpan EndTime { get; set; }
     public TimeSpan Duration => EndTime - StartTime;
 
+    public SubtitleBitmapData? Bitmap { get; set; }
+
     public bool IsBitmap { get; set; }
 
     private bool _isDisposed;
@@ -852,6 +944,12 @@ public class SubtitleData : IDisposable, INotifyPropertyChanged
     {
         if (_isDisposed)
             return;
+
+        if (IsBitmap && Bitmap != null)
+        {
+            Bitmap.Dispose();
+            Bitmap = null;
+        }
 
         _isDisposed = true;
     }

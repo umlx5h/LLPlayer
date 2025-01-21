@@ -126,6 +126,11 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
     public SubtitlesManager     SubtitlesManager   => decoder.SubtitlesManager;
 
     /// <summary>
+    /// Subtitles OCR
+    /// </summary>
+    public SubtitlesOCR         SubtitlesOCR       => decoder.SubtitlesOCR;
+
+    /// <summary>
     /// Data Demuxer
     /// (Normally you should not access this directly)
     /// </summary>

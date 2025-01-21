@@ -43,6 +43,7 @@ public class ExternalStream : DemuxerInput
                 }
                 RaiseUI(nameof(EnabledPrimarySubtitle));
                 RaiseUI(nameof(EnabledSecondarySubtitle));
+                RaiseUI(nameof(SubtitlesStream.SelectedSubMethods));
             }
         }
     }

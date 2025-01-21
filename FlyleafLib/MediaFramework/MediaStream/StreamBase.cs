@@ -27,6 +27,7 @@ public abstract unsafe class StreamBase : NotifyPropertyChanged
             {
                 RaiseUI(nameof(EnabledPrimarySubtitle));
                 RaiseUI(nameof(EnabledSecondarySubtitle));
+                RaiseUI(nameof(SubtitlesStream.SelectedSubMethods));
             }
         }
     }

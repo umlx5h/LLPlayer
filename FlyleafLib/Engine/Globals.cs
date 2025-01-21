@@ -64,6 +64,11 @@ public enum ColorRange : int
     Limited     = 2
 }
 
+public enum SubOCREngineType
+{
+    Tesseract,
+    MicrosoftOCR,
+}
 
 public class GPUOutput
 {

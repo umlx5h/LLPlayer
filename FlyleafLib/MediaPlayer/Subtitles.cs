@@ -4,6 +4,7 @@ using FlyleafLib.MediaFramework.MediaContext;
 using FlyleafLib.MediaFramework.MediaStream;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media.Imaging;
@@ -478,6 +479,7 @@ public class Subtitle : NotifyPropertyChanged
         // TODO: L: Here it may be null when switching subs while displaying.
         _player.sFrames[_subIndex] = null;
 
+        _player.SubtitlesOCR.Reset(_subIndex);
         _player.SubtitlesManager[_subIndex].Reset();
 
         _player.SubtitleClear(_subIndex);
@@ -522,6 +524,7 @@ public class Subtitle : NotifyPropertyChanged
         _player.SubtitleClear(_subIndex);
         //player.renderer?.ClearOverlayTexture();
 
+        _player.SubtitlesOCR.Reset(_subIndex);
         _player.SubtitlesManager[_subIndex].Reset();
 
         if (_player.renderer != null)
@@ -549,20 +552,33 @@ public class Subtitle : NotifyPropertyChanged
         bool isExternal = stream.ExternalStream != null;
         ExternalSubtitlesStream extStream = (ExternalSubtitlesStream)stream.ExternalStream;
 
+        bool useBitmap = SubtitlesSelectedHelper.GetMethod(_subIndex) == SelectSubMethod.OCR;
+
         if (isExternal)
         {
             // external sub
-            _player.SubtitlesManager.Open(_subIndex, extStream.Url, -1, extStream.Language);
+            _player.SubtitlesManager.Open(_subIndex, extStream.Url, -1, useBitmap, extStream.Language);
         }
         else
         {
             // internal sub
-            _player.SubtitlesManager.Open(_subIndex, Decoder.MainDemuxer.Url, stream.StreamIndex, stream.Language);
+            _player.SubtitlesManager.Open(_subIndex, Decoder.MainDemuxer.Url, stream.StreamIndex, useBitmap, stream.Language);
         }
 
         TimeSpan curTime = new(_player.CurTime);
 
         _player.SubtitlesManager[_subIndex].SetCurrentTime(curTime);
+
+        // Do OCR
+        // TODO: L: When OCR is performed while bitmap stream is loaded, the stream is reset and the bitmap is loaded again.
+        // Is it better to reuse loaded bitmap?
+        if (SubtitlesSelectedHelper.GetMethod(_subIndex) == SelectSubMethod.OCR)
+        {
+            if (isExternal || _player.SubtitlesOCR.CanDo(stream.Language))
+            {
+                _player.SubtitlesOCR.Do(_subIndex, _player.SubtitlesManager[_subIndex].Subs.ToList(), stream.Language, curTime);
+            }
+        }
     }
 
     internal void Enable()

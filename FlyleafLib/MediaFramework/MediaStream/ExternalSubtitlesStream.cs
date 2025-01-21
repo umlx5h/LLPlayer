@@ -10,6 +10,12 @@ public class ExternalSubtitlesStream : ExternalStream, ISubtitlesStream
         {
             var methods = (SelectSubMethod[])Enum.GetValues(typeof(SelectSubMethod));
 
+            if (!IsBitmap)
+            {
+                // delete OCR if text sub
+                methods = methods.Where(m => m != SelectSubMethod.OCR).ToArray();
+            }
+
             return methods.
                 Select(m => new SelectedSubMethod(this, m)).ToArray();
         }

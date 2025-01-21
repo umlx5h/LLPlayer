@@ -3,7 +3,7 @@ using System.Threading;
 
 using FlyleafLib.MediaFramework.MediaDecoder;
 using FlyleafLib.MediaFramework.MediaFrame;
-
+using FlyleafLib.MediaFramework.MediaStream;
 using static FlyleafLib.Utils;
 using static FlyleafLib.Logger;
 
@@ -621,8 +621,26 @@ unsafe partial class Player
                     {
                         if (sFrames[i].isBitmap && sFrames[i].sub.num_rects > 0)
                         {
-                            // renderer.CreateOverlayTexture(sFrame, SubtitlesDecoder.CodecCtx->width, SubtitlesDecoder.CodecCtx->height);
-                            SubtitleDisplay(sFrames[i].bitmap, i);
+                            if (SubtitlesSelectedHelper.GetMethod(i) == SelectSubMethod.OCR)
+                            {
+                                // Prevent the problem of OCR subtitles not being used in priority by setting
+                                // the timestamp of the subtitles as they are displayed a little earlier
+                                SubtitlesManager[i].SetCurrentTime(new TimeSpan(sFrames[i].timestamp));
+                            }
+
+                            var cur = SubtitlesManager[i].GetCurrent();
+
+                            if (SubtitlesManager[i].IsDisplaying &&
+                                !string.IsNullOrEmpty(cur.Text))
+                            {
+                                // Use OCR text subtitles if available
+                                SubtitleDisplay(cur.DisplayText, i);
+                            }
+                            else
+                            {
+                                // renderer.CreateOverlayTexture(sFrame, SubtitlesDecoder.CodecCtx->width, SubtitlesDecoder.CodecCtx->height);
+                                SubtitleDisplay(sFrames[i].bitmap, i);
+                            }
 
                             SubtitlesDecoder.DisposeFrame(sFrames[i]);  // only rects
                         }

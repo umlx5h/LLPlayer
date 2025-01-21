@@ -7,7 +7,8 @@ namespace FlyleafLib.MediaFramework.MediaStream;
 
 public enum SelectSubMethod
 {
-    Original
+    Original,
+    OCR
 }
 
 // Both external and internal subtitles implement this interface and use it with PopMenu.
@@ -44,6 +45,11 @@ public unsafe class SubtitlesStream : StreamBase, ISubtitlesStream
         get
         {
             var methods = (SelectSubMethod[])Enum.GetValues(typeof(SelectSubMethod));
+            if (!IsBitmap)
+            {
+                // delete OCR if text sub
+                methods = methods.Where(m => m != SelectSubMethod.OCR).ToArray();
+            }
 
             return methods.
                 Select(m => new SelectedSubMethod(this, m)).ToArray();
