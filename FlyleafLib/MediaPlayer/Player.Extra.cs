@@ -78,17 +78,28 @@ unsafe partial class Player
         => OpenAsync(Clipboard.GetText());
     public void OpenFromFileDialog()
     {
-        bool wasActivityEnabled = Activity.IsEnabled;
+        int prevTimeout = Activity.Timeout;
         Activity.IsEnabled = false;
+        Activity.Timeout = 0;
         IsOpenFileDialogOpen = true;
 
         System.Windows.Forms.OpenFileDialog openFileDialog = new();
+
+        // If there is currently an open file, set that folder as the base folder
+        if (decoder.Playlist.Url != null && File.Exists(decoder.Playlist.Url))
+        {
+            var folder = Path.GetDirectoryName(decoder.Playlist.Url);
+            if (folder != null)
+                openFileDialog.InitialDirectory = folder;
+        }
+
         var res = openFileDialog.ShowDialog();
 
-        if(res == System.Windows.Forms.DialogResult.OK)
+        if (res == System.Windows.Forms.DialogResult.OK)
             OpenAsync(openFileDialog.FileName);
 
-        Activity.IsEnabled = wasActivityEnabled;
+        Activity.Timeout = prevTimeout;
+        Activity.IsEnabled = true;
         IsOpenFileDialogOpen = false;
     }
 
