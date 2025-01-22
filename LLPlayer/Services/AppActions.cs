@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Input;
@@ -51,6 +52,10 @@ public class AppActions
     {
         return new Dictionary<CustomKeyBindingAction, Action>
         {
+            [CustomKeyBindingAction.OpenNextFile] = CmdOpenNextFile.Execute,
+            [CustomKeyBindingAction.OpenPrevFile] = CmdOpenPrevFile.Execute,
+            [CustomKeyBindingAction.OpenCurrentPath] = CmdOpenCurrentPath.Execute,
+
             [CustomKeyBindingAction.SubsPositionUp] = CmdSubsPositionUp.Execute,
             [CustomKeyBindingAction.SubsPositionDown] = CmdSubsPositionDown.Execute,
             [CustomKeyBindingAction.SubsSizeIncrease] = CmdSubsSizeIncrease.Execute,
@@ -100,6 +105,84 @@ public class AppActions
     // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 
     #region Command used in key
+
+    public DelegateCommand CmdOpenNextFile => field ?? new(() =>
+    {
+        OpenNextPrevInternal(isNext: true);
+    });
+
+    public DelegateCommand CmdOpenPrevFile => field ?? new(() =>
+    {
+        OpenNextPrevInternal(isNext: false);
+    });
+
+    private void OpenNextPrevInternal(bool isNext)
+    {
+        var playlist = _player.Playlist;
+        if (playlist.Url == null)
+            return;
+
+        string url = playlist.Url;
+
+        try
+        {
+            (string? prev, string? next) = FileHelper.GetNextAndPreviousFile(url);
+            if (isNext && next != null)
+            {
+                _player.OpenAsync(next);
+            }
+            else if (!isNext && prev != null)
+            {
+                _player.OpenAsync(prev);
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"OpenNextPrevFile is failed: {ex.Message}");
+        }
+    }
+
+    public DelegateCommand CmdOpenCurrentPath => field ?? new(() =>
+    {
+        var playlist = _player.Playlist;
+        if (playlist.Selected == null)
+            return;
+
+        string url = playlist.Url;
+
+        bool isFile = File.Exists(url);
+        bool isUrl = url.StartsWith("http:", StringComparison.OrdinalIgnoreCase) ||
+                     url.StartsWith("https:", StringComparison.OrdinalIgnoreCase);
+
+        if (!isFile && !isUrl)
+        {
+            return;
+        }
+
+        if (isUrl)
+        {
+            // fix url
+            url = playlist.Selected.DirectUrl;
+        }
+
+        // Open folder or URL
+        string? fileName = isFile ? Path.GetDirectoryName(url) : url;
+
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = fileName,
+                UseShellExecute = true,
+                Verb = "open"
+            });
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"OpenCurrentPath is failed: {ex.Message}");
+        }
+    });
+
     public DelegateCommand CmdSubsPositionUp => field ?? new(() =>
     {
         SubsPositionUpActionInternal(true);
@@ -452,6 +535,13 @@ public class AppActions
 // List of key actions to be added from the app side
 public enum CustomKeyBindingAction
 {
+    [Description("Open Next File")]
+    OpenNextFile,
+    [Description("Open Previous File")]
+    OpenPrevFile,
+    [Description("Open Folder or URL of the currently opened file")]
+    OpenCurrentPath,
+
     [Description("Subtitles Position Up")]
     SubsPositionUp,
     [Description("Subtitles Position Down")]
@@ -522,6 +612,11 @@ public static class KeyBindingActionExtensions
     {
         switch (action)
         {
+            case CustomKeyBindingAction.OpenNextFile:
+            case CustomKeyBindingAction.OpenPrevFile:
+            case CustomKeyBindingAction.OpenCurrentPath:
+                return KeyBindingActionGroup.Player; // TODO: L: ?
+
             case CustomKeyBindingAction.SubsPositionUp:
             case CustomKeyBindingAction.SubsPositionDown:
             case CustomKeyBindingAction.SubsSizeIncrease:

@@ -249,7 +249,23 @@
                         </Button.Style>
                     </Button>
                     <materialDesign:PackIcon Kind="VideoInputAntenna" Height="20" Width="20" Foreground="{DynamicResource MaterialDesign.Brush.Secondary}" VerticalAlignment="Center" Visibility="{Binding FL.Player.IsLive, Converter={StaticResource BooleanToVisibilityConv}, FallbackValue=Collapsed, TargetNullValue=Collapsed}"/>
-                    <TextBlock VerticalAlignment="Center" FontStyle="Italic" Margin="5,0,0,0" Text="{Binding FL.Player.Playlist.Selected.Title}" />
+                    <TextBlock VerticalAlignment="Center" FontStyle="Italic" Margin="5,0,0,0" Text="{Binding FL.Player.Playlist.Selected.Title}" Cursor="Hand">
+                        <TextBlock.ToolTip>
+                            <ToolTip xml:space="preserve">Left Click: Open File Dialog
+Right Click: Open Context Menu</ToolTip>
+                        </TextBlock.ToolTip>
+                        <TextBlock.InputBindings>
+                            <MouseBinding Command="{Binding FL.Player.Commands.OpenFromFileDialog}" MouseAction="LeftClick" />
+                        </TextBlock.InputBindings>
+                        <TextBlock.ContextMenu>
+                            <ContextMenu Style="{StaticResource FlyleafContextMenu}">
+                                <MenuItem Header="Open next" Command="{Binding FL.Action.CmdOpenNextFile}" />
+                                <MenuItem Header="Open prev" Command="{Binding FL.Action.CmdOpenPrevFile}" />
+                                <MenuItem Header="Open path" Command="{Binding FL.Action.CmdOpenCurrentPath}" />
+                                <MenuItem Header="Copy path" Command="{Binding FL.Player.Commands.CopyToClipboard}" />
+                            </ContextMenu>
+                        </TextBlock.ContextMenu>
+                    </TextBlock>
                 </StackPanel>
 
                 <Button Grid.Column="5" Content="{materialDesign:PackIcon Kind=SkipPrevious}" Command="{Binding FL.Player.Commands.Reopen}" CommandParameter="{Binding FL.Player.Playlist.PrevItem}">

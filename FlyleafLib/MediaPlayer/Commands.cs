@@ -38,6 +38,8 @@ public class Commands
     public ICommand OpenFromClipboard       { get; set; }
     public ICommand OpenFromFileDialog      { get; set; }
     public ICommand Reopen                  { get; set; }
+    public ICommand CopyToClipboard         { get; set; }
+    public ICommand CopyItemToClipboard     { get; set; }
 
     public ICommand Play                    { get; set; }
     public ICommand Pause                   { get; set; }
@@ -100,6 +102,8 @@ public class Commands
         OpenFromClipboard       = new RelayCommandSimple(player.OpenFromClipboard);
         OpenFromFileDialog      = new RelayCommandSimple(player.OpenFromFileDialog);
         Reopen                  = new RelayCommand(ReopenAction);
+        CopyToClipboard         = new RelayCommandSimple(player.CopyToClipboard);
+        CopyItemToClipboard     = new RelayCommandSimple(player.CopyItemToClipboard);
 
         Play                    = new RelayCommandSimple(player.Play);
         Pause                   = new RelayCommandSimple(player.Pause);
