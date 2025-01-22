@@ -3,7 +3,8 @@
                         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
                         xmlns:prism="http://prismlibrary.com/"
-                        ShutdownMode="OnMainWindowClose">
+                        ShutdownMode="OnMainWindowClose"
+                        DispatcherUnhandledException="App_OnDispatcherUnhandledException">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>

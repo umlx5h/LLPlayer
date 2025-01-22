@@ -1,6 +1,8 @@
 ﻿using System.Globalization;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Threading;
 using FlyleafLib.MediaPlayer;
 using LLPlayer.Extensions;
 using LLPlayer.Services;
@@ -57,5 +59,14 @@ public partial class App : PrismApplication
         FlyleafLoader.StartEngine();
 
         base.OnStartup(e);
+    }
+
+    private void App_OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+    {
+        // Ignore WPF Clipboard exception
+        if (e.Exception is COMException { ErrorCode: -2147221040 })
+        {
+            e.Handled = true;
+        }
     }
 }
