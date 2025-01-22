@@ -56,23 +56,33 @@
                         <ComboBox
                             Width="100"
                             ItemsSource="{Binding WhisperLanguages}"
+                            IsEnabled="{Binding FL.PlayerConfig.Subtitles.WhisperParameters.LanguageDetection, Converter={StaticResource InvertBooleanConv}}"
                             DisplayMemberPath="EnglishName"
                             SelectedValuePath="Code"
                             SelectedValue="{Binding FL.PlayerConfig.Subtitles.WhisperParameters.Language}" />
+                        <CheckBox
+                            Margin="15 0 0 0"
+                            IsChecked="{Binding FL.PlayerConfig.Subtitles.WhisperParameters.LanguageDetection}"
+                            Content="Auto Detect" />
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
-                            Width="200"
-                            Text="Auto Language Detection (Preferred)" />
-                        <ToggleButton
-                            IsChecked="{Binding FL.PlayerConfig.Subtitles.WhisperParameters.LanguageDetection}" />
-                    </StackPanel>
-
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Width="200"
-                            Text="Translate to English" />
+                            Width="200">
+                            Translate to English
+                            <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                <ToolTipService.ToolTip>
+                                    <TextBlock
+                                        Text="Translated into English using Whisper's built-in translation engine. Only English is supported. If you want to translate into another language, you can use the LLPlayer's translation engine."
+                                        TextWrapping="Wrap"
+                                        MaxWidth="400" />
+                                </ToolTipService.ToolTip>
+                                <materialDesign:PackIcon
+                                    Kind="Information"
+                                    Width="16" Height="16"
+                                    Margin="4 0 0 0" />
+                            </InlineUIContainer>
+                        </TextBlock>
                         <ToggleButton
                             IsChecked="{Binding FL.PlayerConfig.Subtitles.WhisperParameters.Translate}" />
                     </StackPanel>
