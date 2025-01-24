@@ -910,7 +910,7 @@ public unsafe class VideoDecoder : DecoderBase
         // More issues with mpegts seeking backwards (those should be used also in the reverse playback in the demuxer)
         demuxer.Interrupter.SeekRequest();
         ret = codecCtx->codec_id == AVCodecID.Hevc|| (demuxer.FormatContext->iformat != null) // TBR: this is on FFInputFormat now -> && demuxer.FormatContext->iformat-> read_seek.Pointer == IntPtr.Zero)
-            ? av_seek_frame(demuxer.FormatContext, -1, Math.Max(0, frameTimestamp - (3 * (long)1000 * 10000)) / 10, SeekFlags.Any)
+            ? av_seek_frame(demuxer.FormatContext, -1, Math.Max(0, frameTimestamp - Config.Player.SeekGetFrameFixMargin) / 10, SeekFlags.Any)
             : av_seek_frame(demuxer.FormatContext, -1, frameTimestamp / 10, SeekFlags.Frame | SeekFlags.Backward);
 
         demuxer.DisposePackets();

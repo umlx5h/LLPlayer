@@ -333,7 +333,7 @@ unsafe partial class Player
 
                 decoder.PauseDecoders(); // TBR: Required to avoid gettings packets between Seek and ShowFrame which causes resync issues
 
-                if (decoder.Seek(seekData.accurate ? Math.Max(0, seekData.ms - 3000) : seekData.ms, seekData.forward, !seekData.accurate) < 0) // Consider using GetVideoFrame with no timestamp (any) to ensure keyframe packet for faster seek in HEVC
+                if (decoder.Seek(seekData.accurate ? Math.Max(0, seekData.ms - (int)new TimeSpan(Config.Player.SeekAccurateFixMargin).TotalMilliseconds) : seekData.ms, seekData.forward, !seekData.accurate) < 0) // Consider using GetVideoFrame with no timestamp (any) to ensure keyframe packet for faster seek in HEVC
                     Log.Warn("Seek failed");
                 else if (seekData.accurate)
                     decoder.GetVideoFrame(seekData.ms * (long)10000);

@@ -236,6 +236,16 @@ public class Config : NotifyPropertyChanged
         bool _SeekAccurate;
 
         /// <summary>
+        /// Margin time to move back forward when doing an exact seek (ticks)
+        /// </summary>
+        public long     SeekAccurateFixMargin       { get; set => Set(ref field, value); } = TimeSpan.FromMilliseconds(0).Ticks;
+
+        /// <summary>
+        /// Margin time to move back forward when getting frame (ticks)
+        /// </summary>
+        public long     SeekGetFrameFixMargin       { get; set => Set(ref field, value); } = TimeSpan.FromMilliseconds(3000).Ticks;
+
+        /// <summary>
         /// Snapshot encoding will be used (valid formats bmp, png, jpg/jpeg)
         /// </summary>
         public string   SnapshotFormat              { get ;set; } = "bmp";
