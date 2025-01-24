@@ -190,7 +190,7 @@ public class AppConfigSubs : Bindable
     {
         FL.Player.renderer.ViewportChanged += (sender, args) =>
         {
-            Utils.UIIfRequired(UpdateSubsConfig);
+            Utils.UI(UpdateSubsConfig);
         };
     }
 

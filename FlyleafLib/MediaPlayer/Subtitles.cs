@@ -286,7 +286,7 @@ public class SubsData : NotifyPropertyChanged
     public void Reset()
     {
         Clear();
-        UIIfRequired(() =>
+        UI(() =>
         {
             // Clear does not reset because there is a config in SubsBitmapPosition
             BitmapPosition = new SubsBitmapPosition(_player, _subIndex);
@@ -297,7 +297,7 @@ public class SubsData : NotifyPropertyChanged
     {
         if (Text != "" || Bitmap != null)
         {
-            UIIfRequired(() =>
+            UI(() =>
             {
                 Text = "";
                 Bitmap = null;
@@ -476,7 +476,7 @@ public class Subtitle : NotifyPropertyChanged
 
     private void UpdateUI()
     {
-        UIIfRequired(() =>
+        UI(() =>
         {
             IsOpened = _isOpened;
             Codec = _codec;

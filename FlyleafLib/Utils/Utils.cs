@@ -92,22 +92,6 @@ public static partial class Utils
     }
 
     /// <summary>
-    /// Begin invokes the UI thread if required to execute the specified action
-    /// </summary>
-    /// <param name="action"></param>
-    public static void UIIfRequired(Action action)
-    {
-        if (Application.Current.Dispatcher.CheckAccess())
-        {
-            action();
-        }
-        else
-        {
-            Application.Current.Dispatcher.BeginInvoke(action, System.Windows.Threading.DispatcherPriority.DataBind);
-        }
-    }
-
-    /// <summary>
     /// Invokes the UI thread to execute the specified action
     /// </summary>
     /// <param name="action"></param>
