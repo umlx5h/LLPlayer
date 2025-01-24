@@ -70,6 +70,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <ToolBar
@@ -308,5 +309,17 @@
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
+
+        <!-- Spinner (when loading subs / OCR / ASR) -->
+        <ProgressBar
+            Grid.Row="2"
+            Margin="10"
+            IsIndeterminate="True"
+            Style="{StaticResource MaterialDesignCircularProgressBar}"
+            ToolTip="Loading..."
+            Visibility="{Binding SubManager.IsLoading, Converter={StaticResource BooleanToVisibilityConv}}"
+            Width="20"
+            Height="20"
+            Foreground="#888888" />
     </Grid>
 </UserControl>

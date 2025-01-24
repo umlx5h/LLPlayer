@@ -595,7 +595,10 @@ public class Subtitle : NotifyPropertyChanged
         {
             if (isExternal || _player.SubtitlesOCR.CanDo(stream.Language))
             {
-                _player.SubtitlesOCR.Do(_subIndex, _player.SubtitlesManager[_subIndex].Subs.ToList(), stream.Language, curTime);
+                using (_player.SubtitlesManager[_subIndex].StartLoading())
+                {
+                    _player.SubtitlesOCR.Do(_subIndex, _player.SubtitlesManager[_subIndex].Subs.ToList(), stream.Language, curTime);
+                }
             }
         }
     }
@@ -642,7 +645,10 @@ public class Subtitle : NotifyPropertyChanged
 
         Task.Factory.StartNew(() =>
         {
-            _player.SubtitlesASR.Open(_subIndex, url, streamIndex, curTime);
+            using (_player.SubtitlesManager[_subIndex].StartLoading())
+            {
+                _player.SubtitlesASR.Open(_subIndex, url, streamIndex, curTime);
+            }
         }, TaskCreationOptions.LongRunning);
 
         UpdateUI();

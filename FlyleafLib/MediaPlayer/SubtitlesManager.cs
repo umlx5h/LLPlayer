@@ -91,6 +91,11 @@ public class SubManager : INotifyPropertyChanged
     /// </summary>
     public BulkObservableCollection<SubtitleData> Subs { get; } = new();
 
+    /// <summary>
+    /// True when addition to Subs is running... (Reading all subtitles, OCR, ASR)
+    /// </summary>
+    public bool IsLoading { get; private set => Set(ref field, value); } = false;
+
     // LanguageSource with fallback
     public Language? Language
     {
@@ -160,6 +165,21 @@ public class SubManager : INotifyPropertyChanged
             CollectionViewSource.GetDefaultView(Subs).Refresh();
         });
     }
+
+    /// <summary>
+    /// This must be called when doing heavy operation
+    /// </summary>
+    /// <returns></returns>
+    internal IDisposable StartLoading()
+    {
+        IsLoading = true;
+
+        return Disposable.Create(() =>
+        {
+            IsLoading = false;
+        });
+    }
+
     public void Clear()
     {
         lock (_subsLocker)
@@ -417,6 +437,8 @@ public class SubManager : INotifyPropertyChanged
 
         lock (_locker)
         {
+            using var loading = StartLoading();
+
             _cts = new CancellationTokenSource();
 
             using SubtitleReader reader = new();
