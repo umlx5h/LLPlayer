@@ -606,6 +606,13 @@ public unsafe class Demuxer : RunThreadBase
                 ret = avformat_find_stream_info(fmtCtx, null);
                 if (ret == AVERROR_EXIT || Status != Status.Opening || Interrupter.ForceInterrupt == 1) return error = "Cancelled";
                 if (ret < 0) return error = $"[avformat_find_stream_info] {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})";
+
+                if (requiresMoreAnalyse)
+                {
+                    // https://github.com/SuRGeoNix/Flyleaf/issues/502
+                    // TODO: L: Fix high memory usage after avformat_find_stream_info temporality when enabling bitmap subtitles
+                    avformat_seek_file(fmtCtx, -1, 0, 0, 0, 0);
+                }
             }
 
             // Prevent Multiple Immediate exit requested on eof (maybe should not use avio_feof() to test for the end)
