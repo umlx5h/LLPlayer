@@ -818,7 +818,7 @@ public class Config : NotifyPropertyChanged
                     }
 
                     // Update text in sidebar
-                    player.SubtitlesManager[SubIndex].Subs.Refresh();
+                    player.SubtitlesManager[SubIndex].Refresh();
                 }
             }
         } = false;

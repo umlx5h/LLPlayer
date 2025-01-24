@@ -148,6 +148,18 @@ public class SubManager : INotifyPropertyChanged
         Last     // After the last subtitle
     }
 
+    /// <summary>
+    /// Force UI refresh
+    /// </summary>
+    internal void Refresh()
+    {
+        // NOTE: If it is not executed in the main thread, the following error occurs.
+        // System.NotSupportedException: 'This type of CollectionView does not support'
+        Utils.UI(() =>
+        {
+            CollectionViewSource.GetDefaultView(Subs).Refresh();
+        });
+    }
     public void Clear()
     {
         lock (_subsLocker)
@@ -1089,12 +1101,6 @@ internal static class WrapperHelper
 
 public static class ObservableCollectionExtensions
 {
-    // Force UI refresh
-    public static void Refresh<T>(this ObservableCollection<T> value)
-    {
-        CollectionViewSource.GetDefaultView(value).Refresh();
-    }
-
     public static int FindIndex<T>(this ObservableCollection<T> collection, Predicate<T> match)
     {
         if (collection == null)
