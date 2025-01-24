@@ -649,4 +649,30 @@ public static partial class Utils
 
         return str.Substring(0, availableLength) + suffix;
     }
+
+    // TODO: L: move to app, using event
+    public static void PlayCompletionSound()
+    {
+        string soundPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets/completion.mp3");
+
+        if (!File.Exists(soundPath))
+        {
+            return;
+        }
+
+        UI(() =>
+        {
+            try
+            {
+                // play completion sound
+                System.Windows.Media.MediaPlayer mp = new();
+                mp.Open(new Uri(soundPath));
+                mp.Play();
+            }
+            catch
+            {
+                // ignored
+            }
+        });
+    }
 }

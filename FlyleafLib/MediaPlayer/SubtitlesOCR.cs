@@ -4,7 +4,6 @@ using System.IO;
 using System.Collections.Generic;
 using System.Drawing.Drawing2D;
 using System.Linq;
-using System.Media;
 using System.Threading;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -124,8 +123,11 @@ public unsafe class SubtitlesOCR
                 }
             }
 
-            // TODO: L: Notify, express completion in some way
-            SystemSounds.Hand.Play();
+            if (!_ctss[subIndex].Token.IsCancellationRequested)
+            {
+                // TODO: L: Notify, express completion in some way
+                Utils.PlayCompletionSound();
+            }
         }
     }
 

@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Media;
 using System.Threading;
 using System.Threading.Tasks;
 using Whisper.net;
@@ -111,8 +110,11 @@ public class SubtitlesASR
             }, _cts.Token);
         }
 
-        // TODO: L: Notify, express completion in some way
-        SystemSounds.Hand.Play();
+        if (!_cts.Token.IsCancellationRequested)
+        {
+            // TODO: L: Notify, express completion in some way
+            Utils.PlayCompletionSound();
+        }
     }
 
     public void TryCancel(bool isWait)
