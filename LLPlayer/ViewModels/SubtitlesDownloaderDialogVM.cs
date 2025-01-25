@@ -80,7 +80,6 @@ public class SubtitlesDownloaderDialogVM : Bindable, IDialogAware
         {
             return;
         }
-        // TODO: L: error handling (error dialog)
         (byte[] subData, _) = await _subProvider.Download(sub);
 
         string subDir = Path.Combine(Path.GetTempPath(), App.Name, "Subs");
@@ -134,7 +133,6 @@ public class SubtitlesDownloaderDialogVM : Bindable, IDialogAware
 
     public AsyncDelegateCommand CmdDownload => field ??= new AsyncDelegateCommand(async () =>
     {
-        // TODO: L: error handling
         var sub = SelectedSub;
         if (sub == null)
         {

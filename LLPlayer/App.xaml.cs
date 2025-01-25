@@ -69,5 +69,12 @@ public partial class App : PrismApplication
         {
             e.Handled = true;
         }
+
+        if (!e.Handled)
+        {
+            // TODO: L: error logging
+            ErrorDialogHelper.ShowUnknownErrorPopup($"Unhandled Exception: {e.Exception.Message}", "Global", e.Exception);
+            e.Handled = true;
+        }
     }
 }
