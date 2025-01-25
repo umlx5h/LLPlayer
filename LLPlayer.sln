@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YoutubeDL", "Plugins\Youtub
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfColorFontDialog", "WpfColorFontDialog\WpfColorFontDialog.csproj", "{9695C7DF-F202-4A25-9458-D6E11AB10499}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlyleafLibTests", "FlyleafLibTests\FlyleafLibTests.csproj", "{640C5BC2-EDAA-4640-94C2-749A42432DF0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,6 +37,10 @@ Global
 		{9695C7DF-F202-4A25-9458-D6E11AB10499}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9695C7DF-F202-4A25-9458-D6E11AB10499}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9695C7DF-F202-4A25-9458-D6E11AB10499}.Release|Any CPU.Build.0 = Release|Any CPU
+		{640C5BC2-EDAA-4640-94C2-749A42432DF0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{640C5BC2-EDAA-4640-94C2-749A42432DF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{640C5BC2-EDAA-4640-94C2-749A42432DF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{640C5BC2-EDAA-4640-94C2-749A42432DF0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
