@@ -17,6 +17,7 @@ public class OpenSubtitlesProvider
     {
         HttpClient client = new();
         client.BaseAddress = new Uri("http://api.opensubtitles.org/xml-rpc");
+        client.Timeout = TimeSpan.FromSeconds(15);
 
         _client = client;
     }

@@ -99,7 +99,8 @@ public class TesseractDownloadDialogVM : Bindable, IDialogAware
 
             StatusText = $"Model '{SelectedModel}' is downloaded successfully";
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
+            when (!ex.Message.StartsWith("The request was canceled due to the configured HttpClient.Timeout"))
         {
             StatusText = "Download canceled";
         }
@@ -199,6 +200,7 @@ public class TesseractDownloadDialogVM : Bindable, IDialogAware
         DownloadedSize = 0;
 
         using HttpClient httpClient = new();
+        httpClient.Timeout = TimeSpan.FromSeconds(10);
 
         using var response = await httpClient.GetAsync($"https://github.com/tesseract-ocr/tessdata/raw/refs/heads/main/{langCode}.traineddata", HttpCompletionOption.ResponseHeadersRead, token);
 
