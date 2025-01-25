@@ -905,7 +905,7 @@ public class Config : NotifyPropertyChanged
             return subs;
         }
 
-        private Player player;
+        internal Player player;
         internal void SetPlayer(Player player)
         {
             this.player = player;

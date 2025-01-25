@@ -86,7 +86,7 @@
                 IsExpanded="False"
                 Visibility="{Binding HasException, Converter={StaticResource BooleanToVisibilityConv}}">
                 <TextBox
-                    Text="{Binding ExceptionMessage, Mode=OneWay}"
+                    Text="{Binding ExceptionDetail, Mode=OneWay}"
                     IsReadOnly="True"
                     FontSize="12"
                     TextAlignment="Left"

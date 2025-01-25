@@ -1,11 +1,10 @@
-﻿using FlyleafLib.MediaPlayer.Translation.Services;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
+using FlyleafLib.MediaPlayer.Translation.Services;
 
 namespace FlyleafLib.MediaPlayer.Translation;
 
@@ -25,6 +24,8 @@ public class SubTranslator
     private readonly TranslateServiceFactory _translateServiceFactory;
     private bool IsEnabled => _config[_subIndex].EnabledTranslated;
 
+    private readonly LogHandler Log;
+
     public SubTranslator(SubManager subManager, Config.SubtitlesConfig config, int subIndex)
     {
         _subManager = subManager;
@@ -35,6 +36,8 @@ public class SubTranslator
         _config.PropertyChanged += Config_OnPropertyChanged;
 
         _translateServiceFactory = new TranslateServiceFactory(config);
+
+        Log = new LogHandler(("[#1]").PadRight(8, ' ') + $" [Translator{subIndex+1}   ] ");
     }
 
     private void SubManager_OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -107,19 +110,19 @@ public class SubTranslator
             if (_translateService != null)
                 return true;
 
-            _translateService = _translateServiceFactory.GetService(_config.TranslateServiceType);
-            _concurrentLimiter = new SemaphoreSlim(_config.TranslateMaxConcurrent);
-
             try
             {
+                _translateService = _translateServiceFactory.GetService(_config.TranslateServiceType);
+                _concurrentLimiter = new SemaphoreSlim(_config.TranslateMaxConcurrent);
                 _translateService.Initialize(srcLang, _config.TranslateTargetLanguage);
             }
-            catch (ArgumentException ex)
+            catch (TranslationConfigException ex)
             {
-                // TODO: L: Make it an event and display the dialog on the app side, or toast display?
-                Utils.UI(() =>
+                // Unable to translate, so turn off the translation and notify
+                _ = Reset().ContinueWith((_) =>
                 {
-                    MessageBox.Show(ex.Message);
+                    _config[_subIndex].EnabledTranslated = false;
+                    _config.player.RaiseKnownErrorOccurred(ex.Message, KnownErrorType.Configuration);
                 });
 
                 return false;
@@ -239,11 +242,24 @@ public class SubTranslator
             sub.TranslatedText = translated;
 
             TimeSpan elapsed = Stopwatch.GetElapsedTime(start);
-            Debug.WriteLine($"Translation {sub.Index} in {elapsed.TotalMilliseconds} - {translated}");
+            Log.Debug($"Translation {sub.Index} in {elapsed.TotalMilliseconds} - {translated}");
+        }
+        catch (OperationCanceledException)
+        {
+            Log.Debug("Translation canceled");
+            throw;
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Translation failed for index {sub.Index}: {ex.Message}");
+            // Unable to translate, so turn off the translation and notify
+            _ = Reset().ContinueWith((_) =>
+            {
+                _config[_subIndex].EnabledTranslated = false;
+
+                _config.player.RaiseUnknownErrorOccurred(ex.Message, UnknownErrorType.Translation, ex);
+            });
+
+            Log.Error($"Translation failed for index {sub.Index}: {ex.Message}");
         }
     }
 }

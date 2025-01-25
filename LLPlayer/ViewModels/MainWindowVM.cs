@@ -29,6 +29,14 @@ public class MainWindowVM : Bindable
             });
         };
 
+        FL.Player.UnknownErrorOccurred += (sender, args) =>
+        {
+            Utils.UI(() =>
+            {
+                ErrorDialogHelper.ShowUnknownErrorPopup(args.Message, args.ErrorType, args.Exception);
+            });
+        };
+
         FL.Player.OpenCompleted += (sender, args) =>
         {
             if (!args.Success || args.IsSubtitles)

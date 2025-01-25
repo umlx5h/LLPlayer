@@ -1,7 +1,7 @@
-﻿using DeepL;
-using DeepL.Model;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
+using DeepL;
+using DeepL.Model;
 
 namespace FlyleafLib.MediaPlayer.Translation.Services;
 
@@ -16,8 +16,17 @@ public class DeepLTranslateService : ITranslateService
 
     public DeepLTranslateService(DeepLTranslateSettings settings)
     {
+        if (string.IsNullOrWhiteSpace(settings.ApiKey))
+        {
+            throw new TranslationConfigException(
+                "APIKey for the DeepL translation is not set. Please set it from the settings.");
+        }
+
         _settings = settings;
-        _translator = new Translator(settings.ApiKey);
+        _translator = new Translator(_settings.ApiKey, new TranslatorOptions()
+        {
+            OverallConnectionTimeout = TimeSpan.FromMilliseconds(settings.TimeoutMs)
+        });
     }
 
     public void Initialize(Language src, TargetLanguage target)
@@ -26,35 +35,35 @@ public class DeepLTranslateService : ITranslateService
 
         if (src == Language.Unknown)
         {
-            throw new ArgumentException("src language are unknown");
+            throw new TranslationConfigException("src language are unknown");
         }
 
         // Exception for same language
         if (src.ISO6391 == target.ToISO6391())
         {
-            throw new ArgumentException("src and target language are same");
+            throw new TranslationConfigException("src and target language are same");
         }
 
         if (!TranslateLanguage.Langs.TryGetValue(iso6391, out var srcLang))
         {
-            throw new ArgumentException($"src language is not supported: {src}", nameof(src));
+            throw new TranslationConfigException($"src language is not supported: {src.TopEnglishName}");
         }
 
         if (!srcLang.SupportedServices.HasFlag(TranslateServiceType.DeepL))
         {
-            throw new ArgumentException($"src language is not supported by DeepL: {src}", nameof(src));
+            throw new TranslationConfigException($"src language is not supported by DeepL: {src.TopEnglishName}");
         }
 
         _srcLang = ToSourceCode(srcLang.ISO6391);
 
         if (!TranslateLanguage.Langs.TryGetValue(target.ToISO6391(), out var targetLang))
         {
-            throw new ArgumentException($"target language is not supported: {target}", nameof(target));
+            throw new TranslationConfigException($"target language is not supported: {target.ToString()}");
         }
 
         if (!targetLang.SupportedServices.HasFlag(TranslateServiceType.DeepL))
         {
-            throw new ArgumentException($"target language is not supported by DeepL: {target}", nameof(target));
+            throw new TranslationConfigException($"target language is not supported by DeepL: {target.ToString()}");
         }
 
         _targetLang = ToTargetCode(target);
@@ -89,15 +98,21 @@ public class DeepLTranslateService : ITranslateService
 
         try
         {
-            TextResult result = await _translator.TranslateTextAsync(text, _srcLang, _targetLang, new TextTranslateOptions
-            {
-                Formality = Formality.Default,
-            }, token);
+            TextResult result = await _translator.TranslateTextAsync(text, _srcLang, _targetLang,
+                new TextTranslateOptions
+                {
+                    Formality = Formality.Default,
+                }, token).ConfigureAwait(false);
 
             return result.Text;
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
+            // Timeout: DeepL.ConnectionException
             throw new TranslationException($"Cannot translate with DeepL: {ex.Message}", ex);
         }
     }

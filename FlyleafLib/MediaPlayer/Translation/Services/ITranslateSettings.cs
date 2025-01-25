@@ -21,6 +21,8 @@ public class GoogleV1TranslateSettings : NotifyPropertyChanged, ITranslateSettin
         Endpoint = DefaultEndpoint;
     });
 
+    public int TimeoutMs { get; set => Set(ref field, value); } = 10000;
+
     public Dictionary<string, string> Regions { get; set; } = new(GoogleV1TranslateService.DefaultRegions);
 
     /// <summary>
@@ -109,16 +111,16 @@ public class GoogleV1TranslateSettings : NotifyPropertyChanged, ITranslateSettin
 public class DeepLTranslateSettings : NotifyPropertyChanged, ITranslateSettings
 {
     public string ApiKey { get; set => Set(ref field, value); }
+
+    public int TimeoutMs { get; set => Set(ref field, value); } = 10000;
 }
 
 public class DeepLXTranslateSettings : NotifyPropertyChanged, ITranslateSettings
 {
     // First request is abnormally slow on localhost, IPv6 related?
-    public string Endpoint
-    {
-        get;
-        set => Set(ref field, value);
-    } = "http://127.0.0.1:11188";
+    public string Endpoint { get; set => Set(ref field, value); } = "http://127.0.0.1:11188";
+
+    public int TimeoutMs { get; set => Set(ref field, value); } = 10000;
 }
 
 public class LanguageRegionMember : NotifyPropertyChanged

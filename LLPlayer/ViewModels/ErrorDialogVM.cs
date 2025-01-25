@@ -25,16 +25,25 @@ public class ErrorDialogVM : Bindable, IDialogAware
             if (Set(ref field, value))
             {
                 OnPropertyChanged(nameof(HasException));
-                OnPropertyChanged(nameof(ExceptionMessage));
+                OnPropertyChanged(nameof(ExceptionDetail));
             }
         }
     }
-
-    public string ExceptionMessage => Exception == null ? "" : Exception.ToString();
-
     public bool HasException => Exception != null;
 
-    public bool IsUnknown { get; set => Set(ref field, value); }
+    public string ExceptionDetail => Exception == null ? "" : Exception.ToString();
+
+    public bool IsUnknown
+    {
+        get;
+        set
+        {
+            if (Set(ref field, value))
+            {
+                OnPropertyChanged(nameof(ErrorTitle));
+            }
+        }
+    }
 
     public string ErrorType
     {
@@ -48,7 +57,7 @@ public class ErrorDialogVM : Bindable, IDialogAware
         }
     }
 
-    public string ErrorTitle => $"{ErrorType} Error";
+    public string ErrorTitle => IsUnknown ? $"{ErrorType} Unknown Error" : $"{ErrorType} Error";
 
     [field: AllowNull, MaybeNull]
     public DelegateCommand CmdCopyMessage => field ??= new(() =>
@@ -95,23 +104,17 @@ public class ErrorDialogVM : Bindable, IDialogAware
             case "known":
                 Message = parameters.GetValue<string>("message");
                 ErrorType = parameters.GetValue<string>("errorType");
-                IsUnknown = true;
+                IsUnknown = false;
 
                 break;
             case "unknown":
-                ErrorType = "Unknown";
+                Message = parameters.GetValue<string>("message");
+                ErrorType = parameters.GetValue<string>("errorType");
                 IsUnknown = true;
 
                 if (parameters.ContainsKey("exception"))
                 {
                     Exception = parameters.GetValue<Exception>("exception");
-
-                    var message = parameters.GetValue<string>("message");
-                    Message = $"{message}: {Exception.Message}";
-                }
-                else
-                {
-                    Message = parameters.GetValue<string>("message");
                 }
 
                 WindowHeight += 100;

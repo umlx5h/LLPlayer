@@ -200,24 +200,34 @@ public partial class WordPopup : UserControl, INotifyPropertyChanged
 
         if (_translateService == null)
         {
-            var service = _translateServiceFactory.GetService(FL.PlayerConfig.Subtitles.TranslateWordServiceType);
             try
             {
+                var service = _translateServiceFactory.GetService(FL.PlayerConfig.Subtitles.TranslateWordServiceType);
                 service.Initialize(srcLang, targetLang);
                 _translateService = service;
             }
-            catch (Exception ex)
+            catch (TranslationConfigException ex)
             {
-                MessageBox.Show(ex.Message);
+                Clear();
+                ErrorDialogHelper.ShowKnownErrorPopup(ex.Message, KnownErrorType.Configuration);
 
                 return text;
             }
         }
 
-        string result = await _translateService.TranslateAsync(text, token);
-        _translateCache.TryAdd(lower, result);
+        try
+        {
+            string result = await _translateService.TranslateAsync(text, token);
+            _translateCache.TryAdd(lower, result);
 
-        return result;
+            return result;
+        }
+        catch (TranslationException ex)
+        {
+            ErrorDialogHelper.ShowUnknownErrorPopup(ex.Message, UnknownErrorType.Translation, ex);
+
+            return text;
+        }
     }
 
     public async Task OnWordClicked(WordClickedEventArgs e)
@@ -322,7 +332,7 @@ public partial class WordPopup : UserControl, INotifyPropertyChanged
 
             try
             {
-                var result = await TranslateWithCache(source, _cts.Token);
+                string result = await TranslateWithCache(source, _cts.Token);
                 TranslationText.Text = result;
                 IsLoading = false;
             }

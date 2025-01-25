@@ -18,9 +18,16 @@ public class DeepLXTranslateService : ITranslateService
 
     public DeepLXTranslateService(DeepLXTranslateSettings settings)
     {
+        if (string.IsNullOrWhiteSpace(settings.Endpoint))
+        {
+            throw new TranslationConfigException(
+                "Endpoint for the DeepLX translation is not set. Please set it from the settings.");
+        }
+
         _settings = settings;
         _httpClient = new HttpClient();
         _httpClient.BaseAddress = new Uri(settings.Endpoint);
+        _httpClient.Timeout = TimeSpan.FromMilliseconds(settings.TimeoutMs);
     }
 
     public void Initialize(Language src, TargetLanguage target)
@@ -29,35 +36,35 @@ public class DeepLXTranslateService : ITranslateService
 
         if (src == Language.Unknown)
         {
-            throw new ArgumentException("src language are unknown");
+            throw new TranslationConfigException("src language are unknown");
         }
 
         // Exception for same language
         if (src.ISO6391 == target.ToISO6391())
         {
-            throw new ArgumentException("src and target language are same");
+            throw new TranslationConfigException("src and target language are same");
         }
 
         if (!TranslateLanguage.Langs.TryGetValue(iso6391, out var srcLang))
         {
-            throw new ArgumentException($"src language is not supported: {src}", nameof(src));
+            throw new TranslationConfigException($"src language is not supported: {src.TopEnglishName}");
         }
 
         if (!srcLang.SupportedServices.HasFlag(TranslateServiceType.DeepLX))
         {
-            throw new ArgumentException($"src language is not supported by DeepLX: {src}", nameof(src));
+            throw new TranslationConfigException($"src language is not supported by DeepLX: {src.TopEnglishName}");
         }
 
         _srcLang = ToSourceCode(srcLang.ISO6391);
 
         if (!TranslateLanguage.Langs.TryGetValue(target.ToISO6391(), out var targetLang))
         {
-            throw new ArgumentException($"target language is not supported: {target}", nameof(target));
+            throw new TranslationConfigException($"target language is not supported: {target.ToString()}");
         }
 
         if (!targetLang.SupportedServices.HasFlag(TranslateServiceType.DeepLX))
         {
-            throw new ArgumentException($"target language is not supported by DeepLX: {target}", nameof(target));
+            throw new TranslationConfigException($"target language is not supported by DeepLX: {target.ToString()}");
         }
 
         _targetLang = ToTargetCode(target);
@@ -99,9 +106,13 @@ public class DeepLXTranslateService : ITranslateService
 
             result.EnsureSuccessStatusCode();
         }
+        catch (OperationCanceledException ex)
+            when (!ex.Message.StartsWith("The request was canceled due to the configured HttpClient.Timeout"))
+        {
+            throw;
+        }
         catch (Exception ex)
         {
-            // TODO: k: should handle cancellation
             throw new TranslationException($"Cannot request to DeepL: {ex.Message}", ex);
         }
 

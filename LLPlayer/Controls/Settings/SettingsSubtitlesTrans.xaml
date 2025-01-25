@@ -41,7 +41,8 @@
                         Text="{Binding Endpoint}" />
                 </DockPanel>
 
-                <StackPanel Orientation="Horizontal">
+                <!--TODO: L: Parent style margins not applied-->
+                <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
                     <TextBlock
                         Width="180"
                         Text="" />
@@ -50,7 +51,17 @@
                         Command="{Binding CmdSetDefaultEndpoint}" />
                 </StackPanel>
 
-                <StackPanel Orientation="Horizontal">
+                <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
+                    <TextBlock
+                        Width="180"
+                        Text="Timeout (ms)" />
+                    <TextBox
+                        Width="100"
+                        Text="{Binding TimeoutMs}"
+                        helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
                     <TextBlock
                         Width="180"
                         Text="Source Language Region" />
@@ -79,7 +90,7 @@
         <!-- DeepL -->
         <DataTemplate DataType="{x:Type flyleafServices:DeepLTranslateSettings}">
             <StackPanel>
-                <DockPanel>
+                <DockPanel Margin="0 0 0 8">
                     <TextBlock
                         Width="180"
                         Text="DeepL API Key" />
@@ -87,13 +98,23 @@
                         HorizontalContentAlignment="Left"
                         Text="{Binding ApiKey}" />
                 </DockPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
+                    <TextBlock
+                        Width="180"
+                        Text="Timeout (ms)" />
+                    <TextBox
+                        Width="100"
+                        Text="{Binding TimeoutMs}"
+                        helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                </StackPanel>
             </StackPanel>
         </DataTemplate>
 
         <!-- DeepLX -->
         <DataTemplate DataType="{x:Type flyleafServices:DeepLXTranslateSettings}">
             <StackPanel>
-                <DockPanel>
+                <DockPanel Margin="0 0 0 8">
                     <TextBlock
                         Width="180"
                         Text="DeepLX Endpoint" />
@@ -101,6 +122,16 @@
                         HorizontalContentAlignment="Left"
                         Text="{Binding Endpoint}" />
                 </DockPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
+                    <TextBlock
+                        Width="180"
+                        Text="Timeout (ms)" />
+                    <TextBox
+                        Width="100"
+                        Text="{Binding TimeoutMs}"
+                        helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                </StackPanel>
             </StackPanel>
         </DataTemplate>
     </UserControl.Resources>

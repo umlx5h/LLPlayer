@@ -10,7 +10,7 @@ public interface ITranslateService
     /// </summary>
     /// <param name="src"></param>
     /// <param name="target"></param>
-    /// <exception cref="ArgumentException">when language is not supported</exception>
+    /// <exception cref="TranslationConfigException">when language is not supported or configured properly</exception>
     void Initialize(Language src, TargetLanguage target);
 
     /// <summary>
@@ -21,25 +21,8 @@ public interface ITranslateService
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
     /// <exception cref="TranslationException">when translation is failed</exception>
+    /// <exception cref="OperationCanceledException"></exception>
     Task<string> TranslateAsync(string text, CancellationToken token);
-}
-
-
-public class TranslationException : Exception
-{
-    public TranslationException()
-    {
-    }
-
-    public TranslationException(string message)
-        : base(message)
-    {
-    }
-
-    public TranslationException(string message, Exception inner)
-        : base(message, inner)
-    {
-    }
 }
 
 [Flags]
@@ -77,5 +60,39 @@ public static class TranslateServiceTypeExtensions
         }
 
         throw new InvalidOperationException();
+    }
+}
+
+public class TranslationException : Exception
+{
+    public TranslationException()
+    {
+    }
+
+    public TranslationException(string message)
+        : base(message)
+    {
+    }
+
+    public TranslationException(string message, Exception inner)
+        : base(message, inner)
+    {
+    }
+}
+
+public class TranslationConfigException : Exception
+{
+    public TranslationConfigException()
+    {
+    }
+
+    public TranslationConfigException(string message)
+        : base(message)
+    {
+    }
+
+    public TranslationConfigException(string message, Exception inner)
+        : base(message, inner)
+    {
     }
 }

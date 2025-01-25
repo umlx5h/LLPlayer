@@ -413,6 +413,7 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
     string _LastError, lastError;
 
     public event        EventHandler<KnownErrorOccurredEventArgs> KnownErrorOccurred;
+    public event        EventHandler<UnknownErrorOccurredEventArgs> UnknownErrorOccurred;
 
     bool decoderHasEnded => decoder != null && (VideoDecoder.Status == MediaFramework.Status.Ended || (VideoDecoder.Disposed && AudioDecoder.Status == MediaFramework.Status.Ended));
     #endregion
@@ -643,17 +644,39 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
             ErrorType = errorType
         });
     }
+
+    internal void RaiseUnknownErrorOccurred(string message, UnknownErrorType errorType, Exception exception = null)
+    {
+        UnknownErrorOccurred?.Invoke(this, new UnknownErrorOccurredEventArgs
+        {
+            Message = message,
+            ErrorType = errorType,
+            Exception = exception
+        });
+    }
 }
 
 public enum KnownErrorType
 {
-    Configuration,
+    Configuration
 }
 
 public class KnownErrorOccurredEventArgs : EventArgs
 {
     public required string Message { get; init; }
     public required KnownErrorType ErrorType { get; init; }
+}
+
+public enum UnknownErrorType
+{
+    Translation
+}
+
+public class UnknownErrorOccurredEventArgs : EventArgs
+{
+    public required string Message { get; init; }
+    public required UnknownErrorType ErrorType { get; init; }
+    public Exception Exception { get; init; }
 }
 
 public enum Status

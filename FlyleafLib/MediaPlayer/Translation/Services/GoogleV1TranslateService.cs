@@ -25,9 +25,16 @@ public class GoogleV1TranslateService : ITranslateService
 
     public GoogleV1TranslateService(GoogleV1TranslateSettings settings)
     {
+        if (string.IsNullOrWhiteSpace(settings.Endpoint))
+        {
+            throw new TranslationConfigException(
+                "Endpoint for the GoogleV1 translation is not set. Please set it from the settings.");
+        }
+
         _settings = settings;
         _httpClient = new HttpClient();
         _httpClient.BaseAddress = new Uri(settings.Endpoint);
+        _httpClient.Timeout = TimeSpan.FromMilliseconds(settings.TimeoutMs);
     }
 
     public void Initialize(Language src, TargetLanguage target)
@@ -37,34 +44,34 @@ public class GoogleV1TranslateService : ITranslateService
         // TODO: L: Allow the user to choose auto-detection?
         if (src == Language.Unknown)
         {
-            throw new ArgumentException("src language are unknown");
+            throw new TranslationConfigException("src language are unknown");
         }
 
         if (src.ISO6391 == target.ToISO6391())
         {
-            throw new ArgumentException("src and target language are same");
+            throw new TranslationConfigException("src and target language are same");
         }
 
         if (!TranslateLanguage.Langs.TryGetValue(iso6391, out var srcLang))
         {
-            throw new ArgumentException($"src language is not supported: {src}");
+            throw new TranslationConfigException($"src language is not supported: {src.TopEnglishName}");
         }
 
         if (!srcLang.SupportedServices.HasFlag(TranslateServiceType.GoogleV1))
         {
-            throw new ArgumentException($"src language is not supported by GoogleV1: {src}");
+            throw new TranslationConfigException($"src language is not supported by GoogleV1: {src.TopEnglishName}");
         }
 
         _srcLang = ToSourceCode(srcLang.ISO6391);
 
         if (!TranslateLanguage.Langs.TryGetValue(target.ToISO6391(), out var targetLang))
         {
-            throw new ArgumentException($"target language is not supported: {target}");
+            throw new TranslationConfigException($"target language is not supported: {target.ToString()}");
         }
 
         if (!targetLang.SupportedServices.HasFlag(TranslateServiceType.GoogleV1))
         {
-            throw new ArgumentException($"target language is not supported by GoogleV1: {src}");
+            throw new TranslationConfigException($"target language is not supported by GoogleV1: {src.TopEnglishName}");
         }
 
         _targetLang = ToTargetCode(target);
@@ -116,8 +123,16 @@ public class GoogleV1TranslateService : ITranslateService
 
             result.EnsureSuccessStatusCode();
         }
+        // Distinguish between timeout and cancel errors
+        catch (OperationCanceledException ex)
+            when (!ex.Message.StartsWith("The request was canceled due to the configured HttpClient.Timeout"))
+        {
+            // cancel
+            throw;
+        }
         catch (Exception ex)
         {
+            // timeout
             throw new TranslationException($"Cannot request to GoogleV1: {ex.Message}", ex);
         }
 
