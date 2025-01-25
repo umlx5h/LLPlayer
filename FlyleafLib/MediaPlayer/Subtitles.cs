@@ -568,12 +568,11 @@ public class Subtitle : NotifyPropertyChanged
         }
 
         SubtitlesStream stream = Decoder.SubtitlesStreams[_subIndex];
-        bool isExternal = stream.ExternalStream != null;
-        ExternalSubtitlesStream extStream = (ExternalSubtitlesStream)stream.ExternalStream;
+        ExternalSubtitlesStream extStream = stream.ExternalStream as ExternalSubtitlesStream;
 
         bool useBitmap = Config.Subtitles.EnabledCached || SubtitlesSelectedHelper.GetMethod(_subIndex) == SelectSubMethod.OCR;
 
-        if (isExternal)
+        if (extStream != null)
         {
             // external sub
             _player.SubtitlesManager.Open(_subIndex, extStream.Url, -1, useBitmap, extStream.Language);
@@ -593,12 +592,9 @@ public class Subtitle : NotifyPropertyChanged
         // Is it better to reuse loaded bitmap?
         if (SubtitlesSelectedHelper.GetMethod(_subIndex) == SelectSubMethod.OCR)
         {
-            if (isExternal || _player.SubtitlesOCR.CanDo(stream.Language))
+            using (_player.SubtitlesManager[_subIndex].StartLoading())
             {
-                using (_player.SubtitlesManager[_subIndex].StartLoading())
-                {
-                    _player.SubtitlesOCR.Do(_subIndex, _player.SubtitlesManager[_subIndex].Subs.ToList(), stream.Language, curTime);
-                }
+                _player.SubtitlesOCR.Do(_subIndex, _player.SubtitlesManager[_subIndex].Subs.ToList(), curTime);
             }
         }
     }

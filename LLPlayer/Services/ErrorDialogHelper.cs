@@ -21,6 +21,11 @@ public static class ErrorDialogHelper
         dialogService.ShowDialog(nameof(ErrorDialog), p);
     }
 
+    public static void ShowKnownErrorPopup(string message, KnownErrorType errorType)
+    {
+        ShowKnownErrorPopup(message, errorType.ToString());
+    }
+
     public static void ShowUnknownErrorPopup(string message, Exception? ex = null)
     {
         var dialogService = ((App)Application.Current).Container.Resolve<DialogService>();

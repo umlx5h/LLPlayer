@@ -411,6 +411,9 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
 
     public string       LastError           { get => lastError; set => Set(ref _LastError, value); }
     string _LastError, lastError;
+
+    public event        EventHandler<KnownErrorOccurredEventArgs> KnownErrorOccurred;
+
     bool decoderHasEnded => decoder != null && (VideoDecoder.Status == MediaFramework.Status.Ended || (VideoDecoder.Disposed && AudioDecoder.Status == MediaFramework.Status.Ended));
     #endregion
 
@@ -631,6 +634,26 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
 
     // Avoid having this code in OnPaintBackground as it can cause designer issues (renderer will try to load FFmpeg.Autogen assembly because of HDR Data)
     internal bool WFPresent() { if (renderer == null || renderer.SCDisposed) return false; renderer?.Present(); return true; }
+
+    internal void RaiseKnownErrorOccurred(string message, KnownErrorType errorType)
+    {
+        KnownErrorOccurred?.Invoke(this, new KnownErrorOccurredEventArgs
+        {
+            Message = message,
+            ErrorType = errorType
+        });
+    }
+}
+
+public enum KnownErrorType
+{
+    Configuration,
+}
+
+public class KnownErrorOccurredEventArgs : EventArgs
+{
+    public required string Message { get; init; }
+    public required KnownErrorType ErrorType { get; init; }
 }
 
 public enum Status

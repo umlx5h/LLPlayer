@@ -238,6 +238,14 @@ public class Commands
             var stream = (SubtitlesStream)tuple.Item2;
             var selectSubMethod = (SelectSubMethod)tuple.Item3;
 
+            if (selectSubMethod == SelectSubMethod.OCR)
+            {
+                if (!TryInitializeOCR(subIndex, stream.Language))
+                {
+                    return;
+                }
+            }
+
             SubtitlesSelectedHelper.Set(subIndex, (stream.StreamIndex, null));
             SubtitlesSelectedHelper.SetMethod(subIndex, selectSubMethod);
             SubtitlesSelectedHelper.CurIndex = subIndex;
@@ -248,12 +256,32 @@ public class Commands
             var stream = (ExternalSubtitlesStream)tuple.Item2;
             var selectSubMethod = (SelectSubMethod)tuple.Item3;
 
+            if (selectSubMethod == SelectSubMethod.OCR)
+            {
+                if (!TryInitializeOCR(subIndex, stream.Language))
+                {
+                    return;
+                }
+            }
+
             SubtitlesSelectedHelper.Set(subIndex, (null, stream));
             SubtitlesSelectedHelper.SetMethod(subIndex, selectSubMethod);
             SubtitlesSelectedHelper.CurIndex = subIndex;
         }
 
         OpenAction(tuple.Item2);
+        return;
+
+        bool TryInitializeOCR(int subIndex, Language lang)
+        {
+            if (!player.SubtitlesOCR.TryInitialize(subIndex, lang, out string err))
+            {
+                player.RaiseKnownErrorOccurred(err, KnownErrorType.Configuration);
+                return false;
+            }
+
+            return true;
+        }
     }
 
     public void OpenSubtitlesASRAction(object input)

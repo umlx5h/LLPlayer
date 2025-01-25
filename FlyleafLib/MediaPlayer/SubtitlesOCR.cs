@@ -1,18 +1,18 @@
-﻿using System.Drawing.Imaging;
+﻿using System.Collections.Generic;
 using System.Drawing;
-using System.IO;
-using System.Collections.Generic;
 using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
-using Color = System.Drawing.Color;
-using ImageFormat = System.Drawing.Imaging.ImageFormat;
-using PixelFormat = System.Drawing.Imaging.PixelFormat;
 using Windows.Graphics.Imaging;
 using Windows.Media.Ocr;
 using Windows.Storage.Streams;
+using Color = System.Drawing.Color;
+using ImageFormat = System.Drawing.Imaging.ImageFormat;
+using PixelFormat = System.Drawing.Imaging.PixelFormat;
 
 namespace FlyleafLib.MediaPlayer;
 
@@ -23,15 +23,12 @@ public unsafe class SubtitlesOCR
 
     private CancellationTokenSource[] _ctss;
     private object[] _lockers;
-
-    //// TODO: L: error handling
-    //private static IList<Language> _enableLangs;
+    private IOCRService _ocrService = null;
 
     public SubtitlesOCR(Config.SubtitlesConfig config, int subNum)
     {
         _config = config;
         _subNum = subNum;
-        //_enableLangs = langs;
 
         _lockers = new object[subNum];
         _ctss = new CancellationTokenSource[subNum];
@@ -43,13 +40,31 @@ public unsafe class SubtitlesOCR
     }
 
     /// <summary>
-    /// Returns whether OCR is available
+    /// Try to initialize OCR Engine
     /// </summary>
     /// <param name="lang">OCR Language</param>
-    /// <returns></returns>
-    public bool CanDo(Language lang)
+    /// <param name="err">expected initialize error</param>
+    /// <returns>whether to success to initialize</returns>
+    public bool TryInitialize(int subIndex, Language lang, out string err)
     {
-        //return _enableLangs.Contains(lang);
+        lang = GetLanguageWithFallback(subIndex, lang);
+
+        // Retaining engines will increase memory usage, so they are created and discarded on the fly.
+        IOCRService ocrService = _config[subIndex].OCREngine switch
+        {
+            SubOCREngineType.Tesseract => new TesseractOCRService(_config),
+            SubOCREngineType.MicrosoftOCR => new MicrosoftOCRService(_config),
+            _ => throw new InvalidOperationException(),
+        };
+
+        if (!ocrService.TryInitialize(lang, out err))
+        {
+            return false;
+        }
+
+        _ocrService = ocrService;
+
+        err = "";
         return true;
     }
 
@@ -58,35 +73,24 @@ public unsafe class SubtitlesOCR
     /// </summary>
     /// <param name="subIndex">0: Primary, 1: Secondary</param>
     /// <param name="subs">List of subtitle data for OCR</param>
-    /// <param name="lang">OCR Language</param>
     /// <param name="startTime">Timestamp to start OCR</param>
-    public void Do(int subIndex, List<SubtitleData> subs, Language lang, TimeSpan? startTime = null)
+    public void Do(int subIndex, List<SubtitleData> subs, TimeSpan? startTime = null)
     {
+        if (_ocrService == null)
+            throw new InvalidOperationException("ocrService is not initialized. you must call TryInitialize() first");
+
         if (subs == null || subs.Count == 0 || !subs.First().IsBitmap)
-        {
             return;
-        }
 
         // Cancel preceding OCR
         TryCancelWait(subIndex);
 
         lock (_lockers[subIndex])
         {
+            // NOTE: important to dispose inside lock
+            using IOCRService ocrService = _ocrService;
+
             _ctss[subIndex] = new CancellationTokenSource();
-
-            if (lang == Language.Unknown)
-            {
-                // fallback to user set language
-                lang = subIndex == 0 ? _config.LanguageFallbackPrimary : _config.LanguageFallbackSecondary;
-            }
-
-            // Retaining engines will increase memory usage, so they are created and discarded on the fly.
-            using IOCRService ocrService = _config[subIndex].OCREngine switch
-            {
-                SubOCREngineType.Tesseract => new TesseractOCRService(lang, _config),
-                SubOCREngineType.MicrosoftOCR => new MicrosoftOCRService(lang, _config),
-                _ => throw new InvalidOperationException(),
-            };
 
             var startIndex = 0;
             // Start OCR from the current playback point
@@ -115,7 +119,7 @@ public unsafe class SubtitlesOCR
                 int index = (startIndex + i) % subs.Count;
 
                 // TODO: L: If it's disposed, do I need to cancel it later?
-                subs[index].Text = Process(ocrService, subIndex, subs[index].Bitmap, lang);
+                subs[index].Text = Process(ocrService, subIndex, subs[index].Bitmap);
                 if (!string.IsNullOrEmpty(subs[index].Text))
                 {
                     // If OCR succeeds, dispose of it (if it fails, leave it so that it can be displayed in the sidebar).
@@ -129,6 +133,17 @@ public unsafe class SubtitlesOCR
                 Utils.PlayCompletionSound();
             }
         }
+    }
+
+    private Language GetLanguageWithFallback(int subIndex, Language lang)
+    {
+        if (lang == Language.Unknown)
+        {
+            // fallback to user set language
+            lang = subIndex == 0 ? _config.LanguageFallbackPrimary : _config.LanguageFallbackSecondary;
+        }
+
+        return lang;
     }
 
     public void TryCancelWait(int subIndex)
@@ -147,7 +162,7 @@ public unsafe class SubtitlesOCR
         }
     }
 
-    public static string Process(IOCRService ocrService, int subIndex, SubtitleBitmapData sub, Language lang)
+    public static string Process(IOCRService ocrService, int subIndex, SubtitleBitmapData sub)
     {
         (byte[] data, AVSubtitleRect rect) = sub.SubToBitmap(true);
 
@@ -170,8 +185,8 @@ public unsafe class SubtitlesOCR
         // Perform preprocessing to improve accuracy before OCR (common processing independent of OCR method)
         using Bitmap ocrBitmap = Preprocess(bitmap);
 
-        string ocrText = ocrService.RecognizeTextAsync(ocrBitmap, lang).GetAwaiter().GetResult();
-        string processedText = ocrService.PostProcess(ocrText, lang);
+        string ocrText = ocrService.RecognizeTextAsync(ocrBitmap).GetAwaiter().GetResult();
+        string processedText = ocrService.PostProcess(ocrText);
 
         return processedText;
     }
@@ -225,20 +240,27 @@ public unsafe class SubtitlesOCR
 
 public interface IOCRService : IDisposable
 {
-    //bool IsLanguageSupported(Language lang);
-
-    Task<string> RecognizeTextAsync(Bitmap bitmap, Language lang);
-
-    string PostProcess(string text, Language lang);
+    bool TryInitialize(Language lang, out string err);
+    Task<string> RecognizeTextAsync(Bitmap bitmap);
+    string PostProcess(string text);
 }
 
 public class TesseractOCRService : IOCRService
 {
-    private readonly TesseractOCR.Engine _ocrEngine;
+    private readonly Config.SubtitlesConfig _config;
+    private TesseractOCR.Engine _ocrEngine = null;
     private bool _disposed;
+    private Language _lang = null;
 
-    public TesseractOCRService(Language lang, Config.SubtitlesConfig config)
+    public TesseractOCRService(Config.SubtitlesConfig config)
     {
+        _config = config;
+    }
+
+    public bool TryInitialize(Language lang, out string err)
+    {
+        _lang = lang;
+
         string iso6391 = lang.ISO6391;
 
         if (iso6391 == "nb")
@@ -251,15 +273,16 @@ public class TesseractOCRService : IOCRService
 
         if (!tesseractModels.TryGetValue(iso6391, out List<TesseractModel> models))
         {
-            // TODO: L: error handling
-            throw new InvalidOperationException("not supported language");
+            err = $"Language:{lang.TopEnglishName} ({iso6391}) is not available in Tesseract OCR, Please download a model in settings if available language.";
+
+            return false;
         }
 
         TesseractModel model = models.First();
-        if (config.TesseractOcrRegions != null && models.Count >= 2)
+        if (_config.TesseractOcrRegions != null && models.Count >= 2)
         {
             // choose zh-CN or zh-TW (for Chinese)
-            if (config.TesseractOcrRegions.TryGetValue(iso6391, out string langCode))
+            if (_config.TesseractOcrRegions.TryGetValue(iso6391, out string langCode))
             {
                 TesseractModel m = models.FirstOrDefault(m => m.LangCode == langCode);
                 if (m != null)
@@ -272,10 +295,16 @@ public class TesseractOCRService : IOCRService
         _ocrEngine = new TesseractOCR.Engine(
             TesseractModel.ModelsDirectory,
             model.Lang);
+
+        err = string.Empty;
+        return true;
     }
 
-    public Task<string> RecognizeTextAsync(Bitmap bitmap, Language lang)
+    public Task<string> RecognizeTextAsync(Bitmap bitmap)
     {
+        if (_ocrEngine == null)
+            throw new InvalidOperationException("ocrEngine is not initialized");
+
         using MemoryStream stream = new();
 
         // 32bit -> 24bit conversion
@@ -290,16 +319,16 @@ public class TesseractOCRService : IOCRService
         stream.Position = 0;
 
         using var img = TesseractOCR.Pix.Image.LoadFromMemory(stream);
-        using var page = _ocrEngine.Process(img);
 
+        using var page = _ocrEngine.Process(img);
         return Task.FromResult(page.Text);
     }
 
-    public string PostProcess(string text, Language lang)
+    public string PostProcess(string text)
     {
         var processedText = text;
 
-        if (lang == Language.English)
+        if (_lang == Language.English)
         {
             processedText = processedText
                 .Replace("|", "I")
@@ -326,16 +355,22 @@ public class TesseractOCRService : IOCRService
 
 public class MicrosoftOCRService : IOCRService
 {
-    private readonly OcrEngine _ocrEngine;
+    private readonly Config.SubtitlesConfig _config;
+    private OcrEngine? _ocrEngine;
     private bool _disposed;
 
-    public MicrosoftOCRService(Language lang, Config.SubtitlesConfig config)
+    public MicrosoftOCRService(Config.SubtitlesConfig config)
+    {
+        _config = config;
+    }
+
+    public bool TryInitialize(Language lang, out string err)
     {
         string iso6391 = lang.ISO6391;
 
         string langTag = null;
 
-        if (config.MsOcrRegions.TryGetValue(iso6391, out string tag))
+        if (_config.MsOcrRegions.TryGetValue(iso6391, out string tag))
         {
             // If there is a preferred language region in the settings, it is given priority.
             langTag = tag;
@@ -361,8 +396,8 @@ public class MicrosoftOCRService : IOCRService
 
         if (langTag == null)
         {
-            // TODO: L: validation
-            throw new InvalidOperationException($"Language:{iso6391} is not supported by Microsoft OCR.");
+            err = $"Language:{lang.TopEnglishName} ({iso6391}) is not available in Microsoft OCR, Please install an OCR engine if available language.";
+            return false;
         }
 
         var language = new Windows.Globalization.Language(langTag);
@@ -370,15 +405,21 @@ public class MicrosoftOCRService : IOCRService
         OcrEngine ocrEngine = OcrEngine.TryCreateFromLanguage(language);
         if (ocrEngine == null)
         {
-            // TODO: L: validation
-            throw new InvalidOperationException($"Language:{iso6391} is not supported by Microsoft OCR.");
+            err = $"Language:{lang.TopEnglishName} ({iso6391}) is not available in Microsoft OCR (TryCreateFromLanguage), Please install an OCR engine if available language.";
+            return false;
         }
 
         _ocrEngine = ocrEngine;
+
+        err = string.Empty;
+        return true;
     }
 
-    public async Task<string> RecognizeTextAsync(Bitmap bitmap, Language lang)
+    public async Task<string> RecognizeTextAsync(Bitmap bitmap)
     {
+        if (_ocrEngine == null)
+            throw new InvalidOperationException("ocrEngine is not initialized");
+
         using MemoryStream ms = new();
 
         bitmap.Save(ms, ImageFormat.Bmp);
@@ -402,7 +443,7 @@ public class MicrosoftOCRService : IOCRService
         return result;
     }
 
-    public string PostProcess(string text, Language lang)
+    public string PostProcess(string text)
     {
         return text;
     }

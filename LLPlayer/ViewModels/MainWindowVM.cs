@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using FlyleafLib;
 using LLPlayer.Extensions;
 using LLPlayer.Services;
 using InputType = FlyleafLib.InputType;
@@ -19,6 +20,15 @@ public class MainWindowVM : Bindable
     // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
     public DelegateCommand CmdOnLoaded => field ??= new(() =>
     {
+        // error handling
+        FL.Player.KnownErrorOccurred += (sender, args) =>
+        {
+            Utils.UI(() =>
+            {
+                ErrorDialogHelper.ShowKnownErrorPopup(args.Message, args.ErrorType);
+            });
+        };
+
         FL.Player.OpenCompleted += (sender, args) =>
         {
             if (!args.Success || args.IsSubtitles)
