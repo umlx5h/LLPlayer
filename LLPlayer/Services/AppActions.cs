@@ -10,6 +10,7 @@ using FlyleafLib.MediaPlayer;
 using LLPlayer.Extensions;
 using LLPlayer.Views;
 using WpfColorFontDialog;
+using Clipboard = System.Windows.Clipboard;
 using KeyBinding = FlyleafLib.MediaPlayer.KeyBinding;
 
 namespace LLPlayer.Services;
@@ -67,6 +68,9 @@ public class AppActions
             [CustomKeyBindingAction.SubsDistanceIncrease] = CmdSubsDistanceIncrease.Execute,
             [CustomKeyBindingAction.SubsDistanceDecrease] = CmdSubsDistanceDecrease.Execute,
 
+            [CustomKeyBindingAction.SubsPrimaryTextCopy] = CmdSubsPrimaryTextCopy.Execute,
+            [CustomKeyBindingAction.SubsSecondaryTextCopy] = CmdSubsSecondaryTextCopy.Execute,
+
             [CustomKeyBindingAction.ToggleSidebar] = CmdToggleSidebar.Execute,
             [CustomKeyBindingAction.ToggleDebugOverlay] = CmdToggleDebugOverlay.Execute,
 
@@ -94,6 +98,7 @@ public class AppActions
             new() { ActionName = nameof(CustomKeyBindingAction.SubsSecondarySizeDecrease), Key = Key.Left, Ctrl = true, Shift = true, Alt = false, IsKeyUp = false },
             new() { ActionName = nameof(CustomKeyBindingAction.SubsDistanceIncrease), Key = Key.Up, Ctrl = true, Shift = true, Alt = false, IsKeyUp = false },
             new() { ActionName = nameof(CustomKeyBindingAction.SubsDistanceDecrease), Key = Key.Down, Ctrl = true, Shift = true, Alt = false, IsKeyUp = false },
+            new() { ActionName = nameof(CustomKeyBindingAction.SubsPrimaryTextCopy), Key = Key.C, Ctrl = true, Shift = false, Alt = false, IsKeyUp = true },
             new() { ActionName = nameof(CustomKeyBindingAction.ToggleSidebar), Key = Key.B, Ctrl = true, Shift = false, Alt = false, IsKeyUp = true },
             new() { ActionName = nameof(CustomKeyBindingAction.ToggleDebugOverlay), Key = Key.D, Ctrl = true, Shift = true, Alt = false, IsKeyUp = true },
             new() { ActionName = nameof(CustomKeyBindingAction.OpenWindowSettings), Key = Key.OemComma, Ctrl = true, Shift = false, Alt = false, IsKeyUp = true },
@@ -267,6 +272,32 @@ public class AppActions
     private void SubsDistanceActionInternal(bool increase)
     {
         _config.Subs.SubsDistanceInitial += 5 * (increase ? 1 : -1);
+    }
+
+    public DelegateCommand CmdSubsPrimaryTextCopy => field ?? new(() =>
+    {
+        SubsTextCopyInternal(0);
+    });
+
+
+    public DelegateCommand CmdSubsSecondaryTextCopy => field ?? new(() =>
+    {
+        SubsTextCopyInternal(1);
+    });
+
+    private void SubsTextCopyInternal(int subIndex)
+    {
+        if (!_player.Subtitles[subIndex].Enabled)
+        {
+            return;
+        }
+
+        string text = _player.Subtitles[subIndex].Data.Text;
+
+        if (!string.IsNullOrEmpty(text))
+        {
+            Clipboard.SetText(text);
+        }
     }
 
     public DelegateCommand CmdToggleSidebar => field ?? new(() =>
@@ -563,6 +594,11 @@ public enum CustomKeyBindingAction
     [Description("Primary/Secondary Subtitles Distance Decrease")]
     SubsDistanceDecrease,
 
+    [Description("Copy Primary Subtiltes Text")]
+    SubsPrimaryTextCopy,
+    [Description("Copy Secondary Subtiltes Text")]
+    SubsSecondaryTextCopy,
+
     [Description("Toggle Subitltes Sidebar")]
     ToggleSidebar,
     [Description("Toggle Debug Overlay")]
@@ -628,6 +664,10 @@ public static class KeyBindingActionExtensions
             case CustomKeyBindingAction.SubsDistanceIncrease:
             case CustomKeyBindingAction.SubsDistanceDecrease:
                 return KeyBindingActionGroup.SubtitlesPosition;
+
+            case CustomKeyBindingAction.SubsPrimaryTextCopy:
+            case CustomKeyBindingAction.SubsSecondaryTextCopy:
+                return KeyBindingActionGroup.Subtitles;
 
             case CustomKeyBindingAction.ToggleSidebar:
             case CustomKeyBindingAction.ToggleDebugOverlay:

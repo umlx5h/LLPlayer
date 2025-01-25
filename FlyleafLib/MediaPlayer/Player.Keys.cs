@@ -304,8 +304,8 @@ public class KeysConfig
 
         Add(Key.V,                  KeyBindingAction.OpenFromClipboard, false, true);
         Add(Key.O,                  KeyBindingAction.OpenFromFileDialog);
-        Add(Key.C,                  KeyBindingAction.CopyToClipboard, false, true);
-        Add(Key.C,                  KeyBindingAction.CopyItemToClipboard, false, false, true);
+        Add(Key.C,                  KeyBindingAction.CopyToClipboard, false, true, true);
+        //Add(Key.C,                  KeyBindingAction.CopyItemToClipboard, false, false, true);
 
         Add(Key.Left,               KeyBindingAction.SeekBackward);
         Add(Key.Left,               KeyBindingAction.SeekBackward2, false, true);
