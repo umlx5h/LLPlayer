@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Whisper.net;
 using Whisper.net.LibraryLoader;
-using MessageBox = System.Windows.MessageBox;
 
 namespace FlyleafLib.MediaPlayer;
 
@@ -40,6 +39,30 @@ public class SubtitlesASR
     {
         _subtitlesManager = subtitlesManager;
         _config = config;
+    }
+
+    /// <summary>
+    /// Check that ASR is executable
+    /// </summary>
+    /// <param name="err">error information</param>
+    /// <returns></returns>
+    public bool CanExecute(out string err)
+    {
+        if (_config.WhisperModel == null)
+        {
+            err = "The whisper model is not set. Please download it from the settings.";
+            return false;
+        }
+
+        if (!File.Exists(_config.WhisperModel.ModelFilePath))
+        {
+            err = $"The whisper model file '{_config.WhisperModel.ModelFileName}' does not exist in the folder. Please download it from the settings.";
+            return false;
+        }
+
+        err = "";
+
+        return true;
     }
 
     /// <summary>
@@ -185,28 +208,6 @@ public class WhisperExecuter
         //    waveStream.Position = 0;
         //}
 
-        // TODO: L: error handling
-        if (_config.WhisperModel == null)
-        {
-            string msg = "Whisper Model is not set, You must set it in settings.";
-
-            // TODO: L: use event and handling from app
-            Utils.UI(() =>
-            {
-                MessageBox.Show(msg);
-            });
-            throw new FileNotFoundException(msg);
-        }
-
-        if (!File.Exists(_config.WhisperModel.ModelFilePath))
-        {
-            string msg = "Whisper Model is set but not found, You must download and set it in settings.";
-            Utils.UI(() =>
-            {
-                MessageBox.Show(msg);
-            });
-            throw new FileNotFoundException(msg);
-        }
 
         if (_config.WhisperRuntimeLibraries.Count >= 1)
         {

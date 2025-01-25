@@ -291,7 +291,12 @@ public class Commands
             return;
         }
 
-        // TODO: L: validation asr model
+        if (!player.SubtitlesASR.CanExecute(out string err))
+        {
+            player.RaiseKnownErrorOccurred(err, KnownErrorType.Configuration);
+
+            return;
+        }
 
         SubtitlesSelectedHelper.CurIndex = subIndex;
 
