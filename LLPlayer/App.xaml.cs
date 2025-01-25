@@ -32,6 +32,7 @@ public partial class App : PrismApplication
         containerRegistry.RegisterDialog<CheatSheetDialog>();
         containerRegistry.RegisterDialog<WhisperDownloadDialog>();
         containerRegistry.RegisterDialog<TesseractDownloadDialog>();
+        containerRegistry.RegisterDialog<ErrorDialog>();
     }
 
     protected override Window CreateShell()

@@ -1,0 +1,125 @@
+﻿<UserControl x:Class="LLPlayer.Views.ErrorDialog"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:LLPlayer.Views"
+             xmlns:vm="clr-namespace:LLPlayer.ViewModels"
+             xmlns:prism="http://prismlibrary.com/"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             d:DataContext="{d:DesignInstance vm:ErrorDialogVM}"
+             d:Foreground="White"
+             d:Background="Black"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <!-- TODO: L: animation -->
+    <prism:Dialog.WindowStyle>
+        <Style TargetType="Window">
+            <Setter Property="ResizeMode" Value="NoResize" />
+            <Setter Property="WindowStyle" Value="None" />
+            <Setter Property="ShowInTaskbar" Value="False" />
+        </Style>
+    </prism:Dialog.WindowStyle>
+
+    <Border
+        Focusable="True"
+        Loaded="FrameworkElement_OnLoaded"
+        MouseLeftButtonDown="ErrorDialog_OnMouseLeftButtonDown">
+        <Border.InputBindings>
+            <KeyBinding
+                Command="{Binding CmdCopyMessage}"
+                Key="C"
+                Modifiers="Control" />
+        </Border.InputBindings>
+        <Grid Margin="15">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <TextBlock
+                Grid.Row="0"
+                VerticalAlignment="Center"
+                FontSize="20"
+                FontWeight="Bold"
+                HorizontalAlignment="Center"
+                Margin="0 0 0 10">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignTextBlock}">
+                        <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsUnknown}" Value="True">
+                                <DataTrigger.Setters>
+                                    <Setter Property="Foreground" Value="#ef5350" />
+                                </DataTrigger.Setters>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+
+                <InlineUIContainer BaselineAlignment="Center">
+                    <materialDesign:PackIcon
+                        Kind="Error"
+                        Width="20" Height="20"
+                        Margin="0 0 4 0" />
+                </InlineUIContainer>
+                <Run Text="{Binding ErrorTitle, Mode=OneWay}" />
+            </TextBlock>
+
+            <TextBox
+                Grid.Row="1"
+                Text="{Binding Message, Mode=OneWay}"
+                FontSize="16"
+                IsReadOnly="True"
+                TextWrapping="Wrap"
+                Padding="10"
+                TextAlignment="Left"
+                Foreground="{DynamicResource MaterialDesignBody}">
+            </TextBox>
+
+            <Expander
+                Grid.Row="2"
+                FontSize="8"
+                Header="Exception Details"
+                IsExpanded="False"
+                Visibility="{Binding HasException, Converter={StaticResource BooleanToVisibilityConv}}">
+                <TextBox
+                    Text="{Binding ExceptionMessage, Mode=OneWay}"
+                    IsReadOnly="True"
+                    FontSize="12"
+                    TextAlignment="Left"
+                    TextWrapping="Wrap"
+                    MaxHeight="140" />
+            </Expander>
+
+            <Grid Grid.Row="3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Button
+                    Grid.Column="0"
+                    HorizontalAlignment="Left"
+                    ToolTip="Copy to clipboard"
+                    Command="{Binding CmdCopyMessage}"
+                    Style="{StaticResource MaterialDesignIconButton}" >
+                    <materialDesign:PackIcon
+                        Width="16"
+                        Height="16"
+                        Kind="ContentCopy" />
+                </Button>
+
+                <Button
+                    Grid.Column="2"
+                    Content="Close"
+                    FontWeight="Bold"
+                    Command="{Binding CmdCloseDialog}"
+                    Style="{StaticResource MaterialDesignOutlinedButton}" />
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>
