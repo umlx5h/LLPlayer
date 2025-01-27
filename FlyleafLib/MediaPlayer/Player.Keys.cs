@@ -415,6 +415,8 @@ public class KeysConfig
 
             case KeyBindingAction.OpenFromClipboard:
                 return player.OpenFromClipboard;
+            case KeyBindingAction.OpenFromClipboardSafe:
+                return player.OpenFromClipboardSafe;
 
             case KeyBindingAction.OpenFromFileDialog:
                 return player.OpenFromFileDialog;
@@ -521,6 +523,7 @@ public class KeysConfig
         // Having issues with alt/ctrl/shift (should save state of alt/ctrl/shift on keydown and not checked on keyup)
 
         { KeyBindingAction.OpenFromClipboard },
+        { KeyBindingAction.OpenFromClipboardSafe },
         { KeyBindingAction.OpenFromFileDialog },
         { KeyBindingAction.CopyToClipboard },
         { KeyBindingAction.TakeSnapshot },
@@ -636,6 +639,8 @@ public enum KeyBindingAction
     CopyItemToClipboard,
     [Description("Open a media from clipboard")]
     OpenFromClipboard,
+    [Description("Open a media from clipboard if not open")]
+    OpenFromClipboardSafe,
     [Description("Open a media from file dialog")]
     OpenFromFileDialog,
 

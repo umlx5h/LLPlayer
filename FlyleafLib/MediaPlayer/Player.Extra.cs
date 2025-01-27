@@ -75,7 +75,24 @@ unsafe partial class Player
             Clipboard.SetText(decoder.Playlist.Selected.DirectUrl);
     }
     public void OpenFromClipboard()
-        => OpenAsync(Clipboard.GetText());
+    {
+        string text = Clipboard.GetText();
+        if (!string.IsNullOrWhiteSpace(text))
+        {
+            OpenAsync(text);
+        }
+    }
+
+    public void OpenFromClipboardSafe()
+    {
+        if (decoder.Playlist.Selected != null)
+        {
+            return;
+        }
+
+        OpenFromClipboard();
+    }
+
     public void OpenFromFileDialog()
     {
         int prevTimeout = Activity.Timeout;

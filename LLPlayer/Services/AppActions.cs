@@ -726,6 +726,7 @@ public static class KeyBindingActionExtensions
                 return KeyBindingActionGroup.Other; // TODO: L: ?
 
             case KeyBindingAction.OpenFromClipboard:
+            case KeyBindingAction.OpenFromClipboardSafe:
             case KeyBindingAction.OpenFromFileDialog:
                 return KeyBindingActionGroup.Player; // TODO: L: ?
 
