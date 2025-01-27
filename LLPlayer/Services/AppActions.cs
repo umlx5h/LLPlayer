@@ -88,22 +88,22 @@ public class AppActions
     {
         return
         [
-            new() { ActionName = nameof(CustomKeyBindingAction.SubsPositionUp), Key = Key.Up, Ctrl = true, Shift = false, Alt = false, IsKeyUp = false },
-            new() { ActionName = nameof(CustomKeyBindingAction.SubsPositionDown), Key = Key.Down, Ctrl = true, Shift = false, Alt = false, IsKeyUp = false },
-            new() { ActionName = nameof(CustomKeyBindingAction.SubsSizeIncrease), Key = Key.Right, Ctrl = true, Shift = false, Alt = false, IsKeyUp = false },
-            new() { ActionName = nameof(CustomKeyBindingAction.SubsSizeDecrease), Key = Key.Left, Ctrl = true, Shift = false, Alt = false, IsKeyUp = false },
-            new() { ActionName = nameof(CustomKeyBindingAction.SubsPrimarySizeIncrease), Key = Key.Up, Ctrl = true, Shift = false, Alt = false, IsKeyUp = false },
-            new() { ActionName = nameof(CustomKeyBindingAction.SubsPrimarySizeDecrease), Key = Key.Up, Ctrl = true, Shift = false, Alt = false, IsKeyUp = false },
-            new() { ActionName = nameof(CustomKeyBindingAction.SubsSecondarySizeIncrease), Key = Key.Right, Ctrl = true, Shift = true, Alt = false, IsKeyUp = false },
-            new() { ActionName = nameof(CustomKeyBindingAction.SubsSecondarySizeDecrease), Key = Key.Left, Ctrl = true, Shift = true, Alt = false, IsKeyUp = false },
-            new() { ActionName = nameof(CustomKeyBindingAction.SubsDistanceIncrease), Key = Key.Up, Ctrl = true, Shift = true, Alt = false, IsKeyUp = false },
-            new() { ActionName = nameof(CustomKeyBindingAction.SubsDistanceDecrease), Key = Key.Down, Ctrl = true, Shift = true, Alt = false, IsKeyUp = false },
-            new() { ActionName = nameof(CustomKeyBindingAction.SubsPrimaryTextCopy), Key = Key.C, Ctrl = true, Shift = false, Alt = false, IsKeyUp = true },
-            new() { ActionName = nameof(CustomKeyBindingAction.ToggleSidebar), Key = Key.B, Ctrl = true, Shift = false, Alt = false, IsKeyUp = true },
-            new() { ActionName = nameof(CustomKeyBindingAction.ToggleDebugOverlay), Key = Key.D, Ctrl = true, Shift = true, Alt = false, IsKeyUp = true },
-            new() { ActionName = nameof(CustomKeyBindingAction.OpenWindowSettings), Key = Key.OemComma, Ctrl = true, Shift = false, Alt = false, IsKeyUp = true },
-            new() { ActionName = nameof(CustomKeyBindingAction.OpenWindowCheatSheet), Key = Key.F1, Ctrl = false, Shift = false, Alt = false, IsKeyUp = true },
-            new() { ActionName = nameof(CustomKeyBindingAction.AppNew), Key = Key.N, Ctrl = true, Shift = false, Alt = false, IsKeyUp = true },
+            new() { ActionName = nameof(CustomKeyBindingAction.SubsPositionUp), Key = Key.Up, Shift = true },
+            new() { ActionName = nameof(CustomKeyBindingAction.SubsPositionDown), Key = Key.Down, Shift = true },
+            new() { ActionName = nameof(CustomKeyBindingAction.SubsSizeIncrease), Key = Key.Right, Shift = true },
+            new() { ActionName = nameof(CustomKeyBindingAction.SubsSizeDecrease), Key = Key.Left, Shift = true },
+            new() { ActionName = nameof(CustomKeyBindingAction.SubsPrimarySizeIncrease), Key = Key.Up, Shift = true },
+            new() { ActionName = nameof(CustomKeyBindingAction.SubsPrimarySizeDecrease), Key = Key.Up, Shift = true },
+            new() { ActionName = nameof(CustomKeyBindingAction.SubsSecondarySizeIncrease), Key = Key.Right, Ctrl = true, Shift = true },
+            new() { ActionName = nameof(CustomKeyBindingAction.SubsSecondarySizeDecrease), Key = Key.Left, Ctrl = true, Shift = true },
+            new() { ActionName = nameof(CustomKeyBindingAction.SubsDistanceIncrease), Key = Key.Up, Ctrl = true, Shift = true },
+            new() { ActionName = nameof(CustomKeyBindingAction.SubsDistanceDecrease), Key = Key.Down, Ctrl = true, Shift = true },
+            new() { ActionName = nameof(CustomKeyBindingAction.SubsPrimaryTextCopy), Key = Key.C, Ctrl = true, IsKeyUp = true },
+            new() { ActionName = nameof(CustomKeyBindingAction.ToggleSidebar), Key = Key.B, Ctrl = true, IsKeyUp = true },
+            new() { ActionName = nameof(CustomKeyBindingAction.ToggleDebugOverlay), Key = Key.D, Ctrl = true, Shift = true, IsKeyUp = true },
+            new() { ActionName = nameof(CustomKeyBindingAction.OpenWindowSettings), Key = Key.OemComma, Ctrl = true, IsKeyUp = true },
+            new() { ActionName = nameof(CustomKeyBindingAction.OpenWindowCheatSheet), Key = Key.F1, IsKeyUp = true },
+            new() { ActionName = nameof(CustomKeyBindingAction.AppNew), Key = Key.N, Ctrl = true, IsKeyUp = true },
         ];
     }
 
