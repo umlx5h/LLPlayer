@@ -107,7 +107,18 @@
                             helpers:TextBoxHelper.OnlyNumeric="Uint"
                             ToolTip="0 for Auto" />
                     </StackPanel>
+                </StackPanel>
+            </GroupBox>
 
+            <GroupBox Header="FFmpeg">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Enable FFmpeg devices" />
+                        <ToggleButton
+                            IsChecked="{Binding FL.ConfigEngine.FFmpegDevices}" />
+                    </StackPanel>
                 </StackPanel>
             </GroupBox>
 
