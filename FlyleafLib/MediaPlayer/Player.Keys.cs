@@ -285,72 +285,59 @@ public class KeysConfig
         else
             Keys.Clear();
 
-        Add(Key.OemOpenBrackets,    KeyBindingAction.AudioDelayRemove);
-        Add(Key.OemOpenBrackets,    KeyBindingAction.AudioDelayRemove2, false, true);
-        Add(Key.OemCloseBrackets,   KeyBindingAction.AudioDelayAdd);
-        Add(Key.OemCloseBrackets,   KeyBindingAction.AudioDelayAdd2, false, true);
-
         Add(Key.OemSemicolon,       KeyBindingAction.SubsDelayRemovePrimary);
-        Add(Key.OemSemicolon,       KeyBindingAction.SubsDelayRemove2Primary, false, true);
         Add(Key.OemQuotes,          KeyBindingAction.SubsDelayAddPrimary);
-        Add(Key.OemQuotes,          KeyBindingAction.SubsDelayAdd2Primary, false, true);
+        Add(Key.OemSemicolon,       KeyBindingAction.SubsDelayRemoveSecondary, shift: true);
+        Add(Key.OemQuotes,          KeyBindingAction.SubsDelayAddSecondary, shift: true);
 
         Add(Key.A,                  KeyBindingAction.SubsPrevSeek);
         Add(Key.S,                  KeyBindingAction.SubsCurSeek);
         Add(Key.D,                  KeyBindingAction.SubsNextSeek);
-        // Mouse backford/forward button
-        Add(Key.Left,               KeyBindingAction.SubsPrevSeekFallback, true);
-        Add(Key.Right,              KeyBindingAction.SubsNextSeekFallback, true);
 
-        Add(Key.V,                  KeyBindingAction.OpenFromClipboard, false, true);
-        Add(Key.O,                  KeyBindingAction.OpenFromFileDialog);
-        Add(Key.C,                  KeyBindingAction.CopyToClipboard, false, true, true);
-        //Add(Key.C,                  KeyBindingAction.CopyItemToClipboard, false, false, true);
+        Add(Key.J,                  KeyBindingAction.SubsPrevSeek);
+        Add(Key.K,                  KeyBindingAction.SubsCurSeek);
+        Add(Key.L,                  KeyBindingAction.SubsNextSeek);
+
+        // Mouse backford/forward button
+        Add(Key.Left,               KeyBindingAction.SubsPrevSeekFallback, alt: true);
+        Add(Key.Right,              KeyBindingAction.SubsNextSeekFallback, alt: true);
+
+        Add(Key.V,                  KeyBindingAction.OpenFromClipboardSafe, ctrl: true);
+        Add(Key.O,                  KeyBindingAction.OpenFromFileDialog, ctrl: true);
+        Add(Key.C,                  KeyBindingAction.CopyToClipboard, ctrl: true, shift: true);
 
         Add(Key.Left,               KeyBindingAction.SeekBackward);
-        Add(Key.Left,               KeyBindingAction.SeekBackward2, false, true);
+        Add(Key.Left,               KeyBindingAction.SeekBackward2, ctrl: true);
         Add(Key.Right,              KeyBindingAction.SeekForward);
-        Add(Key.Right,              KeyBindingAction.SeekForward2, false, true);
-        Add(Key.Left,               KeyBindingAction.ShowPrevFrame, false, false, true);
-        Add(Key.Right,              KeyBindingAction.ShowNextFrame, false, false, true);
+        Add(Key.Right,              KeyBindingAction.SeekForward2, ctrl: true);
 
-        Add(Key.Back,               KeyBindingAction.ToggleReversePlayback);
-        Add(Key.S,                  KeyBindingAction.ToggleSeekAccurate, false, true);
+        Add(Key.S,                  KeyBindingAction.ToggleSeekAccurate, ctrl: true);
 
         Add(Key.OemPlus,            KeyBindingAction.SpeedAdd);
-        Add(Key.OemPlus,            KeyBindingAction.SpeedAdd2, false, false, true);
+        Add(Key.OemPlus,            KeyBindingAction.SpeedAdd2, shift: true);
         Add(Key.OemMinus,           KeyBindingAction.SpeedRemove);
-        Add(Key.OemMinus,           KeyBindingAction.SpeedRemove2, false, false, true);
+        Add(Key.OemMinus,           KeyBindingAction.SpeedRemove2, shift: true);
 
-        Add(Key.OemPlus,            KeyBindingAction.ZoomIn, false, true, false);
-        Add(Key.OemMinus,           KeyBindingAction.ZoomOut, false, true, false);
+        Add(Key.OemPlus,            KeyBindingAction.ZoomIn, ctrl: true);
+        Add(Key.OemMinus,           KeyBindingAction.ZoomOut, ctrl: true);
 
         Add(Key.F,                  KeyBindingAction.ToggleFullScreen);
 
-        Add(Key.P,                  KeyBindingAction.TogglePlayPause);
         Add(Key.Space,              KeyBindingAction.TogglePlayPause);
         Add(Key.MediaPlayPause,     KeyBindingAction.TogglePlayPause);
         Add(Key.Play,               KeyBindingAction.TogglePlayPause);
 
-        Add(Key.A,                  KeyBindingAction.ToggleAudio, false, false, true);
         Add(Key.H,                  KeyBindingAction.ToggleSubtitlesVisibility);
-        Add(Key.V,                  KeyBindingAction.ToggleVideo, false, false, true);
-        Add(Key.H,                  KeyBindingAction.ToggleVideoAcceleration, false, true);
-
-        Add(Key.T,                  KeyBindingAction.TakeSnapshot, false, true);
-        Add(Key.R,                  KeyBindingAction.ToggleRecording, false, true);
-        Add(Key.R,                  KeyBindingAction.ToggleKeepRatio);
+        Add(Key.V,                  KeyBindingAction.ToggleSubtitlesVisibility);
 
         Add(Key.M,                  KeyBindingAction.ToggleMute);
         Add(Key.Up,                 KeyBindingAction.VolumeUp);
         Add(Key.Down,               KeyBindingAction.VolumeDown);
 
         Add(Key.D0,                 KeyBindingAction.ResetAll);
-        Add(Key.X,                  KeyBindingAction.Flush, false, true);
 
-        Add(Key.I,                  KeyBindingAction.ForceIdle);
         Add(Key.Escape,             KeyBindingAction.NormalScreen);
-        Add(Key.Q,                  KeyBindingAction.Stop, false, true, false);
+        Add(Key.Q,                  KeyBindingAction.Stop, ctrl: true);
     }
 
     public Action GetKeyBindingAction(KeyBindingAction action)
@@ -590,7 +577,7 @@ public class KeyBinding
 
 public enum KeyBindingAction
 {
-    [Description("Custom Action defined in application")]
+    [Description(nameof(Custom))]
     Custom,
     [Description("Set Activity to Idle forcibly")]
     ForceIdle,
@@ -633,9 +620,9 @@ public enum KeyBindingAction
     [Description("Decrease Secondary Subtitles Delay (M)")]
     SubsDelayRemove2Secondary,
 
-    [Description(nameof(CopyToClipboard))]
+    [Description("Copy Opened Item to Clipboard")]
     CopyToClipboard,
-    [Description(nameof(CopyItemToClipboard))]
+    [Description("Copy Current Played Item to Clipboard")]
     CopyItemToClipboard,
     [Description("Open a media from clipboard")]
     OpenFromClipboard,
@@ -655,7 +642,7 @@ public enum KeyBindingAction
 
     [Description("Toggle reverse playback")]
     ToggleReversePlayback,
-    [Description(nameof(Flush))]
+    [Description("Flushes the buffer of the player")]
     Flush,
     [Description("Take snapshot")]
     TakeSnapshot,
@@ -678,13 +665,13 @@ public enum KeyBindingAction
     [Description("Toggle Secondary Subtitles Visibility")]
     ToggleSubtitlesVisibilitySecondary,
 
-    [Description(nameof(ToggleKeepRatio))]
+    [Description("Toggle Keep Aspect Ratio")]
     ToggleKeepRatio,
     [Description("Toggle Video Acceleration")]
     ToggleVideoAcceleration,
-    [Description(nameof(ToggleRecording))]
+    [Description("Toggle Recording")]
     ToggleRecording,
-    [Description(nameof(ToggleSeekAccurate))]
+    [Description("Toggle Always Seek Accurate Mode")]
     ToggleSeekAccurate,
 
     [Description("Seek forwards (S)")]
