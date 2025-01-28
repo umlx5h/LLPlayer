@@ -435,6 +435,24 @@ AncestorType={x:Type MenuItem}}}">
             </MenuItem>
 
             <MenuItem Header="Alignment">
+                <MenuItem Header="When Dual">
+                    <MenuItem Header="Top"
+                              IsCheckable="True"
+                              IsChecked="{Binding FL.Config.Subs.SubsPositionAlignmentWhenDual, Converter={StaticResource EnumToBooleanConv}, ConverterParameter={x:Static services:SubPositionAlignment.Top}}"
+                              Command="{Binding FL.Action.CmdSetSubPositionAlignmentWhenDual}"
+                              CommandParameter="{x:Static services:SubPositionAlignment.Top}" />
+                    <MenuItem Header="Center"
+                              IsCheckable="True"
+                              IsChecked="{Binding FL.Config.Subs.SubsPositionAlignmentWhenDual, Converter={StaticResource EnumToBooleanConv}, ConverterParameter={x:Static services:SubPositionAlignment.Center}}"
+                              Command="{Binding FL.Action.CmdSetSubPositionAlignmentWhenDual}"
+                              CommandParameter="{x:Static services:SubPositionAlignment.Center}" />
+                    <MenuItem Header="Bottom"
+                              IsCheckable="True"
+                              IsChecked="{Binding FL.Config.Subs.SubsPositionAlignmentWhenDual, Converter={StaticResource EnumToBooleanConv}, ConverterParameter={x:Static services:SubPositionAlignment.Bottom}}"
+                              Command="{Binding FL.Action.CmdSetSubPositionAlignmentWhenDual}"
+                              CommandParameter="{x:Static services:SubPositionAlignment.Bottom}" />
+                </MenuItem>
+
                 <MenuItem Header="Top"
                           IsCheckable="True"
                           IsChecked="{Binding FL.Config.Subs.SubsPositionAlignment, Converter={StaticResource EnumToBooleanConv}, ConverterParameter={x:Static services:SubPositionAlignment.Top}}"

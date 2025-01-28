@@ -292,7 +292,7 @@ public class AppConfigSubs : Bindable
                 UpdateSubsConfig();
             }
         }
-    } = SubPositionAlignment.Center;
+    } = SubPositionAlignment.Top;
 
     // 0%-100%
     public double SubsFixOverflowMargin

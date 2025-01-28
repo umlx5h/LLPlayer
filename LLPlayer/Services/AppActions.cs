@@ -503,9 +503,7 @@ public class AppActions
     public DelegateCommand<AspectRatio?> CmdChangeAspectRatio => field ??= new((ratio) =>
     {
         if (!ratio.HasValue)
-        {
             return;
-        }
 
         _player.Config.Video.AspectRatio = ratio.Value;
     });
@@ -513,12 +511,17 @@ public class AppActions
     public DelegateCommand<SubPositionAlignment?> CmdSetSubPositionAlignment => field ??= new((alignment) =>
     {
         if (!alignment.HasValue)
-        {
             return;
-        }
 
         _config.Subs.SubsPositionAlignment = alignment.Value;
-        _config.Subs.SubsPositionAlignmentWhenDual = alignment.Value; // Set same value
+    });
+
+    public DelegateCommand<SubPositionAlignment?> CmdSetSubPositionAlignmentWhenDual => field ??= new((alignment) =>
+    {
+        if (!alignment.HasValue)
+            return;
+
+        _config.Subs.SubsPositionAlignmentWhenDual = alignment.Value;
     });
 
     #endregion
