@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using FlyleafLib;
+using FlyleafLib.MediaPlayer;
 using LLPlayer.Extensions;
 using LLPlayer.Services;
 using InputType = FlyleafLib.InputType;
@@ -35,6 +36,18 @@ public class MainWindowVM : Bindable
             {
                 ErrorDialogHelper.ShowUnknownErrorPopup(args.Message, args.ErrorType, args.Exception);
             });
+        };
+
+        FL.Player.PropertyChanged += (sender, args) =>
+        {
+            if (args.PropertyName == nameof(FL.Player.Status))
+            {
+                if (FL.Player.Status == Status.Stopped)
+                {
+                    // reset
+                    Title = App.Name;
+                }
+            }
         };
 
         FL.Player.OpenCompleted += (sender, args) =>
