@@ -24,8 +24,21 @@
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
-                            Width="180"
-                            Text="Use Whisper Model" />
+                            Width="180">
+                            Use Whisper Model
+                            <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                <ToolTipService.ToolTip>
+                                    <TextBlock
+                                        Text="Larger models increase load and accuracy. Please choose the appropriate model for your hardware. Models ending in .en are only available in English."
+                                        TextWrapping="Wrap"
+                                        MaxWidth="400" />
+                                </ToolTipService.ToolTip>
+                                <materialDesign:PackIcon
+                                    Kind="Information"
+                                    Width="16" Height="16"
+                                    Margin="4 0 0 0" />
+                            </InlineUIContainer>
+                        </TextBlock>
                         <ComboBox
                             Width="220"
                             ItemsSource="{Binding DownloadModels}"
@@ -51,8 +64,21 @@
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
-                            Width="200"
-                            Text="Audio Language" />
+                            Width="200">
+                            Audio Language
+                            <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                <ToolTipService.ToolTip>
+                                    <TextBlock
+                                        Text="Audio language can be set manually. If automatic detection is used, it will take precedence."
+                                        TextWrapping="Wrap"
+                                        MaxWidth="400" />
+                                </ToolTipService.ToolTip>
+                                <materialDesign:PackIcon
+                                    Kind="Information"
+                                    Width="16" Height="16"
+                                    Margin="4 0 0 0" />
+                            </InlineUIContainer>
+                        </TextBlock>
                         <ComboBox
                             Width="100"
                             ItemsSource="{Binding WhisperLanguages}"
@@ -89,8 +115,22 @@
 
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
-                            Width="200"
-                            Text="Threads" />
+                            Width="200">
+                            Threads
+                            <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                <ToolTipService.ToolTip>
+                                    <TextBlock
+                                        Text="Specify the number of threads. This will increase the load, but will speed up subtitle generation.
+Do not specify more than CPU threads."
+                                        TextWrapping="Wrap"
+                                        MaxWidth="400" />
+                                </ToolTipService.ToolTip>
+                                <materialDesign:PackIcon
+                                    Kind="Information"
+                                    Width="16" Height="16"
+                                    Margin="4 0 0 0" />
+                            </InlineUIContainer>
+                        </TextBlock>
                         <TextBox
                             Width="100"
                             Text="{Binding FL.PlayerConfig.Subtitles.WhisperParameters.Threads, Converter={StaticResource NullableIntConv}}"
@@ -99,8 +139,23 @@
 
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
-                            Width="200"
-                            Text="MaxSegmentLength" />
+                            Width="200">
+                            MaxSegmentLength
+                            <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                <ToolTipService.ToolTip>
+                                    <TextBlock
+                                        Text="You can limit the number of characters per subtitle. If the default subtitle is too long, you can adjust it by specifying the number of characters."
+                                        TextWrapping="Wrap"
+                                        MaxWidth="400" />
+                                </ToolTipService.ToolTip>
+                                <materialDesign:PackIcon
+                                    Kind="Information"
+                                    Width="16" Height="16"
+                                    Margin="4 0 0 0" />
+                            </InlineUIContainer>
+
+
+                        </TextBlock>
                         <TextBox
                             Width="100"
                             Text="{Binding FL.PlayerConfig.Subtitles.WhisperParameters.MaxSegmentLength, Converter={StaticResource NullableIntConv}}"

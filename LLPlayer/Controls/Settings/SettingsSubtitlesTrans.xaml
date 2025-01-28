@@ -8,6 +8,7 @@
              xmlns:sys="clr-namespace:System;assembly=System.Runtime"
              xmlns:flyleafServices="clr-namespace:FlyleafLib.MediaPlayer.Translation.Services;assembly=FlyleafLib"
              xmlns:flyleafTranslate="clr-namespace:FlyleafLib.MediaPlayer.Translation;assembly=FlyleafLib"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:SettingsSubtitlesTransVM}"
              d:Foreground="White"
@@ -148,9 +149,21 @@
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
-                            Width="180"
-                            Text="Target Language" />
-
+                            Width="180">
+                            Target Language
+                            <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                <ToolTipService.ToolTip>
+                                    <TextBlock
+                                        Text="Set your native language. It will be translated into that language. If it is in the same language as the video, it will not be translated. Some languages are not supported by DeepL."
+                                        TextWrapping="Wrap"
+                                        MaxWidth="400" />
+                                </ToolTipService.ToolTip>
+                                <materialDesign:PackIcon
+                                    Kind="Information"
+                                    Width="16" Height="16"
+                                    Margin="4 0 0 0" />
+                            </InlineUIContainer>
+                        </TextBlock>
                         <ComboBox
                             Width="180"
                             ItemsSource="{Binding Source={StaticResource TranslateTargetLanguageEnum}}"

@@ -6,6 +6,7 @@
              xmlns:local="clr-namespace:LLPlayer.Controls.Settings"
              xmlns:vm="clr-namespace:LLPlayer.ViewModels"
              xmlns:helpers="clr-namespace:LLPlayer.Extensions"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:SettingsSubtitlesVM}"
              d:Foreground="White"
@@ -40,8 +41,21 @@
 
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
-                            Width="180"
-                            Text="Enabled Cached" />
+                            Width="180">
+                            Enabled Cached
+                            <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                <ToolTipService.ToolTip>
+                                    <TextBlock
+                                        Text="If enabled, internal subtitles are always displayed during seek, and bitmap subtitles can be displayed in the sidebar. However, memory usage will increase."
+                                        TextWrapping="Wrap"
+                                        MaxWidth="400" />
+                                </ToolTipService.ToolTip>
+                                <materialDesign:PackIcon
+                                    Kind="Information"
+                                    Width="16" Height="16"
+                                    Margin="4 0 0 0" />
+                            </InlineUIContainer>
+                        </TextBlock>
                         <ToggleButton
                             IsChecked="{Binding FL.PlayerConfig.Subtitles.EnabledCached}" />
                     </StackPanel>
@@ -111,8 +125,21 @@
 
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
-                        Width="180"
-                        Text="Auto Language Detection" />
+                            Width="180">
+                            Auto Language Detection
+                            <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                <ToolTipService.ToolTip>
+                                    <TextBlock
+                                        Text="Automatically detects language from text subtitle. Accurate language identification allows for the translation function. Memory usage will increase slightly."
+                                        TextWrapping="Wrap"
+                                        MaxWidth="400" />
+                                </ToolTipService.ToolTip>
+                                <materialDesign:PackIcon
+                                    Kind="Information"
+                                    Width="16" Height="16"
+                                    Margin="4 0 0 0" />
+                            </InlineUIContainer>
+                        </TextBlock>
                         <ToggleButton
                         IsChecked="{Binding FL.PlayerConfig.Subtitles.LanguageAutoDetect}" />
                     </StackPanel>
