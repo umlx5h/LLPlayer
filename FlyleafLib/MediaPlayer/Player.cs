@@ -412,6 +412,8 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
     public string       LastError           { get => lastError; set => Set(ref _LastError, value); }
     string _LastError, lastError;
 
+    public string       OSDMessage          { get; set => Set(ref field, value, false); }
+
     public event        EventHandler<KnownErrorOccurredEventArgs> KnownErrorOccurred;
     public event        EventHandler<UnknownErrorOccurredEventArgs> UnknownErrorOccurred;
 

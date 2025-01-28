@@ -297,6 +297,8 @@ public class AppActions
         if (!string.IsNullOrEmpty(text))
         {
             Clipboard.SetText(text);
+
+            _player.OSDMessage = $"Copy {(subIndex == 0 ? "Primary" : "Secondary")} Text";
         }
     }
 

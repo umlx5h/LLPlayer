@@ -62,17 +62,22 @@ unsafe partial class Player
 
     public void CopyToClipboard()
     {
-        if (decoder.Playlist.Url == null)
-            Clipboard.SetText("");
-        else
-            Clipboard.SetText(decoder.Playlist.Url);
+        var url = decoder.Playlist.Url;
+        if (url == null)
+            return;
+
+        Clipboard.SetText(url);
+        OSDMessage = $"Copy {url}";
     }
     public void CopyItemToClipboard()
     {
         if (decoder.Playlist.Selected == null || decoder.Playlist.Selected.DirectUrl == null)
-            Clipboard.SetText("");
-        else
-            Clipboard.SetText(decoder.Playlist.Selected.DirectUrl);
+            return;
+
+        string url = decoder.Playlist.Selected.DirectUrl;
+
+        Clipboard.SetText(url);
+        OSDMessage = $"Copy {url}";
     }
     public void OpenFromClipboard()
     {
@@ -321,6 +326,7 @@ unsafe partial class Player
         if (!CanPlay)
             return;
 
+        OSDMessage = $"Start recording to {Path.GetFileName(filename)}";
         decoder.StartRecording(ref filename, useRecommendedExtension);
         IsRecording = decoder.IsRecording;
     }
@@ -332,6 +338,7 @@ unsafe partial class Player
     {
         decoder.StopRecording();
         IsRecording = decoder.IsRecording;
+        OSDMessage = "Stop recording";
     }
     public void ToggleRecording()
     {
@@ -403,7 +410,16 @@ unsafe partial class Player
             return;
 
         Exception e = null;
-        try { snapshotBitmap.Save(filename, imageFormat); } catch (Exception e2) { e = e2; }
+        try
+        {
+            snapshotBitmap.Save(filename, imageFormat);
+
+            OSDMessage = $"Save snapshot to {Path.GetFileName(filename)}";
+        }
+        catch (Exception e2)
+        {
+            e = e2;
+        }
         snapshotBitmap.Dispose();
 
         if (e != null)

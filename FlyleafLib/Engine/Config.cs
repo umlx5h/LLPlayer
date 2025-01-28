@@ -661,7 +661,7 @@ public class Config : NotifyPropertyChanged
         /// <summary>
         /// Activates Direct3D video acceleration (decoding)
         /// </summary>
-        public bool             VideoAcceleration           { get; set; } = true;
+        public bool             VideoAcceleration           { get; set => Set(ref field, value); } = true;
 
         /// <summary>
         /// Whether to use embedded video processor with custom pixel shaders or D3D11<br/>

@@ -370,7 +370,10 @@ partial class Player
     /// This is useful mainly for live streams to push the playback at very end (low latency)
     /// </summary>
     public void Flush()
-        => decoder.Flush();
+    {
+        decoder.Flush();
+        OSDMessage = "Buffer Flushed";
+    }
 
     /// <summary>
     /// Stops and Closes AVS streams

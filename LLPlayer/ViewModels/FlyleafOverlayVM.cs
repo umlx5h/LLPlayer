@@ -1,8 +1,8 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using FlyleafLib;
 using FlyleafLib.MediaFramework.MediaRenderer;
-using FlyleafLib.MediaPlayer;
 using LLPlayer.Extensions;
 using LLPlayer.Services;
 using static FlyleafLib.Utils.NativeMethods;
@@ -177,6 +177,9 @@ public class FlyleafOverlayVM : Bindable
         {
             switch (e.PropertyName)
             {
+                case nameof(player.OSDMessage):
+                    OSDMessage = player.OSDMessage;
+                    break;
                 case nameof(player.Rotation):
                     OSDMessage = $"Rotation {player.Rotation}°";
                     break;
@@ -212,12 +215,41 @@ public class FlyleafOverlayVM : Bindable
             }
         };
 
+        player.Config.Player.PropertyChanged += (o, e) =>
+        {
+            switch (e.PropertyName)
+            {
+                case nameof(player.Config.Player.SeekAccurate):
+                    OSDMessage = $"Seek Accurate {(player.Config.Player.SeekAccurate ? "On" : "Off")}";
+                    break;
+            }
+        };
+
         player.Config.Audio.PropertyChanged += (o, e) =>
         {
             switch (e.PropertyName)
             {
+                case nameof(player.Config.Audio.Enabled):
+                    OSDMessage = $"Audio {(player.Config.Audio.Enabled ? "Enabled" : "Disabled")}";
+                    break;
                 case nameof(player.Config.Audio.Delay):
                     OSDMessage = $"Audio Delay {player.Config.Audio.Delay / 10000}ms";
+                    break;
+            }
+        };
+
+        player.Config.Video.PropertyChanged += (o, e) =>
+        {
+            switch (e.PropertyName)
+            {
+                case nameof(player.Config.Video.Enabled):
+                    OSDMessage = $"Video {(player.Config.Video.Enabled ? "Enabled" : "Disabled")}";
+                    break;
+                case nameof(player.Config.Video.AspectRatio):
+                    OSDMessage = $"Aspect Ratio {player.Config.Video.AspectRatio.ToString()}";
+                    break;
+                case nameof(player.Config.Video.VideoAcceleration):
+                    OSDMessage = $"Video Acceleration {(player.Config.Video.VideoAcceleration ? "On" : "Off")}";
                     break;
             }
         };
@@ -256,10 +288,13 @@ public class FlyleafOverlayVM : Bindable
         get => _osdMessage;
         set
         {
-            _cancelMsgToken.Cancel();
-            Set(ref _osdMessage, value);
-            _cancelMsgToken = new CancellationTokenSource();
-            Task.Run(FadeOutMsg, _cancelMsgToken.Token);
+            Utils.UIInvokeIfRequired(() =>
+            {
+                _cancelMsgToken.Cancel();
+                Set(ref _osdMessage, value);
+                _cancelMsgToken = new CancellationTokenSource();
+                Task.Run(FadeOutMsg, _cancelMsgToken.Token);
+            });
         }
     }
 
@@ -267,7 +302,8 @@ public class FlyleafOverlayVM : Bindable
     private async Task FadeOutMsg()
     {
         await Task.Delay(MSG_TIMEOUT, _cancelMsgToken.Token);
-        Application.Current.Dispatcher.Invoke(() =>
+
+        Utils.UIInvoke(() =>
         {
             _osdMessage = "";
             OnPropertyChanged(nameof(OSDMessage));
