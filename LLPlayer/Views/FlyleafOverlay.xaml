@@ -45,25 +45,8 @@
                 <Run Text="{Binding FL.Player.Duration, Mode=OneWay, Converter={StaticResource TicksToTimeSpanConv}, StringFormat={}{0:hh\\:mm\\:ss\\.fff}}" />
             </TextBlock>
 
-            <!-- Play/Pause indicator in upper right corner -->
-            <TextBlock VerticalAlignment="Top" HorizontalAlignment="Right" Padding="4" Margin="0 5 10 0" FontWeight="Bold" d:Text="Playing" FontSize="18" Text="{Binding FL.Player.Status}" Foreground="{DynamicResource MaterialDesignBody}">
-                <TextBlock.Background>
-                    <SolidColorBrush Color="{Binding FL.PlayerConfig.Video.BackgroundColor}" Opacity="0.15" />
-                </TextBlock.Background>
-                <TextBlock.Style>
-                    <Style TargetType="{x:Type TextBlock}">
-                        <Setter Property="Visibility" Value="Collapsed" />
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding FL.Player.Activity.Mode}" Value="Active" d:Value="{x:Null}">
-                                <Setter Property="Visibility" Value="Visible" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </TextBlock.Style>
-            </TextBlock>
-
-            <!-- Volume display below upper right, etc. -->
-            <TextBlock VerticalAlignment="Top" HorizontalAlignment="Right" Padding="4" Margin="0 50 10 0" FontWeight="Bold" d:Text="Volume 50%" FontSize="16" Text="{Binding OSDMessage}" Foreground="{DynamicResource MaterialDesignBody}">
+            <!-- OSD message in upper right corner -->
+            <TextBlock VerticalAlignment="Top" HorizontalAlignment="Right" Padding="4" Margin="0 10 10 0" FontWeight="Bold" d:Text="Volume 50%" FontSize="18" Text="{Binding OSDMessage}" Foreground="{DynamicResource MaterialDesignBody}">
                 <TextBlock.Background>
                     <SolidColorBrush Color="{Binding FL.PlayerConfig.Video.BackgroundColor}" Opacity="0.15" />
                 </TextBlock.Background>

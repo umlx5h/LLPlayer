@@ -189,15 +189,9 @@ public class FlyleafOverlayVM : Bindable
                 case nameof(player.Zoom):
                     OSDMessage = $"Zoom {player.Zoom}%";
                     break;
-
                 case nameof(player.Status):
-                    if (player.Activity.Mode == ActivityMode.Idle)
-                    {
-                        // not related to OSD
-                        player.Activity.ForceActive();
-                    }
-
-                    // TODO: L: Playback toggling can be done on mouse click, but it should be visually clear.
+                    // TODO: L: Change Playing and Pause to icons
+                    OSDMessage = $"{player.Status.ToString()}";
                     break;
             }
         };
