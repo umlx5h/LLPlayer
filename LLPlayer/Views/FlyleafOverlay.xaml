@@ -8,6 +8,7 @@
              xmlns:flyleaf="clr-namespace:FlyleafLib.Controls.WPF;assembly=FlyleafLib"
              xmlns:controls="clr-namespace:LLPlayer.Controls"
              xmlns:prism="http://prismlibrary.com/"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d"
              SizeChanged="FlyleafOverlay_OnSizeChanged"
              d:DataContext="{d:DesignInstance vm:FlyleafOverlayVM}"
@@ -28,7 +29,7 @@
             <!-- timestamp display in upper left corner -->
             <TextBlock VerticalAlignment="Top" HorizontalAlignment="Left" Padding="4" Margin="10 5 0 0" d:Text="00:00:00.000 / 01:42:23.913" FontWeight="Bold" FontSize="15" Foreground="{DynamicResource MaterialDesignBody}">
                 <TextBlock.Background>
-                    <SolidColorBrush Color="{Binding FL.PlayerConfig.Video.BackgroundColor}" Opacity="0.15" />
+                    <SolidColorBrush Color="{Binding FL.PlayerConfig.Video.BackgroundColor}" Opacity="0.2" />
                 </TextBlock.Background>
                 <TextBlock.Style>
                     <Style TargetType="{x:Type TextBlock}">
@@ -45,10 +46,26 @@
                 <Run Text="{Binding FL.Player.Duration, Mode=OneWay, Converter={StaticResource TicksToTimeSpanConv}, StringFormat={}{0:hh\\:mm\\:ss\\.fff}}" />
             </TextBlock>
 
-            <!-- OSD message in upper right corner -->
+            <!-- OSD message in upper right (Icon) -->
+            <Border Width="32" Height="32"
+                    Visibility="{Binding IsOSDIcon, Converter={StaticResource BooleanToVisibilityConv}}"
+                    CornerRadius="15"
+                    VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0 10 10 0">
+                <Border.Background>
+                    <SolidColorBrush Color="{Binding FL.PlayerConfig.Video.BackgroundColor}" Opacity="0.2" />
+                </Border.Background>
+                <materialDesign:PackIcon Kind="{Binding OSDIcon, TargetNullValue={x:Static materialDesign:PackIconKind.None}}"
+                    Width="26"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Height="26"
+                    Foreground="{DynamicResource MaterialDesignBody}" />
+            </Border>
+
+            <!-- OSD message in upper right (Text) -->
             <TextBlock VerticalAlignment="Top" HorizontalAlignment="Right" Padding="4" Margin="0 10 10 0" FontWeight="Bold" d:Text="Volume 50%" FontSize="18" Text="{Binding OSDMessage}" Foreground="{DynamicResource MaterialDesignBody}">
                 <TextBlock.Background>
-                    <SolidColorBrush Color="{Binding FL.PlayerConfig.Video.BackgroundColor}" Opacity="0.15" />
+                    <SolidColorBrush Color="{Binding FL.PlayerConfig.Video.BackgroundColor}" Opacity="0.2" />
                 </TextBlock.Background>
                 <TextBlock.Style>
                     <Style TargetType="{x:Type TextBlock}">

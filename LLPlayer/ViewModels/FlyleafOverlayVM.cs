@@ -3,8 +3,10 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using FlyleafLib;
 using FlyleafLib.MediaFramework.MediaRenderer;
+using FlyleafLib.MediaPlayer;
 using LLPlayer.Extensions;
 using LLPlayer.Services;
+using MaterialDesignThemes.Wpf;
 using static FlyleafLib.Utils.NativeMethods;
 
 namespace LLPlayer.ViewModels;
@@ -168,7 +170,6 @@ public class FlyleafOverlayVM : Bindable
     #endregion
 
     #region OSD
-    // TODO: L: Extend OSD
     private void SetupOSDStatus()
     {
         var player = FL.Player;
@@ -190,7 +191,16 @@ public class FlyleafOverlayVM : Bindable
                     OSDMessage = $"Zoom {player.Zoom}%";
                     break;
                 case nameof(player.Status):
-                    // TODO: L: Change Playing and Pause to icons
+                    // Change only Play and Pause to icon
+                    switch (player.Status)
+                    {
+                        case Status.Paused:
+                            OSDIcon = PackIconKind.Pause;
+                            return;
+                        case Status.Playing:
+                            OSDIcon = PackIconKind.Play;
+                            return;
+                    }
                     OSDMessage = $"{player.Status.ToString()}";
                     break;
             }
@@ -275,8 +285,8 @@ public class FlyleafOverlayVM : Bindable
         }
     }
 
-    private const int MSG_TIMEOUT = 3000;
-    CancellationTokenSource _cancelMsgToken = new();
+    private CancellationTokenSource? _cancelMsgToken;
+
     public string OSDMessage
     {
         get => _osdMessage;
@@ -284,23 +294,76 @@ public class FlyleafOverlayVM : Bindable
         {
             Utils.UIInvokeIfRequired(() =>
             {
-                _cancelMsgToken.Cancel();
-                Set(ref _osdMessage, value);
-                _cancelMsgToken = new CancellationTokenSource();
-                Task.Run(FadeOutMsg, _cancelMsgToken.Token);
+                if (Set(ref _osdMessage, value))
+                {
+                    if (_cancelMsgToken != null)
+                    {
+                        _cancelMsgToken.Cancel();
+                        _cancelMsgToken.Dispose();
+                        _cancelMsgToken = null;
+                    }
+
+                    if (Set(ref _osdIcon, null, nameof(OSDIcon)))
+                    {
+                        OnPropertyChanged(nameof(IsOSDIcon));
+                    }
+
+                    _cancelMsgToken = new();
+
+                    var token = _cancelMsgToken.Token;
+                    _ = Task.Run(() => ClearOSD(3000, token));
+                }
             });
         }
     }
+    private string _osdMessage;
 
-    string _osdMessage = "";
-    private async Task FadeOutMsg()
+    public PackIconKind? OSDIcon
     {
-        await Task.Delay(MSG_TIMEOUT, _cancelMsgToken.Token);
+        get => _osdIcon;
+        set
+        {
+            Utils.UIInvokeIfRequired(() =>
+            {
+                if (Set(ref _osdIcon, value))
+                {
+                    OnPropertyChanged(nameof(IsOSDIcon));
+
+                    if (_cancelMsgToken != null)
+                    {
+                        _cancelMsgToken.Cancel();
+                        _cancelMsgToken.Dispose();
+                        _cancelMsgToken = null;
+                    }
+
+                    Set(ref _osdMessage, "", nameof(OSDMessage));
+
+                    _cancelMsgToken = new();
+
+                    var token = _cancelMsgToken.Token;
+                    _ = Task.Run(() => ClearOSD(500, token));
+                }
+            });
+        }
+    }
+    private PackIconKind? _osdIcon;
+
+    public bool IsOSDIcon => OSDIcon != null;
+
+    private async Task ClearOSD(int timeoutMs, CancellationToken token)
+    {
+        await Task.Delay(timeoutMs, token);
+
+        if (token.IsCancellationRequested)
+            return;
 
         Utils.UIInvoke(() =>
         {
-            _osdMessage = "";
-            OnPropertyChanged(nameof(OSDMessage));
+            Set(ref _osdMessage, "", nameof(OSDMessage));
+            if (Set(ref _osdIcon, null, nameof(OSDIcon)))
+            {
+                OnPropertyChanged(nameof(IsOSDIcon));
+            }
         });
     }
     #endregion
