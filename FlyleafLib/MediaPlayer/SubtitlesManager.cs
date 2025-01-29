@@ -127,6 +127,7 @@ public class SubManager : INotifyPropertyChanged
     private readonly Config.SubtitlesConfig _config;
     private readonly int _subIndex;
     private readonly SubTranslator _subTranslator;
+    private readonly LogHandler Log;
 
     public SubManager(Config.SubtitlesConfig config, int subIndex, bool enableSync = true)
     {
@@ -134,6 +135,7 @@ public class SubManager : INotifyPropertyChanged
         _subIndex = subIndex;
         // TODO: L: Review whether to initialize it here.
         _subTranslator = new SubTranslator(this, config, subIndex);
+        Log = new LogHandler(("[#1]").PadRight(8, ' ') + $" [SubManager{subIndex+1}   ] ");
 
         if (enableSync)
         {
@@ -441,7 +443,7 @@ public class SubManager : INotifyPropertyChanged
 
             _cts = new CancellationTokenSource();
 
-            using SubtitleReader reader = new();
+            using SubtitleReader reader = new(_subIndex);
 
             reader.Open(url, streamIndex);
 
@@ -462,6 +464,8 @@ public class SubManager : INotifyPropertyChanged
                         isFirst = false;
                         // Set the language at the timing of the first subtitle data set.
                         LanguageSource = lang;
+
+                        Log.Info($"Start loading subs... (lang:{lang.TopEnglishName})");
                     }
 
                     data.Index = subCnt++;
@@ -483,6 +487,7 @@ public class SubManager : INotifyPropertyChanged
                     AddRange(subChunk);
                 }
                 refreshSw.Stop();
+                Log.Info("End loading subs");
             }
             catch (OperationCanceledException)
             {
@@ -558,6 +563,12 @@ public unsafe class SubtitleReader : IDisposable
     private AVIOContext* _avioCtx = null;
     private byte* _inputData;
     private int _inputDataSize;
+    private readonly LogHandler Log;
+
+    public SubtitleReader(int subIndex)
+    {
+        Log = new LogHandler(("[#1]").PadRight(8, ' ') + $" [SubReader{subIndex + 1}    ] ");
+    }
 
     // If streamIndex is -1, search for the first subtitle stream
     // If specified, use the stream of the specified index
@@ -619,11 +630,9 @@ public unsafe class SubtitleReader : IDisposable
                 _fmtCtx->pb = _avioCtx;
                 _fmtCtx->flags |= FmtFlags2.CustomIo;
             }
-            catch
+            catch (Exception ex)
             {
-                // ignored
-
-                // TODO: L: error handling
+                Log.Warn($"Cannot load text subtitle to memory: {ex.Message}");
             }
         }
 
@@ -741,11 +750,10 @@ public unsafe class SubtitleReader : IDisposable
             int gotSub = 0;
             AVSubtitle sub = default;
 
-            ret = avcodec_decode_subtitle2(_codecCtx, &sub, &gotSub, _packet)
-                    .ThrowExceptionIfError("avcodec_decode_subtitle2");
+            ret = avcodec_decode_subtitle2(_codecCtx, &sub, &gotSub, _packet);
             if (ret < 0)
             {
-                // TODO: L: error handling
+                Log.Warn($"Cannot decode subtitle: {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
                 continue;
             }
 

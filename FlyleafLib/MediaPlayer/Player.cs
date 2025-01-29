@@ -671,7 +671,11 @@ public class KnownErrorOccurredEventArgs : EventArgs
 
 public enum UnknownErrorType
 {
-    Translation
+    Translation,
+    Subtitles,
+    ASR,
+    Playback,
+    Network
 }
 
 public class UnknownErrorOccurredEventArgs : EventArgs

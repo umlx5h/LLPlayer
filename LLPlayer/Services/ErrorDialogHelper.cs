@@ -13,7 +13,6 @@ public static class ErrorDialogHelper
         // prevent double popup
         if (_showCount > 0)
         {
-            // TODO: L: logging
             return;
         }
 
@@ -41,7 +40,6 @@ public static class ErrorDialogHelper
         // prevent double popup
         if (_showCount > 0)
         {
-            // TODO: L: logging
             return;
         }
 

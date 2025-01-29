@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.IO;
 using FlyleafLib;
+using FlyleafLib.MediaPlayer;
 using LLPlayer.Extensions;
 using LLPlayer.Services;
 using Microsoft.Win32;
@@ -58,7 +59,17 @@ public class SubtitlesDownloaderDialogVM : Bindable, IDialogAware
     {
         Subs.Clear();
 
-        var result = await _subProvider.Search(Query);
+        IList<SearchResponse> result;
+
+        try
+        {
+            result = await _subProvider.Search(Query);
+        }
+        catch (Exception ex)
+        {
+            ErrorDialogHelper.ShowUnknownErrorPopup($"Cannot search subtitles from opensubtitles.org: {ex.Message}", UnknownErrorType.Network, ex);
+            return;
+        }
 
         // TODO: L: prefer user-configured languages instead of "English"
         var query = result
@@ -80,7 +91,18 @@ public class SubtitlesDownloaderDialogVM : Bindable, IDialogAware
         {
             return;
         }
-        (byte[] subData, _) = await _subProvider.Download(sub);
+
+        byte[] subData;
+
+        try
+        {
+            (subData, _) = await _subProvider.Download(sub);
+        }
+        catch (Exception ex)
+        {
+            ErrorDialogHelper.ShowUnknownErrorPopup($"Cannot load the subtitle from opensubtitles.org: {ex.Message}", UnknownErrorType.Network, ex);
+            return;
+        }
 
         string subDir = Path.Combine(Path.GetTempPath(), App.Name, "Subs");
         string subPath = Path.Combine(subDir, sub.SubFileName);
@@ -161,7 +183,19 @@ public class SubtitlesDownloaderDialogVM : Bindable, IDialogAware
 
         if (dialog.ShowDialog() == true)
         {
-            (byte[] subData, _) = await _subProvider.Download(sub);
+            byte[] subData;
+
+            try
+            {
+                (subData, _) = await _subProvider.Download(sub);
+            }
+            catch (Exception ex)
+            {
+
+                ErrorDialogHelper.ShowUnknownErrorPopup($"Cannot download the subtitle from opensubtitles.org: {ex.Message}", UnknownErrorType.Network, ex);
+                return;
+            }
+
             await File.WriteAllBytesAsync(dialog.FileName, subData);
         }
     }).ObservesCanExecute(() => CanAction);

@@ -88,9 +88,11 @@ partial class Player
 
                 }
 
-            } catch (Exception e)
+            }
+            catch (Exception ex)
             {
-                Log.Error($"Playback failed ({e.Message})");
+                Log.Error($"Playback failed ({ex.Message})");
+                RaiseUnknownErrorOccurred($"Playback failed: {ex.Message}", UnknownErrorType.Playback, ex);
             }
             finally
             {

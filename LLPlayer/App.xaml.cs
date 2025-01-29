@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Threading;
+using FlyleafLib;
 using FlyleafLib.MediaPlayer;
 using LLPlayer.Extensions;
 using LLPlayer.Services;
@@ -17,6 +18,13 @@ public partial class App : PrismApplication
     public static string PlayerConfigPath { get; } = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "LLPlayer.PlayerConfig.json");
     public static string EngineConfigPath { get; } = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "LLPlayer.Engine.json");
     public static string AppConfigPath { get; } = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "LLPlayer.Config.json");
+
+    private readonly LogHandler Log;
+
+    public App()
+    {
+        Log = new LogHandler("[App] [MainApp       ] ");
+    }
 
     protected override void RegisterTypes(IContainerRegistry containerRegistry)
     {
@@ -72,7 +80,8 @@ public partial class App : PrismApplication
 
         if (!e.Handled)
         {
-            // TODO: L: error logging
+            Log.Error($"Unknown error occurred in App: {e.Exception}");
+
             ErrorDialogHelper.ShowUnknownErrorPopup($"Unhandled Exception: {e.Exception.Message}", "Global", e.Exception);
             e.Handled = true;
         }

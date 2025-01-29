@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using Whisper.net;
 using Whisper.net.LibraryLoader;
 
@@ -35,10 +34,14 @@ public class SubtitlesASR
     private int? _subIndex;
     public int? SubIndex => _subIndex;
 
+    private readonly LogHandler Log;
+
     public SubtitlesASR(SubtitlesManager subtitlesManager, Config.SubtitlesConfig config)
     {
         _subtitlesManager = subtitlesManager;
         _config = config;
+
+        Log = new LogHandler(("[#1]").PadRight(8, ' ') + " [SubtitlesASR  ] ");
     }
 
     /// <summary>
@@ -162,8 +165,7 @@ public class SubtitlesASR
             }
             else
             {
-                // TODO: L: logging
-                Debug.WriteLine("cancel");
+                Log.Info("Already cancel requested");
             }
 
             if (!isWait)
@@ -194,9 +196,12 @@ public class WhisperExecuter
 {
     private readonly Config.SubtitlesConfig _config;
 
+    private readonly LogHandler Log;
+
     public WhisperExecuter(Config.SubtitlesConfig config)
     {
         _config = config;
+        Log = new LogHandler(("[#1]").PadRight(8, ' ') + " [WhisperExecute] ");
     }
 
     public async IAsyncEnumerable<SubtitleASRData> Do(MemoryStream waveStream, TimeSpan chunkStart, TimeSpan chunkEnd, int chunkCnt, CancellationToken token = default)
@@ -247,10 +252,10 @@ public class WhisperExecuter
                 Language = result.Language
             };
 
-            //Debug.WriteLine("{0}->{1} ({2}->{3}): {4}",
-            //    start, end,
-            //    result.Start, result.End,
-            //    result.Text);
+            Log.Debug(string.Format("{0}->{1} ({2}->{3}): {4}",
+                start, end,
+                result.Start, result.End,
+                result.Text));
 
             yield return sub;
         }
@@ -267,10 +272,12 @@ public unsafe class AudioReader : IDisposable
     private SwrContext* _swrContext = null;
     private AVPacket* _packet = null;
     private AVFrame* _frame = null;
+    private readonly LogHandler Log;
 
     public AudioReader(Config.SubtitlesConfig config)
     {
         _config = config;
+        Log = new LogHandler(("[#1]").PadRight(8, ' ') + " [AudioReader   ] ");
     }
 
     public void Open(string url, int streamIndex)
@@ -467,10 +474,9 @@ public unsafe class AudioReader : IDisposable
                     addSub(result.Current);
                 }
             }
-            // TODO: L: error handling
-            catch (TaskCanceledException)
+            catch (OperationCanceledException)
             {
-                Debug.WriteLine("cancel");
+                Log.Debug("Whisper canceled");
             }
 
             stream.Dispose();

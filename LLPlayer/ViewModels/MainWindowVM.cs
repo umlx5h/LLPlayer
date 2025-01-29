@@ -10,10 +10,12 @@ namespace LLPlayer.ViewModels;
 public class MainWindowVM : Bindable
 {
     public FlyleafManager FL { get; }
+    private readonly LogHandler Log;
 
     public MainWindowVM(FlyleafManager fl)
     {
         FL = fl;
+        Log = new LogHandler("[App] [MainWindowVM  ] ");
     }
 
     public string Title { get; set => Set(ref field, value); } = App.Name;
@@ -26,6 +28,7 @@ public class MainWindowVM : Bindable
         {
             Utils.UI(() =>
             {
+                Log.Error($"Known error occurred in Flyleaf: {args.Message} ({args.ErrorType.ToString()})");
                 ErrorDialogHelper.ShowKnownErrorPopup(args.Message, args.ErrorType);
             });
         };
@@ -34,6 +37,7 @@ public class MainWindowVM : Bindable
         {
             Utils.UI(() =>
             {
+                Log.Error($"Unknown error occurred in Flyleaf: {args.Message}: {args.Exception}");
                 ErrorDialogHelper.ShowUnknownErrorPopup(args.Message, args.ErrorType, args.Exception);
             });
         };

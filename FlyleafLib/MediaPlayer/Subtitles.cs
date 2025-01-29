@@ -556,7 +556,17 @@ public class Subtitle : NotifyPropertyChanged
         UpdateUI();
 
         // Create cache of the all subtitles in a separate thread
-        Task.Run(Load);
+        Task.Run(Load)
+            .ContinueWith(t =>
+            {
+                // TODO: L: error handling - restore state gracefully?
+                if (t.IsFaulted)
+                {
+                    var ex = t.Exception.Flatten().InnerException;
+
+                    _player.RaiseUnknownErrorOccurred($"Cannot load all subtitles on worker thread: {ex?.Message}", UnknownErrorType.Subtitles, ex);
+                }
+            }, TaskContinuationOptions.OnlyOnFaulted);
     }
 
     internal void Load()
@@ -640,12 +650,22 @@ public class Subtitle : NotifyPropertyChanged
         TimeSpan curTime = new(_player.CurTime);
 
         Task.Factory.StartNew(() =>
-        {
-            using (_player.SubtitlesManager[_subIndex].StartLoading())
             {
-                _player.SubtitlesASR.Open(_subIndex, url, streamIndex, curTime);
-            }
-        }, TaskCreationOptions.LongRunning);
+                using (_player.SubtitlesManager[_subIndex].StartLoading())
+                {
+                    _player.SubtitlesASR.Open(_subIndex, url, streamIndex, curTime);
+                }
+            }, TaskCreationOptions.LongRunning)
+            .ContinueWith(t =>
+            {
+                // TODO: L: error handling - restore state gracefully?
+                if (t.IsFaulted)
+                {
+                    var ex = t.Exception.Flatten().InnerException;
+
+                    _player.RaiseUnknownErrorOccurred($"Cannot execute ASR: {ex?.Message}", UnknownErrorType.ASR, ex);
+                }
+            }, TaskContinuationOptions.OnlyOnFaulted);
 
         UpdateUI();
     }
