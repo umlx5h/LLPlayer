@@ -245,6 +245,15 @@ public class AppConfigSubs : Bindable
         SubsPosition = _subsPositionInitial;
     }
 
+    #region Offsets
+
+    public double SubsPositionOffset { get; set => Set(ref field, value); } = 2.0;
+    public int SubsFontSizeOffset { get; set => Set(ref field, value); } = 2;
+    public double SubsBitmapScaleOffset { get; set => Set(ref field, value); } = 4;
+    public double SubsDistanceOffset { get; set => Set(ref field, value); } = 5;
+
+    #endregion
+
     // -25%-150%
     // Allow some going up and down from ViewPort
     public double SubsPosition

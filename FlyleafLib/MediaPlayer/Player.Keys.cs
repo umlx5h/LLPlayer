@@ -586,38 +586,37 @@ public enum KeyBindingAction
     [Description("Set Activity to FullActive forcibly")]
     ForceFullActive,
 
-    [Description("Increase Audio Delay (S)")]
+    [Description("Increase Audio Delay (1)")]
     AudioDelayAdd,
-    [Description("Increase Audio Delay (M)")]
+    [Description("Increase Audio Delay (2)")]
     AudioDelayAdd2,
-    [Description("Decrease Audio Delay (S)")]
+    [Description("Decrease Audio Delay (1)")]
     AudioDelayRemove,
-    [Description("Decrease Audio Delay (M)")]
+    [Description("Decrease Audio Delay (2)")]
     AudioDelayRemove2,
 
     [Description("Toggle Audio Mute/Unmute")]
     ToggleMute,
-    [Description("Volume Up")]
+    [Description("Volume Up (1)")]
     VolumeUp,
-    [Description("Volume Down")]
+    [Description("Volume Down (1)")]
     VolumeDown,
 
-    // TODO: L: Make units customizable
-    [Description("Increase Primary Subtitles Delay (S)")]
+    [Description("Increase Primary Subtitles Delay (1)")]
     SubsDelayAddPrimary,
-    [Description("Increase Primary Subtitles Delay (M)")]
+    [Description("Increase Primary Subtitles Delay (2)")]
     SubsDelayAdd2Primary,
-    [Description("Decrease Primary Subtitles Delay (S)")]
+    [Description("Decrease Primary Subtitles Delay (1)")]
     SubsDelayRemovePrimary,
-    [Description("Decrease Primary Subtitles Delay (M)")]
+    [Description("Decrease Primary Subtitles Delay (2)")]
     SubsDelayRemove2Primary,
-    [Description("Increase Secondary Subtitles Delay (S)")]
+    [Description("Increase Secondary Subtitles Delay (1)")]
     SubsDelayAddSecondary,
-    [Description("Increase Secondary Subtitles Delay (M)")]
+    [Description("Increase Secondary Subtitles Delay (2)")]
     SubsDelayAdd2Secondary,
-    [Description("Decrease Secondary Subtitles Delay (S)")]
+    [Description("Decrease Secondary Subtitles Delay (1)")]
     SubsDelayRemoveSecondary,
-    [Description("Decrease Secondary Subtitles Delay (M)")]
+    [Description("Decrease Secondary Subtitles Delay (2)")]
     SubsDelayRemove2Secondary,
 
     [Description("Copy Opened Item to Clipboard")]
@@ -674,13 +673,13 @@ public enum KeyBindingAction
     [Description("Toggle Always Seek Accurate Mode")]
     ToggleSeekAccurate,
 
-    [Description("Seek forwards (S)")]
+    [Description("Seek forwards (1)")]
     SeekForward,
-    [Description("Seek backwards (S)")]
+    [Description("Seek backwards (1)")]
     SeekBackward,
-    [Description("Seek forwards (M)")]
+    [Description("Seek forwards (2)")]
     SeekForward2,
-    [Description("Seek backwards (M)")]
+    [Description("Seek backwards (2)")]
     SeekBackward2,
     [Description("Seek to the previous subtitle")]
     SubsPrevSeek,
@@ -693,14 +692,14 @@ public enum KeyBindingAction
     [Description("Seek to the next subtitle or seek forwards")]
     SubsNextSeekFallback,
 
-    [Description("Speed up (S)")]
+    [Description("Speed Up (1)")]
     SpeedAdd,
-    [Description("Speed up (M)")]
+    [Description("Speed Up (2)")]
     SpeedAdd2,
 
-    [Description("Speed down (S)")]
+    [Description("Speed Down (1)")]
     SpeedRemove,
-    [Description("Speed down (M)")]
+    [Description("Speed Down (2)")]
     SpeedRemove2,
 
     [Description("Show Next Frame")]
@@ -712,8 +711,8 @@ public enum KeyBindingAction
     [Description("Reset Zoom Ratio & Speed up")]
     ResetAll,
 
-    [Description("Zoom in")]
+    [Description("Zoom In (1)")]
     ZoomIn,
-    [Description("Zoom out")]
+    [Description("Zoom Out (1)")]
     ZoomOut,
 }

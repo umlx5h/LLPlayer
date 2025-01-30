@@ -35,7 +35,7 @@ public class SubsBitmapPosition : NotifyPropertyChanged
 
     #region Config
 
-    public decimal ConfScale
+    public double ConfScale
     {
         get;
         set
@@ -50,14 +50,14 @@ public class SubsBitmapPosition : NotifyPropertyChanged
                 Calculate();
             }
         }
-    } = 1.0M; // x 1.0
+    } = 1.0; // x 1.0
 
-    public decimal ConfPos
+    public double ConfPos
     {
         get;
         set
         {
-            if (value < 0M || value > 150.0M)
+            if (value < 0 || value > 150.0)
             {
                 return;
             }
@@ -67,7 +67,7 @@ public class SubsBitmapPosition : NotifyPropertyChanged
                 Calculate();
             }
         }
-    } = 100.0M; // 0 - 150.0
+    } = 100.0; // 0 - 150.0
 
     #endregion
 
@@ -138,15 +138,15 @@ public class SubsBitmapPosition : NotifyPropertyChanged
         if (IsHorizontal)
         {
             // mpv: https://github.com/mpv-player/mpv/blob/df166c1333694cbfe70980dbded1984d48b0685a/sub/sd_lavc.c#L486
-            double offset = (double)((100.0M - ConfPos) / 100.0M * (decimal)videoHeight);
+            double offset = (100.0 - ConfPos) / 100.0 * videoHeight;
             y -= offset * scaleY;
         }
 
         // Adjust x and y axes when changing subtitle size(centering)
-        if (ConfScale != 1.0M)
+        if (Math.Abs(ConfScale - 1.0) > 1e-6)
         {
             // mpv: https://github.com/mpv-player/mpv/blob/df166c1333694cbfe70980dbded1984d48b0685a/sub/sd_lavc.c#L508-L515
-            double ratio = (double)((ConfScale - 1.0M) / 2);
+            double ratio = (ConfScale - 1.0) / 2;
 
             double dw = bitmap.Width * scaleX;
             double dy = bitmap.Height * scaleY;
@@ -154,8 +154,8 @@ public class SubsBitmapPosition : NotifyPropertyChanged
             x -= dw * ratio;
             y -= dy * ratio;
 
-            scaleX *= (double)ConfScale;
-            scaleY *= (double)ConfScale;
+            scaleX *= ConfScale;
+            scaleY *= ConfScale;
         }
 
         Margin = new Thickness(x, y, 0, 0);

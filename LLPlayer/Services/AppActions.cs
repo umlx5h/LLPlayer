@@ -238,11 +238,11 @@ public class AppActions
             // TODO: L: Match scaling ratios in text and bitmap subtitles
             if (primary.Enabled && (!primary.IsBitmap || !string.IsNullOrEmpty(primary.Data.Text)))
             {
-                _config.Subs.SubsFontSize += 2 * (increase ? 1 : -1);
+                _config.Subs.SubsFontSize += _config.Subs.SubsFontSizeOffset * (increase ? 1 : -1);
             }
             else if (primary.Enabled && primary.IsBitmap)
             {
-                _player.Subtitles[0].Data.BitmapPosition.ConfScale += 0.07M * (increase ? 1.0M : -1.0M);
+                _player.Subtitles[0].Data.BitmapPosition.ConfScale += _config.Subs.SubsBitmapScaleOffset / 100.0 * (increase ? 1.0 : -1.0);
             }
         }
 
@@ -250,11 +250,11 @@ public class AppActions
         {
             if (secondary.Enabled && (!secondary.IsBitmap || !string.IsNullOrEmpty(secondary.Data.Text)))
             {
-                _config.Subs.SubsFontSize2 += 2 * (increase ? 1 : -1);
+                _config.Subs.SubsFontSize2 += _config.Subs.SubsFontSizeOffset * (increase ? 1 : -1);
             }
             else if (secondary.Enabled && secondary.IsBitmap)
             {
-                _player.Subtitles[1].Data.BitmapPosition.ConfScale += 0.07M * (increase ? 1.0M : -1.0M);
+                _player.Subtitles[1].Data.BitmapPosition.ConfScale += _config.Subs.SubsBitmapScaleOffset / 100.0 * (increase ? 1.0 : -1.0);
             }
         }
     }
@@ -271,7 +271,7 @@ public class AppActions
 
     private void SubsDistanceActionInternal(bool increase)
     {
-        _config.Subs.SubsDistanceInitial += 5 * (increase ? 1 : -1);
+        _config.Subs.SubsDistanceInitial += _config.Subs.SubsDistanceOffset * (increase ? 1 : -1);
     }
 
     public DelegateCommand CmdSubsPrimaryTextCopy => field ?? new(() =>
@@ -555,14 +555,14 @@ public class AppActions
             secondary.Enabled && !secondary.IsBitmap || !string.IsNullOrEmpty(primary.Data.Text) || //  If OCR subtitles are available
             !string.IsNullOrEmpty(secondary.Data.Text))
         {
-            _config.Subs.SubsPosition += 2 * (up ? -1 : 1);
+            _config.Subs.SubsPosition += _config.Subs.SubsPositionOffset * (up ? -1 : 1);
         }
         else if (primary.IsBitmap || secondary.IsBitmap)
         {
             // For bitmap subtitles (absolute position)
             for (int i = 0; i < _player.Config.Subtitles.Max; i++)
             {
-                _player.Subtitles[i].Data.BitmapPosition.ConfPos += 1.5M * (up ? -1M : 1M);
+                _player.Subtitles[i].Data.BitmapPosition.ConfPos += _config.Subs.SubsPositionOffset * (up ? -1 : 1);
             }
         }
     }

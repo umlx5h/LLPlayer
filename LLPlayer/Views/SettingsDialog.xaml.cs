@@ -67,6 +67,10 @@ public partial class SettingsDialog : UserControl
                     SettingsContent.Content = new SettingsKeys();
                     break;
 
+                case nameof(SettingsKeysOffset):
+                    SettingsContent.Content = new SettingsKeysOffset();
+                    break;
+
                 case nameof(SettingsThemes):
                     SettingsContent.Content = new SettingsThemes();
                     break;

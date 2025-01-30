@@ -97,13 +97,19 @@
                             FontWeight="Normal" />
                     </TreeViewItem>
 
-                    <TreeViewItem Tag="SettingsKeys">
+                    <TreeViewItem Tag="SettingsKeys" IsExpanded="True">
                         <TreeViewItem.Header>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <materialDesign:PackIcon Kind="Keyboard" Width="24" Height="24" Margin="0 0 8 0" />
                                 <TextBlock Text="Keys" VerticalAlignment="Center" />
                             </StackPanel>
                         </TreeViewItem.Header>
+
+                        <TreeViewItem
+                            Header="Offset"
+                            Tag="SettingsKeysOffset"
+                            FontSize="14"
+                            FontWeight="Normal" />
                     </TreeViewItem>
 
                     <TreeViewItem Tag="SettingsThemes">
