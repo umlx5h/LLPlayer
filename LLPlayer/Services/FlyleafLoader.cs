@@ -85,7 +85,11 @@ public static class FlyleafLoader
     {
         EngineConfig engineConfig = new()
         {
+#if DEBUG
+            PluginsPath = @":Plugins\bin\Plugins.NET9",
+#else
             PluginsPath = ":Plugins",
+#endif
             FFmpegPath = ":FFmpeg",
             FFmpegHLSLiveSeek = true,
             UIRefresh = true,
