@@ -1,5 +1,6 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Threading;
@@ -86,4 +87,51 @@ public partial class App : PrismApplication
             e.Handled = true;
         }
     }
+
+    #region App Version
+    private static string? _version;
+    public static string Version
+    {
+        get
+        {
+            if (_version == null)
+            {
+                (_version, _commitHash) = GetVersion();
+            }
+
+            return _version;
+        }
+    }
+
+    private static string? _commitHash;
+    public static string CommitHash
+    {
+        get
+        {
+            if (_commitHash == null)
+            {
+                (_version, _commitHash) = GetVersion();
+            }
+
+            return _commitHash;
+        }
+    }
+
+    private static (string version, string commitHash) GetVersion()
+    {
+        Assembly assembly = Assembly.GetExecutingAssembly();
+
+        FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(assembly.Location);
+
+        Guards.ThrowIfNull(fvi.ProductVersion);
+
+        var version = fvi.ProductVersion.Split("+");
+        if (version.Length != 2)
+        {
+            throw new InvalidOperationException($"ProductVersion is invalid: {fvi.ProductVersion}");
+        }
+
+        return (version[0], version[1]);
+    }
+    #endregion
 }

@@ -7,6 +7,7 @@
              xmlns:vm="clr-namespace:LLPlayer.ViewModels"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:helpers="clr-namespace:LLPlayer.Extensions"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:SettingsAboutVM}"
              d:Foreground="White"
@@ -24,10 +25,20 @@
                 <TextBlock Text="{Binding AppName}" FontSize="20" FontWeight="Bold" Margin="0 0 0 10"/>
 
                 <StackPanel Orientation="Horizontal" Margin="0 0 0 20">
+                    <Button
+                        HorizontalAlignment="Left"
+                        ToolTip="Copy version to clipboard"
+                        Command="{Binding CmdCopyVersion}"
+                        Style="{StaticResource MaterialDesignIconButton}" >
+                        <materialDesign:PackIcon
+                            Width="16"
+                            Height="16"
+                            Kind="ContentCopy" />
+                    </Button>
                     <TextBlock Text="Version: " FontWeight="Bold"/>
-                    <TextBlock Text="{Binding Version}"/>
+                    <TextBox IsReadOnly="True" Text="{Binding Version, Mode=OneWay}"/>
                     <TextBlock Text="    Commit: " FontWeight="Bold" Margin="20 0 0 0"/>
-                    <TextBlock Text="{Binding CommitHash}"/>
+                    <TextBox IsReadOnly="True" Text="{Binding CommitHash, Mode=OneWay}"/>
                 </StackPanel>
 
                 <TextBlock Text="Using libraries" FontSize="18" FontWeight="SemiBold" Margin="0 0 0 10"/>

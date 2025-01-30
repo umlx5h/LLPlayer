@@ -1,6 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Reflection;
+using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Controls;
 using LLPlayer.Extensions;
@@ -27,11 +27,10 @@ public class SettingsAboutVM : Bindable
 {
     public SettingsAboutVM()
     {
-        AppName = Assembly.GetExecutingAssembly().GetName().Name;
+        AppName = App.Name;
 
-        Version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
-
-        CommitHash = GetCommitHash();
+        Version = App.Version;
+        CommitHash = App.CommitHash;
 
         Libraries =
         [
@@ -107,14 +106,16 @@ public class SettingsAboutVM : Bindable
         ];
 
     }
-    public string AppName { get; set; }
-    public string Version { get; set; }
-    public string CommitHash { get; set; }
-    public ObservableCollection<LibraryInfo> Libraries { get; set; }
-    private string? GetCommitHash()
+    public string AppName { get; }
+    public string Version { get; }
+    public string CommitHash { get; }
+    public ObservableCollection<LibraryInfo> Libraries { get; }
+
+    [field: AllowNull, MaybeNull]
+    public DelegateCommand CmdCopyVersion => field ??= new(() =>
     {
-        return "TODO";
-    }
+        Clipboard.SetText($"Version: {App.Version}, CommitHash: {App.CommitHash}");
+    });
 }
 
 public class LibraryInfo
