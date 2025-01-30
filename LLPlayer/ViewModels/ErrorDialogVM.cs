@@ -69,6 +69,10 @@ public class ErrorDialogVM : Bindable, IDialogAware
             text += Environment.NewLine + Environment.NewLine + Exception.ToString();
         }
 
+        text += Environment.NewLine + Environment.NewLine;
+
+        text += $"Version: {App.Version}, CommitHash: {App.CommitHash}";
+
         Clipboard.SetText(text);
     });
 
