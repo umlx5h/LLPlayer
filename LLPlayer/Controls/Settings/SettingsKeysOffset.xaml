@@ -155,6 +155,10 @@
                             Width="100"
                             Text="{Binding FL.PlayerConfig.Player.SeekOffset, Converter={StaticResource TicksToMilliSecondsConv}}"
                             helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                        <CheckBox
+                            Margin="15 0 0 0"
+                            IsChecked="{Binding FL.PlayerConfig.Player.SeekOffsetAccurate}"
+                            Content="Accurate" />
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal">
@@ -165,6 +169,38 @@
                             Width="100"
                             Text="{Binding FL.PlayerConfig.Player.SeekOffset2, Converter={StaticResource TicksToMilliSecondsConv}}"
                             helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                        <CheckBox
+                            Margin="15 0 0 0"
+                            IsChecked="{Binding FL.PlayerConfig.Player.SeekOffsetAccurate2}"
+                            Content="Accurate" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Seek Offset3 (ms)" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.PlayerConfig.Player.SeekOffset3, Converter={StaticResource TicksToMilliSecondsConv}}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                        <CheckBox
+                            Margin="15 0 0 0"
+                            IsChecked="{Binding FL.PlayerConfig.Player.SeekOffsetAccurate3}"
+                            Content="Accurate" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Seek Offset4 (ms)" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.PlayerConfig.Player.SeekOffset4, Converter={StaticResource TicksToMilliSecondsConv}}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                        <CheckBox
+                            Margin="15 0 0 0"
+                            IsChecked="{Binding FL.PlayerConfig.Player.SeekOffsetAccurate4}"
+                            Content="Accurate" />
                     </StackPanel>
                 </StackPanel>
             </GroupBox>

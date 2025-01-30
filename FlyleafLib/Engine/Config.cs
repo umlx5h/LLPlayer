@@ -283,9 +283,14 @@ public class Config : NotifyPropertyChanged
         public long     AudioDelayOffset2           { get; set; } = 1000 * 10000;
         public long     SubtitlesDelayOffset        { get; set; } =  100 * 10000;
         public long     SubtitlesDelayOffset2       { get; set; } = 1000 * 10000;
-        public long     SeekOffset                  { get; set; } = 5 * (long)1000 * 10000;
-        public long     SeekOffset2                 { get; set; } = 15 * (long)1000 * 10000;
-        public long     SeekOffset3                 { get; set; } = 30 * (long)1000 * 10000;
+        public long     SeekOffset                  { get; set; } = 1 * (long)1000 * 10000;
+        public long     SeekOffset2                 { get; set; } = 5 * (long)1000 * 10000;
+        public long     SeekOffset3                 { get; set; } = 15 * (long)1000 * 10000;
+        public long     SeekOffset4                 { get; set; } = 30 * (long)1000 * 10000;
+        public bool     SeekOffsetAccurate          { get; set; } = true;
+        public bool     SeekOffsetAccurate2         { get; set; } = false;
+        public bool     SeekOffsetAccurate3         { get; set; } = false;
+        public bool     SeekOffsetAccurate4         { get; set; } = false;
         public double   SpeedOffset                 { get; set; } = 0.10;
         public double   SpeedOffset2                { get; set; } = 0.25;
         public int      ZoomOffset                  { get => _ZoomOffset; set { if (Set(ref _ZoomOffset, value)) player?.ResetAll(); } }

@@ -306,10 +306,10 @@ public class KeysConfig
         Add(Key.O,                  KeyBindingAction.OpenFromFileDialog, ctrl: true);
         Add(Key.C,                  KeyBindingAction.CopyToClipboard, ctrl: true, shift: true);
 
-        Add(Key.Left,               KeyBindingAction.SeekBackward);
-        Add(Key.Left,               KeyBindingAction.SeekBackward2, ctrl: true);
-        Add(Key.Right,              KeyBindingAction.SeekForward);
-        Add(Key.Right,              KeyBindingAction.SeekForward2, ctrl: true);
+        Add(Key.Left,               KeyBindingAction.SeekBackward2);
+        Add(Key.Left,               KeyBindingAction.SeekBackward, ctrl: true);
+        Add(Key.Right,              KeyBindingAction.SeekForward2);
+        Add(Key.Right,              KeyBindingAction.SeekForward, ctrl: true);
 
         Add(Key.S,                  KeyBindingAction.ToggleSeekAccurate, ctrl: true);
 
@@ -461,6 +461,18 @@ public class KeysConfig
 
             case KeyBindingAction.SeekForward2:
                 return player.SeekForward2;
+
+            case KeyBindingAction.SeekBackward3:
+                return player.SeekBackward3;
+
+            case KeyBindingAction.SeekForward3:
+                return player.SeekForward3;
+
+            case KeyBindingAction.SeekBackward4:
+                return player.SeekBackward4;
+
+            case KeyBindingAction.SeekForward4:
+                return player.SeekForward4;
 
             case KeyBindingAction.SubsCurSeek:
                 return player.Subtitles.CurSeek;
@@ -681,6 +693,14 @@ public enum KeyBindingAction
     SeekForward2,
     [Description("Seek backwards (2)")]
     SeekBackward2,
+    [Description("Seek forwards (3)")]
+    SeekForward3,
+    [Description("Seek backwards (3)")]
+    SeekBackward3,
+    [Description("Seek forwards (4)")]
+    SeekForward4,
+    [Description("Seek backwards (4)")]
+    SeekBackward4,
     [Description("Seek to the previous subtitle")]
     SubsPrevSeek,
     [Description("Seek to the current subtitle")]

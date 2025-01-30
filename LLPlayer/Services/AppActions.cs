@@ -740,6 +740,14 @@ public static class KeyBindingActionExtensions
             case KeyBindingAction.Play:
             case KeyBindingAction.TogglePlayPause:
             case KeyBindingAction.ToggleReversePlayback:
+            case KeyBindingAction.SeekForward:
+            case KeyBindingAction.SeekBackward:
+            case KeyBindingAction.SeekForward2:
+            case KeyBindingAction.SeekBackward2:
+            case KeyBindingAction.SeekForward3:
+            case KeyBindingAction.SeekBackward3:
+            case KeyBindingAction.SeekForward4:
+            case KeyBindingAction.SeekBackward4:
                 return KeyBindingActionGroup.Playback;
 
             case KeyBindingAction.Flush:
@@ -755,10 +763,6 @@ public static class KeyBindingActionExtensions
             case KeyBindingAction.ToggleRecording:
                 return KeyBindingActionGroup.Video;
 
-            case KeyBindingAction.SeekForward:
-            case KeyBindingAction.SeekBackward:
-            case KeyBindingAction.SeekForward2:
-            case KeyBindingAction.SeekBackward2:
             case KeyBindingAction.SubsPrevSeek:
             case KeyBindingAction.SubsCurSeek:
             case KeyBindingAction.SubsNextSeek:

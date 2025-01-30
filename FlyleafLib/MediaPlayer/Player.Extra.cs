@@ -18,26 +18,28 @@ unsafe partial class Player
     public bool IsOpenFileDialogOpen    { get; private set; }
 
 
-    public void SeekBackward()  => SeekBackward_(Config.Player.SeekOffset);
-    public void SeekBackward2() => SeekBackward_(Config.Player.SeekOffset2);
-    public void SeekBackward3() => SeekBackward_(Config.Player.SeekOffset3);
-    public void SeekBackward_(long offset)
+    public void SeekBackward()  => SeekBackward_(Config.Player.SeekOffset, Config.Player.SeekOffsetAccurate);
+    public void SeekBackward2() => SeekBackward_(Config.Player.SeekOffset2, Config.Player.SeekOffsetAccurate2);
+    public void SeekBackward3() => SeekBackward_(Config.Player.SeekOffset3, Config.Player.SeekOffsetAccurate3);
+    public void SeekBackward4() => SeekBackward_(Config.Player.SeekOffset4, Config.Player.SeekOffsetAccurate4);
+    public void SeekBackward_(long offset, bool accurate)
     {
         if (!CanPlay)
             return;
 
         long seekTs = CurTime - (CurTime % offset) - offset;
 
-        if (Config.Player.SeekAccurate)
+        if (Config.Player.SeekAccurate || accurate)
             SeekAccurate(Math.Max((int) (seekTs / 10000), 0));
         else
             Seek(Math.Max((int) (seekTs / 10000), 0), false);
     }
 
-    public void SeekForward()   => SeekForward_(Config.Player.SeekOffset);
-    public void SeekForward2()  => SeekForward_(Config.Player.SeekOffset2);
-    public void SeekForward3()  => SeekForward_(Config.Player.SeekOffset3);
-    public void SeekForward_(long offset)
+    public void SeekForward()   => SeekForward_(Config.Player.SeekOffset, Config.Player.SeekOffsetAccurate);
+    public void SeekForward2()  => SeekForward_(Config.Player.SeekOffset2, Config.Player.SeekOffsetAccurate2);
+    public void SeekForward3()  => SeekForward_(Config.Player.SeekOffset3, Config.Player.SeekOffsetAccurate3);
+    public void SeekForward4()  => SeekForward_(Config.Player.SeekOffset4, Config.Player.SeekOffsetAccurate4);
+    public void SeekForward_(long offset, bool accurate)
     {
         if (!CanPlay)
             return;
@@ -47,7 +49,7 @@ unsafe partial class Player
         if (seekTs > Duration && !isLive)
             return;
 
-        if (Config.Player.SeekAccurate)
+        if (Config.Player.SeekAccurate || accurate)
             SeekAccurate((int)(seekTs / 10000));
         else
             Seek((int)(seekTs / 10000), true);

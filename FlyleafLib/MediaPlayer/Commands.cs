@@ -49,9 +49,11 @@ public class Commands
     public ICommand SeekBackward            { get; set; }
     public ICommand SeekBackward2           { get; set; }
     public ICommand SeekBackward3           { get; set; }
+    public ICommand SeekBackward4           { get; set; }
     public ICommand SeekForward             { get; set; }
     public ICommand SeekForward2            { get; set; }
     public ICommand SeekForward3            { get; set; }
+    public ICommand SeekForward4            { get; set; }
     public ICommand SeekToChapter           { get; set; }
 
     public ICommand ShowFramePrev           { get; set; }
@@ -113,9 +115,11 @@ public class Commands
         SeekBackward            = new RelayCommandSimple(player.SeekBackward);
         SeekBackward2           = new RelayCommandSimple(player.SeekBackward2);
         SeekBackward3           = new RelayCommandSimple(player.SeekBackward3);
+        SeekBackward4           = new RelayCommandSimple(player.SeekBackward4);
         SeekForward             = new RelayCommandSimple(player.SeekForward);
         SeekForward2            = new RelayCommandSimple(player.SeekForward2);
         SeekForward3            = new RelayCommandSimple(player.SeekForward3);
+        SeekForward4            = new RelayCommandSimple(player.SeekForward4);
         SeekToChapter           = new RelayCommand(SeekToChapterAction);
 
         ShowFrameNext           = new RelayCommandSimple(player.ShowFrameNext);

@@ -224,7 +224,7 @@ public class FlyleafOverlayVM : Bindable
             switch (e.PropertyName)
             {
                 case nameof(player.Config.Player.SeekAccurate):
-                    OSDMessage = $"Seek Accurate {(player.Config.Player.SeekAccurate ? "On" : "Off")}";
+                    OSDMessage = $"Always Seek Accurate {(player.Config.Player.SeekAccurate ? "On" : "Off")}";
                     break;
             }
         };
