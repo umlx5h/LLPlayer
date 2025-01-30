@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Windows;
 using FlyleafLib;
 using FlyleafLib.Controls.WPF;
 using FlyleafLib.MediaPlayer;
@@ -35,11 +36,19 @@ public class FlyleafManager
             {
                 config = AppConfig.Load(App.AppConfigPath);
             }
-            catch
+            catch (Exception ex)
             {
-                // ignored
-                // TODO: L: error handling
-                // If it was an incorrect configuration file and it will be set to the default settings, the current settings will be lost.
+                MessageBox.Show($"Cannot load AppConfig from {Path.GetFileName(App.AppConfigPath)}, Please review the settings or delete the config file. Error details are recorded in {Path.GetFileName(App.CrashLogPath)}.");
+                try
+                {
+                    File.WriteAllText(App.CrashLogPath, "AppConfig Loading Error: " + ex);
+                }
+                catch
+                {
+                    // ignored
+                }
+
+                Application.Current.Shutdown();
             }
         }
 

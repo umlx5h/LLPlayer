@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Windows;
 using FlyleafLib;
 using FlyleafLib.MediaPlayer;
 
@@ -17,10 +18,19 @@ public static class FlyleafLoader
             {
                 engineConfig = EngineConfig.Load(App.EngineConfigPath, AppConfig.GetJsonSerializerOptions());
             }
-            catch
+            catch (Exception ex)
             {
-                // ignored
-                // TODO: L: error handling
+                MessageBox.Show($"Cannot load EngineConfig from {Path.GetFileName(App.EngineConfigPath)}, Please review the settings or delete the config file. Error details are recorded in {Path.GetFileName(App.CrashLogPath)}.");
+                try
+                {
+                    File.WriteAllText(App.CrashLogPath, "EngineConfig Loading Error: " + ex);
+                }
+                catch
+                {
+                    // ignored
+                }
+
+                Application.Current.Shutdown();
             }
         }
 
@@ -40,10 +50,19 @@ public static class FlyleafLoader
                 config = Config.Load(App.PlayerConfigPath, AppConfig.GetJsonSerializerOptions());
                 useConfig = true;
             }
-            catch
+            catch (Exception ex)
             {
-                // ignored
-                // TODO: L: error handling
+                MessageBox.Show($"Cannot load PlayerConfig from {Path.GetFileName(App.PlayerConfigPath)}, Please review the settings or delete the config file. Error details are recorded in {Path.GetFileName(App.CrashLogPath)}.");
+                try
+                {
+                    File.WriteAllText(App.CrashLogPath, "PlayerConfig Loading Error: " + ex);
+                }
+                catch
+                {
+                    // ignored
+                }
+
+                Application.Current.Shutdown();
             }
         }
 

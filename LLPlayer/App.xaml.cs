@@ -1,3 +1,4 @@
+﻿using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
@@ -19,6 +20,7 @@ public partial class App : PrismApplication
     public static string PlayerConfigPath { get; } = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "LLPlayer.PlayerConfig.json");
     public static string EngineConfigPath { get; } = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "LLPlayer.Engine.json");
     public static string AppConfigPath { get; } = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "LLPlayer.Config.json");
+    public static string CrashLogPath { get; } = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "crash.log");
 
     private readonly LogHandler Log;
 
