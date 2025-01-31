@@ -108,6 +108,12 @@ public class SettingsSubtitlesASRVM : Bindable
         }
 
         FL.PlayerConfig.Subtitles.WhisperModel = DownloadModels.FirstOrDefault(m => m.Equals(prevSelected));
+
+        if (FL.PlayerConfig.Subtitles.WhisperModel == null && DownloadModels.Count == 1)
+        {
+            // automatically set first downloaded model
+            FL.PlayerConfig.Subtitles.WhisperModel = DownloadModels.First();
+        }
     }
 
     public ObservableCollection<WhisperModel> DownloadModels { get; set => Set(ref field, value); } = new();
