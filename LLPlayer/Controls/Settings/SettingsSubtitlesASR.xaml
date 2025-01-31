@@ -153,8 +153,6 @@ Do not specify more than CPU threads."
                                     Width="16" Height="16"
                                     Margin="4 0 0 0" />
                             </InlineUIContainer>
-
-
                         </TextBlock>
                         <TextBox
                             Width="100"
@@ -215,8 +213,21 @@ Do not specify more than CPU threads."
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
-                            Width="200"
-                            Text="Audio Chunk Size (MB)" />
+                            Width="200">
+                            Audio Chunk Size (MB)
+                            <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                <ToolTipService.ToolTip>
+                                    <TextBlock
+                                        Text="Parameter for how many MB of audio to accumulate and pass to ASR. Increasing it increase memory usage and may cause natural breaks in sentences."
+                                        TextWrapping="Wrap"
+                                        MaxWidth="400" />
+                                </ToolTipService.ToolTip>
+                                <materialDesign:PackIcon
+                                    Kind="Information"
+                                    Width="16" Height="16"
+                                    Margin="4 0 0 0" />
+                            </InlineUIContainer>
+                        </TextBlock>
                         <TextBox
                             Width="100"
                             Text="{Binding FL.PlayerConfig.Subtitles.ASRChunkSizeMB}"
@@ -225,8 +236,21 @@ Do not specify more than CPU threads."
 
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
-                            Width="200"
-                            Text="Audio Chunk Seconds (sec)" />
+                            Width="200">
+                            Audio Chunk Seconds (sec)
+                            <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                <ToolTipService.ToolTip>
+                                    <TextBlock
+                                        Text="Parameter for how many seconds to wait to accumulate and pass to ASR. It is the real time, not the audio time. This parameter is ORed with Audio Chunk Size, and is used for when the size of the video is small, such as in the case of live video."
+                                        TextWrapping="Wrap"
+                                        MaxWidth="400" />
+                                </ToolTipService.ToolTip>
+                                <materialDesign:PackIcon
+                                    Kind="Information"
+                                    Width="16" Height="16"
+                                    Margin="4 0 0 0" />
+                            </InlineUIContainer>
+                        </TextBlock>
                         <TextBox
                             Width="100"
                             Text="{Binding FL.PlayerConfig.Subtitles.ASRChunkSeconds}"
