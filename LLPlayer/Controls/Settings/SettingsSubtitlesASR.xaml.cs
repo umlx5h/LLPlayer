@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using FlyleafLib;
@@ -17,6 +18,19 @@ public partial class SettingsSubtitlesASR : UserControl
         InitializeComponent();
 
         DataContext = ((App)Application.Current).Container.Resolve<SettingsSubtitlesASRVM>();
+    }
+
+    private void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
+            e.Handled = true;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Failed to open link" + ex.Message);
+        }
     }
 }
 

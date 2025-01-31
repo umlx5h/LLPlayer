@@ -336,6 +336,14 @@ Do not specify more than CPU threads."
                                 BorderBrush="{DynamicResource MaterialDesign.Brush.Primary}" />
                         </StackPanel>
                     </Grid>
+
+                    <TextBlock Grid.Column="0" Grid.Row="2" Margin="5 10 5 0">
+                        Some runtimes require the installation of a toolkit or others beforehand. Please check
+                        <Hyperlink NavigateUri="https://github.com/sandrohanea/whisper.net?tab=readme-ov-file#runtimes-description" RequestNavigate="Hyperlink_RequestNavigate">
+                            this link
+                        </Hyperlink>
+                        for details.
+                    </TextBlock>
                 </StackPanel>
             </GroupBox>
         </StackPanel>
