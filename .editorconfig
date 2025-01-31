@@ -11,3 +11,6 @@ indent_style = space
 indent_size = 4
 # to distinguish
 tab_width = 8
+
+[*.md]
+trim_trailing_whitespace = false
