@@ -167,7 +167,7 @@ $ ./LLPlayer.sln
 
 3. **Build**
 
-Select "LLPlayer" project and then build and run.
+Select `LLPlayer` project and then build and run.
 
 ## 🚩 Roadmaps
 
@@ -218,6 +218,7 @@ Guiding Principles for LLPlayer
 - [ ] Cross-Platform Support using Avalonia (Linux / Mac)
   - [ ] NativeAOT for faster startup time
 - [ ] Support more languages (not covered by ISO6391)
+- [ ] Context-Aware Translation
 - [ ] Word Management (reference to LingQ, Language Reactor)
   - [ ] Anki Support
 
