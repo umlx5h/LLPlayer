@@ -4,6 +4,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using FlyleafLib;
 using FlyleafLib.MediaFramework.MediaDemuxer;
 using LLPlayer.Services;
 using Microsoft.Xaml.Behaviors;
@@ -154,8 +155,14 @@ public class SliderToolTipBehavior : Behavior<Slider>
 
         Window window = Window.GetWindow(AssociatedObject);
         Point cursorPoint = window!.PointToScreen(e.GetPosition(window));
-
         Point sliderPoint = AssociatedObject.PointToScreen(default);
+
+        // Fix for high dpi because PointToScreen returns physical coords
+        cursorPoint.X /= Utils.NativeMethods.DpiX;
+        cursorPoint.Y /= Utils.NativeMethods.DpiY;
+
+        sliderPoint.X /= Utils.NativeMethods.DpiX;
+        sliderPoint.Y /= Utils.NativeMethods.DpiY;
 
         // Display on top of slider near mouse
         _valuePopup.HorizontalOffset = cursorPoint.X - (_tooltipText.ActualWidth + PaddingSize * 2) / 2;
