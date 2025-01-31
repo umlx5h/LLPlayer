@@ -214,7 +214,7 @@ public class FlyleafOverlayVM : Bindable
                     OSDMessage = $"Volume {player.Audio.Volume}%";
                     break;
                 case nameof(player.Audio.Mute):
-                    OSDMessage = player.Audio.Mute ? "Muted" : "Unmuted";
+                    OSDIcon = player.Audio.Mute ? PackIconKind.VolumeOff : PackIconKind.VolumeHigh;
                     break;
             }
         };
