@@ -140,7 +140,6 @@ Keyboard controls are fully customizable from the settings.
 ## ❤️ Development Status
 
 Status: `Beta`  
-Condition: `Not Stable`
 
 It has not yet been tested by enough users and may be unstable.
 
@@ -184,26 +183,16 @@ Guiding Principles for LLPlayer
   - [ ] ASR
     - [ ] Enable ASR subtitles with dual subtitles (one of them as translation)
     - [ ] Pause and resume
-    - [ ] Percentage display of progress
     - [ ] More natural sentence splitting (try [echosharp](https://github.com/sandrohanea/echosharp)?)
 
   - [ ] Subtitles
-    - [ ] Add ability to force source language instead of fallback
     - [ ] Customize language preference for primary and secondary subtitles, respectively, and automatic opening
     - [ ] Enhanced local subtitle search
-    - [ ] Eliminate flickering when seeking subtitles
-    - [ ] Display subtitles when paused with subtitles seek
     - [ ] Export ASR/OCR subtitle results to SRT file
 
 - [ ] Stabilization of the application
-  - [ ] Proper error handling
-  - [ ] Proper logging for issue handling
-
 - [ ] Allow customizable mouse shortcuts
-
-- [ ] Elimination of TODOs
 - [ ] Documentation / More Help
-- [ ] CI/CD
 
 ### Later
 
@@ -216,11 +205,9 @@ Guiding Principles for LLPlayer
 ### Future
 
 - [ ] Cross-Platform Support using Avalonia (Linux / Mac)
-  - [ ] NativeAOT for faster startup time
-- [ ] Support more languages (not covered by ISO6391)
 - [ ] Context-Aware Translation
 - [ ] Word Management (reference to LingQ, Language Reactor)
-  - [ ] Anki Support
+- [ ] Anki Integration
 
 ## 🤝 Contribution
 
@@ -264,7 +251,6 @@ Thank you for providing this for free!
 * [searchpioneer/lingua-dotnet](https://github.com/searchpioneer/lingua-dotnet) : For Language Detection
 * [sskodje/WpfColorFont](https://github.com/sskodje/WpfColorFont) : For Font Selection
 
-
 ### For Apps
 
 * [Language Reactor](https://chromewebstore.google.com/detail/language-reactor/hoombieeljmmljlkjmnheibnpciblicm)
@@ -273,59 +259,7 @@ Browser Extension for Netflix.
 LLPlayer is mainly inspired by this with its functionality and interface.
 (Not enough functionality yet, though).
 
-### For Information
-
-* ffmpeg tutorials
-
-The following tutorial was helpful in creating a video player with the ffmpeg API.
-
-ffmpeg libav tutorial
-https://github.com/leandromoreira/ffmpeg-libav-tutorial
-
-ffmpeg video player tutorials
-http://dranger.com/ffmpeg/ffmpeg.html  
-https://github.com/rambod-rahmani/ffmpeg-video-player
-
-(Japanese) https://qiita.com/Kujiro/items/78956f5906538b718ffb
-
-* WPF tutorials
-
-I learned WPF at pluralsight from Thomas Huber's course.
-
-https://app.pluralsight.com/profile/author/thomas-huber
-
-I also learned from the following book.
-
-[Pro WPF 4.5 in C#: Windows Presentation Foundation in .NET 4.5](https://www.amazon.com/dp/1430243651)
-
 ## ❓ FAQ
-
-#### Q: LLPlayer is free?
-
-It is completely free under the GPL license. There are no plans to monetize it in the future.
-
-The reason is that I am simply combining existing OSS.
-
-Without free OSS libraries, LLPlayer could not exist. Therefore, it must be free.
-
-#### Q: Why perform ASR and OCR in real time?
-There is no need to wait for completion to enable subtitles.
-The latest technology and hardwares also allow for more faster and accurate subtitles.
-
-LLPlayer can also start subtitle generation from any video position. This means that even long videos can be viewed immediately with subtitles.
-
-In addition, LLplayer works with `yt-dlp` to allow users to view any online video while generating subtitles in real time!
-
-If you want to generate and edit them in advance, you can use [SubtitleEdit](https://github.com/SubtitleEdit/subtitleedit) instead.
-
-#### Q: Is external network communication required?
-
-All ASR and OCR are executed locally and do not communicate externally.
-However, the models need to be downloaded for the first time, so communication is required only for that.
-
-Network communication is required to use the subtitle translation and word translation functions.
-
-These are optional features that can be opted out, so if they are not used, no communication is performed at all.
 
 #### Q: How can I speed up the ASR?
 
@@ -352,55 +286,6 @@ Instead, you can copy selected words to the clipboard.
 Certain dictionary tools can monitor the clipboard and search for words.
 
 For English-English dictionaries, [LDOCE5 Viewer](https://github.com/ciscorn/ldoce5viewer) is highly recommended.
-
-#### Q: Why is it written in C#/WPF?
-
-Because the [Flyleaf](https://github.com/SuRGeoNix/Flyleaf) library was available. It would probably be difficult to use [libmpv](https://github.com/mpv-player/mpv/tree/master/libmpv) or [libVLC](https://www.videolan.org/vlc/libvlc.html) in achieving similar functionality for me.
-The challenge is that these are difficult to modify on the library side.  
-Even building them from scratch is quite challenging.
-
-I also believe that there is no better environment for creating Windows desktop applications other than C#/WPF.
-
-I also thought that WPF would be suitable for the future because of the ease of cross-platform development using Avalonia.
-
-#### Q: When will you support cross-platform?
-
-LLPlayer uses the Flyleaf library in its core video player.  
-In order to support cross-platform, this library side needs to be supported first. Therefore, I cannot do it alone.
-
-The Flyleaf library will be cross-platform in v4, and there will be [various improvements](
-https://github.com/SuRGeoNix/Flyleaf/issues?q=sort%3Aupdated-desc%20is%3Aissue%20is%3Aopen%20label%3Av4) such as live streaming cache.
-
-Class platform ETA  
-https://github.com/SuRGeoNix/Flyleaf/discussions/543
-
-As soon as this is released, I will begin the transition in parallel with learning Avalonia.
-
-Until it is released, I will continue to make various improvements on Windows only.
-
-#### Q: How does the ASR feature differ from VLC?
-
-VLC is also likely to add Whisper-based features in the future.
-
-https://techcrunch.com/2025/01/09/vlc-tops-6-billion-downloads-previews-ai-generated-subtitles/
-
-This is a guess since it is not available at this time, but I predict that VLC does not use translation engines such as Google or DeepL at all. So it can probably only be translated into English. Because they claim they do not require network communications to translate.
-
-If Whisper is used to translate, it currently only supports English.
-Therefore, other translation engines will be required to translate into languages other than English.
-
-In contrast, LLPlayer not only uses Whisper to translate in English, but also uses a separate translation engine to translate into any language.
-
-VLC may be using a local translation LLM, but the accuracy and speed will be less than Google or DeepL at this time.
-Unlike video and audio, subtitle data is text data and its size is very small, so there is little advantage in using local AI for translation.
-
-The only advantage would be to meet the demand for local execution over convenience.
-
-LLPlayer also has language learning-specific features such as subtitle sidebar, subtitles seek, dual subtitles, and word translation, and I believe this is what differentiates it.
-
-I think that simply generating subtitles is not so much useful. It is important to add value in connection with it. A general purpose video player will possibly not be able to achieve that.
-
-For example, they will not add Japanese-specific features, but I plan to.
 
 ## 📝 LICENSE
 
