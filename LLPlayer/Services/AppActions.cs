@@ -92,8 +92,6 @@ public class AppActions
             new() { ActionName = nameof(CustomKeyBindingAction.SubsPositionDown), Key = Key.Down, Shift = true },
             new() { ActionName = nameof(CustomKeyBindingAction.SubsSizeIncrease), Key = Key.Right, Shift = true },
             new() { ActionName = nameof(CustomKeyBindingAction.SubsSizeDecrease), Key = Key.Left, Shift = true },
-            new() { ActionName = nameof(CustomKeyBindingAction.SubsPrimarySizeIncrease), Key = Key.Up, Shift = true },
-            new() { ActionName = nameof(CustomKeyBindingAction.SubsPrimarySizeDecrease), Key = Key.Up, Shift = true },
             new() { ActionName = nameof(CustomKeyBindingAction.SubsSecondarySizeIncrease), Key = Key.Right, Ctrl = true, Shift = true },
             new() { ActionName = nameof(CustomKeyBindingAction.SubsSecondarySizeDecrease), Key = Key.Left, Ctrl = true, Shift = true },
             new() { ActionName = nameof(CustomKeyBindingAction.SubsDistanceIncrease), Key = Key.Up, Ctrl = true, Shift = true },
