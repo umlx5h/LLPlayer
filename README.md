@@ -61,11 +61,6 @@ LLPlayer has many features for language learning that are not available in norma
 
 1. **Download builds from [release](https://github.com/umlx5h/LLPlayer/releases)**
 
-It is a portable application compressed in 7zip format.  
-If you cannot unzip, please install 7zip beforehand.
-
-https://www.7-zip.org/
-
 2. **Launch LLPlayer**
 
 Please open `LLPlayer.exe`.
@@ -79,13 +74,9 @@ Press `CTRL+.` or click the settings icon on the seek bar to open the settings w
 From `Subtitles > ASR` section, please download Whisper's models.
 You can choose from a variety of models, the larger the size, the higher the load and accuracy.
 
-Note that models with `.en` endings are only available in English.
+Note that models with `En` endings are only available in English.
 
 `Audio Language` allows you to manually set the language of the video (audio). The default is auto-detection.
-
-Hardware acceleration can be configured in the `Whisper Hardware Options` at the bottom.
-
-If `CUDA`, `Vulkan`, or `OpenVINO` is available on your machine, move it to the right column and set its priority. You may be able to generate subtitles very fast.
 
 5. **Download Tesseract Model for OCR (optional)**
 
@@ -97,13 +88,13 @@ Note that there is a model for each language.
 6. **Set Translation Target Language (optional)**
 
 To use the translation function, please set your native language. This is called the `target language`.
-The `source language` is almost always detected automatically.
+The `source language` is detected automatically.
 
 From `Subtitles > Translate` section, please set the `Target Language` at the top.
 
-The default translation engine is Google Translate.
+The default translation engine is `Google Translate`.
 
-You can change it to DeepL from the settings below, but you will need to configure API key. (free for a certain amount of use)
+You can change it to `DeepL` from the settings below, but you will need to configure API key. (free for a certain amount of use)
 
 7. **Place `yt-dlp.exe` to project (optional)**
 
@@ -127,8 +118,6 @@ There are two `CC` buttons on the bottom seek bar.
 
 The left is the primary subtitle and the right is the secondary subtitle.
 Please set your learning language for the primary subtitle and your native language for the secondary subtitle.
-
-From here you can change built-in subtitles, external subtitles, ASR subtitles, OCR subtitles, and there is a toggle for the translation function.
 
 9. **Open CheatSheet**
 
