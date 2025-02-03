@@ -84,6 +84,7 @@ public partial class App : PrismApplication
         if (!e.Handled)
         {
             Log.Error($"Unknown error occurred in App: {e.Exception}");
+            Logger.ForceFlush();
 
             ErrorDialogHelper.ShowUnknownErrorPopup($"Unhandled Exception: {e.Exception.Message}", "Global", e.Exception);
             e.Handled = true;
