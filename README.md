@@ -190,6 +190,8 @@ Guiding Principles for LLPlayer
   - [ ] Word Segmentation Handling
   - [ ] Use WebView to incorporate [rikaichamp](https://github.com/birchill/10ten-ja-reader), etc.
 - [ ] Text-to-Speech integration
+- [ ] More translation engine such as local LLM
+  - [ ] Support translation as plugin?
 
 ### Future
 
