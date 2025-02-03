@@ -43,7 +43,7 @@ LLPlayer has many features for language learning that are not available in norma
 
 ![LLPlayer Screenshot](LLPlayer-screenshot.jpg)
 
-[TED Talk - The future we're building -- and boring](https://www.ted.com/talks/elon_musk_the_future_we_re_building_and_boring)
+[TED Talk - The mind behind Linux](https://www.ted.com/talks/linus_torvalds_the_mind_behind_linux)
 
 ## ✅ Requirements
 
