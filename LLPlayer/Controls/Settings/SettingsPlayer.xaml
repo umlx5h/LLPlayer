@@ -198,6 +198,16 @@
                             ItemsSource="{Binding Source={StaticResource FFmpegLogLevelEnum}}"
                             SelectedItem="{Binding FL.ConfigEngine.FFmpegLogLevel}" />
                     </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Log Cached Lines" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.ConfigEngine.LogCachedLines}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                    </StackPanel>
                 </StackPanel>
             </GroupBox>
         </StackPanel>
