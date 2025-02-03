@@ -15,9 +15,9 @@
 
 ## 🎬 Demo
 
-https://github.com/user-attachments/assets/66b5334c-4a62-4ea8-894b-2b1fa49aabb2
+https://github.com/user-attachments/assets/798efbb9-ec01-42cc-8884-9cea4f602121
 
-[TED Talk - The future we're building -- and boring](https://www.ted.com/talks/elon_musk_the_future_we_re_building_and_boring)
+[TED Talk - The mind behind Linux](https://www.ted.com/talks/linus_torvalds_the_mind_behind_linux)
 
 ## ✨ Features
 
