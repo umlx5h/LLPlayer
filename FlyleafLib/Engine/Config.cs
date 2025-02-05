@@ -274,6 +274,11 @@ public class Config : NotifyPropertyChanged
         int _VolumeMax = 150;
 
         /// <summary>
+        /// The default volume
+        /// </summary>
+        public int      VolumeDefault               { get; set => Set(ref field, value); } = 75;
+
+        /// <summary>
         /// The purpose of the player
         /// </summary>
         public Usage    Usage                       { get; set; } = Usage.AVS;

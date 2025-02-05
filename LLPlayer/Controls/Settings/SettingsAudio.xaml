@@ -56,6 +56,16 @@
                             Text="{Binding FL.PlayerConfig.Player.VolumeMax}"
                             helpers:TextBoxHelper.OnlyNumeric="Uint"/>
                     </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Default Volume (%)" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.PlayerConfig.Player.VolumeDefault}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint"/>
+                    </StackPanel>
                 </StackPanel>
             </GroupBox>
 
