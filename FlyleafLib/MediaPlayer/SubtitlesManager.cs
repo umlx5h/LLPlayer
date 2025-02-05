@@ -16,6 +16,7 @@ using System.Windows.Media.Imaging;
 using FlyleafLib.MediaFramework.MediaFrame;
 using FlyleafLib.MediaFramework.MediaRenderer;
 using FlyleafLib.MediaPlayer.Translation;
+using static FlyleafLib.Logger;
 
 namespace FlyleafLib.MediaPlayer;
 
@@ -27,7 +28,7 @@ public class SubtitlesManager
     public SubManager this[int subIndex] => _subManagers[subIndex];
     private readonly int _subNum;
 
-    public SubtitlesManager(Config.SubtitlesConfig config, int subNum)
+    public SubtitlesManager(Config config, int subNum)
     {
         _subNum = subNum;
         _subManagers = new SubManager[subNum];
@@ -104,7 +105,7 @@ public class SubManager : INotifyPropertyChanged
             if (LanguageSource == Language.Unknown)
             {
                 // fallback to user set language
-                return _subIndex == 0 ? _config.LanguageFallbackPrimary : _config.LanguageFallbackSecondary;
+                return _subIndex == 0 ? _config.Subtitles.LanguageFallbackPrimary : _config.Subtitles.LanguageFallbackSecondary;
             }
 
             return LanguageSource;
@@ -124,17 +125,17 @@ public class SubManager : INotifyPropertyChanged
     }
 
     private readonly object _subsLocker = new();
-    private readonly Config.SubtitlesConfig _config;
+    private readonly Config _config;
     private readonly int _subIndex;
     private readonly SubTranslator _subTranslator;
     private readonly LogHandler Log;
 
-    public SubManager(Config.SubtitlesConfig config, int subIndex, bool enableSync = true)
+    public SubManager(Config config, int subIndex, bool enableSync = true)
     {
         _config = config;
         _subIndex = subIndex;
         // TODO: L: Review whether to initialize it here.
-        _subTranslator = new SubTranslator(this, config, subIndex);
+        _subTranslator = new SubTranslator(this, config.Subtitles, subIndex);
         Log = new LogHandler(("[#1]").PadRight(8, ' ') + $" [SubManager{subIndex+1}   ] ");
 
         if (enableSync)
@@ -301,7 +302,7 @@ public class SubManager : INotifyPropertyChanged
     public SubManager SetCurrentTime(TimeSpan currentTime)
     {
         // Adjust the display timing of subtitles by adjusting the timestamp of the video
-        currentTime = currentTime.Subtract(new TimeSpan(_config[_subIndex].Delay));
+        currentTime = currentTime.Subtract(new TimeSpan(_config.Subtitles[_subIndex].Delay));
 
         lock (_subsLocker)
         {
@@ -443,7 +444,7 @@ public class SubManager : INotifyPropertyChanged
 
             _cts = new CancellationTokenSource();
 
-            using SubtitleReader reader = new(_subIndex);
+            using SubtitleReader reader = new(_config, _subIndex);
 
             reader.Open(url, streamIndex);
 
@@ -563,10 +564,12 @@ public unsafe class SubtitleReader : IDisposable
     private AVIOContext* _avioCtx = null;
     private byte* _inputData;
     private int _inputDataSize;
+    private readonly Config _config;
     private readonly LogHandler Log;
 
-    public SubtitleReader(int subIndex)
+    public SubtitleReader(Config config, int subIndex)
     {
+        _config = config;
         Log = new LogHandler(("[#1]").PadRight(8, ' ') + $" [SubReader{subIndex + 1}    ] ");
     }
 
@@ -728,8 +731,29 @@ public unsafe class SubtitleReader : IDisposable
         // 0.1us (tick)
         double timebase = av_q2d(_stream->time_base) * 10000.0 * 1000.0;
 
-        while (av_read_frame(_fmtCtx, _packet) >= 0)
+        int demuxErrors = 0;
+        int decodeErrors = 0;
+
+        while (true)
         {
+            ret = av_read_frame(_fmtCtx, _packet);
+            if (ret == AVERROR_EOF)
+            {
+                break;
+            }
+
+            if (ret != 0)
+            {
+                // demux error
+                av_packet_unref(_packet);
+                if (CanWarn) Log.Warn($"av_read_frame: {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
+
+                if (++demuxErrors == _config.Demuxer.MaxErrors)
+                {
+                    ret.ThrowExceptionIfError("av_read_frame");
+                }
+            }
+
             if (token.IsCancellationRequested)
             {
                 av_packet_unref(_packet);
@@ -753,7 +777,14 @@ public unsafe class SubtitleReader : IDisposable
             ret = avcodec_decode_subtitle2(_codecCtx, &sub, &gotSub, _packet);
             if (ret < 0)
             {
-                Log.Warn($"Cannot decode subtitle: {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
+                // decode error
+                av_packet_unref(_packet);
+                if (CanWarn) Log.Warn($"avcodec_decode_subtitle2: {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
+                if (++decodeErrors == _config.Decoder.MaxErrors)
+                {
+                    ret.ThrowExceptionIfError("avcodec_decode_subtitle2");
+                }
+
                 continue;
             }
 

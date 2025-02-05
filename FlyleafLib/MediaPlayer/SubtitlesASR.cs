@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using Whisper.net;
 using Whisper.net.LibraryLoader;
+using static FlyleafLib.Logger;
 
 namespace FlyleafLib.MediaPlayer;
 
@@ -25,7 +26,7 @@ namespace FlyleafLib.MediaPlayer;
 public class SubtitlesASR
 {
     private readonly SubtitlesManager _subtitlesManager;
-    private readonly Config.SubtitlesConfig _config;
+    private readonly Config _config;
     private readonly Lock _locker = new();
     private CancellationTokenSource? _cts = null;
     private List<SubtitleData>? _prevSubs;
@@ -36,7 +37,7 @@ public class SubtitlesASR
 
     private readonly LogHandler Log;
 
-    public SubtitlesASR(SubtitlesManager subtitlesManager, Config.SubtitlesConfig config)
+    public SubtitlesASR(SubtitlesManager subtitlesManager, Config config)
     {
         _subtitlesManager = subtitlesManager;
         _config = config;
@@ -51,15 +52,15 @@ public class SubtitlesASR
     /// <returns></returns>
     public bool CanExecute(out string err)
     {
-        if (_config.WhisperModel == null)
+        if (_config.Subtitles.WhisperModel == null)
         {
             err = "The whisper model is not set. Please download it from the settings.";
             return false;
         }
 
-        if (!File.Exists(_config.WhisperModel.ModelFilePath))
+        if (!File.Exists(_config.Subtitles.WhisperModel.ModelFilePath))
         {
-            err = $"The whisper model file '{_config.WhisperModel.ModelFileName}' does not exist in the folder. Please download it from the settings.";
+            err = $"The whisper model file '{_config.Subtitles.WhisperModel.ModelFileName}' does not exist in the folder. Please download it from the settings.";
             return false;
         }
 
@@ -194,11 +195,11 @@ public class SubtitlesASR
 
 public class WhisperExecuter
 {
-    private readonly Config.SubtitlesConfig _config;
+    private readonly Config _config;
 
     private readonly LogHandler Log;
 
-    public WhisperExecuter(Config.SubtitlesConfig config)
+    public WhisperExecuter(Config config)
     {
         _config = config;
         Log = new LogHandler(("[#1]").PadRight(8, ' ') + " [WhisperExecute] ");
@@ -214,19 +215,19 @@ public class WhisperExecuter
         //}
 
 
-        if (_config.WhisperRuntimeLibraries.Count >= 1)
+        if (_config.Subtitles.WhisperRuntimeLibraries.Count >= 1)
         {
-            RuntimeOptions.RuntimeLibraryOrder = [.. _config.WhisperRuntimeLibraries];
+            RuntimeOptions.RuntimeLibraryOrder = [.. _config.Subtitles.WhisperRuntimeLibraries];
         }
         else
         {
             RuntimeOptions.RuntimeLibraryOrder = [RuntimeLibrary.Cpu, RuntimeLibrary.CpuNoAvx]; // fallback to default
         }
 
-        using WhisperFactory whisperFactory = WhisperFactory.FromPath(_config.WhisperModel.ModelFilePath);
+        using WhisperFactory whisperFactory = WhisperFactory.FromPath(_config.Subtitles.WhisperModel.ModelFilePath);
 
         WhisperProcessorBuilder whisperBuilder = whisperFactory.CreateBuilder();
-        await using WhisperProcessor processor = _config.WhisperParameters.ConfigureBuilder(whisperBuilder).Build();
+        await using WhisperProcessor processor = _config.Subtitles.WhisperParameters.ConfigureBuilder(whisperBuilder).Build();
 
         await foreach (var result in processor.ProcessAsync(waveStream, token))
         {
@@ -264,7 +265,7 @@ public class WhisperExecuter
 
 public unsafe class AudioReader : IDisposable
 {
-    private readonly Config.SubtitlesConfig _config;
+    private readonly Config _config;
     private AVFormatContext* _fmtCtx = null;
     private AVStream* _stream = null;
     private AVCodec* _codec = null;
@@ -274,7 +275,7 @@ public unsafe class AudioReader : IDisposable
     private AVFrame* _frame = null;
     private readonly LogHandler Log;
 
-    public AudioReader(Config.SubtitlesConfig config)
+    public AudioReader(Config config)
     {
         _config = config;
         Log = new LogHandler(("[#1]").PadRight(8, ' ') + " [AudioReader   ] ");
@@ -344,9 +345,9 @@ public unsafe class AudioReader : IDisposable
 
         // Stream processing is performed by dividing the audio by a certain size and passing it to whisper.
         // TODO: L: Review this process as subtitles may be cut off in the middle.
-        long chunkSize = _config.ASRChunkSize;
+        long chunkSize = _config.Subtitles.ASRChunkSize;
         // Also split by elapsed seconds for live
-        TimeSpan chunkElapsed = TimeSpan.FromSeconds(_config.ASRChunkSeconds);
+        TimeSpan chunkElapsed = TimeSpan.FromSeconds(_config.Subtitles.ASRChunkSeconds);
         Stopwatch chunkSw = new();
         chunkSw.Start();
 
@@ -376,8 +377,29 @@ public unsafe class AudioReader : IDisposable
         // 0.1us (tick)
         double timebase = av_q2d(_stream->time_base) * 10000.0 * 1000.0;
 
-        while (av_read_frame(_fmtCtx, _packet) >= 0)
+        int demuxErrors = 0;
+        int decodeErrors = 0;
+
+        while (true)
         {
+            ret = av_read_frame(_fmtCtx, _packet);
+            if (ret == AVERROR_EOF)
+            {
+                break;
+            }
+
+            if (ret != 0)
+            {
+                // demux error
+                av_packet_unref(_packet);
+                if (CanWarn) Log.Warn($"av_read_frame: {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
+
+                if (++demuxErrors == _config.Demuxer.MaxErrors)
+                {
+                    ret.ThrowExceptionIfError("av_read_frame");
+                }
+            }
+
             if (token.IsCancellationRequested)
             {
                 av_packet_unref(_packet);
@@ -396,7 +418,20 @@ public unsafe class AudioReader : IDisposable
             {
                 continue;
             }
-            ret.ThrowExceptionIfError("avcodec_send_packet");
+
+            if (ret != 0)
+            {
+                // decoder error
+                av_packet_unref(_packet);
+                if (CanWarn) Log.Warn($"avcodec_send_packet: {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
+
+                if (++decodeErrors == _config.Decoder.MaxErrors)
+                {
+                    ret.ThrowExceptionIfError("avcodec_send_packet");
+                }
+
+                continue;
+            }
 
             av_packet_unref(_packet);
 
