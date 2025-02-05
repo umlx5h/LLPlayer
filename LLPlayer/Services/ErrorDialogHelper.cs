@@ -25,8 +25,6 @@ public static class ErrorDialogHelper
             { "errorType", errorType }
         };
 
-        ActiveMainWindowIfNotActivated();
-
         dialogService.ShowDialog(nameof(ErrorDialog), p);
     }
 
@@ -57,8 +55,6 @@ public static class ErrorDialogHelper
             p.Add("exception", ex);
         }
 
-        ActiveMainWindowIfNotActivated();
-
         _showCount++;
         dialogService.ShowDialog(nameof(ErrorDialog), p);
         _showCount--;
@@ -67,22 +63,5 @@ public static class ErrorDialogHelper
     public static void ShowUnknownErrorPopup(string message, UnknownErrorType errorType, Exception? ex = null)
     {
         ShowUnknownErrorPopup(message, errorType.ToString(), ex);
-    }
-
-    private static void ActiveMainWindowIfNotActivated()
-    {
-        // Prevent the dialog from being displayed on the back side of MainWindow
-        // even though Owner is set if it is displayed when it is not in the active state.
-        if (Application.Current.MainWindow != null && !Application.Current.MainWindow.IsActive)
-        {
-            var dialogs = Application.Current.Windows.OfType<IDialogWindow>();
-            IDialogWindow? activeDialog = dialogs
-                .FirstOrDefault(dw => dw is Window { IsActive: true });
-
-            if (activeDialog == null)
-            {
-                Application.Current.MainWindow.Activate();
-            }
-        }
     }
 }

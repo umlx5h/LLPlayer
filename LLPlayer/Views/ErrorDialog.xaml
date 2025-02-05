@@ -17,7 +17,10 @@
         <Style TargetType="Window">
             <Setter Property="ResizeMode" Value="NoResize" />
             <Setter Property="WindowStyle" Value="None" />
-            <Setter Property="ShowInTaskbar" Value="False" />
+            <!--Error dialogs are sometimes displayed behind the MainWindow even though the Owner is set for the Dialog's Window.
+            In this case, any operation becomes impossible, so be sure to display it in front of any apps.-->
+            <Setter Property="Topmost" Value="True" />
+            <EventSetter Event="MouseDown" Handler="Window_MouseDown" />
         </Style>
     </prism:Dialog.WindowStyle>
 
