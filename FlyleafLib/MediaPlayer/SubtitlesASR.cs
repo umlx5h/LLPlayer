@@ -128,6 +128,7 @@ public class SubtitlesASR
                     StartTime = data.StartTime,
                     EndTime = data.EndTime,
 #if DEBUG
+                    ChunkNo = data.ChunkNo,
                     StartTimeChunk = data.StartTimeChunk,
                     EndTimeChunk = data.EndTimeChunk,
 #endif
@@ -243,10 +244,11 @@ public class WhisperExecuter
 
             SubtitleASRData sub = new()
             {
-                Text = result.Text,
+                Text = result.Text.Trim(), // remove leading whitespace
                 StartTime = start,
                 EndTime = end,
 #if DEBUG
+                ChunkNo = chunkCnt,
                 StartTimeChunk = result.Start,
                 EndTimeChunk = result.End,
 #endif
@@ -658,6 +660,7 @@ public class SubtitleASRData
     public TimeSpan EndTime { get; set; }
 
 #if DEBUG
+    public int ChunkNo { get; set; }
     public TimeSpan StartTimeChunk { get; set; }
     public TimeSpan EndTimeChunk { get; set; }
 #endif

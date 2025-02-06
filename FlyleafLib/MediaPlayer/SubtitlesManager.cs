@@ -1089,8 +1089,9 @@ public class SubtitleData : IDisposable, INotifyPropertyChanged
     public TimeSpan StartTime { get; set; }
     public TimeSpan EndTime { get; set; }
 #if DEBUG
-    public TimeSpan StartTimeChunk { get; set; }
-    public TimeSpan EndTimeChunk { get; set; }
+    public int ChunkNo { get; set => Set(ref field, value); }
+    public TimeSpan StartTimeChunk { get; set => Set(ref field, value); }
+    public TimeSpan EndTimeChunk { get; set => Set(ref field, value); }
 #endif
     public TimeSpan Duration => EndTime - StartTime;
 
