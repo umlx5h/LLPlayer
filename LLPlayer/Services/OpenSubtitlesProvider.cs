@@ -9,12 +9,14 @@ namespace LLPlayer.Services;
 
 public class OpenSubtitlesProvider
 {
+    private readonly FlyleafManager FL;
     private readonly HttpClient _client;
     private string? _token;
     private bool _initialized = false;
 
-    public OpenSubtitlesProvider()
+    public OpenSubtitlesProvider(FlyleafManager fl)
     {
+        FL = fl;
         HttpClient client = new();
         client.BaseAddress = new Uri("http://api.opensubtitles.org/xml-rpc");
         client.Timeout = TimeSpan.FromSeconds(15);
@@ -352,12 +354,17 @@ $"""
         Encoding? encoding = TextEncodings.DetectEncoding(subData);
         encoding ??= Encoding.UTF8;
 
-        var subString = encoding.GetString(subData);
+        // If there is originally a BOM, it will remain even if it is converted to a string, so delete it.
+        string subString = encoding.GetString(subData).TrimStart('\uFEFF');
 
-        // Convert to UTF-8 with BOM and return
-        var subText = Encoding.UTF8.GetPreamble().Concat(
-            Encoding.UTF8.GetBytes(subString)
-        ).ToArray();
+        // Convert to UTF-8 and return
+        byte[] subText = Encoding.UTF8.GetBytes(subString);
+
+        if (FL.Config.Subs.SubsExportUTF8WithBom)
+        {
+            // append BOM
+            subText = Encoding.UTF8.GetPreamble().Concat(subText).ToArray();
+        }
 
         return (subText, false);
     }
