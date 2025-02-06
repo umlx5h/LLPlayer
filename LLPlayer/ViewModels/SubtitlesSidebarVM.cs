@@ -2,19 +2,16 @@
 using FlyleafLib.MediaPlayer;
 using LLPlayer.Extensions;
 using LLPlayer.Services;
-using LLPlayer.Views;
 
 namespace LLPlayer.ViewModels;
 
 public class SubtitlesSidebarVM : Bindable
 {
     public FlyleafManager FL { get; }
-    private readonly IDialogService _dialogService;
 
-    public SubtitlesSidebarVM(FlyleafManager fl, IDialogService dialogService)
+    public SubtitlesSidebarVM(FlyleafManager fl)
     {
         FL = fl;
-        _dialogService = dialogService;
     }
 
     public bool IsPrimary
@@ -66,14 +63,14 @@ public class SubtitlesSidebarVM : Bindable
         OnPropertyChanged(nameof(SubManager));
     });
 
-    public DelegateCommand CmdSwapSidebarPosition => field ??= new(() =>
+    public DelegateCommand CmdShowDownloadSubsDialog => field ??= new(() =>
     {
-        FL.Config.SidebarLeft = !FL.Config.SidebarLeft;
+        FL.Action.CmdOpenWindowSubsDownloader.Execute();
     });
 
-    public DelegateCommand CmdShowDownloadSubDialog => field ??= new(() =>
+    public DelegateCommand CmdShowExportSubsDialog => field ??= new(() =>
     {
-        _dialogService.ShowSingleton(nameof(SubtitlesDownloaderDialog), true);
+        FL.Action.CmdOpenWindowSubsExporter.Execute();
     });
 
     public DelegateCommand<int?> CmdSubPlay => field ??= new((index) =>

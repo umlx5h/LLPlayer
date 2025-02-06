@@ -177,7 +177,7 @@ Guiding Principles for LLPlayer
   - [ ] Subtitles
     - [ ] Customize language preference for primary and secondary subtitles, respectively, and automatic opening
     - [ ] Enhanced local subtitle search
-    - [ ] Export ASR/OCR subtitle results to SRT file
+    - [X] [Export ASR/OCR subtitle results to SRT file](https://github.com/umlx5h/LLPlayer/issues/12)
 
 - [ ] Stabilization of the application
 - [ ] Allow customizable mouse shortcuts

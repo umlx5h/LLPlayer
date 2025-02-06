@@ -448,6 +448,8 @@ public class AppConfigSubs : Bindable
         return marginTop;
     }
 
+    public bool SubsExportUTF8WithBom { get; set => Set(ref field, value); } = true;
+
     public WordClickAction WordClickActionMethod { get; set => Set(ref field, value); }
     public bool WordCopyOnSelected { get; set => Set(ref field, value); } = true;
     public bool WordLastSearchOnSelected { get; set => Set(ref field, value); } = true;

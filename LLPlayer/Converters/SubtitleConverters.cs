@@ -133,3 +133,25 @@ public class SubBitmapImageSourceConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         => throw new NotImplementedException();
 }
+
+[ValueConversion(typeof(int), typeof(string))]
+public class SubIndexToDisplayStringConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is int subIndex)
+        {
+            return subIndex == 0 ? "Primary" : "Secondary";
+        }
+        return DependencyProperty.UnsetValue;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is string str)
+        {
+            return str == "Primary" ? 0 : 1;
+        }
+        return DependencyProperty.UnsetValue;
+    }
+}

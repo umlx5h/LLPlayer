@@ -63,6 +63,14 @@
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
                             Width="180"
+                            Text="Export UTF8 with BOM" />
+                        <ToggleButton
+                            IsChecked="{Binding FL.Config.Subs.SubsExportUTF8WithBom}" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
                             Text="Delay Primary (ms)" />
                         <TextBox
                             Width="100"

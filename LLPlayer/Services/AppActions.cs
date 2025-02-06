@@ -76,6 +76,7 @@ public class AppActions
 
             [CustomKeyBindingAction.OpenWindowSettings] = CmdOpenWindowSettings.Execute,
             [CustomKeyBindingAction.OpenWindowSubsDownloader] = CmdOpenWindowSubsDownloader.Execute,
+            [CustomKeyBindingAction.OpenWindowSubsExporter] = CmdOpenWindowSubsExporter.Execute,
             [CustomKeyBindingAction.OpenWindowCheatSheet] = CmdOpenWindowCheatSheet.Execute,
 
             [CustomKeyBindingAction.AppNew] = CmdAppNew.Execute,
@@ -391,6 +392,18 @@ public class AppActions
         _dialogService.ShowSingleton(nameof(SubtitlesDownloaderDialog), true);
     });
 
+    public DelegateCommand CmdOpenWindowSubsExporter => field ?? new(() =>
+    {
+        _dialogService.ShowSingleton(nameof(SubtitlesExportDialog), _ =>
+        {
+            // Activate as it may be minimized for some reason
+            if (!Application.Current.MainWindow!.IsActive)
+            {
+                Application.Current.MainWindow!.Activate();
+            }
+        }, false);
+    });
+
     public DelegateCommand CmdOpenWindowCheatSheet => field ?? new(() =>
     {
         _dialogService.ShowSingleton(nameof(CheatSheetDialog), true);
@@ -611,6 +624,8 @@ public enum CustomKeyBindingAction
     OpenWindowSettings,
     [Description("Open Subtitles Downloader Window")]
     OpenWindowSubsDownloader,
+    [Description("Open Subtitles Exporter Window")]
+    OpenWindowSubsExporter,
     [Description("Open Cheat Sheet Window")]
     OpenWindowCheatSheet,
 
@@ -676,6 +691,7 @@ public static class KeyBindingActionExtensions
             case CustomKeyBindingAction.ToggleDebugOverlay:
             case CustomKeyBindingAction.OpenWindowSettings:
             case CustomKeyBindingAction.OpenWindowSubsDownloader:
+            case CustomKeyBindingAction.OpenWindowSubsExporter:
             case CustomKeyBindingAction.OpenWindowCheatSheet:
                 return KeyBindingActionGroup.Window;
 

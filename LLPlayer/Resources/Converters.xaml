@@ -40,5 +40,6 @@
     <conv:ListItemIndexVisibilityConverter x:Key="ListItemIndexVisibilityConv"/>
     <conv:TimeSpanToStringConverter x:Key="TimeSpanToStringConv"/>
     <conv:SubBitmapImageSourceConverter x:Key="SubBitmapImageSourceConv"/>
+    <conv:SubIndexToDisplayStringConverter x:Key="SubIndexToDisplayStringConv"/>
 
 </ResourceDictionary>

@@ -139,17 +139,17 @@
                 Command="{Binding CmdShowOriginalTextToggle}"
                 IsChecked="{Binding FL.Config.SidebarShowOriginalText, Mode=OneWay}" />
 
-            <!-- Sidebar Left Toggle -->
-            <Button Style="{StaticResource IconButton}"
-                    Command="{Binding CmdSwapSidebarPosition}"
-                    ToolTip="Swap sidebar position"
-                    Content="{materialDesign:PackIcon Kind=SwapHorizontal}" />
-
             <!-- Subtitles Downloader -->
             <Button Style="{StaticResource IconButton}"
-                    Command="{Binding CmdShowDownloadSubDialog}"
+                    Command="{Binding CmdShowDownloadSubsDialog}"
                     ToolTip="Download subtitles"
                     Content="{materialDesign:PackIcon Kind=Download}" />
+
+            <!-- Subtitles Exporter -->
+            <Button Style="{StaticResource IconButton}"
+                    Command="{Binding CmdShowExportSubsDialog}"
+                    ToolTip="Export subtitles as srt"
+                    Content="{materialDesign:PackIcon Kind=FileExportOutline}" />
         </ToolBar>
 
         <controls:NonTopmostPopup

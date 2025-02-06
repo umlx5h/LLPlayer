@@ -476,7 +476,8 @@ AncestorType={x:Type MenuItem}}}">
             </MenuItem>
 
             <MenuItem Header="Streams" ItemsSource="{StaticResource MenuSubtitlesStreams}"/>
-            <MenuItem Header="Sub Downloader" Command="{Binding FL.Action.CmdOpenWindowSubsDownloader}" Icon="{materialDesign:PackIcon Kind=Download}"/>
+            <MenuItem Header="Subs Downloader" Command="{Binding FL.Action.CmdOpenWindowSubsDownloader}" Icon="{materialDesign:PackIcon Kind=Download}"/>
+            <MenuItem Header="Subs Exporter"   Command="{Binding FL.Action.CmdOpenWindowSubsExporter}" Icon="{materialDesign:PackIcon Kind=FileExport}"/>
         </MenuItem>
 
         <MenuItem Header="Video" Icon="{materialDesign:PackIcon VideoOutline}">
