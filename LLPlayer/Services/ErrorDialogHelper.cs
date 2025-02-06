@@ -6,16 +6,8 @@ namespace LLPlayer.Services;
 
 public static class ErrorDialogHelper
 {
-    private static int _showCount;
-
     public static void ShowKnownErrorPopup(string message, string errorType)
     {
-        // prevent double popup
-        if (_showCount > 0)
-        {
-            return;
-        }
-
         var dialogService = ((App)Application.Current).Container.Resolve<DialogService>();
 
         DialogParameters p = new()
@@ -35,12 +27,6 @@ public static class ErrorDialogHelper
 
     public static void ShowUnknownErrorPopup(string message, string errorType, Exception? ex = null)
     {
-        // prevent double popup
-        if (_showCount > 0)
-        {
-            return;
-        }
-
         var dialogService = ((App)Application.Current).Container.Resolve<DialogService>();
 
         DialogParameters p = new()
@@ -55,9 +41,7 @@ public static class ErrorDialogHelper
             p.Add("exception", ex);
         }
 
-        _showCount++;
         dialogService.ShowDialog(nameof(ErrorDialog), p);
-        _showCount--;
     }
 
     public static void ShowUnknownErrorPopup(string message, UnknownErrorType errorType, Exception? ex = null)
