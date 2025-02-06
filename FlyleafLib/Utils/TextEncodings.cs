@@ -131,8 +131,14 @@ public class TextEncodings
 
             return true;
         }
-        catch
+        catch (DecoderFallbackException ex)
         {
+            // Ignore when a trailing cut character causes a validation error.
+            if (bytes.Length - ex.Index < 4)
+            {
+                return true;
+            }
+
             return false;
         }
     }
