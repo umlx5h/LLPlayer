@@ -279,6 +279,7 @@ AncestorType={x:Type MenuItem}}}">
 
         <MenuItem Header="{Binding FL.PlayerConfig.Subtitles.WhisperParameters.LanguageName}"
                   HeaderStringFormat="ASR ({0})"
+                  Command="{Binding FL.Player.Commands.OpenSubtitlesASR}"
                   CommandParameter="1"
                   IsCheckable="True"
                   IsChecked="{Binding FL.Player.Subtitles[1].EnabledASR, Mode=OneWay}" />
