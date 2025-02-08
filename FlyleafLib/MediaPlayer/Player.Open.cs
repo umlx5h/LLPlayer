@@ -279,10 +279,11 @@ unsafe partial class Player
     /// <param name="defaultVideo">Whether to open the default video stream from plugin suggestions</param>
     /// <param name="defaultAudio">Whether to open the default audio stream from plugin suggestions</param>
     /// <param name="defaultSubtitles">Whether to open the default subtitles stream from plugin suggestions</param>
+    /// <param name="forceSubtitles">Forces input url to be handled as subtitles</param>
     /// <returns></returns>
-    public OpenCompletedArgs Open(string url, bool defaultPlaylistItem = true, bool defaultVideo = true, bool defaultAudio = true, bool defaultSubtitles = true)
+    public OpenCompletedArgs Open(string url, bool defaultPlaylistItem = true, bool defaultVideo = true, bool defaultAudio = true, bool defaultSubtitles = true, bool forceSubtitles = false)
     {
-        if (ExtensionsSubtitles.Contains(GetUrlExtention(url)))
+        if (forceSubtitles || ExtensionsSubtitles.Contains(GetUrlExtention(url)))
         {
             OnOpening(new() { Url = url, IsSubtitles = true});
             return OpenSubtitles(url);
