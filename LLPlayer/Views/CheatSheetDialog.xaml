@@ -47,7 +47,7 @@
                                             Style="{StaticResource MaterialDesignIconButton}"
                                             Width="20"
                                             Height="20"
-                                            Command="{Binding DataContext.CmdAction, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=StackPanel}}"
+                                            Command="{Binding DataContext.CmdAction, ElementName=ActionListsItemsControl}"
                                             CommandParameter="{Binding}">
                                             <materialDesign:PackIcon Kind="Play" />
                                         </Button>
@@ -134,6 +134,7 @@
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <StackPanel HorizontalAlignment="Center">
                             <ItemsControl
+                                x:Name="ActionListsItemsControl"
                                 ItemsSource="{Binding KeyBindingGroups}"
                                 ItemTemplate="{StaticResource ActionGroupItemTemplate}">
                                 <ItemsControl.ItemsPanel>

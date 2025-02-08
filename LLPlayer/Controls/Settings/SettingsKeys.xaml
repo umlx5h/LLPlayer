@@ -136,7 +136,7 @@
                             <DataTemplate>
                                 <Grid>
                                     <ComboBox
-                                        ItemsSource="{Binding RelativeSource={RelativeSource AncestorType=DataGrid, Mode=FindAncestor}, Path=DataContext.Actions}"
+                                        ItemsSource="{Binding DataContext.Actions, ElementName=KeyBindingsDataGrid}"
                                         DisplayMemberPath="DisplayName"
                                         SelectedItem="{Binding Action, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                         IsTextSearchEnabled="True"

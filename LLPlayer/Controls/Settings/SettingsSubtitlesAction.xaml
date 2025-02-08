@@ -118,6 +118,7 @@
                     </Grid.RowDefinitions>
 
                     <DataGrid
+                        x:Name="MenuActionsDataGrid"
                         Grid.Row="0"
                         ItemsSource="{Binding MenuActions}"
                         VerticalContentAlignment="Center"
@@ -215,7 +216,7 @@
                                             HorizontalAlignment="Center"
                                             Width="30"
                                             Height="30"
-                                            Command="{Binding DataContext.CmdRemoveAction, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                            Command="{Binding DataContext.CmdRemoveAction, ElementName=MenuActionsDataGrid}"
                                             CommandParameter="{Binding}">
                                             <materialDesign:PackIcon Kind="Delete" />
                                         </Button>
