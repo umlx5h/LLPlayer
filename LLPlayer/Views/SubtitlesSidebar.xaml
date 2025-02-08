@@ -53,7 +53,7 @@
                             <MultiDataTrigger>
                                 <MultiDataTrigger.Conditions>
                                     <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem, Mode=FindAncestor}}" Value="True" />
-                                    <Condition Binding="{Binding DataContext.SubManager.IsDisplaying, RelativeSource={RelativeSource AncestorType=ListBox, Mode=FindAncestor}}" Value="True" />
+                                    <Condition Binding="{Binding DataContext.SubManager.IsDisplaying, ElementName=SubtitleListBox}" Value="True" />
                                 </MultiDataTrigger.Conditions>
                                 <MultiDataTrigger.Setters>
                                     <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Primary}" />
@@ -191,7 +191,7 @@
                     <Setter Property="materialDesign:RippleAssist.IsDisabled" Value="True" />
                     <Setter Property="Padding">
                         <Setter.Value>
-                            <Binding Path="DataContext.FL.Config.SidebarSubPadding" RelativeSource="{RelativeSource AncestorType=ListBox}" />
+                            <Binding Path="DataContext.FL.Config.SidebarSubPadding" ElementName="SubtitleListBox" />
                         </Setter.Value>
                     </Setter>
                     <Style.Triggers>
@@ -221,12 +221,9 @@
                                         <Binding Path="Index" />
                                         <Binding Path="DisplayText" />
                                         <Binding Path="Text" />
-                                        <Binding Path="SelectedIndex"
-                                                 RelativeSource="{RelativeSource AncestorType=ListBox}" />
-                                        <Binding Path="DataContext.FL.Config.SidebarTextMask"
-                                                 RelativeSource="{RelativeSource AncestorType=ListBox}" />
-                                        <Binding Path="DataContext.FL.Config.SidebarShowOriginalText"
-                                                 RelativeSource="{RelativeSource AncestorType=ListBox}" />
+                                        <Binding Path="SelectedIndex" ElementName="SubtitleListBox" />
+                                        <Binding Path="DataContext.FL.Config.SidebarTextMask" ElementName="SubtitleListBox" />
+                                        <Binding Path="DataContext.FL.Config.SidebarShowOriginalText" ElementName="SubtitleListBox" />
                                     </MultiBinding>
                                 </controls:SelectableTextBox.Text>
                             </controls:SelectableTextBox>
@@ -242,10 +239,8 @@
                                 <Image.Visibility>
                                     <MultiBinding Converter="{StaticResource ListItemIndexVisibilityConv}" Mode="OneWay">
                                         <Binding Path="Index" />
-                                        <Binding Path="SelectedIndex"
-                                                 RelativeSource="{RelativeSource AncestorType=ListBox}" />
-                                        <Binding Path="DataContext.FL.Config.SidebarTextMask"
-                                                 RelativeSource="{RelativeSource AncestorType=ListBox}" />
+                                        <Binding Path="SelectedIndex" ElementName="SubtitleListBox" />
+                                        <Binding Path="DataContext.FL.Config.SidebarTextMask" ElementName="SubtitleListBox" />
                                     </MultiBinding>
                                 </Image.Visibility>
                             </Image>
@@ -265,8 +260,7 @@
                             ToolTipService.Placement="Left"
                             ToolTipService.InitialShowDelay="200"
                             ToolTip="{Binding StartTime, Converter={StaticResource TimeSpanToStringConv}}"
-                            Command="{Binding DataContext.CmdSubPlay,
-                                RelativeSource={RelativeSource AncestorType=ListBox}}"
+                            Command="{Binding DataContext.CmdSubPlay, ElementName=SubtitleListBox}"
                             CommandParameter="{Binding Index}"
                             materialDesign:RippleAssist.Feedback="Transparent"
                             Style="{StaticResource SubPlayIconButton}"
@@ -296,8 +290,7 @@
                             x:Name="SubSyncButton"
                             Grid.Column="2"
                             ToolTip="Adjust the delay so that this subtitle is currently playing."
-                            Command="{Binding DataContext.CmdSubSync,
-                                RelativeSource={RelativeSource AncestorType=ListBox}}"
+                            Command="{Binding DataContext.CmdSubSync, ElementName=SubtitleListBox}"
                             CommandParameter="{Binding Index}"
                             materialDesign:RippleAssist.Feedback="Transparent"
                             Style="{StaticResource SubIconButton}">
