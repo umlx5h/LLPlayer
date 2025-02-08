@@ -80,7 +80,7 @@ Note that models with `En` endings are only available in English.
 
 5. **Download Tesseract Model for OCR (optional)**
 
-If you want to use OCR for bitmap subtitles, please download Tesseract's Model. (You can also use Microsoft OCR)
+If you want to use OCR for bitmap subtitles, please download Tesseract's Model. (You can also use Microsoft OCR.)
 
 From `Subtitles > OCR` section, you can download Tesseract models.
 Note that there is a model for each language.
@@ -118,6 +118,8 @@ There are two `CC` buttons on the bottom seek bar.
 
 The left is the primary subtitle and the right is the secondary subtitle.
 Please set your learning language for the primary subtitle and your native language for the secondary subtitle.
+
+Adding external subtitles is done in the same way as for videos, either by dragging or from the context menu.
 
 9. **Open CheatSheet**
 
@@ -185,7 +187,7 @@ Guiding Principles for LLPlayer
 
 ### Later
 
-- [ ] Support for dictionary API for specific languages (English definitely)
+- [ ] Support for dictionary API or for specific languages (English, Japanese, ...)
 - [ ] Dedicated support for Japanese for watching anime.
   - [ ] Word Segmentation Handling
   - [ ] Use WebView to incorporate [rikaichamp](https://github.com/birchill/10ten-ja-reader), etc.
