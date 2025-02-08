@@ -290,7 +290,7 @@ AncestorType={x:Type MenuItem}}}">
 
         <Separator />
 
-        <MenuItem Header="Auto-translate"
+        <MenuItem Header="Auto-Translate"
                   IsCheckable="True"
                   IsChecked="{Binding FL.PlayerConfig.Subtitles[1].EnabledTranslated}"/>
     </collections:ArrayList>
