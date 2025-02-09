@@ -293,7 +293,35 @@ partial class Player
 
                     for (int i = 0; i < subNum; i++)
                     {
-                        if (sFramesPrev[i] != null)
+                        // Display subtitles from cache when seeking while paused
+                        bool display = false;
+                        var cur = SubtitlesManager[i].GetCurrent();
+                        if (cur != null)
+                        {
+                            if (!string.IsNullOrEmpty(cur.DisplayText))
+                            {
+                                SubtitleDisplay(cur.DisplayText, i);
+                                display = true;
+                            }
+                            else if (cur.IsBitmap && cur.Bitmap != null)
+                            {
+                                SubtitleDisplay(cur.Bitmap, i);
+                                display = true;
+                            }
+
+                            if (display)
+                            {
+                                sFramesPrev[i] = new SubtitlesFrame
+                                {
+                                    timestamp = cur.StartTime.Ticks + Config.Subtitles[i].Delay,
+                                    duration = (uint)cur.Duration.TotalMilliseconds
+                                };
+                            }
+                        }
+
+                        // clear subtitles
+                        // but do not clear when cache hit
+                        if (!display && sFramesPrev[i] != null)
                         {
                             sFramesPrev[i] = null;
                             SubtitleClear(i);
