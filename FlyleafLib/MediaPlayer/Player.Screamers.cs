@@ -96,6 +96,19 @@ unsafe partial class Player
 
         for (int i = 0; i < subNum; i++)
         {
+            // Prevents blinking after seek
+            if (sFramesPrev[i] != null)
+            {
+                var cur = SubtitlesManager[i].GetCurrent();
+                if (cur != null)
+                {
+                    if (!string.IsNullOrEmpty(cur.DisplayText) || (cur.IsBitmap && cur.Bitmap != null))
+                    {
+                        continue;
+                    }
+                }
+            }
+
             // Clear last subtitles text if video timestamp is not within subs timestamp + duration (to prevent clearing current subs on pause/play)
             if (sFramesPrev[i] == null || sFramesPrev[i].timestamp > vFrame.timestamp || (sFramesPrev[i].timestamp + (sFramesPrev[i].duration * (long)10000)) < vFrame.timestamp)
             {
@@ -324,7 +337,35 @@ unsafe partial class Player
 
                 for (int i = 0; i < subNum; i++)
                 {
-                    if (sFramesPrev[i] != null)
+                    // Display subtitles from cache when seeking while playing
+                    bool display = false;
+                    var cur = SubtitlesManager[i].GetCurrent();
+                    if (cur != null)
+                    {
+                        if (!string.IsNullOrEmpty(cur.DisplayText))
+                        {
+                            SubtitleDisplay(cur.DisplayText, i);
+                            display = true;
+                        }
+                        else if (cur.IsBitmap && cur.Bitmap != null)
+                        {
+                            SubtitleDisplay(cur.Bitmap, i);
+                            display = true;
+                        }
+
+                        if (display)
+                        {
+                            sFramesPrev[i] = new SubtitlesFrame
+                            {
+                                timestamp = cur.StartTime.Ticks + Config.Subtitles[i].Delay,
+                                duration = (uint)cur.Duration.TotalMilliseconds
+                            };
+                        }
+                    }
+
+                    // clear subtitles
+                    // but do not clear when cache hit
+                    if (!display && sFramesPrev[i] != null)
                     {
                         sFramesPrev[i] = null;
                         SubtitleClear(i);
