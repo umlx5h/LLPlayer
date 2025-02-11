@@ -24,7 +24,7 @@ https://github.com/user-attachments/assets/798efbb9-ec01-42cc-8884-9cea4f602121
 LLPlayer has many features for language learning that are not available in normal video players.
 
 - **Dual Subtitles:** Two subtitles can be displayed simultaneously. Both text subtitles and bitmap subtitles are supported.
-- **AI-generated subtitles (ASR):** Real-time automatic subtitle generation from any video and audio, powered by [OpenAI Whisper](https://github.com/openai/whisper). **100** languages are suported!
+- **AI-generated subtitles (ASR):** Real-time automatic subtitle generation from any video and audio, powered by [OpenAI Whisper](https://github.com/openai/whisper). **99** languages are suported!
 - **Real-time Translation:** Supports Google and DeepL API, **134** languages are currently supported!
 - **Real-time OCR subtitles:** Can convert bitmap subtitles to text subtitles in real time, powered by [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) and Microsoft OCR.
 - **Subtitles Sidebar:** Both text and bitmap are supported. Seek and word lookup available. Has anti-spoiler functionality.
@@ -48,8 +48,8 @@ LLPlayer has many features for language learning that are not available in norma
 ## ✅ Requirements
 
 [OS]
-* Windows 10, Version 1903 later
-* Windows 11
+* Windows 10 x64, Version 1903 later
+* Windows 11 x64
 
 [Pre-requisites]
 * [.NET Desktop Runtime 9](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
@@ -253,6 +253,17 @@ LLPlayer is mainly inspired by this with its functionality and interface.
 (Not enough functionality yet, though).
 
 ## ❓ FAQ
+
+#### Q: Does ASR or OCR require network communication?
+
+AI subtitle generation (ASR) and OCR subtitles are all performed locally.  
+Therefore, no network communication occurs at all.
+
+However, the model needs to be downloaded only once for the first time, and this is the only place where network communication occurs.
+
+Network communication is required when using the translation function, but this is an optional feature, so it is possible to choose not to communicate at all.
+
+Your privacy is fully guaranteed because it is free and OSS.
 
 #### Q: How can I speed up the ASR?
 
