@@ -296,6 +296,18 @@ public class TesseractOCRService : IOCRService
             TesseractModel.ModelsDirectory,
             model.Lang);
 
+        bool isCJK = model.Lang is
+            TesseractOCR.Enums.Language.Japanese or
+            TesseractOCR.Enums.Language.Korean or
+            TesseractOCR.Enums.Language.ChineseSimplified or
+            TesseractOCR.Enums.Language.ChineseTraditional;
+
+        if (isCJK)
+        {
+            // remove whitespace around word if CJK
+            _ocrEngine.SetVariable("preserve_interword_spaces", 1);
+        }
+
         err = string.Empty;
         return true;
     }
@@ -357,6 +369,7 @@ public class MicrosoftOCRService : IOCRService
 {
     private readonly Config.SubtitlesConfig _config;
     private OcrEngine? _ocrEngine;
+    private bool _isCJK;
     private bool _disposed;
 
     public MicrosoftOCRService(Config.SubtitlesConfig config)
@@ -410,6 +423,8 @@ public class MicrosoftOCRService : IOCRService
         }
 
         _ocrEngine = ocrEngine;
+        _isCJK = langTag.StartsWith("zh", StringComparison.OrdinalIgnoreCase) || // Chinese
+                 langTag.StartsWith("ja", StringComparison.OrdinalIgnoreCase);   // Japanese
 
         err = string.Empty;
         return true;
@@ -431,16 +446,14 @@ public class MicrosoftOCRService : IOCRService
 
         OcrResult ocrResult = await _ocrEngine.RecognizeAsync(softwareBitmap);
 
-        List<string> lines = new();
-
-        foreach (var line in ocrResult.Lines)
+        if (_isCJK)
         {
-            lines.Add(line.Text);
+            // remove whitespace around word if CJK
+            return string.Join(Environment.NewLine,
+                ocrResult.Lines.Select(line => string.Concat(line.Words.Select(word => word.Text))));
         }
 
-        string result = string.Join("\n", lines);
-
-        return result;
+        return string.Join(Environment.NewLine, ocrResult.Lines.Select(l => l.Text));
     }
 
     public string PostProcess(string text)
