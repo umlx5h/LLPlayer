@@ -19,7 +19,11 @@
   <ItemGroup>
     <PackageReference Include="MaterialDesignThemes" Version="5.2.1" />
     <PackageReference Include="Prism.DryIoc" Version="9.0.537" />
-    <PackageReference Include="Whisper.net.AllRuntimes" Version="1.7.4" />
+    <PackageReference Include="Whisper.net.Runtime" Version="1.7.4" />
+    <PackageReference Include="Whisper.net.Runtime.Cuda.Windows" Version="1.7.4" />
+    <PackageReference Include="Whisper.net.Runtime.NoAvx" Version="1.7.4" />
+    <PackageReference Include="Whisper.net.Runtime.OpenVino" Version="1.7.4" />
+    <PackageReference Include="Whisper.net.Runtime.Vulkan" Version="1.7.4" />
   </ItemGroup>
 
   <ItemGroup>
