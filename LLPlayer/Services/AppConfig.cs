@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using FlyleafLib;
+using FlyleafLib.MediaPlayer;
 using FlyleafLib.MediaPlayer.Translation.Services;
 using LLPlayer.Extensions;
 using MaterialDesignThemes.Wpf;
@@ -184,6 +185,11 @@ public class AppConfigSubs : Bindable
         SubsFontSize2 = SubsFontSize;
         // Save the initial value of the position for reset.
         _subsPositionInitial = SubsPosition;
+
+        // register event handler
+        var pSubsAutoCopy = SubsAutoTextCopy;
+        SubsAutoTextCopy = false;
+        SubsAutoTextCopy = pSubsAutoCopy;
     }
 
     public void FlyleafHostLoaded()
@@ -450,6 +456,58 @@ public class AppConfigSubs : Bindable
 
     public bool SubsExportUTF8WithBom { get; set => Set(ref field, value); } = true;
 
+    public bool SubsAutoTextCopy
+    {
+        get;
+        set
+        {
+            if (Set(ref field, value) && Loaded)
+            {
+                if (value)
+                {
+                    FL.Player.Subtitles[0].Data.PropertyChanged += SubtitleTextOnPropertyChanged;
+                    FL.Player.Subtitles[1].Data.PropertyChanged += SubtitleTextOnPropertyChanged;
+                }
+                else
+                {
+                    FL.Player.Subtitles[0].Data.PropertyChanged -= SubtitleTextOnPropertyChanged;
+                    FL.Player.Subtitles[1].Data.PropertyChanged -= SubtitleTextOnPropertyChanged;
+                }
+            }
+        }
+    }
+
+    public SubAutoTextCopyTarget SubsAutoTextCopyTarget { get; set => Set(ref field, value); } = SubAutoTextCopyTarget.Primary;
+
+    private void SubtitleTextOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(SubsData.Text))
+            return;
+
+        switch (SubsAutoTextCopyTarget)
+        {
+            case SubAutoTextCopyTarget.All:
+                if (FL.Player.Subtitles[0].Data.Text != "" ||
+                    FL.Player.Subtitles[1].Data.Text != "")
+                {
+                    FL.Action.CmdSubsTextCopy.Execute(true);
+                }
+                break;
+            case SubAutoTextCopyTarget.Primary:
+                if (FL.Player.Subtitles[0].Data == sender && FL.Player.Subtitles[0].Data.Text != "")
+                {
+                    FL.Action.CmdSubsPrimaryTextCopy.Execute(true);
+                }
+                break;
+            case SubAutoTextCopyTarget.Secondary:
+                if (FL.Player.Subtitles[1].Data == sender && FL.Player.Subtitles[1].Data.Text != "")
+                {
+                    FL.Action.CmdSubsSecondaryTextCopy.Execute(true);
+                }
+                break;
+        }
+    }
+
     public WordClickAction WordClickActionMethod { get; set => Set(ref field, value); }
     public bool WordCopyOnSelected { get; set => Set(ref field, value); } = true;
     public bool WordLastSearchOnSelected { get; set => Set(ref field, value); } = true;
@@ -464,6 +522,13 @@ public class AppConfigSubs : Bindable
         new SearchMenuAction{ Title = "Search Longman", Url = "https://www.ldoceonline.com/search/english/direct/?q=%w" },
     ]);
     public string? PDICPipeExecutablePath { get; set => Set(ref field, value); }
+}
+
+public enum SubAutoTextCopyTarget
+{
+    Primary,
+    Secondary,
+    All
 }
 
 public enum SubPositionAlignment

@@ -21,6 +21,12 @@
                 <x:Type TypeName="flyleafServices:TranslateServiceType"/>
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
+
+        <ObjectDataProvider x:Key="SubAutoTextCopyTargetEnum" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="services:SubAutoTextCopyTarget"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
     </UserControl.Resources>
 
     <ScrollViewer>
@@ -254,6 +260,28 @@
                         </StackPanel>
                     </Grid>
                 </Grid>
+            </GroupBox>
+
+            <GroupBox Header="Subtitles Special Actions">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Auto Text Copy" />
+                        <ToggleButton
+                            IsChecked="{Binding FL.Config.Subs.SubsAutoTextCopy}" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Auto Text Copy Target" />
+                        <ComboBox
+                            Width="100"
+                            ItemsSource="{Binding Source={StaticResource SubAutoTextCopyTargetEnum}}"
+                            SelectedItem="{Binding FL.Config.Subs.SubsAutoTextCopyTarget}" />
+                    </StackPanel>
+                </StackPanel>
             </GroupBox>
 
             <GroupBox Header="Word Special Actions">

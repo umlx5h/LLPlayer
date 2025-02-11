@@ -283,6 +283,18 @@ public class FlyleafOverlayVM : Bindable
                 }
             };
         }
+
+        // app config
+
+        FL.Config.Subs.PropertyChanged += (o, e) =>
+        {
+            switch (e.PropertyName)
+            {
+                case nameof(FL.Config.Subs.SubsAutoTextCopy):
+                    OSDMessage = $"Subs Auto Text Copy {(FL.Config.Subs.SubsAutoTextCopy ? "On" : "Off")}";
+                    break;
+            }
+        };
     }
 
     private CancellationTokenSource? _cancelMsgToken;

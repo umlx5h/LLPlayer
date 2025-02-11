@@ -70,6 +70,7 @@ public class AppActions
             [CustomKeyBindingAction.SubsTextCopy] = () => CmdSubsTextCopy.Execute(false),
             [CustomKeyBindingAction.SubsPrimaryTextCopy] = () => CmdSubsPrimaryTextCopy.Execute(false),
             [CustomKeyBindingAction.SubsSecondaryTextCopy] = () => CmdSubsSecondaryTextCopy.Execute(false),
+            [CustomKeyBindingAction.ToggleSubsAutoTextCopy] = CmdToggleSubsAutoTextCopy.Execute,
 
             [CustomKeyBindingAction.ToggleSidebar] = CmdToggleSidebar.Execute,
             [CustomKeyBindingAction.ToggleDebugOverlay] = CmdToggleDebugOverlay.Execute,
@@ -98,6 +99,7 @@ public class AppActions
             new() { ActionName = nameof(CustomKeyBindingAction.SubsDistanceIncrease), Key = Key.Up, Ctrl = true, Shift = true },
             new() { ActionName = nameof(CustomKeyBindingAction.SubsDistanceDecrease), Key = Key.Down, Ctrl = true, Shift = true },
             new() { ActionName = nameof(CustomKeyBindingAction.SubsPrimaryTextCopy), Key = Key.C, Ctrl = true, IsKeyUp = true },
+            new() { ActionName = nameof(CustomKeyBindingAction.ToggleSubsAutoTextCopy), Key = Key.A, Alt = true, IsKeyUp = true },
             new() { ActionName = nameof(CustomKeyBindingAction.ToggleSidebar), Key = Key.B, Ctrl = true, IsKeyUp = true },
             new() { ActionName = nameof(CustomKeyBindingAction.ToggleDebugOverlay), Key = Key.D, Ctrl = true, Shift = true, IsKeyUp = true },
             new() { ActionName = nameof(CustomKeyBindingAction.OpenWindowSettings), Key = Key.OemComma, Ctrl = true, IsKeyUp = true },
@@ -338,6 +340,11 @@ public class AppActions
             }
         }
     }
+
+    public DelegateCommand CmdToggleSubsAutoTextCopy => field ?? new(() =>
+    {
+        _config.Subs.SubsAutoTextCopy = !_config.Subs.SubsAutoTextCopy;
+    });
 
     public DelegateCommand CmdToggleSidebar => field ?? new(() =>
     {
@@ -654,6 +661,8 @@ public enum CustomKeyBindingAction
     SubsPrimaryTextCopy,
     [Description("Copy Secondary Subtiltes Text")]
     SubsSecondaryTextCopy,
+    [Description("Toggle Auto Subtitles Text Copy")]
+    ToggleSubsAutoTextCopy,
 
     [Description("Toggle Subitltes Sidebar")]
     ToggleSidebar,
@@ -726,6 +735,7 @@ public static class KeyBindingActionExtensions
             case CustomKeyBindingAction.SubsTextCopy:
             case CustomKeyBindingAction.SubsPrimaryTextCopy:
             case CustomKeyBindingAction.SubsSecondaryTextCopy:
+            case CustomKeyBindingAction.ToggleSubsAutoTextCopy:
                 return KeyBindingActionGroup.Subtitles;
 
             case CustomKeyBindingAction.ToggleSidebar:
