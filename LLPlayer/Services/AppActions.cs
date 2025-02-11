@@ -10,7 +10,6 @@ using FlyleafLib.MediaPlayer;
 using LLPlayer.Extensions;
 using LLPlayer.Views;
 using WpfColorFontDialog;
-using Clipboard = System.Windows.Clipboard;
 using KeyBinding = FlyleafLib.MediaPlayer.KeyBinding;
 
 namespace LLPlayer.Services;
@@ -68,8 +67,9 @@ public class AppActions
             [CustomKeyBindingAction.SubsDistanceIncrease] = CmdSubsDistanceIncrease.Execute,
             [CustomKeyBindingAction.SubsDistanceDecrease] = CmdSubsDistanceDecrease.Execute,
 
-            [CustomKeyBindingAction.SubsPrimaryTextCopy] = CmdSubsPrimaryTextCopy.Execute,
-            [CustomKeyBindingAction.SubsSecondaryTextCopy] = CmdSubsSecondaryTextCopy.Execute,
+            [CustomKeyBindingAction.SubsTextCopy] = () => CmdSubsTextCopy.Execute(false),
+            [CustomKeyBindingAction.SubsPrimaryTextCopy] = () => CmdSubsPrimaryTextCopy.Execute(false),
+            [CustomKeyBindingAction.SubsSecondaryTextCopy] = () => CmdSubsSecondaryTextCopy.Execute(false),
 
             [CustomKeyBindingAction.ToggleSidebar] = CmdToggleSidebar.Execute,
             [CustomKeyBindingAction.ToggleDebugOverlay] = CmdToggleDebugOverlay.Execute,
@@ -273,18 +273,47 @@ public class AppActions
         _config.Subs.SubsDistanceInitial += _config.Subs.SubsDistanceOffset * (increase ? 1 : -1);
     }
 
-    public DelegateCommand CmdSubsPrimaryTextCopy => field ?? new(() =>
+    public DelegateCommand<bool?> CmdSubsTextCopy => field ?? new((suppressOsd) =>
     {
-        SubsTextCopyInternal(0);
+        if (!_player.Subtitles[0].Enabled && !_player.Subtitles[1].Enabled)
+        {
+            return;
+        }
+
+        string text = _player.Subtitles[0].Data.Text;
+        if (!string.IsNullOrEmpty(_player.Subtitles[1].Data.Text))
+        {
+            text += Environment.NewLine + "( " + _player.Subtitles[1].Data.Text + " )";
+        }
+
+        if (!string.IsNullOrEmpty(text))
+        {
+            try
+            {
+                WindowsClipboard.SetText(text);
+                if (!suppressOsd.HasValue || !suppressOsd.Value)
+                {
+                    _player.OSDMessage = "Copy All Subtitle Text";
+                }
+            }
+            catch
+            {
+                // ignored
+            }
+        }
     });
 
-
-    public DelegateCommand CmdSubsSecondaryTextCopy => field ?? new(() =>
+    public DelegateCommand<bool?> CmdSubsPrimaryTextCopy => field ?? new((suppressOsd) =>
     {
-        SubsTextCopyInternal(1);
+        SubsTextCopyInternal(0, suppressOsd);
     });
 
-    private void SubsTextCopyInternal(int subIndex)
+    public DelegateCommand<bool?> CmdSubsSecondaryTextCopy => field ?? new((suppressOsd) =>
+    {
+        SubsTextCopyInternal(1, suppressOsd);
+    });
+
+    private void SubsTextCopyInternal(int subIndex, bool? suppressOsd)
     {
         if (!_player.Subtitles[subIndex].Enabled)
         {
@@ -295,9 +324,18 @@ public class AppActions
 
         if (!string.IsNullOrEmpty(text))
         {
-            Clipboard.SetText(text);
-
-            _player.OSDMessage = $"Copy {(subIndex == 0 ? "Primary" : "Secondary")} Text";
+            try
+            {
+                WindowsClipboard.SetText(text);
+                if (!suppressOsd.HasValue || !suppressOsd.Value)
+                {
+                    _player.OSDMessage = $"Copy {(subIndex == 0 ? "Primary" : "Secondary")} Subtitle Text";
+                }
+            }
+            catch
+            {
+                // ignored
+            }
         }
     }
 
@@ -610,6 +648,8 @@ public enum CustomKeyBindingAction
     [Description("Primary/Secondary Subtitles Distance Decrease")]
     SubsDistanceDecrease,
 
+    [Description("Copy All Subtiltes Text")]
+    SubsTextCopy,
     [Description("Copy Primary Subtiltes Text")]
     SubsPrimaryTextCopy,
     [Description("Copy Secondary Subtiltes Text")]
@@ -683,6 +723,7 @@ public static class KeyBindingActionExtensions
             case CustomKeyBindingAction.SubsDistanceDecrease:
                 return KeyBindingActionGroup.SubtitlesPosition;
 
+            case CustomKeyBindingAction.SubsTextCopy:
             case CustomKeyBindingAction.SubsPrimaryTextCopy:
             case CustomKeyBindingAction.SubsSecondaryTextCopy:
                 return KeyBindingActionGroup.Subtitles;
