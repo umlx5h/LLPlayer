@@ -344,6 +344,21 @@ public class AppConfigSubs : Bindable
         }
     } = 11;
 
+    public double SubsSeparatorMaxWidth { get; set => Set(ref field, value); } = 280;
+    public double SubsSeparatorOpacity
+    {
+        get;
+        set
+        {
+            if (value < 0.0 || value > 1.0)
+            {
+                return;
+            }
+
+            Set(ref field, value);
+        }
+    } = 0.3;
+
     public double SubsWidthPercentage
     {
         get;

@@ -108,10 +108,10 @@
 
             <!-- Show dividing line when secondary subtitles are displayed -->
             <Separator
-                MaxWidth="280"
+                MaxWidth="{Binding FL.Config.Subs.SubsSeparatorMaxWidth}"
                 Visibility="{Binding FL.Player.Subtitles[1].Data.IsDisplaying, Converter={StaticResource BooleanToVisibilityConv}, FallbackValue=Collapsed, TargetNullValue=Collapsed}"
                 Foreground="#FFFFFF"
-                Opacity="0.3"
+                Opacity="{Binding FL.Config.Subs.SubsSeparatorOpacity}"
                 Height="{Binding FL.Config.Subs.SubsDistance}" />
 
             <!-- Secondary -->
