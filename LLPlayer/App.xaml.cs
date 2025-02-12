@@ -123,9 +123,8 @@ public partial class App : PrismApplication
 
     private static (string version, string commitHash) GetVersion()
     {
-        Assembly assembly = Assembly.GetExecutingAssembly();
-
-        FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(assembly.Location);
+        string exeLocation = Process.GetCurrentProcess().MainModule!.FileName;
+        FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(exeLocation);
 
         Guards.ThrowIfNull(fvi.ProductVersion);
 
