@@ -181,29 +181,32 @@
 
             <GroupBox Header="Filters">
                 <StackPanel>
-                    <StackPanel>
-                        <ItemsControl ItemsSource="{Binding FL.PlayerConfig.Video.Filters.Values}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel
-                                        Orientation="Horizontal"
-                                        Margin="0 0 0 8"
-                                        Visibility="{Binding Available, Converter={StaticResource BooleanToVisibilityConv}}">
-                                        <TextBlock
-                                            Width="180"
-                                            Text="{Binding Filter}" />
-                                        <Slider
-                                            Width="200"
-                                            Style="{StaticResource MaterialDesignDiscreteSlider}"
-                                            Value="{Binding Value, Mode=TwoWay}"
-                                            Minimum="{Binding Minimum}"
-                                            Maximum="{Binding Maximum}"
-                                            IsSnapToTickEnabled="True" />
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
+                    <ItemsControl ItemsSource="{Binding FL.PlayerConfig.Video.Filters.Values}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel
+                                    Orientation="Horizontal"
+                                    Margin="0 0 0 8"
+                                    Visibility="{Binding Available, Converter={StaticResource BooleanToVisibilityConv}}">
+                                    <TextBlock
+                                        Width="180"
+                                        Text="{Binding Filter}" />
+                                    <Slider
+                                        Width="200"
+                                        Style="{StaticResource MaterialDesignDiscreteSlider}"
+                                        Value="{Binding Value, Mode=TwoWay}"
+                                        Minimum="{Binding Minimum}"
+                                        Maximum="{Binding Maximum}"
+                                        IsSnapToTickEnabled="True" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Margin="10 10 10 0">
+                        Some filters will not work unless the Video Processor is D3D11.
+                        If you want to use them, Please set Video Processor to D3D11 in the Video Settings above.
+                    </TextBlock>
                 </StackPanel>
             </GroupBox>
         </StackPanel>
