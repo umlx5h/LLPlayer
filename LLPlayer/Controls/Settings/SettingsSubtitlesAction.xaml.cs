@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -15,6 +16,20 @@ public partial class SettingsSubtitlesAction : UserControl
         InitializeComponent();
 
         DataContext = ((App)Application.Current).Container.Resolve<SettingsSubtitlesActionVM>();
+    }
+
+    private void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
+    {
+        // TODO: L: refactor
+        try
+        {
+            Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
+            e.Handled = true;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Failed to open link" + ex.Message);
+        }
     }
 }
 

@@ -233,10 +233,10 @@
                     </DataGrid>
 
                     <Grid Grid.Row="1" Margin="0 10 0 0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0" Orientation="Horizontal">
                             <Button
                                 Content="Add Search"
@@ -262,12 +262,26 @@
                 </Grid>
             </GroupBox>
 
-            <GroupBox Header="Subtitles Special Actions">
+            <GroupBox Header="Subtitles Auto Copy">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
-                            Width="180"
-                            Text="Auto Text Copy" />
+                            Width="180">
+                            Auto Text Copy
+                            <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                <ToolTipService.ToolTip>
+                                    <TextBlock
+                                        Text="Copy the text subtitle to the clipboard when it changes.
+Note that this does not work for bitmap subtitles. In that case, please use OCR to convert them to text."
+                                        TextWrapping="Wrap"
+                                        MaxWidth="400" />
+                                </ToolTipService.ToolTip>
+                                <materialDesign:PackIcon
+                                    Kind="Information"
+                                    Width="16" Height="16"
+                                    Margin="4 0 0 0" />
+                            </InlineUIContainer>
+                        </TextBlock>
                         <ToggleButton
                             IsChecked="{Binding FL.Config.Subs.SubsAutoTextCopy}" />
                     </StackPanel>
@@ -281,6 +295,12 @@
                             ItemsSource="{Binding Source={StaticResource SubAutoTextCopyTargetEnum}}"
                             SelectedItem="{Binding FL.Config.Subs.SubsAutoTextCopyTarget}" />
                     </StackPanel>
+
+                    <TextBlock Margin="5 10 5 0">
+                        You can send subtitle text to your browser via the clipboard and work with browser extensions such as Yomitan and 10ten.
+                        See <Hyperlink NavigateUri="https://github.com/umlx5h/LLPlayer/wiki/Browser-Extensions-Integration" RequestNavigate="Hyperlink_RequestNavigate">this link</Hyperlink>
+                        for more information.
+                    </TextBlock>
                 </StackPanel>
             </GroupBox>
 
