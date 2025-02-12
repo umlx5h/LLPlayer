@@ -64,16 +64,6 @@
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
                             Width="180"
-                            Text="Read Timeout (ms)" />
-                        <TextBox
-                            Width="100"
-                            Text="{Binding FL.PlayerConfig.Demuxer.ReadTimeout, Converter={StaticResource TicksToMilliSecondsConv}}"
-                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
-                    </StackPanel>
-
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Width="180"
                             Text="Buffer Duration Min (ms)" />
                         <TextBox
                             Width="100"
@@ -120,6 +110,50 @@
                             Text="{Binding FL.PlayerConfig.Video.MaxVerticalResolutionCustom}"
                             helpers:TextBoxHelper.OnlyNumeric="Uint"
                             ToolTip="0 for Auto" />
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="Player Timeout (For Live Stream)">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Open Timeout (ms)" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.PlayerConfig.Demuxer.OpenTimeout, Converter={StaticResource TicksToMilliSecondsConv}}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Read Timeout (ms)" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.PlayerConfig.Demuxer.ReadTimeout, Converter={StaticResource TicksToMilliSecondsConv}}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Read Live Timeout (ms)" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.PlayerConfig.Demuxer.ReadLiveTimeout, Converter={StaticResource TicksToMilliSecondsConv}}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Seek Timeout (ms)" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.PlayerConfig.Demuxer.SeekTimeout, Converter={StaticResource TicksToMilliSecondsConv}}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
                     </StackPanel>
                 </StackPanel>
             </GroupBox>
