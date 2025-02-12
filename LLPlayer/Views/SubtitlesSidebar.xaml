@@ -73,9 +73,10 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <ToolBar
+        <StackPanel
             Grid.Row="0"
-            Margin="5">
+            Orientation="Horizontal"
+            Margin="7">
 
             <!-- Primary Secondary Toggle -->
             <ToggleButton
@@ -106,16 +107,20 @@
                         Kind="FormatText" />
                 </materialDesign:PopupBox.ToggleContent>
 
+                <!--TODO: L: In Toolbar, there is a bug that the color of the button turns black when it overflows.
+                I don't know how to solve this problem, so I use StackPanel.-->
                 <StackPanel Orientation="Horizontal">
                     <Button Style="{StaticResource IconButton}"
                             Command="{Binding CmdSubFontSizeChange}"
                             CommandParameter="-1"
+                            Background="{DynamicResource MaterialDesignToolBarBackground}"
                             ToolTip="Font size decrease"
                             Content="{materialDesign:PackIcon Kind=FormatFontSizeDecrease}" />
 
                     <Button Style="{StaticResource IconButton}"
                             Command="{Binding CmdSubFontSizeChange}"
                             CommandParameter="1"
+                            Background="{DynamicResource MaterialDesignToolBarBackground}"
                             ToolTip="Font size increase"
                             Content="{materialDesign:PackIcon Kind=FormatFontSizeIncrease}" />
                 </StackPanel>
@@ -150,7 +155,13 @@
                     Command="{Binding CmdShowExportSubsDialog}"
                     ToolTip="Export subtitles as srt"
                     Content="{materialDesign:PackIcon Kind=FileExportOutline}" />
-        </ToolBar>
+
+            <!-- Sidebar Left Toggle -->
+            <Button Style="{StaticResource IconButton}"
+                    Command="{Binding CmdSwapSidebarPosition}"
+                    ToolTip="Swap sidebar position"
+                    Content="{materialDesign:PackIcon Kind=SwapHorizontal}" />
+        </StackPanel>
 
         <controls:NonTopmostPopup
             Grid.Row="0"

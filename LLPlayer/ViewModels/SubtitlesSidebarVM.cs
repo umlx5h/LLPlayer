@@ -73,6 +73,11 @@ public class SubtitlesSidebarVM : Bindable
         FL.Action.CmdOpenWindowSubsExporter.Execute();
     });
 
+    public DelegateCommand CmdSwapSidebarPosition => field ??= new(() =>
+    {
+        FL.Config.SidebarLeft = !FL.Config.SidebarLeft;
+    });
+
     public DelegateCommand<int?> CmdSubPlay => field ??= new((index) =>
     {
         if (!index.HasValue)
