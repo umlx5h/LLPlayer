@@ -34,6 +34,7 @@ LLPlayer has many features for language learning that are not available in norma
 - **Flexible Subtitles Size/Placement Settings:** The size and position of the dual subtitles can be adjusted very flexibly.
 - **Subtitles Seeking for any format:** Any subtitle format can be used for subtitle seek.
 - **Built-in Subtitles Downloader:** Supports opensubtitles.org
+- **Integrate with browser extensions:** Can work with any browser extensions, such as [Yomitan](https://github.com/yomidevs/yomitan) and [10ten](https://github.com/birchill/10ten-ja-reader).
 - **Customizable Dark Theme:** The theme is based on black and can be customized.
 - **Fully Customizable Shortcuts:** All keyboard shortcuts are fully customizable. The same action can be assigned to multiple keys!
 - **Built-in Cheat Sheet:** You can find out how to use the application in the application itself.
@@ -190,7 +191,7 @@ Guiding Principles for LLPlayer
 - [ ] Support for dictionary API or for specific languages (English, Japanese, ...)
 - [ ] Dedicated support for Japanese for watching anime.
   - [ ] Word Segmentation Handling
-  - [ ] Use WebView to incorporate [rikaichamp](https://github.com/birchill/10ten-ja-reader), etc.
+  - [ ] [Incorporate Yomitan or 10ten to video player](https://github.com/umlx5h/LLPlayer/issues/13)
 - [ ] Text-to-Speech integration
 - [ ] More translation engine such as local LLM
   - [ ] Support translation as plugin?
@@ -290,6 +291,14 @@ Instead, you can copy selected words to the clipboard.
 Certain dictionary tools can monitor the clipboard and search for words.
 
 For English-English dictionaries, [LDOCE5 Viewer](https://github.com/ciscorn/ldoce5viewer) is highly recommended.
+
+#### Q: Can I use browser extensions such as Yomitan or 10ten?
+
+Currently not available within the video player, but you can send subtitle text to your browser via the clipboard.
+Thus, you can check the meaning of words with any browser extension such as [Yomitan](https://github.com/yomidevs/yomitan), [10ten](https://github.com/birchill/10ten-ja-reader).
+
+A little preparation is required, please check following page.  
+https://github.com/umlx5h/LLPlayer/wiki/Browser-Extensions-Integration
 
 ## 📝 LICENSE
 
