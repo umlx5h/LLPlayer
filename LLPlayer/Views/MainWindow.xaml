@@ -26,6 +26,13 @@
         </i:EventTrigger>
     </i:Interaction.Triggers>
 
+    <!-- Progress display of taskbar icon -->
+    <Window.TaskbarItemInfo>
+        <TaskbarItemInfo
+            ProgressValue="{Binding TaskBarProgressValue}"
+            ProgressState="{Binding TaskBarProgressState}" />
+    </Window.TaskbarItemInfo>
+
     <Grid>
         <!-- Swap Sidebar Left/Right -->
         <Grid.Style>

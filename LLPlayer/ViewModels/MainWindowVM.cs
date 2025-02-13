@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Windows.Shell;
 using FlyleafLib;
 using FlyleafLib.MediaPlayer;
 using LLPlayer.Extensions;
@@ -19,6 +20,25 @@ public class MainWindowVM : Bindable
     }
 
     public string Title { get; set => Set(ref field, value); } = App.Name;
+
+    #region Progress in TaskBar
+    public double TaskBarProgressValue
+    {
+        get;
+        set
+        {
+            double v = value;
+            if (v < 0.01)
+            {
+                // Set to 1% because it is not displayed.
+                v = 0.01;
+            }
+            Set(ref field, v);
+        }
+    }
+
+    public TaskbarItemProgressState TaskBarProgressState { get; set => Set(ref field, value); }
+    #endregion
 
     // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
     public DelegateCommand CmdOnLoaded => field ??= new(() =>
@@ -44,12 +64,43 @@ public class MainWindowVM : Bindable
 
         FL.Player.PropertyChanged += (sender, args) =>
         {
+            if (args.PropertyName == nameof(FL.Player.CurTime))
+            {
+                double prevValue = TaskBarProgressValue;
+                double newValue = (double)FL.Player.CurTime / FL.Player.Duration;
+
+                if (Math.Abs(newValue - prevValue) >= 0.01) // prevent frequent update
+                {
+                    TaskBarProgressValue = newValue;
+                }
+            }
             if (args.PropertyName == nameof(FL.Player.Status))
             {
-                if (FL.Player.Status == Status.Stopped)
+                switch (FL.Player.Status)
                 {
-                    // reset
-                    Title = App.Name;
+                    case Status.Stopped:
+                        // reset
+                        Title = App.Name;
+                        TaskBarProgressState = TaskbarItemProgressState.None;
+                        TaskBarProgressValue = 0;
+                        break;
+                    case Status.Playing:
+                        TaskBarProgressState = TaskbarItemProgressState.Normal;
+                        break;
+                    case Status.Opening:
+                        TaskBarProgressState = TaskbarItemProgressState.Indeterminate;
+                        TaskBarProgressValue = 0;
+                        break;
+                    case Status.Paused:
+                        TaskBarProgressState = TaskbarItemProgressState.Paused;
+                        break;
+                    case Status.Ended:
+                        TaskBarProgressState = TaskbarItemProgressState.Paused;
+                        TaskBarProgressValue = 1;
+                        break;
+                    case Status.Failed:
+                        TaskBarProgressState = TaskbarItemProgressState.Error;
+                        break;
                 }
             }
         };
@@ -67,6 +118,8 @@ public class MainWindowVM : Bindable
                 name = FL.Player.Playlist.Selected.Title;
             }
             Title = $"{name} - {App.Name}";
+            TaskBarProgressValue = 0;
+            TaskBarProgressState = TaskbarItemProgressState.Normal;
         };
 
         if (App.CmdUrl != null)
