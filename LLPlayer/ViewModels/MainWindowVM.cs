@@ -1,4 +1,6 @@
 ﻿using System.IO;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Shell;
 using FlyleafLib;
 using FlyleafLib.MediaPlayer;
@@ -38,6 +40,17 @@ public class MainWindowVM : Bindable
     }
 
     public TaskbarItemProgressState TaskBarProgressState { get; set => Set(ref field, value); }
+    #endregion
+
+    #region Action Button in TaskBar
+    public Visibility PlayPauseVisibility { get; set => Set(ref field, value); } = Visibility.Collapsed;
+    public ImageSource PlayPauseImageSource { get; set => Set(ref field, value); } = PlayIcon;
+
+    private static readonly BitmapImage PlayIcon = new(
+        new Uri("pack://application:,,,/Resources/Images/play.png"));
+
+    private static readonly BitmapImage PauseIcon = new(
+        new Uri("pack://application:,,,/Resources/Images/pause.png"));
     #endregion
 
     // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
@@ -100,6 +113,19 @@ public class MainWindowVM : Bindable
                         break;
                     case Status.Failed:
                         TaskBarProgressState = TaskbarItemProgressState.Error;
+                        break;
+                }
+
+                // Action Button in TaskBar
+                switch (FL.Player.Status)
+                {
+                    case Status.Paused:
+                    case Status.Playing:
+                        PlayPauseVisibility = Visibility.Visible;
+                        PlayPauseImageSource = FL.Player.Status == Status.Playing ? PauseIcon : PlayIcon;
+                        break;
+                    default:
+                        PlayPauseVisibility = Visibility.Collapsed;
                         break;
                 }
             }

@@ -37,4 +37,9 @@
     </Content>
   </ItemGroup>
 
+  <ItemGroup>
+    <Resource Include="Resources\Images\pause.png" />
+    <Resource Include="Resources\Images\play.png" />
+  </ItemGroup>
+
 </Project>

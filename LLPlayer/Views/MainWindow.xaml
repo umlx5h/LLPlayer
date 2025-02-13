@@ -30,7 +30,18 @@
     <Window.TaskbarItemInfo>
         <TaskbarItemInfo
             ProgressValue="{Binding TaskBarProgressValue}"
-            ProgressState="{Binding TaskBarProgressState}" />
+            ProgressState="{Binding TaskBarProgressState}">
+            <TaskbarItemInfo.ThumbButtonInfos>
+                <ThumbButtonInfoCollection>
+                    <!-- Play/Pause Action Button -->
+                    <ThumbButtonInfo
+                        Command="{Binding FL.Player.Commands.TogglePlayPause}"
+                        Description="Play / Pause"
+                        Visibility="{Binding PlayPauseVisibility}"
+                        ImageSource="{Binding PlayPauseImageSource}" />
+                </ThumbButtonInfoCollection>
+            </TaskbarItemInfo.ThumbButtonInfos>
+        </TaskbarItemInfo>
     </Window.TaskbarItemInfo>
 
     <Grid>
