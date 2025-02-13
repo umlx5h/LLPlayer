@@ -16,7 +16,36 @@ public partial class MainWindow : Window
 
         InitializeComponent();
 
+        SetWindowSize();
         SetTitleBarDarkMode(this);
+    }
+
+    private void SetWindowSize()
+    {
+        // 16:9 size list
+        List<Size> candidateSizes =
+        [
+            new(1280, 720),
+            new(1024, 576),
+            new(960, 540),
+            new(800, 450),
+            new(640, 360),
+            new(480, 270),
+            new(320, 180)
+        ];
+
+        // Get available screen width / height
+        double availableWidth = SystemParameters.WorkArea.Width;
+        double availableHeight = SystemParameters.WorkArea.Height;
+
+        // Get the largest size that will fit on the screen
+        Size selectedSize = candidateSizes.FirstOrDefault(
+            s => s.Width <= availableWidth && s.Height <= availableHeight,
+            candidateSizes[^1]);
+
+        // Set
+        Width = selectedSize.Width;
+        Height = selectedSize.Height;
     }
 
     #region Dark Title Bar
