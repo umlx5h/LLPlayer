@@ -782,7 +782,7 @@ public class Subtitles
         bool seeked = _prevSeek();
         if (!seeked)
         {
-            _player.SeekBackward();
+            _player.SeekBackward2();
         }
     }
 
@@ -818,7 +818,7 @@ public class Subtitles
         bool seeked = _nextSeek();
         if (!seeked)
         {
-            _player.SeekForward();
+            _player.SeekForward2();
         }
     }
 }
