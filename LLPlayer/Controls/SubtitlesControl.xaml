@@ -45,7 +45,6 @@
             </Image>
 
             <!-- Absolute bitmap (Secondary) -->
-            <!--// TODO: L: May not be used, delete it? -->
             <Image
                 Margin="{Binding FL.Player.Subtitles[1].Data.BitmapPosition.Margin, TargetNullValue=0}"
                 Visibility="{Binding FL.Player.Subtitles[1].Data.IsAbsoluteVisible, Converter={StaticResource BooleanToVisibilityConv}, FallbackValue=Collapsed, TargetNullValue=Collapsed}"
