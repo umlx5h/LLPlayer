@@ -93,9 +93,11 @@ public static class FlyleafLoader
             FFmpegPath = ":FFmpeg",
             FFmpegHLSLiveSeek = true,
             UIRefresh = true,
+#if DEBUG
+            LogOutput = ":debug",
             LogLevel = LogLevel.Debug,
-            FFmpegLogLevel = global::Flyleaf.FFmpeg.LogLevel.Warn,
-            LogOutput = ":debug"
+            FFmpegLogLevel = Flyleaf.FFmpeg.LogLevel.Warn,
+#endif
         };
 
         return engineConfig;
