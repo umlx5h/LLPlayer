@@ -235,7 +235,7 @@ public partial class SelectableSubtitleText : UserControl
                         // Set brush to Border because OutlinedTextBlock's character click judgment is only on the character.
                         //ref: https://stackoverflow.com/questions/50653308/hit-testing-a-transparent-element-in-a-transparent-window
                         Background = new SolidColorBrush(Color.FromArgb(1, 0, 0, 0)),
-                        //Padding = new Thickness(1),
+                        Padding = new Thickness(1, 2, 1, 2),
                         IsHitTestVisible = true,
                         Child = textBlock,
                         Cursor = Cursors.Hand
@@ -245,6 +245,16 @@ public partial class SelectableSubtitleText : UserControl
                     border.MouseLeftButtonDown += WordMouseLeftButtonDown;
                     border.MouseLeftButtonUp += WordMouseLeftButtonUp;
                     border.MouseRightButtonUp += WordMouseRightButtonUp;
+
+                    // Change background color on mouse over
+                    border.MouseEnter += (_, _) =>
+                    {
+                        border.Background = new SolidColorBrush(Color.FromArgb(80, 127, 127, 127));
+                    };
+                    border.MouseLeave += (_, _) =>
+                    {
+                        border.Background = new SolidColorBrush(Color.FromArgb(1, 0, 0, 0));
+                    };
 
                     wrapPanel.Children.Add(border);
                 }
