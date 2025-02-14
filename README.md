@@ -214,6 +214,10 @@ https://github.com/SuRGeoNix/Flyleaf
 
 I may not be able to respond to all questions or requests regarding core player parts as I do not currently understand many of them yet.
 
+For more information for developers, please check the following page.
+
+https://github.com/umlx5h/LLPlayer/wiki/For-Developers
+
 ## 🙏 Special Thanks
 
 LLPlayer would not exist without the following!
