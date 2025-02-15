@@ -447,6 +447,9 @@ public class KeysConfig
             case KeyBindingAction.ToggleReversePlayback:
                 return player.ToggleReversePlayback;
 
+            case KeyBindingAction.ToggleLoopPlayback:
+                return player.ToggleLoopPlayback;
+
             case KeyBindingAction.ToggleSeekAccurate:
                 return player.ToggleSeekAccurate;
 
@@ -549,6 +552,7 @@ public class KeysConfig
         { KeyBindingAction.TogglePlayPause },
         { KeyBindingAction.ToggleRecording },
         { KeyBindingAction.ToggleReversePlayback },
+        { KeyBindingAction.ToggleLoopPlayback },
         { KeyBindingAction.Play },
         { KeyBindingAction.Pause },
         { KeyBindingAction.Stop },
@@ -662,6 +666,8 @@ public enum KeyBindingAction
 
     [Description("Toggle reverse playback")]
     ToggleReversePlayback,
+    [Description("Toggle loop playback")]
+    ToggleLoopPlayback,
     [Description("Flushes the buffer of the player")]
     Flush,
     [Description("Take snapshot")]

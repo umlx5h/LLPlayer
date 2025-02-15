@@ -173,6 +173,12 @@ public class FlyleafOverlayVM : Bindable
                 case nameof(player.OSDMessage):
                     OSDMessage = player.OSDMessage;
                     break;
+                case nameof(player.ReversePlayback):
+                    OSDMessage = $"Reverse Playback {(player.ReversePlayback ? "On" : "Off")}";
+                    break;
+                case nameof(player.LoopPlayback):
+                    OSDMessage = $"Loop Playback {(player.LoopPlayback ? "On" : "Off")}";
+                    break;
                 case nameof(player.Rotation):
                     OSDMessage = $"Rotation {player.Rotation}°";
                     break;

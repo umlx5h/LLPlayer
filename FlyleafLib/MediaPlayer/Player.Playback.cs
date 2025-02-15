@@ -190,6 +190,9 @@ partial class Player
     public void ToggleReversePlayback()
         => ReversePlayback = !ReversePlayback;
 
+    public void ToggleLoopPlayback()
+        => LoopPlayback = !LoopPlayback;
+
     /// <summary>
     /// Seeks backwards or forwards based on the specified ms to the nearest keyframe
     /// </summary>

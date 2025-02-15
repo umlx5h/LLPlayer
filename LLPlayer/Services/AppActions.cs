@@ -805,6 +805,7 @@ public static class KeyBindingActionExtensions
             case KeyBindingAction.Play:
             case KeyBindingAction.TogglePlayPause:
             case KeyBindingAction.ToggleReversePlayback:
+            case KeyBindingAction.ToggleLoopPlayback:
             case KeyBindingAction.SeekForward:
             case KeyBindingAction.SeekBackward:
             case KeyBindingAction.SeekForward2:

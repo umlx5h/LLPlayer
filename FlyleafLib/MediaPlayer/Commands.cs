@@ -64,6 +64,7 @@ public class Commands
     public ICommand ToggleFullScreen        { get; set; }
 
     public ICommand ToggleReversePlayback   { get; set; }
+    public ICommand ToggleLoopPlayback      { get; set; }
     public ICommand StartRecording          { get; set; }
     public ICommand StopRecording           { get; set; }
     public ICommand ToggleRecording         { get; set; }
@@ -133,6 +134,7 @@ public class Commands
         ToggleFullScreen        = new RelayCommandSimple(player.ToggleFullScreen);
 
         ToggleReversePlayback   = new RelayCommandSimple(player.ToggleReversePlayback);
+        ToggleLoopPlayback      = new RelayCommandSimple(player.ToggleLoopPlayback);
         StartRecording          = new RelayCommandSimple(player.StartRecording);
         StopRecording           = new RelayCommandSimple(player.StopRecording);
         ToggleRecording         = new RelayCommandSimple(player.ToggleRecording);
