@@ -511,6 +511,15 @@ public class KeysConfig
 
             case KeyBindingAction.ResetAll:
                 return player.ResetAll;
+
+            case KeyBindingAction.ResetSpeed:
+                return player.ResetSpeed;
+
+            case KeyBindingAction.ResetRotation:
+                return player.ResetRotation;
+
+            case KeyBindingAction.ResetZoom:
+                return player.ResetZoom;
         }
 
         return null;
@@ -727,9 +736,14 @@ public enum KeyBindingAction
     [Description("Show Previous Frame")]
     ShowPrevFrame,
 
-    // TODO: L: Add key to reset individually
-    [Description("Reset Zoom Ratio & Speed up")]
+    [Description("Reset Zoom / Rotation / Speed")]
     ResetAll,
+    [Description("Reset Speed")]
+    ResetSpeed,
+    [Description("Reset Rotation")]
+    ResetRotation,
+    [Description("Reset Zoom")]
+    ResetZoom,
 
     [Description("Zoom In (1)")]
     ZoomIn,

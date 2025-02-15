@@ -2,7 +2,6 @@
 using System.Windows.Controls;
 using System.Windows.Input;
 using FlyleafLib;
-using FlyleafLib.MediaFramework.MediaRenderer;
 using FlyleafLib.MediaPlayer;
 using LLPlayer.Extensions;
 using LLPlayer.Services;
@@ -94,14 +93,7 @@ public class FlyleafOverlayVM : Bindable
             if (ctrlDown)
             {
                 // CTRL + Middle click: Reset zoom
-                // TODO: L: make it Command
-                FL.Player.renderer.SetPanAll(0, 0, 0, 1, Renderer.ZoomCenterPoint, true);
-
-                FL.Player.PanXOffset = 0;
-                FL.Player.PanYOffset = 0;
-                FL.Player.Rotation = 0;
-                FL.Player.Zoom = 100;
-
+                FL.Player.ResetZoom();
                 e.Handled = true;
                 return;
             }

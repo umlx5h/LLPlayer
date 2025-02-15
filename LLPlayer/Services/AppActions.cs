@@ -844,6 +844,9 @@ public static class KeyBindingActionExtensions
                 return KeyBindingActionGroup.Playback;
 
             case KeyBindingAction.ResetAll:
+            case KeyBindingAction.ResetSpeed:
+            case KeyBindingAction.ResetRotation:
+            case KeyBindingAction.ResetZoom:
             case KeyBindingAction.ZoomIn:
             case KeyBindingAction.ZoomOut:
                 return KeyBindingActionGroup.Player;

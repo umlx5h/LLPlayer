@@ -75,6 +75,9 @@ public class Commands
     public ICommand RotateLeft              { get; set; }
     public ICommand RotateRight             { get; set; }
     public ICommand ResetAll                { get; set; }
+    public ICommand ResetSpeed              { get; set; }
+    public ICommand ResetRotation           { get; set; }
+    public ICommand ResetZoom               { get; set; }
 
     public ICommand SpeedSet                { get; set; }
     public ICommand SpeedUp                 { get; set; }
@@ -141,6 +144,9 @@ public class Commands
         RotateLeft              = new RelayCommandSimple(player.RotateLeft);
         RotateRight             = new RelayCommandSimple(player.RotateRight);
         ResetAll                = new RelayCommandSimple(player.ResetAll);
+        ResetSpeed              = new RelayCommandSimple(player.ResetSpeed);
+        ResetRotation           = new RelayCommandSimple(player.ResetRotation);
+        ResetZoom               = new RelayCommandSimple(player.ResetZoom);
 
         SpeedSet                = new RelayCommand(SpeedSetAction);
         SpeedUp                 = new RelayCommandSimple(player.SpeedUp);

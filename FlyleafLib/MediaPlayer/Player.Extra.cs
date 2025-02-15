@@ -473,20 +473,32 @@ unsafe partial class Player
 
     public void ResetAll()
     {
-        ReversePlayback = false;
-        Speed = 1;
+        ResetSpeed();
+        ResetRotation();
+        ResetZoom();
+    }
 
+    public void ResetSpeed()
+    {
+        Speed = 1;
+    }
+
+    public void ResetRotation()
+    {
+        Rotation = 0;
+    }
+
+    public void ResetZoom()
+    {
         bool npx = renderer.PanXOffset != 0;
         bool npy = renderer.PanYOffset != 0;
-        bool npr = renderer.Rotation != 0;
         bool npz = renderer.Zoom != 1;
-        renderer.SetPanAll(0, 0, 0, 1, Renderer.ZoomCenterPoint, true); // Pan X/Y, Rotation, Zoom, Zoomcenter, Refresh
+        renderer.SetPanAll(0, 0, Rotation, 1, Renderer.ZoomCenterPoint, true); // Pan X/Y, Rotation, Zoom, Zoomcenter, Refresh
 
         UI(() =>
         {
             if (npx) Raise(nameof(PanXOffset));
             if (npy) Raise(nameof(PanYOffset));
-            if (npr) Raise(nameof(Rotation));
             if (npz) Raise(nameof(Zoom));
         });
     }
