@@ -38,6 +38,7 @@
                     Grid.Column="0"
                     x:Name="SourceText"
                     Margin="0 0 8 0"
+                    TextWrapping="Wrap"
                     Cursor="Hand"
                     MouseLeftButtonUp="SourceText_OnMouseLeftButtonUp"
                     FontWeight="Bold"

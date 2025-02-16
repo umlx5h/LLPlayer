@@ -176,7 +176,8 @@
             <controls:WordPopup
                 x:Name="WordPopupControl"
                 IsSidebar="True"
-                SidebarLeft="{Binding FL.Config.SidebarLeft}" />
+                SidebarLeft="{Binding FL.Config.SidebarLeft}"
+                MaxWidth="400" />
         </controls:NonTopmostPopup>
 
         <ListBox

@@ -240,7 +240,7 @@ public partial class WordPopup : UserControl, INotifyPropertyChanged
             FL.Player.Pause();
         }
 
-        if (e.Mouse == MouseClick.Left)
+        if (e.Mouse is MouseClick.Left or MouseClick.Middle)
         {
             switch (FL.Config.Subs.WordClickActionMethod)
             {
@@ -270,7 +270,7 @@ public partial class WordPopup : UserControl, INotifyPropertyChanged
             CopyToClipboard(e.Words);
         }
 
-        if (FL.Config.Subs.WordClickActionMethod == WordClickAction.PDIC)
+        if (FL.Config.Subs.WordClickActionMethod == WordClickAction.PDIC && e.IsWord)
         {
             if (_pdicSender == null)
             {
@@ -281,11 +281,8 @@ public partial class WordPopup : UserControl, INotifyPropertyChanged
                 }
             }
 
-            if (e.IsWord)
-            {
-                _ = _pdicSender.SendWithPipe(e.Text, e.WordOffset + 1);
-                return;
-            }
+            _ = _pdicSender.SendWithPipe(e.Text, e.WordOffset + 1);
+            return;
         }
 
         try

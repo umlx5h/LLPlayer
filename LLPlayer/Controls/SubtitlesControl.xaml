@@ -21,7 +21,8 @@
             StaysOpen="True">
             <local:WordPopup
                 x:Name="WordPopupControl"
-                IsSidebar="False" />
+                IsSidebar="False"
+                MaxWidth="400" />
         </local:NonTopmostPopup>
 
         <!-- Absolute bitmap -->

@@ -20,7 +20,7 @@ public class WordClickedEventArgs(RoutedEvent args) : RoutedEventArgs(args)
 
 public enum MouseClick
 {
-    Left, Right
+    Left, Right, Middle
 }
 
 public delegate void WordClickedEventHandler(object sender, WordClickedEventArgs e);

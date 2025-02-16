@@ -93,6 +93,33 @@ public class SelectableTextBox : TextBox
         e.Handled = true;
     }
 
+    protected override void OnMouseUp(MouseButtonEventArgs e)
+    {
+        // Middle click: Sentence Lookup
+        if (e.ChangedButton == MouseButton.Middle)
+        {
+            if (string.IsNullOrEmpty(Text))
+            {
+                return;
+            }
+
+            // Change line breaks to spaces to improve translation accuracy.
+            string fixText = Text.ReplaceLineEndings(" ");
+
+            WordClickedEventArgs args = new(WordClickedEvent)
+            {
+                Mouse = MouseClick.Middle,
+                Words = fixText,
+                IsWord = false,
+                Text = fixText,
+                WordOffset = 0,
+                Sender = this
+            };
+
+            RaiseEvent(args);
+        }
+    }
+
     private void HandleClick(Point point, MouseClick mouse)
     {
         // false because it fires only above the word

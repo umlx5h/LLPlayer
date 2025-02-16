@@ -250,6 +250,14 @@
 
                                 <StackPanel Orientation="Horizontal" Margin="0 0 0 10">
                                     <TextBlock
+                                        Text="Middle Click"
+                                        Width="200" />
+                                    <TextBlock
+                                        Text="Sentence Lookup" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Margin="0 0 0 10">
+                                    <TextBlock
                                         Text="Left Click with Ctrl"
                                         Width="200" />
                                     <TextBlock

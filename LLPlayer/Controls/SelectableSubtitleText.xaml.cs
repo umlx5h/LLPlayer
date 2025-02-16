@@ -249,8 +249,6 @@ public partial class SelectableSubtitleText : UserControl
                         Child = textBlock,
                     };
 
-                    // TODO: L: Middle-click to translate sentences
-
                     if (IsPrimary)
                     {
                         border.Cursor = Cursors.Hand;
@@ -259,6 +257,7 @@ public partial class SelectableSubtitleText : UserControl
                         border.MouseLeftButtonDown += WordMouseLeftButtonDown;
                         border.MouseLeftButtonUp += WordMouseLeftButtonUp;
                         border.MouseRightButtonUp += WordMouseRightButtonUp;
+                        border.MouseUp += WordMouseMiddleButtonUp;
 
                         // Change background color on mouse over
                         border.MouseEnter += (_, _) =>
@@ -441,6 +440,25 @@ public partial class SelectableSubtitleText : UserControl
                 WordOffset = word.WordOffset,
                 WordsX = wordPoint.X,
                 WordsWidth = word.ActualWidth
+            };
+            RaiseEvent(args);
+            e.Handled = true;
+        }
+    }
+
+    private void WordMouseMiddleButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton == MouseButton.Middle)
+        {
+            WordClickedEventArgs args = new(WordClickedEvent)
+            {
+                Mouse = MouseClick.Middle,
+                Words = _textFix,
+                IsWord = false,
+                Text = _textFix,
+                WordOffset = 0,
+                WordsX = 0,
+                WordsWidth = wrapPanel.ActualWidth
             };
             RaiseEvent(args);
             e.Handled = true;
