@@ -173,7 +173,7 @@ Guiding Principles for LLPlayer
 
 - [ ] Improve core functionality
   - [ ] ASR
-    - [ ] Enable ASR subtitles with dual subtitles (one of them as translation)
+    - [X] Enable ASR subtitles with dual subtitles (one of them as translation)
     - [ ] Pause and resume
     - [ ] More natural sentence splitting (try [echosharp](https://github.com/sandrohanea/echosharp)?)
 

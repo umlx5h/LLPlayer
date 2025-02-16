@@ -762,10 +762,8 @@ unsafe partial class Player
             }
 
             // ASR subtitle
-            if (SubtitlesASR.SubIndex != null)
+            foreach (int i in SubtitlesASR.SubIndexSet)
             {
-                int i = SubtitlesASR.SubIndex.Value;
-
                 SubtitleData cur = SubtitlesManager[i].GetCurrent();
                 if (cur != null &&
                     (sFramesPrev[i] == null || sFramesPrev[i].timestamp != cur.StartTime.Ticks + Config.Subtitles[i].Delay))
@@ -963,10 +961,8 @@ unsafe partial class Player
             }
 
             // Support only ASR subtitle for audio
-            if (SubtitlesASR.SubIndex != null)
+            foreach (int i in SubtitlesASR.SubIndexSet)
             {
-                int i = SubtitlesASR.SubIndex.Value;
-
                 SubtitlesManager[i].SetCurrentTime(new TimeSpan(curTime));
 
                 var cur = SubtitlesManager[i].GetCurrent();

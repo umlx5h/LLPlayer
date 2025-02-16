@@ -12,8 +12,6 @@ namespace FlyleafLib.MediaPlayer;
 #nullable enable
 
 // TODO: L: Pause and resume ASR
-// TODO: L: Enable simultaneous use of primary and secondary (in conjunction with automatic translation)
-// TODO: L: Support ASR (Translate) so that it can run in parallel with ASR (Transcribe)
 
 /// <summary>
 /// Running ASR from a media file
@@ -28,12 +26,9 @@ public class SubtitlesASR
     private readonly SubtitlesManager _subtitlesManager;
     private readonly Config _config;
     private readonly Lock _locker = new();
+    private readonly Lock _lockerSubs = new();
     private CancellationTokenSource? _cts = null;
-    private List<SubtitleData>? _prevSubs;
-    private (string, int)? _openedStream;
-
-    private int? _subIndex;
-    public int? SubIndex => _subIndex;
+    public HashSet<int> SubIndexSet { get; } = new();
 
     private readonly LogHandler Log;
 
@@ -70,7 +65,7 @@ public class SubtitlesASR
     }
 
     /// <summary>
-    /// Open madi file and read all subtitle data from audio
+    /// Open media file and read all subtitle data from audio
     /// </summary>
     /// <param name="subIndex">0: Primary, 1: Secondary</param>
     /// <param name="url">media file path</param>
@@ -78,70 +73,145 @@ public class SubtitlesASR
     /// <param name="curTime">Current playback timestamp, from which whisper is run</param>
     public void Open(int subIndex, string url, int streamIndex, TimeSpan curTime)
     {
-        // Cancel if already executed
-        TryCancel(true);
+        // When Dual ASR: Copy the other ASR result and return early
+        if (SubIndexSet.Count > 0 && !SubIndexSet.Contains(subIndex))
+        {
+            lock (_lockerSubs)
+            {
+                SubIndexSet.Add(subIndex);
+                int otherIndex = (subIndex + 1) % 2;
+
+                if (_subtitlesManager[otherIndex].Subs.Count > 0)
+                {
+                    bool enableTranslated = _config.Subtitles[subIndex].EnabledTranslated;
+
+                    // Copy other ASR result
+                    _subtitlesManager[subIndex]
+                        .Load(_subtitlesManager[otherIndex].Subs.Select(s =>
+                        {
+                            var clone = (SubtitleData)s.Clone();
+
+                            if (!enableTranslated)
+                            {
+                                clone.TranslatedText = null;
+                                clone.EnabledTranslated = true;
+                            }
+
+                            return clone;
+                        }));
+
+                    if (!_subtitlesManager[otherIndex].IsLoading)
+                    {
+                        // Copy the language source if one of them is already done.
+                        _subtitlesManager[subIndex].LanguageSource = _subtitlesManager[otherIndex].LanguageSource;
+                    }
+                }
+            }
+
+            // return early
+            return;
+        }
+
+        // If it has already been executed, cancel it to start over from the current playback position.
+        if (SubIndexSet.Contains(subIndex))
+        {
+            Dictionary<int, List<SubtitleData>> prevSubs = new();
+            HashSet<int> prevSubIndexSet = [.. SubIndexSet];
+            lock (_lockerSubs)
+            {
+                // backup current result
+                foreach (int i in SubIndexSet)
+                {
+                    prevSubs[i] = _subtitlesManager[i].Subs.ToList();
+                }
+            }
+            // Cancel preceding execution and wait
+            TryCancel(true);
+
+            // restore previous result
+            lock (_lockerSubs)
+            {
+                foreach (int i in prevSubIndexSet)
+                {
+                    _subtitlesManager[i].Load(prevSubs[i]);
+                    // Re-enable spinner
+                    _subtitlesManager[i].StartLoading();
+
+                    SubIndexSet.Add(i);
+                }
+            }
+        }
 
         lock (_locker)
         {
             _cts = new CancellationTokenSource();
-            _subIndex = subIndex;
-
-            (string url, int streamIndex) openStream = (url, streamIndex);
-            if (_openedStream == openStream && _prevSubs != null)
-            {
-                // Restore Subs data for the same audio
-                _subtitlesManager[subIndex].Load(_prevSubs);
-            }
-            else
-            {
-                _openedStream = openStream;
-                // Clear stored subs when a different audio is opened (to prevent memory leaks)
-                _prevSubs = null;
-            }
+            SubIndexSet.Add(subIndex);
 
             using AudioReader reader = new(_config);
 
-            bool isFirst = true;
             reader.Open(url, streamIndex);
-            reader.ReadAll(curTime, (data) =>
+            reader.ReadAll(curTime, data =>
             {
                 if (_cts.Token.IsCancellationRequested)
                 {
                     return;
                 }
 
-                if (isFirst)
+                lock (_lockerSubs)
                 {
-                    // Delete subtitles after the first subtitle to be added (leave the previous one)
-                    _subtitlesManager[subIndex].DeleteAfter(data.StartTime);
+                    foreach (int i in SubIndexSet)
+                    {
+                        bool isInit = false;
+                        if (_subtitlesManager[i].LanguageSource == null)
+                        {
+                            isInit = true;
 
-                    // Set language
-                    // Can currently only be set for the whole, not per subtitle
-                    _subtitlesManager[subIndex].LanguageSource = Language.Get(data.Language);
+                            // Delete subtitles after the first subtitle to be added (leave the previous one)
+                            _subtitlesManager[i].DeleteAfter(data.StartTime);
 
-                    isFirst = false;
-                }
+                            // Set language
+                            // Can currently only be set for the whole, not per subtitle
+                            _subtitlesManager[i].LanguageSource = Language.Get(data.Language);
 
-                SubtitleData sub = new()
-                {
-                    Text = data.Text,
-                    StartTime = data.StartTime,
-                    EndTime = data.EndTime,
+                            // Required when dual
+                            _ = _subtitlesManager[i].StartLoading();
+                        }
+
+                        SubtitleData sub = new()
+                        {
+                            Text = data.Text,
+                            StartTime = data.StartTime,
+                            EndTime = data.EndTime,
 #if DEBUG
-                    ChunkNo = data.ChunkNo,
-                    StartTimeChunk = data.StartTimeChunk,
-                    EndTimeChunk = data.EndTimeChunk,
+                            ChunkNo = data.ChunkNo,
+                            StartTimeChunk = data.StartTimeChunk,
+                            EndTimeChunk = data.EndTimeChunk,
 #endif
-                };
+                        };
 
-                _subtitlesManager[subIndex].Add(sub);
+                        _subtitlesManager[i].Add(sub);
+                        if (isInit)
+                        {
+                            _subtitlesManager[i].SetCurrentTime(new TimeSpan(_config.Subtitles.player.CurTime));
+                        }
+                    }
+                }
             }, _cts.Token);
-        }
 
-        if (!_cts.Token.IsCancellationRequested)
-        {
-            // TODO: L: Notify, express completion in some way
-            Utils.PlayCompletionSound();
+            if (!_cts.Token.IsCancellationRequested)
+            {
+                // TODO: L: Notify, express completion in some way
+                Utils.PlayCompletionSound();
+            }
+
+            foreach (int i in SubIndexSet)
+            {
+                lock (_lockerSubs)
+                {
+                    // Stop spinner (required when dual ASR)
+                    _subtitlesManager[i].StartLoading().Dispose();
+                }
+            }
         }
     }
 
@@ -150,20 +220,21 @@ public class SubtitlesASR
         var cts = _cts;
         if (cts != null)
         {
-            // Save current Subs before canceling.
-            // TODO: L: locking?
             if (!cts.IsCancellationRequested)
             {
-                var prevSubs = _subtitlesManager[_subIndex!.Value].Subs;
-                if (prevSubs.Count > 0)
+                lock (_lockerSubs)
                 {
-                    _prevSubs = prevSubs.ToList();
-                    // clear
-                    _subtitlesManager[_subIndex!.Value].Clear();
+                    foreach (var i in SubIndexSet)
+                    {
+                        _subtitlesManager[i].Clear();
+                    }
                 }
 
                 cts.Cancel();
-                _subIndex = null;
+                lock (_lockerSubs)
+                {
+                    SubIndexSet.Clear();
+                }
             }
             else
             {
@@ -186,11 +257,24 @@ public class SubtitlesASR
 
     public void Reset(int subIndex)
     {
-        if (_subIndex == subIndex)
+        if (!SubIndexSet.Contains(subIndex))
+            return;
+
+        if (SubIndexSet.Count == 2)
         {
-            // cancel asynchronously as it takes time to cancel.
-            TryCancel(false);
+            lock (_lockerSubs)
+            {
+                // When Dual ASR: only the state is cleared without stopping ASR execution.
+                SubIndexSet.Remove(subIndex);
+                _subtitlesManager[subIndex].StartLoading().Dispose();
+                _subtitlesManager[subIndex].Clear();
+            }
+
+            return;
         }
+
+        // cancel asynchronously as it takes time to cancel.
+        TryCancel(false);
     }
 }
 

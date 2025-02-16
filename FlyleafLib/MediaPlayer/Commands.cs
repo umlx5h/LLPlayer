@@ -312,14 +312,12 @@ public class Commands
 
         SubtitlesSelectedHelper.CurIndex = subIndex;
 
-        int otherIndex = (subIndex + 1) % 2;
+        // First, turn off existing subtitles (if not ASR)
+        if (!player.Subtitles[subIndex].EnabledASR)
+        {
+            player.Subtitles[subIndex].Disable();
+        }
 
-        // First, turn off existing subtitles
-        player.Subtitles[subIndex].Disable();
-
-        // Cancel one of the ASRs since simultaneous ASR execution is not allowed
-        // (actual cancellation is done in SubtitlesASR)
-        player.Subtitles[otherIndex].EnabledASR = false;
         player.Subtitles[subIndex].EnableASR();
     }
 

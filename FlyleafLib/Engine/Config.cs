@@ -1037,8 +1037,6 @@ public class Config : NotifyPropertyChanged
                                 Parser              { get; set; } = ParseSubtitles.Parse;
 
         #region ASR
-        // TODO: L: Consider whether to have one for primary and one for secondary in the future,
-        // but currently not possible to run concurrently, so they should be shared.
         /// <summary>
         /// ASR Whisper model
         /// </summary>

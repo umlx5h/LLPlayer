@@ -248,6 +248,7 @@ AncestorType={x:Type MenuItem}}}">
                   HeaderStringFormat="ASR ({0})"
                   Command="{Binding FL.Player.Commands.OpenSubtitlesASR}"
                   CommandParameter="0"
+                  ToolTip="If you run it again when it is already enabled, subtitles will be regenerated from the playback position."
                   IsCheckable="True"
                   IsChecked="{Binding FL.Player.Subtitles[0].EnabledASR, Mode=OneWay}" />
 
@@ -281,6 +282,7 @@ AncestorType={x:Type MenuItem}}}">
                   HeaderStringFormat="ASR ({0})"
                   Command="{Binding FL.Player.Commands.OpenSubtitlesASR}"
                   CommandParameter="1"
+                  ToolTip="If you run it again when it is already enabled, subtitles will be regenerated from the playback position."
                   IsCheckable="True"
                   IsChecked="{Binding FL.Player.Subtitles[1].EnabledASR, Mode=OneWay}" />
 

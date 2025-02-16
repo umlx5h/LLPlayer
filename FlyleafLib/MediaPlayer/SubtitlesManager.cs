@@ -136,7 +136,7 @@ public class SubManager : INotifyPropertyChanged
         _subIndex = subIndex;
         // TODO: L: Review whether to initialize it here.
         _subTranslator = new SubTranslator(this, config.Subtitles, subIndex);
-        Log = new LogHandler(("[#1]").PadRight(8, ' ') + $" [SubManager{subIndex+1}   ] ");
+        Log = new LogHandler(("[#1]").PadRight(8, ' ') + $" [SubManager{subIndex + 1}   ] ");
 
         if (enableSync)
         {
@@ -182,19 +182,6 @@ public class SubManager : INotifyPropertyChanged
         {
             IsLoading = false;
         });
-    }
-
-    public void Clear()
-    {
-        lock (_subsLocker)
-        {
-            CurrentIndex = -1;
-            foreach (var sub in Subs)
-            {
-                sub.Dispose();
-            }
-            Subs.Clear();
-        }
     }
 
     public void Load(IEnumerable<SubtitleData> items)
@@ -498,7 +485,7 @@ public class SubManager : INotifyPropertyChanged
                     sub.Dispose();
                 }
 
-                ClearAll();
+                Clear();
             }
         }
     }
@@ -519,18 +506,25 @@ public class SubManager : INotifyPropertyChanged
         }
     }
 
-    public void ClearAll()
+    public void Clear()
     {
-        Clear();
-
-        State = PositionState.First;
-        LanguageSource = null;
+        lock (_subsLocker)
+        {
+            CurrentIndex = -1;
+            foreach (var sub in Subs)
+            {
+                sub.Dispose();
+            }
+            Subs.Clear();
+            State = PositionState.First;
+            LanguageSource = null;
+        }
     }
 
     public void Reset()
     {
         TryCancelWait();
-        ClearAll();
+        Clear();
     }
 
     #region INotifyPropertyChanged
@@ -1044,7 +1038,7 @@ public class SubtitleBitmapData : IDisposable
 #endif
 }
 
-public class SubtitleData : IDisposable, INotifyPropertyChanged
+public class SubtitleData : IDisposable, INotifyPropertyChanged, ICloneable
 {
     public int Index { get; set; }
 
@@ -1114,6 +1108,26 @@ public class SubtitleData : IDisposable, INotifyPropertyChanged
         }
 
         _isDisposed = true;
+    }
+
+    public object Clone()
+    {
+        return new SubtitleData()
+        {
+            Index = Index,
+            Text = Text,
+            TranslatedText = TranslatedText,
+            EnabledTranslated = EnabledTranslated,
+            StartTime = StartTime,
+            EndTime = EndTime,
+#if DEBUG
+            ChunkNo = ChunkNo,
+            StartTimeChunk = StartTimeChunk,
+            EndTimeChunk = EndTimeChunk,
+#endif
+            IsBitmap = IsBitmap,
+            Bitmap = null,
+        };
     }
 
     #region INotifyPropertyChanged
