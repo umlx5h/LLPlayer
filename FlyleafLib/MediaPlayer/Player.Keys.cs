@@ -562,6 +562,10 @@ public class KeysConfig
         { KeyBindingAction.SpeedAdd2 },
         { KeyBindingAction.SpeedRemove },
         { KeyBindingAction.SpeedRemove2 },
+        { KeyBindingAction.ResetAll },
+        { KeyBindingAction.ResetSpeed },
+        { KeyBindingAction.ResetRotation },
+        { KeyBindingAction.ResetZoom },
         { KeyBindingAction.ForceIdle },
         { KeyBindingAction.ForceActive },
         { KeyBindingAction.ForceFullActive }
