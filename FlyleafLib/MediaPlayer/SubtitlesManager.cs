@@ -166,6 +166,7 @@ public class SubManager : INotifyPropertyChanged
         Utils.UI(() =>
         {
             CollectionViewSource.GetDefaultView(Subs).Refresh();
+            OnPropertyChanged(nameof(CurrentIndex)); // required for translating current sub
         });
     }
 
