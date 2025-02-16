@@ -85,6 +85,7 @@
                     WidthPercentage="{Binding FL.Config.Subs.SubsWidthPercentage}"
                     IgnoreLineBreak="{Binding FL.Config.Subs.SubsIgnoreLineBreak}"
                     Text="{Binding FL.Player.Subtitles[0].Data.Text}"
+                    IsPrimary="True"
                     WordClickedDown="SubtitlePrimaryText_OnWordClickedDown"
                     WordClicked="SelectableSubtitleText_OnWordClicked" />
 
@@ -127,7 +128,8 @@
                     StrokeThicknessInitial="{Binding FL.Config.Subs.SubsStrokeThickness}"
                     WidthPercentage="{Binding FL.Config.Subs.SubsWidthPercentage}"
                     IgnoreLineBreak="{Binding FL.Config.Subs.SubsIgnoreLineBreak}"
-                    Text="{Binding FL.Player.Subtitles[1].Data.Text}" />
+                    Text="{Binding FL.Player.Subtitles[1].Data.Text}"
+                    IsPrimary="False" />
 
                 <Border
                     Visibility="{Binding FL.Player.Subtitles[1].Data.IsAbsolute, Converter={StaticResource BooleanToVisibilityInvertConv}, FallbackValue=Collapsed, TargetNullValue=Collapsed}"

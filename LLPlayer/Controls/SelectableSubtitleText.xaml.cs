@@ -126,6 +126,15 @@ public partial class SelectableSubtitleText : UserControl
         set => SetValue(StrokeThicknessInitialProperty, value);
     }
 
+    public static readonly DependencyProperty IsPrimaryProperty =
+        DependencyProperty.Register(nameof(IsPrimary), typeof(bool), typeof(SelectableSubtitleText), new FrameworkPropertyMetadata(false));
+
+    public bool IsPrimary
+    {
+        get => (bool)GetValue(IsPrimaryProperty);
+        set => SetValue(IsPrimaryProperty, value);
+    }
+
     private static void OnWidthPercentageChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var ctl = (SelectableSubtitleText)d;
@@ -238,23 +247,29 @@ public partial class SelectableSubtitleText : UserControl
                         Padding = new Thickness(1, 2, 1, 2),
                         IsHitTestVisible = true,
                         Child = textBlock,
-                        Cursor = Cursors.Hand
                     };
 
                     // TODO: L: Middle-click to translate sentences
-                    border.MouseLeftButtonDown += WordMouseLeftButtonDown;
-                    border.MouseLeftButtonUp += WordMouseLeftButtonUp;
-                    border.MouseRightButtonUp += WordMouseRightButtonUp;
 
-                    // Change background color on mouse over
-                    border.MouseEnter += (_, _) =>
+                    if (IsPrimary)
                     {
-                        border.Background = new SolidColorBrush(Color.FromArgb(80, 127, 127, 127));
-                    };
-                    border.MouseLeave += (_, _) =>
-                    {
-                        border.Background = new SolidColorBrush(Color.FromArgb(1, 0, 0, 0));
-                    };
+                        border.Cursor = Cursors.Hand;
+
+                        // TODO: L: Currently set event handler for primary sub only, secondary sub should be enabled?
+                        border.MouseLeftButtonDown += WordMouseLeftButtonDown;
+                        border.MouseLeftButtonUp += WordMouseLeftButtonUp;
+                        border.MouseRightButtonUp += WordMouseRightButtonUp;
+
+                        // Change background color on mouse over
+                        border.MouseEnter += (_, _) =>
+                        {
+                            border.Background = new SolidColorBrush(Color.FromArgb(80, 127, 127, 127));
+                        };
+                        border.MouseLeave += (_, _) =>
+                        {
+                            border.Background = new SolidColorBrush(Color.FromArgb(1, 0, 0, 0));
+                        };
+                    }
 
                     wrapPanel.Children.Add(border);
                 }
