@@ -397,7 +397,7 @@ public static class SubtitlesSelectedHelper
             return tuple.Value.Item1 == stream.StreamIndex;
         }
 
-        if (tuple.Value.Item2 is not null)
+        if (tuple.Value.Item2 is not null && stream.ExternalStream is not null)
         {
             // external sub
             return GetSubEnabled(stream.ExternalStream, subIndex);
@@ -446,14 +446,12 @@ public class Subtitle : NotifyPropertyChanged
 
     public bool EnabledASR
     {
-        get;
+        get => _enabledASR;
         internal set
         {
-            if (Set(ref field, value))
-            {
-                // Synchronize as it is updated from outside
-                _enabledASR = value;
-            }
+            Set(ref field, value);
+            // Synchronize as it is updated from outside
+            _enabledASR = value;
         }
     }
     private bool _enabledASR;
@@ -461,13 +459,13 @@ public class Subtitle : NotifyPropertyChanged
     /// <summary>
     /// Whether the input has subtitles and it is configured
     /// </summary>
-    public bool IsOpened { get; private set => Set(ref field, value); }
+    public bool IsOpened { get => _isOpened; private set => Set(ref field, value); }
     private bool _isOpened;
 
-    public string Codec { get; private set => Set(ref field, value); }
+    public string Codec { get => _codec; private set => Set(ref field, value); }
     private string _codec;
 
-    public bool IsBitmap { get; private set => Set(ref field, value); }
+    public bool IsBitmap { get => _isBitmap; private set => Set(ref field, value); }
     private bool _isBitmap;
 
     public bool Enabled => IsOpened || EnabledASR;
@@ -478,10 +476,10 @@ public class Subtitle : NotifyPropertyChanged
     {
         UI(() =>
         {
-            IsOpened = _isOpened;
-            Codec = _codec;
-            IsBitmap = _isBitmap;
-            EnabledASR = _enabledASR;
+            IsOpened = IsOpened;
+            Codec = Codec;
+            IsBitmap = IsBitmap;
+            EnabledASR = EnabledASR;
         });
     }
 

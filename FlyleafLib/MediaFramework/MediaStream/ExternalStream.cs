@@ -35,16 +35,17 @@ public class ExternalStream : DemuxerInput
         get => _Enabled;
         set
         {
-            if (SetUI(ref _Enabled, value))
+            Utils.UI(() =>
             {
-                if (value)
+                if (Set(ref _Enabled, value) && value)
                 {
                     OpenedCounter++;
                 }
-                RaiseUI(nameof(EnabledPrimarySubtitle));
-                RaiseUI(nameof(EnabledSecondarySubtitle));
-                RaiseUI(nameof(SubtitlesStream.SelectedSubMethods));
-            }
+
+                Raise(nameof(EnabledPrimarySubtitle));
+                Raise(nameof(EnabledSecondarySubtitle));
+                Raise(nameof(SubtitlesStream.SelectedSubMethods));
+            });
         }
     }
     bool _Enabled;

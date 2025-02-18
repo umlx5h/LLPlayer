@@ -23,12 +23,14 @@ public abstract unsafe class StreamBase : NotifyPropertyChanged
         get => _Enabled;
         internal set
         {
-            if (SetUI(ref _Enabled, value))
+            Utils.UI(() =>
             {
-                RaiseUI(nameof(EnabledPrimarySubtitle));
-                RaiseUI(nameof(EnabledSecondarySubtitle));
-                RaiseUI(nameof(SubtitlesStream.SelectedSubMethods));
-            }
+                Set(ref _Enabled, value);
+
+                Raise(nameof(EnabledPrimarySubtitle));
+                Raise(nameof(EnabledSecondarySubtitle));
+                Raise(nameof(SubtitlesStream.SelectedSubMethods));
+            });
         }
     }
 
