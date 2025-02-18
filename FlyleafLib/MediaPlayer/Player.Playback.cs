@@ -370,10 +370,10 @@ partial class Player
                             ShowOneFrame();
                             VideoDemuxer.Start();
                             AudioDemuxer.Start();
-                            for (int i = 0; i < subNum; i++)
-                            {
-                                SubtitlesDemuxers[i].Start();
-                            }
+                            //for (int i = 0; i < subNum; i++)
+                            //{
+                            //    SubtitlesDemuxers[i].Start();
+                            //}
                             DataDemuxer.Start();
                             decoder.PauseOnQueueFull();
                             SeekCompleted?.Invoke(this, seekData.ms);

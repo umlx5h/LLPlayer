@@ -121,11 +121,11 @@ unsafe partial class Player
                 {
                     SubtitlesDecoders[i].Start();
                 }
-                else// if (!decoder.RequiresResync)
-                {
-                    SubtitlesDemuxers[i].Start();
-                    SubtitlesDecoders[i].Start();
-                }
+                //else// if (!decoder.RequiresResync)
+                //{
+                //    SubtitlesDemuxers[i].Start();
+                //    SubtitlesDecoders[i].Start();
+                //}
             }
         }
     }
@@ -788,12 +788,15 @@ unsafe partial class Player
 
                 isSubsSwitches[i] = true;
 
-                decoder.SeekSubtitles(i);
+                //decoder.SeekSubtitles(i);
                 sFrames[i] = sFramesPrev[i] = null;
                 SubtitleClear(i);
                 isSubsSwitches[i] = false;
+
+                // do not start demuxer and decoder for external subs
+                return;
             }
-            else
+            else if (stream.Demuxer.Type == MediaType.Data)
             {
                 isDataSwitch = true;
                 decoder.SeekData();

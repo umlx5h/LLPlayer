@@ -46,7 +46,7 @@
                             <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
                                 <ToolTipService.ToolTip>
                                     <TextBlock
-                                        Text="If enabled, internal subtitles are always displayed during seek, and bitmap subtitles can be displayed in the sidebar. However, memory usage will increase."
+                                        Text="If enabled, internal bitmap subtitles can be displayed in the sidebar. and internal bitmap subtitles are always displayed during seek, However, memory usage will increase."
                                         TextWrapping="Wrap"
                                         MaxWidth="400" />
                                 </ToolTipService.ToolTip>

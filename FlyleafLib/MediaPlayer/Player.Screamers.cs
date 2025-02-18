@@ -164,11 +164,11 @@ unsafe partial class Player
                     {
                         SubtitlesDecoders[i].Start();
                     }
-                    else if (!decoder.RequiresResync)
-                    {
-                        SubtitlesDemuxers[i].Start();
-                        SubtitlesDecoders[i].Start();
-                    }
+                    //else if (!decoder.RequiresResync)
+                    //{
+                    //    SubtitlesDemuxers[i].Start();
+                    //    SubtitlesDecoders[i].Start();
+                    //}
                 }
             }
         }
@@ -647,6 +647,7 @@ unsafe partial class Player
                     }
                 }
             }
+            // Internal subtitles (Text or Bitmap or OCR)
             for (int i = 0; i < subNum; i++)
             {
                 if (sFramesPrev[i] != null && ((sFramesPrev[i].timestamp - startTicks + (sFramesPrev[i].duration * (long)10000)) / speed) - (long) (sw.ElapsedTicks * SWFREQ_TO_TICKS) < 0)
@@ -671,8 +672,7 @@ unsafe partial class Player
 
                             var cur = SubtitlesManager[i].GetCurrent();
 
-                            if (SubtitlesManager[i].IsDisplaying &&
-                                !string.IsNullOrEmpty(cur.Text))
+                            if (cur != null && !string.IsNullOrEmpty(cur.Text))
                             {
                                 // Use OCR text subtitles if available
                                 SubtitleDisplay(cur.DisplayText, i);
@@ -693,6 +693,7 @@ unsafe partial class Player
                         }
                         else
                         {
+                            // internal text sub
                             SubtitleDisplay(sFrames[i].text, i);
                         }
                         sFramesPrev[i] = sFrames[i];
@@ -704,7 +705,7 @@ unsafe partial class Player
                         if (CanDebug)
                             Log.Debug($"sDistanceMss[i] = {sDistanceMss[i]}");
 
-                        SubtitleClear(i);
+                        //SubtitleClear(i);
 
                         // TODO: L: Here sFrames can be null, occurs when switching subtitles?
                         SubtitlesDecoder.DisposeFrame(sFrames[i]);
@@ -714,69 +715,57 @@ unsafe partial class Player
                 }
             }
 
-            if (Config.Subtitles.EnabledCached)
+            // External or ASR subtitles
+            for (int i = 0; i < subNum; i++)
             {
-                // Display from cache to ensure that even internal subtitles are displayed at seek time
-                for (int i = 0; i < subNum; i++)
+                if (!Config.Subtitles.Enabled || !Subtitles[i].Enabled)
                 {
-                    SubtitleData cur = SubtitlesManager[i].GetCurrent();
-
-                    // If the subtitle currently playing is not translated, change to the translated for display
-                    if (Config.Subtitles[i].EnabledTranslated &&
-                        cur != null &&
-                        sFramesPrev[i] != null &&
-                        sFramesPrev[i].timestamp == cur.StartTime.Ticks + Config.Subtitles[i].Delay &&
-                        sFramesPrev[i].text != cur.DisplayText)
-                    {
-                        SubtitleDisplay(cur.DisplayText, i);
-                        continue;
-                    }
-
-                    if (cur != null &&
-                        // Prevent duplicate display
-                        (sFramesPrev[i] == null || sFramesPrev[i].timestamp != cur.StartTime.Ticks + Config.Subtitles[i].Delay))
-                    {
-                        bool display = false;
-                        if (!string.IsNullOrEmpty(cur.Text))
-                        {
-                            SubtitleDisplay(cur.DisplayText, i);
-                            display = true;
-                        }
-                        else if (cur.IsBitmap && cur.Bitmap != null)
-                        {
-                            SubtitleDisplay(cur.Bitmap, i);
-                            display = true;
-                        }
-
-                        if (display)
-                        {
-                            // Need this to clear the subtitles that are displayed when seeking
-                            sFramesPrev[i] = new SubtitlesFrame
-                            {
-                                timestamp = cur.StartTime.Ticks + Config.Subtitles[i].Delay,
-                                duration = (uint)cur.Duration.TotalMilliseconds
-                            };
-                        }
-                    }
+                    continue;
                 }
-            }
 
-            // ASR subtitle
-            foreach (int i in SubtitlesASR.SubIndexSet)
-            {
                 SubtitleData cur = SubtitlesManager[i].GetCurrent();
-                if (cur != null &&
-                    (sFramesPrev[i] == null || sFramesPrev[i].timestamp != cur.StartTime.Ticks + Config.Subtitles[i].Delay))
+
+                if (cur == null)
                 {
+                    continue;
+                }
+
+                if (sFramesPrev[i] == null ||
+                    sFramesPrev[i].timestamp != cur.StartTime.Ticks + Config.Subtitles[i].Delay)
+                {
+                    bool display = false;
                     if (!string.IsNullOrEmpty(cur.DisplayText))
                     {
                         SubtitleDisplay(cur.DisplayText, i);
+                        display = true;
+                    }
+                    else if (cur.IsBitmap && cur.Bitmap != null)
+                    {
+                        SubtitleDisplay(cur.Bitmap, i);
+                        display = true;
+                    }
 
+                    if (display)
+                    {
                         sFramesPrev[i] = new SubtitlesFrame
                         {
                             timestamp = cur.StartTime.Ticks + Config.Subtitles[i].Delay,
                             duration = (uint)cur.Duration.TotalMilliseconds
                         };
+                    }
+                }
+                else
+                {
+                    // Apply translation to current sub
+                    if (Config.Subtitles[i].EnabledTranslated) {
+
+                        // If the subtitle currently playing is not translated, change to the translated for display
+                        if (sFramesPrev[i] != null &&
+                            sFramesPrev[i].timestamp == cur.StartTime.Ticks + Config.Subtitles[i].Delay &&
+                            sFramesPrev[i].text != cur.DisplayText)
+                        {
+                            SubtitleDisplay(cur.DisplayText, i);
+                        }
                     }
                 }
             }

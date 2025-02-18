@@ -324,6 +324,10 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
             speed                   = newValue;
             decoder.RequiresResync  = true;
             requiresBuffering       = true;
+            for (int i = 0; i < subNum; i++)
+            {
+                sFramesPrev[i] = null;
+            }
             SubtitleClear();
             UI(() =>
             {

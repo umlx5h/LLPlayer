@@ -569,25 +569,20 @@ public class Subtitle : NotifyPropertyChanged
 
     internal void Load()
     {
-        // Do not cache for original secondary subtitles
-        if (!Config.Subtitles.EnabledCached && _subIndex > 0 && SubtitlesSelectedHelper.SecondaryMethod == SelectSubMethod.Original)
-        {
-            return;
-        }
-
         SubtitlesStream stream = Decoder.SubtitlesStreams[_subIndex];
         ExternalSubtitlesStream extStream = stream.ExternalStream as ExternalSubtitlesStream;
-
-        bool useBitmap = Config.Subtitles.EnabledCached || SubtitlesSelectedHelper.GetMethod(_subIndex) == SelectSubMethod.OCR;
 
         if (extStream != null)
         {
             // external sub
-            _player.SubtitlesManager.Open(_subIndex, extStream.Url, -1, useBitmap, extStream.Language);
+            // always load all bitmaps on memory with external subtitles
+            _player.SubtitlesManager.Open(_subIndex, extStream.Url, -1, true, extStream.Language);
         }
         else
         {
             // internal sub
+            // load all bitmaps on memory when cache enabled or OCR used
+            bool useBitmap = Config.Subtitles.EnabledCached || SubtitlesSelectedHelper.GetMethod(_subIndex) == SelectSubMethod.OCR;
             _player.SubtitlesManager.Open(_subIndex, Decoder.MainDemuxer.Url, stream.StreamIndex, useBitmap, stream.Language);
         }
 

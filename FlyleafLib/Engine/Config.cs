@@ -939,10 +939,10 @@ public class Config : NotifyPropertyChanged
         public int Max { get; set => Set(ref field, value); } = 2;
 
         /// <summary>
-        /// Whether to cache internal subtitles on memory
-        /// Memory usage is larger since all subtitles are read, but has the following advantages
-        /// 1. Internal subtitles (text & bitmap) can be displayed in the sidebar
-        /// 2. Can display subtitles during playback when seeking with internal subtitles (mpv: can, VLC: cannot)
+        /// Whether to cache internal bitmap subtitles on memory
+        /// Memory usage is larger since all bitmap are read on memory, but has the following advantages
+        /// 1. Internal bitmap subtitles can be displayed in the sidebar
+        /// 2. Can display bitmap subtitles during playback when seeking (mpv: can, VLC: cannot)
         /// </summary>
         public bool EnabledCached { get; set => Set(ref field, value); } = true;
 
