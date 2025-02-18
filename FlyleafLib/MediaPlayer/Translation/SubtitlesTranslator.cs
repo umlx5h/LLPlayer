@@ -37,15 +37,38 @@ public class SubTranslator
 
         _translateServiceFactory = new TranslateServiceFactory(config);
 
-        Log = new LogHandler(("[#1]").PadRight(8, ' ') + $" [Translator{subIndex+1}   ] ");
+        Log = new LogHandler(("[#1]").PadRight(8, ' ') + $" [Translator{subIndex + 1}   ] ");
     }
+
+    private int _oldIndex = -1;
+    private CancellationTokenSource? _translationStartCancellation;
 
     private void SubManager_OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         switch (e.PropertyName)
         {
             case nameof(SubManager.CurrentIndex):
-                _ = UpdateCurrentIndexAsync(_subManager.CurrentIndex);
+                if (_translationStartCancellation != null)
+                {
+                    _translationStartCancellation.Cancel();
+                    _translationStartCancellation.Dispose();
+                    _translationStartCancellation = null;
+                }
+                _translationStartCancellation = new CancellationTokenSource();
+                _ = UpdateCurrentIndexAsync(_subManager.CurrentIndex, _translationStartCancellation.Token)
+                    .ContinueWith(t =>
+                    {
+                        if (t.IsCanceled)
+                        {
+                            Log.Info("Translation start canceled");
+                        }
+                        else if (t.IsFaulted)
+                        {
+                            var ex = t.Exception.Flatten().InnerException;
+                            Log.Error($"Translation start failed: {ex?.Message}");
+                        }
+                    }, TaskContinuationOptions.NotOnRanToCompletion);
+
                 break;
             case nameof(SubManager.Language):
                 _ = Reset();
@@ -87,7 +110,7 @@ public class SubTranslator
         _translationSemaphore.Release();
     }
 
-    public async Task UpdateCurrentIndexAsync(int newIndex)
+    public async Task UpdateCurrentIndexAsync(int newIndex, CancellationToken token)
     {
         if (!IsEnabled)
         {
@@ -96,6 +119,19 @@ public class SubTranslator
 
         if (newIndex != -1 && _subManager.Subs.Any())
         {
+            // Prevent continuous firing when continuously switching subtitles with sub seek
+            if (Math.Abs(_oldIndex - newIndex) == 1)
+            {
+                _oldIndex = newIndex;
+
+                if (_subManager.Subs[newIndex].Duration.TotalMilliseconds > 320)
+                {
+                    await Task.Delay(300, token);
+                }
+            }
+            _oldIndex = newIndex;
+            token.ThrowIfCancellationRequested();
+
             await TranslateAheadAsync(newIndex, _config.TranslateCount);
         }
     }
