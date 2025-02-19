@@ -81,11 +81,11 @@
             <!-- Primary Secondary Toggle -->
             <ToggleButton
                 Style="{StaticResource ToggleButton}"
-                materialDesign:ToggleButtonAssist.OnContent="{materialDesign:PackIcon Kind=Numeric1BoxMultipleOutline}"
-                Content="{materialDesign:PackIcon Kind=Numeric2BoxMultipleOutline}"
+                materialDesign:ToggleButtonAssist.OnContent="{materialDesign:PackIcon Kind=Numeric2BoxMultipleOutline}"
+                Content="{materialDesign:PackIcon Kind=Numeric1BoxMultipleOutline}"
                 ToolTip="Toggle Primary / Secondary"
-                Command="{Binding CmdSubIndexToggle}"
-                IsChecked="{Binding IsPrimary, Mode=OneWay}" />
+                Command="{Binding FL.Action.CmdToggleSidebarShowSecondary}"
+                IsChecked="{Binding FL.Config.SidebarShowSecondary, Mode=OneWay}" />
 
             <!-- Font Size -->
             <materialDesign:PopupBox
@@ -141,7 +141,7 @@
                 materialDesign:ToggleButtonAssist.OnContent="{materialDesign:PackIcon Kind=TranslateOff}"
                 Content="{materialDesign:PackIcon Kind=Translate}"
                 ToolTip="Toggle to show original text when translating enabled"
-                Command="{Binding CmdShowOriginalTextToggle}"
+                Command="{Binding FL.Action.CmdToggleSidebarShowOriginalText}"
                 IsChecked="{Binding FL.Config.SidebarShowOriginalText, Mode=OneWay}" />
 
             <!-- Subtitles Downloader -->

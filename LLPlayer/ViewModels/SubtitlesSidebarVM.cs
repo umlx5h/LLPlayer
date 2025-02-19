@@ -1,42 +1,47 @@
-﻿using FlyleafLib;
+﻿using System.ComponentModel;
+using FlyleafLib;
 using FlyleafLib.MediaPlayer;
 using LLPlayer.Extensions;
 using LLPlayer.Services;
 
 namespace LLPlayer.ViewModels;
 
-public class SubtitlesSidebarVM : Bindable
+public class SubtitlesSidebarVM : Bindable, IDisposable
 {
     public FlyleafManager FL { get; }
 
     public SubtitlesSidebarVM(FlyleafManager fl)
     {
         FL = fl;
+
+        FL.Config.PropertyChanged += OnConfigOnPropertyChanged;
     }
 
-    public bool IsPrimary
+    private void OnConfigOnPropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
-        get;
-        set
+        switch (args.PropertyName)
         {
-            if (Set(ref field, value))
-            {
+            case nameof(FL.Config.SidebarShowSecondary):
                 OnPropertyChanged(nameof(SubIndex));
                 OnPropertyChanged(nameof(SubManager));
-            }
+                break;
+            case nameof(FL.Config.SidebarShowOriginalText):
+                // Update ListBox
+                OnPropertyChanged(nameof(SubManager));
+                break;
         }
-    } = true;
+    }
 
-    public int SubIndex => IsPrimary ? 0 : 1;
+    public void Dispose()
+    {
+        FL.Config.PropertyChanged -= OnConfigOnPropertyChanged;
+    }
+
+    public int SubIndex => !FL.Config.SidebarShowSecondary ? 0 : 1;
 
     public SubManager SubManager => FL.Player.SubtitlesManager[SubIndex];
 
     // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
-
-    public DelegateCommand CmdSubIndexToggle => field ??= new(() =>
-    {
-        IsPrimary = !IsPrimary;
-    });
 
     // TODO: L: Fix implicit changes to reflect
     public DelegateCommand<string> CmdSubFontSizeChange => field ??= new(increase =>
@@ -50,14 +55,6 @@ public class SubtitlesSidebarVM : Bindable
     public DelegateCommand CmdSubTextMaskToggle => field ??= new(() =>
     {
         FL.Config.SidebarTextMask = !FL.Config.SidebarTextMask;
-
-        // Update ListBox
-        OnPropertyChanged(nameof(SubManager));
-    });
-
-    public DelegateCommand CmdShowOriginalTextToggle => field ??= new(() =>
-    {
-        FL.Config.SidebarShowOriginalText = !FL.Config.SidebarShowOriginalText;
 
         // Update ListBox
         OnPropertyChanged(nameof(SubManager));

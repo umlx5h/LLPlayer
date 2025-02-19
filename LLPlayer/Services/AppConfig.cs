@@ -121,6 +121,9 @@ public class AppConfig : Bindable
 
     public int SidebarSubPadding { get; set => Set(ref field, value); } = 5;
 
+    [JsonIgnore]
+    public bool SidebarShowSecondary { get; set => Set(ref field, value); }
+
     public bool SidebarShowOriginalText { get; set => Set(ref field, value); }
 
     public bool SidebarTextMask { get; set => Set(ref field, value); }

@@ -12,6 +12,14 @@ public partial class SubtitlesSidebar : UserControl
         InitializeComponent();
 
         DataContext = ((App)Application.Current).Container.Resolve<SubtitlesSidebarVM>();
+
+        Unloaded += (sender, args) =>
+        {
+            if (DataContext is SubtitlesSidebarVM vm)
+            {
+                vm.Dispose();
+            }
+        };
     }
 
     /// <summary>
