@@ -49,7 +49,7 @@ public static partial class Utils
 
     public static List<string> ExtensionsSubtitlesBitmap = new()
     {
-        "sub"
+        "sub", "sup"
     };
 
     public static List<string> ExtensionsSubtitles = [..ExtensionsSubtitlesText, ..ExtensionsSubtitlesBitmap];
