@@ -955,9 +955,9 @@ unsafe partial class Player
                 SubtitlesManager[i].SetCurrentTime(new TimeSpan(curTime));
 
                 var cur = SubtitlesManager[i].GetCurrent();
-                if (cur != null && !string.IsNullOrEmpty(cur.Text))
+                if (cur != null && !string.IsNullOrEmpty(cur.DisplayText))
                 {
-                    SubtitleDisplay(cur.Text, i);
+                    SubtitleDisplay(cur.DisplayText, i);
                 }
                 else
                 {
