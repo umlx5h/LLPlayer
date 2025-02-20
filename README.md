@@ -15,7 +15,7 @@
 
 ## 🎬 Demo
 
-https://github.com/user-attachments/assets/798efbb9-ec01-42cc-8884-9cea4f602121
+https://github.com/user-attachments/assets/05a7b451-ee3b-489f-aac9-f1670ed76e71
 
 [TED Talk - The mind behind Linux](https://www.ted.com/talks/linus_torvalds_the_mind_behind_linux)
 
@@ -207,7 +207,7 @@ Guiding Principles for LLPlayer
 
 Contributions are very welcome! Development is easy because it is written in C#/WPF.
 
-If you want to improve the core of the video player other than language functions,
+If you want to improve the core of the video player other than UI and language functions,
 LLPlayer uses Flyleaf as a core player library, so if you submit it there, I will actively incorporate the changes into the LLPlayer side.
 
 https://github.com/SuRGeoNix/Flyleaf
@@ -247,6 +247,7 @@ Thank you for providing this for free!
 * [Sicos1977/TesseractOCR](https://github.com/Sicos1977/TesseractOCR) : For Tessseract OCR
 * [MaterialDesignInXAML/MaterialDesignInXamlToolkit](https://github.com/MaterialDesignInXAML/MaterialDesignInXamlToolkit) : For UI
 * [searchpioneer/lingua-dotnet](https://github.com/searchpioneer/lingua-dotnet) : For Language Detection
+* [CharsetDetector/UTF-unknown](https://github.com/CharsetDetector/UTF-unknown) : For Charset Detection
 * [sskodje/WpfColorFont](https://github.com/sskodje/WpfColorFont) : For Font Selection
 
 ### For Apps
