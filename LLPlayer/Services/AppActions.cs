@@ -446,11 +446,13 @@ public class AppActions
 
     public DelegateCommand CmdOpenWindowSubsDownloader => field ?? new(() =>
     {
+        _player.Activity.ForceFullActive();
         _dialogService.ShowSingleton(nameof(SubtitlesDownloaderDialog), true);
     });
 
     public DelegateCommand CmdOpenWindowSubsExporter => field ?? new(() =>
     {
+        _player.Activity.ForceFullActive();
         _dialogService.ShowSingleton(nameof(SubtitlesExportDialog), _ =>
         {
             // Activate as it may be minimized for some reason
@@ -463,6 +465,7 @@ public class AppActions
 
     public DelegateCommand CmdOpenWindowCheatSheet => field ?? new(() =>
     {
+        _player.Activity.ForceFullActive();
         _dialogService.ShowSingleton(nameof(CheatSheetDialog), true);
     });
 
@@ -537,6 +540,8 @@ public class AppActions
 
         dialog.Font = new FontInfo(new FontFamily(_config.Subs.SubsFontFamily), _config.Subs.SubsFontSize, (FontStyle)_fontStyleConv.ConvertFromString(_config.Subs.SubsFontStyle)!, (FontStretch)_fontStretchConv.ConvertFromString(_config.Subs.SubsFontStretch)!, (FontWeight)_fontWeightConv.ConvertFromString(_config.Subs.SubsFontWeight)!, new SolidColorBrush(_config.Subs.SubsFontColor));
 
+        _player.Activity.ForceFullActive();
+
         if (dialog.ShowDialog() == true && dialog.Font != null)
         {
             _config.Subs.SubsFontFamily = dialog.Font.Family.ToString();
@@ -553,6 +558,8 @@ public class AppActions
         ColorFontDialog dialog = new();
 
         dialog.Font = new FontInfo(new FontFamily(_config.SidebarFontFamily), _config.SidebarFontSize, FontStyles.Normal, FontStretches.Normal, (FontWeight)_fontWeightConv.ConvertFromString(_config.SidebarFontWeight)!, new SolidColorBrush(Colors.Black));
+
+        _player.Activity.ForceFullActive();
 
         if (dialog.ShowDialog() == true && dialog.Font != null)
         {
