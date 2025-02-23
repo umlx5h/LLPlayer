@@ -444,16 +444,7 @@ public class Subtitle : NotifyPropertyChanged
         Data = new SubsData(_player, _subIndex);
     }
 
-    public bool EnabledASR
-    {
-        get => _enabledASR;
-        internal set
-        {
-            Set(ref field, value);
-            // Synchronize as it is updated from outside
-            _enabledASR = value;
-        }
-    }
+    public bool EnabledASR { get => _enabledASR; private set => Set(ref field, value); }
     private bool _enabledASR;
 
     /// <summary>
@@ -644,9 +635,17 @@ public class Subtitle : NotifyPropertyChanged
 
         Task.Factory.StartNew(() =>
             {
+                bool isDone;
+
                 using (_player.SubtitlesManager[_subIndex].StartLoading())
                 {
-                    _player.SubtitlesASR.Open(_subIndex, url, streamIndex, curTime);
+                    isDone = _player.SubtitlesASR.Open(_subIndex, url, streamIndex, curTime);
+                }
+
+                if (!isDone)
+                {
+                    // re-enable spinner because it is running
+                    _player.SubtitlesManager[_subIndex].StartLoading();
                 }
             }, TaskCreationOptions.LongRunning)
             .ContinueWith(t =>

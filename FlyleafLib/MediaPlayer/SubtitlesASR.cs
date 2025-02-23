@@ -71,7 +71,8 @@ public class SubtitlesASR
     /// <param name="url">media file path</param>
     /// <param name="streamIndex">Audio streamIndex</param>
     /// <param name="curTime">Current playback timestamp, from which whisper is run</param>
-    public void Open(int subIndex, string url, int streamIndex, TimeSpan curTime)
+    /// <returns>true: process completed, false: run in progress</returns>
+    public bool Open(int subIndex, string url, int streamIndex, TimeSpan curTime)
     {
         // When Dual ASR: Copy the other ASR result and return early
         if (SubIndexSet.Count > 0 && !SubIndexSet.Contains(subIndex))
@@ -109,7 +110,7 @@ public class SubtitlesASR
             }
 
             // return early
-            return;
+            return false;
         }
 
         // If it has already been executed, cancel it to start over from the current playback position.
@@ -172,9 +173,6 @@ public class SubtitlesASR
                             // Set language
                             // Can currently only be set for the whole, not per subtitle
                             _subtitlesManager[i].LanguageSource = Language.Get(data.Language);
-
-                            // Required when dual
-                            _ = _subtitlesManager[i].StartLoading();
                         }
 
                         SubtitleData sub = new()
@@ -213,6 +211,8 @@ public class SubtitlesASR
                 }
             }
         }
+
+        return true;
     }
 
     public void TryCancel(bool isWait)
@@ -266,7 +266,6 @@ public class SubtitlesASR
             {
                 // When Dual ASR: only the state is cleared without stopping ASR execution.
                 SubIndexSet.Remove(subIndex);
-                _subtitlesManager[subIndex].StartLoading().Dispose();
                 _subtitlesManager[subIndex].Clear();
             }
 

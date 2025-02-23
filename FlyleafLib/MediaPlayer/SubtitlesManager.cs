@@ -518,6 +518,7 @@ public class SubManager : INotifyPropertyChanged
             Subs.Clear();
             State = PositionState.First;
             LanguageSource = null;
+            IsLoading = false;
         }
     }
 
