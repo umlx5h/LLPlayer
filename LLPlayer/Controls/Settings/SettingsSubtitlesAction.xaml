@@ -308,25 +308,20 @@ Note that this does not work for bitmap subtitles. In that case, please use OCR 
                 <StackPanel>
                     <DockPanel>
                         <TextBlock
-                            Width="180">
-                            PDIC Executable Path (for Japanese users)
-                            <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
-                                <ToolTipService.ToolTip>
-                                    <TextBlock
-                                        Text="For Japanese users with PDIC with Eijiro, please specify the full path to pdic-pipe.exe. It is usually located under AppData\Roaming\PDIC-R Unicode for EIJIRO XI\pdic-pipe.exe. Then select PDIC from the Word Click Action above."
-                                        TextWrapping="Wrap"
-                                        MaxWidth="400" />
-                                </ToolTipService.ToolTip>
-                                <materialDesign:PackIcon
-                                    Kind="Information"
-                                    Width="16" Height="16"
-                                    Margin="4 0 0 0" />
-                            </InlineUIContainer>
-                        </TextBlock>
+                            Text="PDIC Executable Path (for Japanese users)"
+                            Width="180" />
                         <TextBox
                             HorizontalContentAlignment="Left"
                             Text="{Binding FL.Config.Subs.PDICPipeExecutablePath}" />
                     </DockPanel>
+
+                    <TextBlock Margin="5 10 5 0">
+                        (For Japanese-speaking learners of English)
+                        <LineBreak />
+                        It can be linked to the PDIC dictionary tool.
+                        See <Hyperlink NavigateUri="https://github.com/umlx5h/LLPlayer/wiki/PDIC-Integration-(For-Japanese-users)" RequestNavigate="Hyperlink_RequestNavigate">this link</Hyperlink>
+                        for more information.
+                    </TextBlock>
                 </StackPanel>
             </GroupBox>
         </StackPanel>
