@@ -685,7 +685,8 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
 
 public enum KnownErrorType
 {
-    Configuration
+    Configuration,
+    ASR
 }
 
 public class KnownErrorOccurredEventArgs : EventArgs

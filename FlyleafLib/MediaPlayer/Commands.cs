@@ -306,7 +306,12 @@ public class Commands
         if (!player.SubtitlesASR.CanExecute(out string err))
         {
             player.RaiseKnownErrorOccurred(err, KnownErrorType.Configuration);
+            return;
+        }
 
+        if (player.IsLive)
+        {
+            player.RaiseKnownErrorOccurred("Currently ASR is not available for live streams.", KnownErrorType.ASR);
             return;
         }
 
