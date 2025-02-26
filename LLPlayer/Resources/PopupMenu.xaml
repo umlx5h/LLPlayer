@@ -385,6 +385,9 @@ AncestorType={x:Type MenuItem}}}">
             <MenuItem Header="Fonts..." Command="{Binding FL.Action.CmdSetSubtitlesFont}" Icon="{materialDesign:PackIcon Kind=FormatTextVariantOutline}"/>
             <MenuItem Header="{Binding FL.PlayerConfig.Subtitles[0].Delay, Converter={StaticResource TicksToMilliSecondsConv}}" HeaderStringFormat="Delay 1st ({0})">
                 <MenuItem Header="Reset..." CommandParameter="0" Command="{Binding FL.Player.Commands.SubtitlesDelaySetPrimary}"/>
+                <MenuItem Header="From 2nd"
+                          CommandParameter="{Binding FL.Player.Config.Subtitles[1].Delay, Converter={StaticResource TicksToMilliSecondsConv}}"
+                          Command="{Binding FL.Player.Commands.SubtitlesDelaySetPrimary}"/>
                 <Separator />
                 <MenuItem Header="-   10"   CommandParameter="-10"      Command="{Binding FL.Player.Commands.SubtitlesDelaySet2Primary}"/>
                 <MenuItem Header="-  100"   CommandParameter="-100"     Command="{Binding FL.Player.Commands.SubtitlesDelaySet2Primary}"/>
@@ -398,6 +401,9 @@ AncestorType={x:Type MenuItem}}}">
             </MenuItem>
             <MenuItem Header="{Binding FL.PlayerConfig.Subtitles[1].Delay, Converter={StaticResource TicksToMilliSecondsConv}}" HeaderStringFormat="Delay 2nd ({0})">
                 <MenuItem Header="Reset..." CommandParameter="0" Command="{Binding FL.Player.Commands.SubtitlesDelaySetSecondary}"/>
+                <MenuItem Header="From 1st"
+                          CommandParameter="{Binding FL.Player.Config.Subtitles[0].Delay, Converter={StaticResource TicksToMilliSecondsConv}}"
+                          Command="{Binding FL.Player.Commands.SubtitlesDelaySetSecondary}"/>
                 <Separator />
                 <MenuItem Header="-   10"   CommandParameter="-10"      Command="{Binding FL.Player.Commands.SubtitlesDelaySet2Secondary}"/>
                 <MenuItem Header="-  100"   CommandParameter="-100"     Command="{Binding FL.Player.Commands.SubtitlesDelaySet2Secondary}"/>
