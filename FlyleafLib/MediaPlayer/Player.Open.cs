@@ -537,10 +537,10 @@ unsafe partial class Player
                 decoder.GetVideoFrame(syncMs * (long)10000);
                 VideoDemuxer.Start();
                 AudioDemuxer.Start();
-                for (int i = 0; i < subNum; i++)
-                {
-                    SubtitlesDemuxers[i].Start();
-                }
+                //for (int i = 0; i < subNum; i++)
+                //{
+                //    SubtitlesDemuxers[i].Start();
+                //}
                 DataDemuxer.Start();
                 decoder.PauseOnQueueFull();
 
