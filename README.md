@@ -79,14 +79,7 @@ Note that models with `En` endings are only available in English.
 
 `Audio Language` allows you to manually set the language of the video (audio). The default is auto-detection.
 
-5. **Download Tesseract Model for OCR (optional)**
-
-If you want to use OCR for bitmap subtitles, please download Tesseract's Model. (You can also use Microsoft OCR.)
-
-From `Subtitles > OCR` section, you can download Tesseract models.
-Note that there is a model for each language.
-
-6. **Set Translation Target Language (optional)**
+5. **Set Translation Target Language**
 
 To use the translation function, please set your native language. This is called the `target language`.
 The `source language` is detected automatically.
@@ -97,23 +90,11 @@ The default translation engine is `Google Translate`.
 
 You can change it to `DeepL` from the settings below, but you will need to configure API key. (free for a certain amount of use)
 
-7. **Place `yt-dlp.exe` to project (optional)**
-
-If you want to play online videos such as Youtube, please place `yt-dlp.exe` in your project.
-
-There is currently no downloader in the application. You can download it from the following.
-
-https://github.com/yt-dlp/yt-dlp/releases/
-
-Please place it in the following path.
-
-`Plugins/YoutubeDL/yt-dlp.exe`
-
-8. **Play any videos with subtitles!**
+6. **Play any videos with subtitles!**
 
 You can play it from the context menu or by dropping the video.
 
-If `yt-dlp` is installed, you can also play it by pasting the URL with `CTRL+V` (or from context menu).
+For online videos, you can also play it by pasting the URL with `CTRL+V` or from context menu.
 
 There are two `CC` buttons on the bottom seek bar.
 
@@ -122,7 +103,7 @@ Please set your learning language for the primary subtitle and your native langu
 
 Adding external subtitles is done in the same way as for videos, either by dragging or from the context menu.
 
-9. **Open CheatSheet**
+7. **Open CheatSheet**
 
 You can open a built-in CheatSheet by pressing `F1` or from ContextMenu.
 
@@ -304,6 +285,18 @@ Thus, you can check the meaning of words with any browser extension such as [Yom
 
 A little preparation is required, please check following page.  
 https://github.com/umlx5h/LLPlayer/wiki/Browser-Extensions-Integration
+
+#### Q: How do I update yt-dlp.exe?
+
+`yt-dlp.exe` is located in the following path.
+
+`Plugins/YoutubeDL/yt-dlp.exe`
+
+You can download latest version executable from the following.
+
+https://github.com/yt-dlp/yt-dlp/releases/
+
+If you want to update, please download and copy it to the specified path.
 
 ## 📝 LICENSE
 
