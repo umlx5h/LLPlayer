@@ -268,7 +268,7 @@ Right Click: Open Context Menu</ToolTip>
                     </TextBlock>
                 </StackPanel>
 
-                <Button Grid.Column="5" Content="{materialDesign:PackIcon Kind=SkipPrevious}" Command="{Binding FL.Player.Commands.Reopen}" CommandParameter="{Binding FL.Player.Playlist.PrevItem}">
+                <Button Grid.Column="5" Content="{materialDesign:PackIcon Kind=SkipPrevious}" Command="{Binding FL.Player.Commands.Reopen}" CommandParameter="{Binding FL.Player.Playlist.PrevItem}" ToolTip="Previous Playlist Item">
                     <Button.Style>
                         <Style TargetType="Button" BasedOn="{StaticResource IconButton}">
                             <Setter Property="Visibility" Value="Visible"/>
@@ -281,7 +281,7 @@ Right Click: Open Context Menu</ToolTip>
                     </Button.Style>
                 </Button>
 
-                <Button Grid.Column="6" Content="{materialDesign:PackIcon Kind=SkipNext}" Command="{Binding FL.Player.Commands.Reopen}" CommandParameter="{Binding FL.Player.Playlist.NextItem}">
+                <Button Grid.Column="6" Content="{materialDesign:PackIcon Kind=SkipNext}" Command="{Binding FL.Player.Commands.Reopen}" CommandParameter="{Binding FL.Player.Playlist.NextItem}" ToolTip="Next Playlist Item">
                     <Button.Style>
                         <Style TargetType="Button" BasedOn="{StaticResource IconButton}">
                             <Setter Property="Visibility" Value="Visible"/>
