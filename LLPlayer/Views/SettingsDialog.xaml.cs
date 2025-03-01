@@ -14,7 +14,6 @@ public partial class SettingsDialog : UserControl
         DataContext = ((App)Application.Current).Container.Resolve<SettingsDialogVM>();
     }
 
-    // TODO: L: Using Prism's Region to allow MVVM to display any View with parameters?
     private void SettingsTreeView_OnSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
     {
         if (SettingsContent == null)

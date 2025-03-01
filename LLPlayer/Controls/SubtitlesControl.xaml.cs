@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using FlyleafLib.MediaPlayer;
 using LLPlayer.Services;
@@ -35,15 +34,7 @@ public partial class SubtitlesControl : UserControl
 
     private async void SelectableSubtitleText_OnWordClicked(object sender, WordClickedEventArgs e)
     {
-        try
-        {
-            await WordPopupControl.OnWordClicked(e);
-        }
-        catch (Exception ex)
-        {
-            // TODO: L: handle exception
-            Debug.Fail(ex.Message);
-        }
+        await WordPopupControl.OnWordClicked(e);
     }
 
     private void SubtitlePrimaryText_OnWordClickedDown(object? sender, EventArgs e)

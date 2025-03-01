@@ -176,19 +176,12 @@ public class AppActions
         // Open folder or URL
         string? fileName = isFile ? Path.GetDirectoryName(url) : url;
 
-        try
+        Process.Start(new ProcessStartInfo
         {
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = fileName,
-                UseShellExecute = true,
-                Verb = "open"
-            });
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"OpenCurrentPath is failed: {ex.Message}");
-        }
+            FileName = fileName,
+            UseShellExecute = true,
+            Verb = "open"
+        });
     });
 
     public DelegateCommand CmdSubsPositionUp => field ?? new(() =>
@@ -471,61 +464,37 @@ public class AppActions
 
     public DelegateCommand CmdAppNew => field ?? new(() =>
     {
-        try
-        {
-            string exePath = Process.GetCurrentProcess().MainModule!.FileName;
-            Process.Start(exePath);
-        }
-        catch (Exception ex)
-        {
-            // TODO: L: Error handling
-            MessageBox.Show($"Failed to launch new app instance: {ex.Message}");
-        }
+        string exePath = Process.GetCurrentProcess().MainModule!.FileName;
+        Process.Start(exePath);
     });
 
     public DelegateCommand CmdAppExit => field ?? new(() =>
     {
-        try
-        {
-            Application.Current.Shutdown();
-        }
-        catch (Exception ex)
-        {
-            // TODO: L: Error handling
-            MessageBox.Show($"Failed to exit the app: {ex.Message}");
-        }
+        Application.Current.Shutdown();
     });
 
     public DelegateCommand CmdAppRestart => field ?? new(() =>
     {
         var prevPlaylist = _player.Playlist.Selected;
 
-        try
+        // Launch New App with current url if opened
+        string exePath = Process.GetCurrentProcess().MainModule!.FileName;
+
+        ProcessStartInfo startInfo = new()
         {
-            // Launch New App with current url if opened
-            string exePath = Process.GetCurrentProcess().MainModule!.FileName;
+            FileName = exePath,
+            UseShellExecute = false
+        };
 
-            ProcessStartInfo startInfo = new()
-            {
-                FileName = exePath,
-                UseShellExecute = false
-            };
-
-            if (prevPlaylist != null)
-            {
-                startInfo.ArgumentList.Add(prevPlaylist.DirectUrl);
-            }
-
-            Process.Start(startInfo);
-
-            // Exit Current App
-            Application.Current.Shutdown();
-        }
-        catch (Exception ex)
+        if (prevPlaylist != null)
         {
-            // TODO: L: Error handling
-            MessageBox.Show($"Failed to restart the app: {ex.Message}");
+            startInfo.ArgumentList.Add(prevPlaylist.DirectUrl);
         }
+
+        Process.Start(startInfo);
+
+        // Exit Current App
+        Application.Current.Shutdown();
     });
     #endregion
 

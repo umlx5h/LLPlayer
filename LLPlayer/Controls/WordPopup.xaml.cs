@@ -285,67 +285,58 @@ public partial class WordPopup : UserControl, INotifyPropertyChanged
             return;
         }
 
+        if (_cts != null)
+        {
+            // Canceled if running ahead
+            _cts.Cancel();
+            _cts.Dispose();
+        }
+
+        _cts = new CancellationTokenSource();
+
+        string source = e.Words;
+
+        IsLoading = true;
+
+        SourceText.Text = source;
+        TranslationText.Text = "";
+
+        if (IsSidebar && e.Sender is SelectableTextBox)
+        {
+            var listBoxItem = UIHelper.FindParent<ListBoxItem>(e.Sender);
+            if (listBoxItem != null)
+            {
+                PopupPlacementTarget = listBoxItem;
+            }
+        }
+
+        if (FL.Config.Subs.WordLastSearchOnSelected)
+        {
+            if (Keyboard.Modifiers == FL.Config.Subs.WordLastSearchOnSelectedModifier)
+            {
+                if (_lastSearchActionUrl != null)
+                {
+                    OpenWeb(_lastSearchActionUrl, source);
+                }
+            }
+        }
+
+        IsOpen = true;
+
+        await UpdatePosition();
+
         try
         {
-            if (_cts != null)
-            {
-                // Canceled if running ahead
-                _cts.Cancel();
-                _cts.Dispose();
-            }
-
-            _cts = new CancellationTokenSource();
-
-            string source = e.Words;
-
-            IsLoading = true;
-
-            SourceText.Text = source;
-            TranslationText.Text = "";
-
-            if (IsSidebar && e.Sender is SelectableTextBox)
-            {
-                var listBoxItem = UIHelper.FindParent<ListBoxItem>(e.Sender);
-                if (listBoxItem != null)
-                {
-                    PopupPlacementTarget = listBoxItem;
-                }
-            }
-
-            if (FL.Config.Subs.WordLastSearchOnSelected)
-            {
-                if (Keyboard.Modifiers == FL.Config.Subs.WordLastSearchOnSelectedModifier)
-                {
-                    if (_lastSearchActionUrl != null)
-                    {
-                        OpenWeb(_lastSearchActionUrl, source);
-                    }
-                }
-            }
-
-            IsOpen = true;
-
-            await UpdatePosition();
-
-            try
-            {
-                string result = await TranslateWithCache(source, _cts.Token);
-                TranslationText.Text = result;
-                IsLoading = false;
-            }
-            catch (OperationCanceledException)
-            {
-                return;
-            }
-
-            await UpdatePosition();
+            string result = await TranslateWithCache(source, _cts.Token);
+            TranslationText.Text = result;
+            IsLoading = false;
         }
-        catch (Exception ex)
+        catch (OperationCanceledException)
         {
-            //throw;
-            // TODO: L: handle exception
-            Debug.WriteLine(ex.ToString());
+            return;
         }
+
+        await UpdatePosition();
 
         return;
 
@@ -438,19 +429,11 @@ public partial class WordPopup : UserControl, INotifyPropertyChanged
             url = url.Replace("%s", Uri.EscapeDataString(sentence));
         }
 
-        try
+        Process.Start(new ProcessStartInfo
         {
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = url,
-                UseShellExecute = true
-            });
-        }
-        catch (Exception ex)
-        {
-            // TODO: L: error handling
-            MessageBox.Show($"Failed to open browser: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
+            FileName = url,
+            UseShellExecute = true
+        });
     }
 
     #region INotifyPropertyChanged
