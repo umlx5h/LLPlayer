@@ -283,6 +283,7 @@ public class PluginHandler
             if (extStream != null)
             {
                 Log.Info($"SuggestVideo (External) {extStream.Width} x {extStream.Height} @ {extStream.FPS}");
+                Log.Debug($"SuggestVideo (External) Url: {extStream.Url}, UrlFallback: {extStream.UrlFallback}");
                 return extStream;
             }
         }
@@ -301,6 +302,7 @@ public class PluginHandler
             if (extStream != null)
             {
                 Log.Info($"SuggestAudio (External) {extStream.SampleRate} Hz, {extStream.Codec}");
+                Log.Debug($"SuggestAudio (External) Url: {extStream.Url}, UrlFallback: {extStream.UrlFallback}");
                 return extStream;
             }
         }
