@@ -24,4 +24,17 @@ public static class StringExtensions
             yield return line;
         }
     }
+
+    /// <summary>
+    /// Convert only the first character to lower case
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    public static string ToLowerFirstChar(this string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return input;
+
+        return char.ToLower(input[0]) + input.Substring(1);
+    }
 }

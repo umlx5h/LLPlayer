@@ -27,11 +27,6 @@ public class SettingsAboutVM : Bindable
 {
     public SettingsAboutVM()
     {
-        AppName = App.Name;
-
-        Version = App.Version;
-        CommitHash = App.CommitHash;
-
         Libraries =
         [
             new LibraryInfo
@@ -106,15 +101,15 @@ public class SettingsAboutVM : Bindable
         ];
 
     }
-    public string AppName { get; }
-    public string Version { get; }
-    public string CommitHash { get; }
     public ObservableCollection<LibraryInfo> Libraries { get; }
 
     [field: AllowNull, MaybeNull]
     public DelegateCommand CmdCopyVersion => field ??= new(() =>
     {
-        Clipboard.SetText($"Version: {App.Version}, CommitHash: {App.CommitHash}");
+        Clipboard.SetText($"""
+                           Version: {App.Version}, CommitHash: {App.CommitHash}
+                           OS Architecture: {App.OSArchitecture}, Process Architecture: {App.ProcessArchitecture}
+                           """);
     });
 }
 

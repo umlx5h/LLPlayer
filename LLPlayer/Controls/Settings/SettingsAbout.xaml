@@ -7,6 +7,7 @@
              xmlns:vm="clr-namespace:LLPlayer.ViewModels"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:helpers="clr-namespace:LLPlayer.Extensions"
+             xmlns:app="clr-namespace:LLPlayer"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:SettingsAboutVM}"
@@ -22,10 +23,16 @@
                 Margin="0 0 0 16" />
 
             <StackPanel>
-                <TextBlock Text="{Binding AppName}" FontSize="20" FontWeight="Bold" Margin="0 0 0 10"/>
+                <TextBlock Text="{x:Static app:App.Name}" FontSize="20" FontWeight="Bold" Margin="0 0 0 10"/>
 
-                <StackPanel Orientation="Horizontal" Margin="0 0 0 20">
+                <Grid Margin="0 0 0 20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
                     <Button
+                        Grid.Column="0"
                         HorizontalAlignment="Left"
                         ToolTip="Copy version to clipboard"
                         Command="{Binding CmdCopyVersion}"
@@ -35,12 +42,22 @@
                             Height="16"
                             Kind="ContentCopy" />
                     </Button>
-                    <TextBlock Text="Version: " FontWeight="Bold"/>
-                    <TextBox IsReadOnly="True" Text="{Binding Version, Mode=OneWay}"/>
-                    <TextBlock Text="    Commit: " FontWeight="Bold" Margin="20 0 0 0"/>
-                    <TextBox IsReadOnly="True" Text="{Binding CommitHash, Mode=OneWay}"/>
-                </StackPanel>
 
+                    <StackPanel Grid.Column="1">
+                        <StackPanel Orientation="Horizontal" >
+                            <TextBlock Text="Version: " FontWeight="Bold"/>
+                            <TextBox IsReadOnly="True" Text="{x:Static app:App.Version}"/>
+                            <TextBlock Text="Commit: " FontWeight="Bold" Margin="20 0 0 0"/>
+                            <TextBox IsReadOnly="True" Text="{x:Static app:App.CommitHash}"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" >
+                            <TextBlock Text="OS Architecture: " FontWeight="Bold"/>
+                            <TextBox IsReadOnly="True" Text="{x:Static app:App.OSArchitecture}"/>
+                            <TextBlock Text="Process Architecture: " FontWeight="Bold" Margin="20 0 0 0"/>
+                            <TextBox IsReadOnly="True" Text="{x:Static app:App.ProcessArchitecture}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
                 <TextBlock Text="Using libraries" FontSize="18" FontWeight="SemiBold" Margin="0 0 0 10"/>
                 <TextBlock Text="LLPlayer cannot exist without the following libraries!" Margin="0 0 0 10">
 

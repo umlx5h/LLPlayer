@@ -62,17 +62,28 @@ public class ErrorDialogVM : Bindable, IDialogAware
     [field: AllowNull, MaybeNull]
     public DelegateCommand CmdCopyMessage => field ??= new(() =>
     {
-        string text = ErrorTitle + ":" + Environment.NewLine + Message;
+        string text = $"""
+                       [{ErrorTitle}]
+                       {Message}
+                       """;
 
         if (Exception != null)
         {
-            text += Environment.NewLine + Environment.NewLine + Exception.ToString();
+            text += $"""
+
+
+                    ```
+                    {Exception}
+                    ```
+                    """;
         }
 
-        text += Environment.NewLine + Environment.NewLine;
+        text += $"""
 
-        text += $"Version: {App.Version}, CommitHash: {App.CommitHash}";
 
+                 Version: {App.Version}, CommitHash: {App.CommitHash}
+                 OS Architecture: {App.OSArchitecture}, Process Architecture: {App.ProcessArchitecture}
+                 """;
         Clipboard.SetText(text);
     });
 

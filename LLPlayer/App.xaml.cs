@@ -93,6 +93,9 @@ public partial class App : PrismApplication
     }
 
     #region App Version
+    public static string OSArchitecture => RuntimeInformation.OSArchitecture.ToString().ToLowerFirstChar();
+    public static string ProcessArchitecture => RuntimeInformation.ProcessArchitecture.ToString().ToLowerFirstChar();
+
     private static string? _version;
     public static string Version
     {
