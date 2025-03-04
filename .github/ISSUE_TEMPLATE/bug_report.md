@@ -27,6 +27,7 @@ If applicable, add screenshots to help explain your problem.
 
  - OS: [e.g. Windows 10, 11]
  - OS Architecture: [e.g. x64, x32, ARM64]
+ - GPU: [e.g. NVIDIA RTX 4060]
  - LLPlayer version: [e.g. v0.0.1]
  - LLPlayer commit version: [e.g. 86f063df2c56a198b204664951a6147ee739f1b7]
 
