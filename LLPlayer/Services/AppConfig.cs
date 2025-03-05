@@ -114,6 +114,12 @@ public class AppConfig : Bindable
         }
     }
 
+    #region Mouse
+    public bool MouseSingleClickToPlay { get; set => Set(ref field, value); } = true;
+    public bool MouseDoubleClickToFullScreen { get; set => Set(ref field, value); }
+    public bool MouseWheelToVolumeUpDown { get; set => Set(ref field, value); }
+    #endregion
+
     // TODO: L: should be move to AppConfigSubs?
     public bool SidebarLeft { get; set => Set(ref field, value); }
 

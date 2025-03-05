@@ -112,6 +112,15 @@
                             FontWeight="Normal" />
                     </TreeViewItem>
 
+                    <TreeViewItem Tag="SettingsMouse">
+                        <TreeViewItem.Header>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="Mouse" Width="24" Height="24" Margin="0 0 8 0" />
+                                <TextBlock Text="Mouse" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </TreeViewItem.Header>
+                    </TreeViewItem>
+
                     <TreeViewItem Tag="SettingsThemes">
                         <TreeViewItem.Header>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">

@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.Diagnostics;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using FlyleafLib;
@@ -71,7 +72,7 @@ public class FlyleafOverlayVM : Bindable
     }
 
     #region Flyleaf Keybindings
-    // TODO: L: Mouse operation should also be customizable via Config.
+    // TODO: L: Make it fully customizable like PotPlayer
     private void SetupFlyleafKeybindings()
     {
         // Subscribe to the same event to the following two
@@ -79,12 +80,15 @@ public class FlyleafOverlayVM : Bindable
         // Overlay: Content of FlyleafHost = FlyleafOverlay
         foreach (var window in (Window[])[FL.FlyleafHost!.Surface, FL.FlyleafHost!.Overlay])
         {
-            window.MouseUp += FlyleafOnMouseUp;
             window.MouseWheel += FlyleafOnMouseWheel;
         }
+        FL.FlyleafHost.Surface.MouseUp += SurfaceOnMouseUp;
+        FL.FlyleafHost.Surface.MouseDoubleClick += SurfaceOnMouseDoubleClick;
+        FL.FlyleafHost.Surface.MouseLeftButtonDown += SurfaceOnMouseLeftButtonDown;
+        FL.FlyleafHost.Surface.MouseLeftButtonUp += SurfaceOnMouseLeftButtonUp;
     }
 
-    private void FlyleafOnMouseUp(object sender, MouseButtonEventArgs e)
+    private void SurfaceOnMouseUp(object sender, MouseButtonEventArgs e)
     {
         // Middle click: seek to current subtitle
         if (e.ChangedButton == MouseButton.Middle)
@@ -104,6 +108,57 @@ public class FlyleafOverlayVM : Bindable
             }
             e.Handled = true;
         }
+    }
+
+    private void SurfaceOnMouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (FL.Config.MouseDoubleClickToFullScreen && e.ChangedButton == MouseButton.Left)
+        {
+            FL.Player.ToggleFullScreen();
+
+            // Double and single clicks are not currently distinguished, so need to be re-fired
+            // Timers need to be added to distinguish between the two,
+            // but this is controversial because it delays a single click action
+            SingleClickAction();
+
+            e.Handled = true;
+        }
+    }
+
+    private Point _mouseLeftDownPoint;
+    private long _mouseLeftDownTick;
+    private bool _isDragMovingOwner;
+
+    private void SurfaceOnMouseLeftButtonDown(object o, MouseButtonEventArgs e)
+    {
+        _isDragMovingOwner = FL.FlyleafHost!.IsDragMovingOwner;
+        if (_isDragMovingOwner)
+        {
+            _mouseLeftDownPoint = FL.FlyleafHost.Surface.PointToScreen(default);
+            _mouseLeftDownTick = Stopwatch.GetTimestamp();
+        }
+    }
+
+    private void SurfaceOnMouseLeftButtonUp(object o, MouseButtonEventArgs e)
+    {
+        if (!_isDragMovingOwner)
+            return;
+
+        Point curPoint = FL.FlyleafHost!.Surface.PointToScreen(default);
+
+        if (curPoint == _mouseLeftDownPoint // if not moved at all
+            || // clicked within 200ms
+            Stopwatch.GetElapsedTime(_mouseLeftDownTick) <= TimeSpan.FromMilliseconds(200))
+        {
+            SingleClickAction();
+        }
+    }
+
+    private void SingleClickAction()
+    {
+        // Toggle play/pause on left click
+        if (FL.Config.MouseSingleClickToPlay && FL.Player.CanPlay)
+            FL.Player.TogglePlayPause();
     }
 
     private void FlyleafOnMouseWheel(object sender, MouseWheelEventArgs e)
@@ -154,6 +209,20 @@ public class FlyleafOverlayVM : Bindable
             else
             {
                 FL.Action.CmdSubsPositionDown.Execute();
+            }
+        }
+        else
+        {
+            if (FL.Config.MouseWheelToVolumeUpDown)
+            {
+                if (e.Delta > 0)
+                {
+                    FL.Player.Audio.VolumeUp();
+                }
+                else
+                {
+                    FL.Player.Audio.VolumeDown();
+                }
             }
         }
 

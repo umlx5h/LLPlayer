@@ -36,7 +36,7 @@ public partial class WordPopup : UserControl, INotifyPropertyChanged
 
         FL = ((App)Application.Current).Container.Resolve<FlyleafManager>();
 
-        FL.FlyleafHost!.SurfaceClicked += FlyleafHost_OnSurfaceClicked;
+        FL.Player.PropertyChanged += Player_OnPropertyChanged;
 
         _translateServiceFactory = new TranslateServiceFactory(FL.PlayerConfig.Subtitles);
 
@@ -176,9 +176,12 @@ public partial class WordPopup : UserControl, INotifyPropertyChanged
     }
 
     // Click on video screen to close pop-up
-    private void FlyleafHost_OnSurfaceClicked(object? sender, EventArgs e)
+    private void Player_OnPropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
-        IsOpen = false;
+        if (args.PropertyName == nameof(FL.Player.Status) && FL.Player.Status == Status.Playing)
+        {
+            IsOpen = false;
+        }
     }
 
     private async ValueTask<string> TranslateWithCache(string text, CancellationToken token)

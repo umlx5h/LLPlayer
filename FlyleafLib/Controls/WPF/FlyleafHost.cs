@@ -7,7 +7,7 @@ using System.Windows.Input;
 using System.Windows.Interop;
 
 using FlyleafLib.MediaPlayer;
-using System.Diagnostics;
+
 using static FlyleafLib.Utils;
 using static FlyleafLib.Utils.NativeMethods;
 
@@ -102,7 +102,6 @@ public class FlyleafHost : ContentControl, IHostPlayer, IDisposable
 
     public event EventHandler SurfaceCreated;
     public event EventHandler OverlayCreated;
-    public event EventHandler SurfaceClicked;
     public event DragEventHandler OnSurfaceDrop;
     public event DragEventHandler OnOverlayDrop;
 
@@ -121,11 +120,9 @@ public class FlyleafHost : ContentControl, IHostPlayer, IDisposable
 
     CornerRadius zeroCornerRadius = new(0);
     Point zeroPoint = new(0, 0);
-    Point mouseLeftDownAbsPoint = new(0, 0);
     Point mouseLeftDownPoint = new(0, 0);
     Point mouseMoveLastPoint = new(0, 0);
     Point ownerZeroPointPos = new();
-    long mouseLeftDownTick;
 
     Rect zeroRect = new(0, 0, 0, 0);
     Rect rectDetachedLast = Rect.Empty;
@@ -1255,8 +1252,6 @@ public class FlyleafHost : ContentControl, IHostPlayer, IDisposable
         Player?.Activity.RefreshFullActive();
 
         mouseLeftDownPoint = e.GetPosition(window);
-        mouseLeftDownAbsPoint = window.PointToScreen(zeroPoint);
-        mouseLeftDownTick = Stopwatch.GetTimestamp();
         IsSwappingStarted = false; // currently we don't care if it was cancelled (it can be stay true if we miss the mouse up) - QueryContinueDrag
 
         // Resize
@@ -1310,11 +1305,11 @@ public class FlyleafHost : ContentControl, IHostPlayer, IDisposable
         window.CaptureMouse();
     }
 
-    private void Surface_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) => Surface_ReleaseCapture(e);
+    private void Surface_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) => Surface_ReleaseCapture();
     private void Overlay_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) => Overlay_ReleaseCapture();
-    private void Surface_LostMouseCapture(object sender, MouseEventArgs e) => Surface_ReleaseCapture(e);
+    private void Surface_LostMouseCapture(object sender, MouseEventArgs e) => Surface_ReleaseCapture();
     private void Overlay_LostMouseCapture(object sender, MouseEventArgs e) => Overlay_ReleaseCapture();
-    private void Surface_ReleaseCapture(MouseEventArgs e)
+    private void Surface_ReleaseCapture()
     {
         if (!IsResizing && !IsPanMoving && !IsDragMoving && !IsDragMovingOwner)
             return;
@@ -1342,20 +1337,7 @@ public class FlyleafHost : ContentControl, IHostPlayer, IDisposable
         else if (IsDragMoving)
             IsDragMoving = false;
         else if (IsDragMovingOwner)
-        {
             IsDragMovingOwner = false;
-
-            Point curPoint = Surface.PointToScreen(zeroPoint);
-
-            if (curPoint == mouseLeftDownAbsPoint // if not moved at all
-                || // clicked withing 200ms
-                Stopwatch.GetElapsedTime(mouseLeftDownTick) <= TimeSpan.FromMilliseconds(200))
-            {
-                SurfaceClicked?.Invoke(this, EventArgs.Empty);
-                // Toggle play/pause on left click
-                Player?.TogglePlayPause();
-            }
-        }
         else
             return;
     }

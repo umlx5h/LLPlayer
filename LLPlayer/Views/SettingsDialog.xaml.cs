@@ -70,6 +70,10 @@ public partial class SettingsDialog : UserControl
                     SettingsContent.Content = new SettingsKeysOffset();
                     break;
 
+                case nameof(SettingsMouse):
+                    SettingsContent.Content = new SettingsMouse();
+                    break;
+
                 case nameof(SettingsThemes):
                     SettingsContent.Content = new SettingsThemes();
                     break;

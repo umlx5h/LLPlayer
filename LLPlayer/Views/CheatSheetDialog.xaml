@@ -161,12 +161,22 @@
                             Header="On Video"
                             Margin="20 10">
                             <StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0 0 0 10">
+                                <StackPanel Orientation="Horizontal" Margin="0 0 0 10"
+                                            Visibility="{Binding FL.Config.MouseSingleClickToPlay, Converter={StaticResource BooleanToVisibilityConv}}">
                                     <TextBlock
                                         Text="Left Click"
                                         Width="200" />
                                     <TextBlock
                                         Text="Toggle Play/Pause" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Margin="0 0 0 10"
+                                            Visibility="{Binding FL.Config.MouseDoubleClickToFullScreen, Converter={StaticResource BooleanToVisibilityConv}}">
+                                    <TextBlock
+                                        Text="Left DoubleClick"
+                                        Width="200" />
+                                    <TextBlock
+                                        Text="Toggle FullScreen" />
                                 </StackPanel>
 
                                 <StackPanel Orientation="Horizontal" Margin="0 0 0 10">
@@ -179,10 +189,19 @@
 
                                 <StackPanel Orientation="Horizontal" Margin="0 0 0 10">
                                     <TextBlock
-                                        Text="Middle Click"
+                                        Text="Wheel Click"
                                         Width="200" />
                                     <TextBlock
                                         Text="Seek to current subtitle if available" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Margin="0 0 0 10"
+                                            Visibility="{Binding FL.Config.MouseWheelToVolumeUpDown, Converter={StaticResource BooleanToVisibilityConv}}">
+                                    <TextBlock
+                                        Text="Wheel"
+                                        Width="200" />
+                                    <TextBlock
+                                        Text="Volume Up / Down" />
                                 </StackPanel>
 
                                 <StackPanel Orientation="Horizontal" Margin="0 0 0 10">
@@ -250,7 +269,7 @@
 
                                 <StackPanel Orientation="Horizontal" Margin="0 0 0 10">
                                     <TextBlock
-                                        Text="Middle Click"
+                                        Text="Wheel Click"
                                         Width="200" />
                                     <TextBlock
                                         Text="Sentence Lookup" />
