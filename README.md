@@ -24,7 +24,7 @@ https://github.com/user-attachments/assets/05a7b451-ee3b-489f-aac9-f1670ed76e71
 LLPlayer has many features for language learning that are not available in normal video players.
 
 - **Dual Subtitles:** Two subtitles can be displayed simultaneously. Both text subtitles and bitmap subtitles are supported.
-- **AI-generated subtitles (ASR):** Real-time automatic subtitle generation from any video and audio, powered by [OpenAI Whisper](https://github.com/openai/whisper). **99** languages are suported!
+- **AI-generated subtitles (ASR):** Real-time automatic subtitle generation from any video and audio, powered by [OpenAI Whisper](https://github.com/openai/whisper). **99** languages are supported!
 - **Real-time Translation:** Supports Google and DeepL API, **134** languages are currently supported!
 - **Real-time OCR subtitles:** Can convert bitmap subtitles to text subtitles in real time, powered by [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) and Microsoft OCR.
 - **Subtitles Sidebar:** Both text and bitmap are supported. Seek and word lookup available. Has anti-spoiler functionality.
