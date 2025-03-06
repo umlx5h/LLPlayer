@@ -187,6 +187,7 @@
             FontFamily="{Binding FL.Config.SidebarFontFamily}"
             BorderThickness="0"
             Foreground="{DynamicResource MaterialDesignBody}"
+            VirtualizingStackPanel.ScrollUnit="Pixel"
             VirtualizingStackPanel.VirtualizationMode="Recycling"
             VerticalContentAlignment="Top"
             ItemsSource="{Binding SubManager.Subs}"
