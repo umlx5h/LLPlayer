@@ -35,4 +35,15 @@ public partial class ErrorDialog : UserControl
             window.DragMove();
         }
     }
+
+    // Make TextBox uncopyable
+    private void TextBox_PreviewMouseDown(object sender, ExecutedRoutedEventArgs e)
+    {
+        if (e.Command == ApplicationCommands.Copy ||
+            e.Command == ApplicationCommands.Cut ||
+            e.Command == ApplicationCommands.Paste)
+        {
+            e.Handled = true;
+        }
+    }
 }

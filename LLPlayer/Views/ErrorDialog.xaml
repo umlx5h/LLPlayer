@@ -20,6 +20,7 @@
             <!--Error dialogs are sometimes displayed behind the MainWindow even though the Owner is set for the Dialog's Window.
             In this case, any operation becomes impossible, so be sure to display it in front of any apps.-->
             <Setter Property="Topmost" Value="True" />
+            <Setter Property="Cursor" Value="Hand" />
             <EventSetter Event="MouseDown" Handler="Window_MouseDown" />
         </Style>
     </prism:Dialog.WindowStyle>
@@ -77,13 +78,18 @@
                 FontSize="16"
                 IsReadOnly="True"
                 TextWrapping="Wrap"
+                ContextMenu="{x:Null}"
+                CommandManager.PreviewExecuted="TextBox_PreviewMouseDown"
                 Padding="10"
                 TextAlignment="Left"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Center"
                 Foreground="{DynamicResource MaterialDesignBody}">
             </TextBox>
 
             <Expander
                 Grid.Row="2"
+                Margin="0 12 0 0"
                 FontSize="8"
                 Header="Exception Details"
                 IsExpanded="False"
@@ -91,13 +97,15 @@
                 <TextBox
                     Text="{Binding ExceptionDetail, Mode=OneWay}"
                     IsReadOnly="True"
+                    ContextMenu="{x:Null}"
+                    CommandManager.PreviewExecuted="TextBox_PreviewMouseDown"
                     FontSize="12"
                     TextAlignment="Left"
                     TextWrapping="Wrap"
                     MaxHeight="140" />
             </Expander>
 
-            <Grid Grid.Row="3">
+            <Grid Grid.Row="3" Margin="0 12 0 0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
@@ -106,15 +114,9 @@
 
                 <Button
                     Grid.Column="0"
-                    HorizontalAlignment="Left"
-                    ToolTip="Copy to clipboard"
+                    Content="Copy to Clipboard"
                     Command="{Binding CmdCopyMessage}"
-                    Style="{StaticResource MaterialDesignIconButton}" >
-                    <materialDesign:PackIcon
-                        Width="16"
-                        Height="16"
-                        Kind="ContentCopy" />
-                </Button>
+                    Style="{StaticResource MaterialDesignRaisedButton}" />
 
                 <Button
                     Grid.Column="2"
