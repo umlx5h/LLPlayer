@@ -252,6 +252,7 @@ partial class Player
         SubtitlesManager.SetCurrentTime(new TimeSpan(curTime));
 
         Raise(nameof(CurTime));
+        Raise(nameof(RemainingDuration));
 
         if (Status == Status.Playing)
             return;
