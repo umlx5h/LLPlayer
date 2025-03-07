@@ -145,7 +145,9 @@ public class FlyleafOverlayVM : Bindable
         if (!FL.FlyleafHost.IsFullScreen && FL.FlyleafHost.Owner.WindowState == WindowState.Normal)
         {
             // normal window: window dragging
+            FL.Player.Activity.IsEnabled = false;
             FL.FlyleafHost.Owner.DragMove();
+            FL.Player.Activity.IsEnabled = true;
 
             MouseLeftButtonUpAction(downPoint, downTick);
         }
