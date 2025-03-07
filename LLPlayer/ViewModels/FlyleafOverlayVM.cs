@@ -371,28 +371,25 @@ public class FlyleafOverlayVM : Bindable
         get => _osdMessage;
         set
         {
-            Utils.UIInvokeIfRequired(() =>
+            if (Set(ref _osdMessage, value))
             {
-                if (Set(ref _osdMessage, value))
+                if (_cancelMsgToken != null)
                 {
-                    if (_cancelMsgToken != null)
-                    {
-                        _cancelMsgToken.Cancel();
-                        _cancelMsgToken.Dispose();
-                        _cancelMsgToken = null;
-                    }
-
-                    if (Set(ref _osdIcon, null, nameof(OSDIcon)))
-                    {
-                        OnPropertyChanged(nameof(IsOSDIcon));
-                    }
-
-                    _cancelMsgToken = new();
-
-                    var token = _cancelMsgToken.Token;
-                    _ = Task.Run(() => ClearOSD(3000, token));
+                    _cancelMsgToken.Cancel();
+                    _cancelMsgToken.Dispose();
+                    _cancelMsgToken = null;
                 }
-            });
+
+                if (Set(ref _osdIcon, null, nameof(OSDIcon)))
+                {
+                    OnPropertyChanged(nameof(IsOSDIcon));
+                }
+
+                _cancelMsgToken = new();
+
+                var token = _cancelMsgToken.Token;
+                _ = Task.Run(() => ClearOSD(3000, token));
+            }
         }
     }
     private string _osdMessage;
@@ -402,27 +399,24 @@ public class FlyleafOverlayVM : Bindable
         get => _osdIcon;
         set
         {
-            Utils.UIInvokeIfRequired(() =>
+            if (Set(ref _osdIcon, value))
             {
-                if (Set(ref _osdIcon, value))
+                OnPropertyChanged(nameof(IsOSDIcon));
+
+                if (_cancelMsgToken != null)
                 {
-                    OnPropertyChanged(nameof(IsOSDIcon));
-
-                    if (_cancelMsgToken != null)
-                    {
-                        _cancelMsgToken.Cancel();
-                        _cancelMsgToken.Dispose();
-                        _cancelMsgToken = null;
-                    }
-
-                    Set(ref _osdMessage, "", nameof(OSDMessage));
-
-                    _cancelMsgToken = new();
-
-                    var token = _cancelMsgToken.Token;
-                    _ = Task.Run(() => ClearOSD(500, token));
+                    _cancelMsgToken.Cancel();
+                    _cancelMsgToken.Dispose();
+                    _cancelMsgToken = null;
                 }
-            });
+
+                Set(ref _osdMessage, "", nameof(OSDMessage));
+
+                _cancelMsgToken = new();
+
+                var token = _cancelMsgToken.Token;
+                _ = Task.Run(() => ClearOSD(500, token));
+            }
         }
     }
     private PackIconKind? _osdIcon;
@@ -436,7 +430,7 @@ public class FlyleafOverlayVM : Bindable
         if (token.IsCancellationRequested)
             return;
 
-        Utils.UIInvoke(() =>
+        Utils.UI(() =>
         {
             Set(ref _osdMessage, "", nameof(OSDMessage));
             if (Set(ref _osdIcon, null, nameof(OSDIcon)))

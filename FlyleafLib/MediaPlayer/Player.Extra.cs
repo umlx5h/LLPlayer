@@ -416,7 +416,10 @@ unsafe partial class Player
         {
             snapshotBitmap.Save(filename, imageFormat);
 
-            OSDMessage = $"Save snapshot to {Path.GetFileName(filename)}";
+            UI(() =>
+            {
+                OSDMessage = $"Save snapshot to {Path.GetFileName(filename)}";
+            });
         }
         catch (Exception e2)
         {
