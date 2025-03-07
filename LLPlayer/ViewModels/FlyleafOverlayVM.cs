@@ -86,6 +86,7 @@ public class FlyleafOverlayVM : Bindable
         FL.FlyleafHost.Surface.MouseDoubleClick += SurfaceOnMouseDoubleClick;
         FL.FlyleafHost.Surface.MouseLeftButtonDown += SurfaceOnMouseLeftButtonDown;
         FL.FlyleafHost.Surface.MouseLeftButtonUp += SurfaceOnMouseLeftButtonUp;
+        FL.FlyleafHost.Surface.LostMouseCapture += SurfaceOnLostMouseCapture;
     }
 
     private void SurfaceOnMouseUp(object sender, MouseButtonEventArgs e)
@@ -125,30 +126,60 @@ public class FlyleafOverlayVM : Bindable
         }
     }
 
-    private Point _mouseLeftDownPoint;
-    private long _mouseLeftDownTick;
-    private bool _isDragMovingOwner;
+    private bool _isLeftDragging;
+    private Point _downPoint;
+    private long _downTick;
 
-    private void SurfaceOnMouseLeftButtonDown(object o, MouseButtonEventArgs e)
+    private void SurfaceOnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        _isDragMovingOwner = FL.FlyleafHost!.IsDragMovingOwner;
-        if (_isDragMovingOwner)
+        // Support window dragging & play / pause toggle
+        if (Keyboard.Modifiers != ModifierKeys.None)
+            return;
+
+        if (FL.FlyleafHost is not { IsResizing: false, IsPanMoving: false, IsDragMoving: false })
+            return;
+
+        Point downPoint = FL.FlyleafHost!.Surface.PointToScreen(default);
+        long downTick = Stopwatch.GetTimestamp();
+
+        if (!FL.FlyleafHost.IsFullScreen && FL.FlyleafHost.Owner.WindowState == WindowState.Normal)
         {
-            _mouseLeftDownPoint = FL.FlyleafHost.Surface.PointToScreen(default);
-            _mouseLeftDownTick = Stopwatch.GetTimestamp();
+            // normal window: window dragging
+            FL.FlyleafHost.Owner.DragMove();
+
+            MouseLeftButtonUpAction(downPoint, downTick);
+        }
+        else
+        {
+            // fullscreen or maximized window: do action in KeyUp event
+            _isLeftDragging = true;
+            _downPoint = downPoint;
+            _downTick = downTick;
         }
     }
 
-    private void SurfaceOnMouseLeftButtonUp(object o, MouseButtonEventArgs e)
+    private void SurfaceOnMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
-        if (!_isDragMovingOwner)
+        if (!_isLeftDragging)
             return;
 
-        Point curPoint = FL.FlyleafHost!.Surface.PointToScreen(default);
+        _isLeftDragging = false;
 
-        if (curPoint == _mouseLeftDownPoint // if not moved at all
-            || // clicked within 200ms
-            Stopwatch.GetElapsedTime(_mouseLeftDownTick) <= TimeSpan.FromMilliseconds(200))
+        MouseLeftButtonUpAction(_downPoint, _downTick);
+    }
+
+    private void SurfaceOnLostMouseCapture(object sender, MouseEventArgs e)
+    {
+        _isLeftDragging = false;
+    }
+
+    private void MouseLeftButtonUpAction(Point downPoint, long downTick)
+    {
+        Point upPoint = FL.FlyleafHost!.Surface.PointToScreen(default);
+
+        if (downPoint == upPoint // if not moved at all
+            ||
+            Stopwatch.GetElapsedTime(downTick) <= TimeSpan.FromMilliseconds(200)) // clicked within 200ms
         {
             SingleClickAction();
         }

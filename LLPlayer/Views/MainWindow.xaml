@@ -90,6 +90,7 @@
             KeyBindings="Both"
             PanRotateOnShiftWheel="None"
             PanZoomOnCtrlWheel="None"
+            AttachedDragMove="None"
             ToggleFullScreenOnDoubleClick="None">
             <view:FlyleafOverlay />
         </flyleaf:FlyleafHost>
