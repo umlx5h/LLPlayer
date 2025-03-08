@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using Whisper.net;
 using Whisper.net.LibraryLoader;
+using Whisper.net.Logger;
 using static FlyleafLib.Logger;
 
 namespace FlyleafLib.MediaPlayer;
@@ -298,6 +299,10 @@ public class WhisperExecuter
         //    waveStream.Position = 0;
         //}
 
+        using var logger = LogProvider.AddLogger((level, s) =>
+        {
+            if (CanDebug) Log.Debug($"[Whisper.net] [{level.ToString()}] {s}");
+        });
 
         if (_config.Subtitles.WhisperRuntimeLibraries.Count >= 1)
         {
@@ -307,6 +312,8 @@ public class WhisperExecuter
         {
             RuntimeOptions.RuntimeLibraryOrder = [RuntimeLibrary.Cpu, RuntimeLibrary.CpuNoAvx]; // fallback to default
         }
+
+        if (CanDebug) Log.Debug($"Use whisper runtime libraries ({string.Join(",", RuntimeOptions.RuntimeLibraryOrder)})");
 
         using WhisperFactory whisperFactory = WhisperFactory.FromPath(_config.Subtitles.WhisperModel.ModelFilePath);
 
@@ -427,6 +434,7 @@ public unsafe class AudioReader : IDisposable
         int targetSampleRate = 16000;
         int targetChannel = 1;
         MemoryStream waveStream = new();
+        TimeSpan waveDuration = TimeSpan.Zero; // for logging
 
         // Stream processing is performed by dividing the audio by a certain size and passing it to whisper.
         // TODO: L: Review this process as subtitles may be cut off in the middle.
@@ -530,6 +538,7 @@ public unsafe class AudioReader : IDisposable
                 ret.ThrowExceptionIfError("avcodec_receive_frame");
 
                 framePts = _frame->pts;
+                waveDuration = waveDuration.Add(new TimeSpan((long)(_frame->duration * timebase)));
 
                 if (chunkStart == null)
                 {
@@ -546,10 +555,12 @@ public unsafe class AudioReader : IDisposable
                 // TODO: L: want it to split at the silent part
                 if (waveStream.Length >= chunkSize || chunkSw.Elapsed >= chunkElapsed)
                 {
+                    Log.Info($"Process chunk:{chunkCnt + 1} (sizeMB: {waveStream.Length / 1024 / 1024}, duration: {waveDuration}, elapsed: {chunkSw.Elapsed})");
                     ProcessChunk(waveStream, framePts);
 
                     waveStream = new MemoryStream();
                     WriteWavHeader(waveStream, targetSampleRate, targetChannel);
+                    waveDuration = TimeSpan.Zero;
 
                     chunkStart = null;
                     chunkSw.Restart();
@@ -562,6 +573,7 @@ public unsafe class AudioReader : IDisposable
             // Process remaining
             if (waveStream.Length > 0 && framePts != long.MinValue)
             {
+                Log.Info($"Process remaining:{chunkCnt + 1} (sizeMB: {waveStream.Length / 1024 / 1024}, duration: {waveDuration}, elapsed: {chunkSw.Elapsed})");
                 ProcessChunk(waveStream, framePts);
             }
         }
