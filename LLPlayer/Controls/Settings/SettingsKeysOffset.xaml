@@ -28,7 +28,7 @@
                         <TextBox
                             Width="100"
                             Text="{Binding FL.PlayerConfig.Player.SpeedOffset}"
-                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                            helpers:TextBoxHelper.OnlyNumeric="Double" />
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal">
@@ -38,7 +38,7 @@
                         <TextBox
                             Width="100"
                             Text="{Binding FL.PlayerConfig.Player.SpeedOffset2}"
-                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                            helpers:TextBoxHelper.OnlyNumeric="Double" />
                     </StackPanel>
                 </StackPanel>
             </GroupBox>
