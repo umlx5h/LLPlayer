@@ -4,8 +4,10 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using FlyleafLib;
 using FlyleafLib.MediaFramework.MediaDemuxer;
+using FlyleafLib.MediaPlayer;
 using LLPlayer.Services;
 using Microsoft.Xaml.Behaviors;
 
@@ -27,16 +29,96 @@ public partial class FlyleafBar : UserControl
         MouseEnter += OnMouseEnter;
         LostFocus += OnMouseLeave;
         MouseLeave += OnMouseLeave;
+
+        FL.Player.Activity.PropertyChanged += (sender, args) =>
+        {
+            switch (args.PropertyName)
+            {
+                case nameof(FL.Player.Activity.IsEnabled):
+                    if (FL.Config.SeekBarShowOnlyMouseOver)
+                    {
+                        IsShowing = !FL.Player.Activity.IsEnabled;
+                    }
+                    break;
+
+                case nameof(FL.Player.Activity.Mode):
+                    if (!FL.Config.SeekBarShowOnlyMouseOver)
+                    {
+                        IsShowing = FL.Player.Activity.Mode == ActivityMode.FullActive;
+                    }
+                    break;
+            }
+        };
+
+        if (FL.Config.SeekBarShowOnlyMouseOver)
+        {
+            // start in hide
+            MyCard.Opacity = 0.01;
+        }
+        else
+        {
+            // start in show
+            IsShowing = true;
+        }
+    }
+
+    public bool IsShowing
+    {
+        get;
+        set
+        {
+            if (field == value)
+                return;
+
+            field = value;
+            if (value)
+            {
+                // Fade In
+                MyCard.BeginAnimation(OpacityProperty, new DoubleAnimation()
+                {
+                    BeginTime = TimeSpan.Zero,
+                    To = 1,
+                    Duration = new Duration(TimeSpan.FromMilliseconds(FL.Config.SeekBarFadeInTimeMs))
+                });
+            }
+            else
+            {
+                // Fade Out
+                MyCard.BeginAnimation(OpacityProperty, new DoubleAnimation()
+                {
+                    BeginTime = TimeSpan.Zero,
+                    // TODO: L: needs to be almost transparent to receive MouseEnter events
+                    To = FL.Config.SeekBarShowOnlyMouseOver ? 0.01 : 0,
+                    Duration = new Duration(TimeSpan.FromMilliseconds(FL.Config.SeekBarFadeOutTimeMs))
+                });
+            }
+        }
     }
 
     private void OnMouseLeave(object sender, RoutedEventArgs e)
     {
-        SetActivity(true);
+        if (FL.Config.SeekBarShowOnlyMouseOver)
+        {
+            if (FL.Player.Activity.IsEnabled)
+                IsShowing = false;
+        }
+        else
+        {
+            SetActivity(true);
+        }
     }
 
     private void OnMouseEnter(object sender, MouseEventArgs e)
     {
-        SetActivity(false);
+        if (FL.Config.SeekBarShowOnlyMouseOver)
+        {
+            if (FL.Player.Activity.IsEnabled)
+                IsShowing = true;
+        }
+        else
+        {
+            SetActivity(false);
+        }
     }
 
     private void SetActivity(bool isActive)
@@ -60,19 +142,23 @@ public partial class FlyleafBar : UserControl
         if (btn.ContextMenu.PlacementTarget == null)
         {
             // Do not hide seek bar when context menu is displayed (register once)
-            btn.ContextMenu.Opened += (o, args) =>
-            {
-                SetActivity(false);
-            };
-
-            btn.ContextMenu.Closed += (o, args) =>
-            {
-                SetActivity(true);
-            };
-
+            btn.ContextMenu.Opened += OnContextMenuOnOpened;
+            btn.ContextMenu.Closed += OnContextMenuOnClosed;
             btn.ContextMenu.PlacementTarget = btn;
         }
         btn.ContextMenu.IsOpen = true;
+    }
+
+    // TODO: L: Addresses the problem of disappearing after consecutive clicks
+    // of the SeekBar button when SeekBarShowOnlyMouseOver = true.
+    private void OnContextMenuOnOpened(object o, RoutedEventArgs args)
+    {
+        SetActivity(false);
+    }
+
+    private void OnContextMenuOnClosed(object o, RoutedEventArgs args)
+    {
+        SetActivity(true);
     }
 }
 

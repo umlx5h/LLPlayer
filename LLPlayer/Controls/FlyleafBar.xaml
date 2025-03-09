@@ -17,49 +17,13 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/Resources/Slider.xaml"/>
             </ResourceDictionary.MergedDictionaries>
-
-            <!-- Set animation for seek bar display -->
-            <!-- TODO: L: make it configurable -->
-            <Storyboard x:Key="FadeIn" Timeline.DesiredFrameRate="60">
-                <DoubleAnimation BeginTime="0:0:0" Storyboard.TargetProperty="Opacity"  To="1" Duration="0:0:0.1" AutoReverse="False"/>
-            </Storyboard>
-
-            <Storyboard x:Key="FadeOut" Timeline.DesiredFrameRate="60">
-                <DoubleAnimation BeginTime="0:0:0" Storyboard.TargetProperty="Opacity"  To="0" Duration="0:0:0.3" AutoReverse="False"/>
-            </Storyboard>
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <materialDesign:Card TextElement.FontSize="14" TextElement.FontWeight="Medium" TextElement.Foreground="White" FontFamily="{materialDesign:MaterialDesignFont}" VerticalAlignment="Bottom" Focusable="False">
+    <materialDesign:Card x:Name="MyCard" TextElement.FontSize="14" TextElement.FontWeight="Medium" TextElement.Foreground="White" FontFamily="{materialDesign:MaterialDesignFont}" VerticalAlignment="Bottom" Focusable="False">
         <materialDesign:Card.Background>
             <SolidColorBrush Color="{Binding FL.PlayerConfig.Video.BackgroundColor}" Opacity="0.15"/>
         </materialDesign:Card.Background>
-        <materialDesign:Card.Style>
-            <Style TargetType="{x:Type materialDesign:Card}">
-                <Style.Triggers>
-                    <DataTrigger Binding="{Binding FL.Player.Activity.Mode}" Value="Idle">
-                        <DataTrigger.EnterActions>
-                            <RemoveStoryboard BeginStoryboardName="fadeInN" />
-                            <BeginStoryboard x:Name="fadeOutN" Storyboard="{StaticResource FadeOut}" />
-                        </DataTrigger.EnterActions>
-                    </DataTrigger>
-                    <DataTrigger Binding="{Binding FL.Player.Activity.Mode}" Value="Active">
-                        <DataTrigger.EnterActions>
-                            <RemoveStoryboard BeginStoryboardName="fadeInN" />
-                            <BeginStoryboard x:Name="fadeOutN2" Storyboard="{StaticResource FadeOut}" />
-                        </DataTrigger.EnterActions>
-                    </DataTrigger>
-                    <DataTrigger Binding="{Binding FL.Player.Activity.Mode, FallbackValue=FullActive, TargetNullValue=FullActive}" Value="FullActive">
-                        <DataTrigger.EnterActions>
-                            <RemoveStoryboard BeginStoryboardName="fadeOutN" />
-                            <RemoveStoryboard BeginStoryboardName="fadeOutN2" />
-                            <BeginStoryboard x:Name="fadeInN" Storyboard="{StaticResource FadeIn}" />
-                        </DataTrigger.EnterActions>
-                    </DataTrigger>
-                </Style.Triggers>
-            </Style>
-        </materialDesign:Card.Style>
-
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition/>
@@ -258,7 +222,7 @@ Right Click: Open Context Menu</ToolTip>
                             <MouseBinding Command="{Binding FL.Player.Commands.OpenFromFileDialog}" MouseAction="LeftClick" />
                         </TextBlock.InputBindings>
                         <TextBlock.ContextMenu>
-                            <ContextMenu Style="{StaticResource FlyleafContextMenu}">
+                            <ContextMenu Style="{StaticResource FlyleafContextMenu}" Opened="OnContextMenuOnOpened" Closed="OnContextMenuOnClosed">
                                 <MenuItem Header="Open next" Command="{Binding FL.Action.CmdOpenNextFile}" />
                                 <MenuItem Header="Open prev" Command="{Binding FL.Action.CmdOpenPrevFile}" />
                                 <MenuItem Header="Open path" Command="{Binding FL.Action.CmdOpenCurrentPath}" />

@@ -40,29 +40,6 @@
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
-                            Width="180">
-                            Idle Timeout (ms)
-                            <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
-                                <ToolTipService.ToolTip>
-                                    <TextBlock
-                                        Text="Specify idle time in milliseconds to hide seek bar and mouse cursor"
-                                        TextWrapping="Wrap"
-                                        MaxWidth="400" />
-                                </ToolTipService.ToolTip>
-                                <materialDesign:PackIcon
-                                    Kind="Information"
-                                    Width="16" Height="16"
-                                    Margin="4 0 0 0" />
-                            </InlineUIContainer>
-                        </TextBlock>
-                        <TextBox
-                            Width="100"
-                            Text="{Binding FL.Config.ActivityTimeout}"
-                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
-                    </StackPanel>
-
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
                             Width="180"
                             Text="Buffer Duration Min (ms)" />
                         <TextBox
@@ -110,6 +87,74 @@
                             Text="{Binding FL.PlayerConfig.Video.MaxVerticalResolutionCustom}"
                             helpers:TextBoxHelper.OnlyNumeric="Uint"
                             ToolTip="0 for Auto" />
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="Player UI">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180">
+                            Idle Timeout (ms)
+                            <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                <ToolTipService.ToolTip>
+                                    <TextBlock
+                                        Text="Specify idle time in milliseconds to hide seek bar and mouse cursor"
+                                        TextWrapping="Wrap"
+                                        MaxWidth="400" />
+                                </ToolTipService.ToolTip>
+                                <materialDesign:PackIcon
+                                    Kind="Information"
+                                    Width="16" Height="16"
+                                    Margin="4 0 0 0" />
+                            </InlineUIContainer>
+                        </TextBlock>
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.Config.ActivityTimeout}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180">
+                            Show SeekBar only when MouseOver
+                            <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                <ToolTipService.ToolTip>
+                                    <TextBlock
+                                        Text="If this is switched on, the seek bar is only displayed on mouse-over; if it is switched off, it is displayed when the cursor is moved."
+                                        TextWrapping="Wrap"
+                                        MaxWidth="400" />
+                                </ToolTipService.ToolTip>
+                                <materialDesign:PackIcon
+                                    Kind="Information"
+                                    Width="16" Height="16"
+                                    Margin="4 0 0 0" />
+                            </InlineUIContainer>
+                        </TextBlock>
+                        <ToggleButton
+                            IsChecked="{Binding FL.Config.SeekBarShowOnlyMouseOver}" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="SeekBar FadeIn Time (ms)" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.Config.SeekBarFadeInTimeMs}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="SeekBar FadeOut Time (ms)" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.Config.SeekBarFadeOutTimeMs}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
                     </StackPanel>
                 </StackPanel>
             </GroupBox>

@@ -114,6 +114,13 @@ public class AppConfig : Bindable
         }
     }
 
+
+    #region FlyleafBar
+    public bool SeekBarShowOnlyMouseOver { get; set => Set(ref field, value); } = false;
+    public int SeekBarFadeInTimeMs { get; set => Set(ref field, value); } = 80;
+    public int SeekBarFadeOutTimeMs { get; set => Set(ref field, value); } = 150;
+    #endregion
+
     #region Mouse
     public bool MouseSingleClickToPlay { get; set => Set(ref field, value); } = true;
     public bool MouseDoubleClickToFullScreen { get; set => Set(ref field, value); }

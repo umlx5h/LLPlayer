@@ -145,9 +145,20 @@ public class FlyleafOverlayVM : Bindable
         if (!FL.FlyleafHost.IsFullScreen && FL.FlyleafHost.Owner.WindowState == WindowState.Normal)
         {
             // normal window: window dragging
-            FL.Player.Activity.IsEnabled = false;
+
+            bool prevEnabled = FL.Player.Activity.IsEnabled;
+            // prevent to activate seek bar when mouse over
+            if (!FL.Config.SeekBarShowOnlyMouseOver)
+            {
+                FL.Player.Activity.IsEnabled = false;
+            }
+
             FL.FlyleafHost.Owner.DragMove();
-            FL.Player.Activity.IsEnabled = true;
+
+            if (!FL.Config.SeekBarShowOnlyMouseOver && prevEnabled)
+            {
+                FL.Player.Activity.IsEnabled = true;
+            }
 
             MouseLeftButtonUpAction(downPoint, downTick);
         }
