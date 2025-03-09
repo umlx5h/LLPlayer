@@ -38,5 +38,15 @@ If the bug relates to `Whisper` / `ASR`, please complete the following.
  - Whisper Hardware Options: [e.g. Cuda -> Cpu -> CpuNoAvx]
  - [Microsoft Visual C++ Redistributable Version >=2022](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#latest-microsoft-visual-c-redistributable-version) Installed: [e.g. True]
 
+If the bug relates to the specific media file, please complete the following.
+
+- local or online video: [e.g. local]
+- [MediaInfo](https://mediaarea.net/MediaInfo) results (if local):
+
+```
+```
+ 
+- URL (if online): [e.g. https://www.youtube.com/watch?v=aaaa]
+
 **Additional context**
 Add any other context about the problem here.
