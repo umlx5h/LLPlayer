@@ -37,7 +37,7 @@ public partial class FlyleafBar : UserControl
                 case nameof(FL.Player.Activity.IsEnabled):
                     if (FL.Config.SeekBarShowOnlyMouseOver)
                     {
-                        IsShowing = !FL.Player.Activity.IsEnabled;
+                        IsShowing = !FL.Player.Activity.IsEnabled || MyCard.IsMouseOver;
                     }
                     break;
 
