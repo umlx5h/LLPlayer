@@ -58,6 +58,10 @@ LLPlayer has many features for language learning that are not available in norma
 * [Microsoft Visual C++ Redistributable Version >= 2022](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#latest-microsoft-visual-c-redistributable-version) (for Whisper ASR, Tesseract OCR)
   * Note that if this is not installed, the app will launch, but **will crash when ASR or OCR is enabled**!
 
+[For Nvidia User (RTX GPU)]
+  * Note: Having CUDA driver will make the rendering of subtitle faster
+  [CUDA 12.8](https://developer.nvidia.com/cuda-downloads) (please take note that this is the required driver if you're using Blackwell GPU's and if you want to use CUDA (RTX 50xx))
+
 ## 🚀 Getting Started
 
 1. **Download builds from [release](https://github.com/umlx5h/LLPlayer/releases)**
