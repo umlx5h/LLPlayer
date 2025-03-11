@@ -445,7 +445,7 @@ public unsafe class AudioReader : IDisposable
         chunkSw.Start();
 
         int chunkCnt = 0;
-        long framePts = long.MinValue;
+        long framePts = AV_NOPTS_VALUE;
         TimeSpan? chunkStart = null;
 
         WriteWavHeader(waveStream, targetSampleRate, targetChannel);
@@ -559,7 +559,20 @@ public unsafe class AudioReader : IDisposable
                 }
                 ret.ThrowExceptionIfError("avcodec_receive_frame");
 
-                framePts = _frame->pts;
+                if (_frame->best_effort_timestamp != AV_NOPTS_VALUE)
+                {
+                    framePts = _frame->best_effort_timestamp;
+                }
+                else if (_frame->pts != AV_NOPTS_VALUE)
+                {
+                    framePts = _frame->pts;
+                }
+                else
+                {
+                    // Certain encoders sometimes cannot get pts (APE, Musepack)
+                    framePts += _frame->duration;
+                }
+
                 waveDuration = waveDuration.Add(new TimeSpan((long)(_frame->duration * timebase)));
 
                 if (chunkStart == null)
@@ -593,7 +606,7 @@ public unsafe class AudioReader : IDisposable
         if (!token.IsCancellationRequested)
         {
             // Process remaining
-            if (waveStream.Length > 0 && framePts != long.MinValue)
+            if (waveStream.Length > 0 && framePts != AV_NOPTS_VALUE)
             {
                 Log.Info($"Process remaining:{chunkCnt + 1} (sizeMB: {waveStream.Length / 1024 / 1024}, duration: {waveDuration}, elapsed: {chunkSw.Elapsed})");
                 ProcessChunk(waveStream, framePts);
