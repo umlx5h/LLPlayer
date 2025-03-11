@@ -168,6 +168,7 @@ public class SliderToolTipBehavior : Behavior<Slider>
     private Popup _valuePopup;
     private TextBlock _tooltipText;
     private Border _tooltipBorder;
+    private Track? _track;
 
     public static readonly DependencyProperty ChaptersProperty =
         DependencyProperty.Register(nameof(Chapters), typeof(IList<Demuxer.Chapter>), typeof(SliderToolTipBehavior), new PropertyMetadata(null));
@@ -219,9 +220,9 @@ public class SliderToolTipBehavior : Behavior<Slider>
 
     private void Slider_MouseMove(object sender, MouseEventArgs e)
     {
-        Point position = e.GetPosition(AssociatedObject);
-        double value = CalculateSliderValue(position);
-
+        _track ??= (Track)AssociatedObject.Template.FindName("PART_Track", AssociatedObject);
+        Point pos = e.GetPosition(_track);
+        double value = _track.ValueFromPoint(pos);
         TimeSpan hoverTime = TimeSpan.FromSeconds(value);
 
         string dateFormat = hoverTime.Hours >= 1 ? @"hh\:mm\:ss" : @"mm\:ss";
@@ -261,12 +262,6 @@ public class SliderToolTipBehavior : Behavior<Slider>
     private void Slider_MouseLeave(object sender, MouseEventArgs e)
     {
         _valuePopup.IsOpen = false;
-    }
-
-    private double CalculateSliderValue(Point mousePosition)
-    {
-        double percentage = mousePosition.X / AssociatedObject.ActualWidth;
-        return AssociatedObject.Minimum + (percentage * (AssociatedObject.Maximum - AssociatedObject.Minimum));
     }
 
     private string? GetChapterTitleAtTime(TimeSpan time)
