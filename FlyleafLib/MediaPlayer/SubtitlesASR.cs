@@ -454,11 +454,33 @@ public unsafe class AudioReader : IDisposable
         // TODO: L: Fold back and allow the first half to run as well.
         if (curTime > TimeSpan.FromSeconds(30))
         {
-            TimeSpan seekTime = curTime.Subtract(TimeSpan.FromSeconds(10));
+            long savedPbPos = _fmtCtx->pb != null ? _fmtCtx->pb->pos : 0;
+
+            long ticks = curTime.Subtract(TimeSpan.FromSeconds(10)).Ticks;
             // Seek if later than 30 seconds (Seek before 10 seconds)
             // TODO: L: m2ts seek problem?
-            av_seek_frame(_fmtCtx, -1, seekTime.Ticks / 10, 0)
-                .ThrowExceptionIfError("av_seek_frame");
+            ret = avformat_seek_file(_fmtCtx, -1, long.MinValue, ticks / 10, ticks / 10, SeekFlags.Any);
+            if (ret < 0)
+            {
+                Log.Info($"Seek failed 1/2 (retrying) {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
+                ret = avformat_seek_file(_fmtCtx, -1, ticks / 10, ticks / 10, long.MaxValue, SeekFlags.Any);
+                if (ret < 0)
+                {
+                    Log.Warn($"Seek failed 2/2 {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
+
+                    // (from Demuxer) Flush required because of seek failure
+                    if (_fmtCtx->pb != null)
+                    {
+                        avio_flush(_fmtCtx->pb);
+                        _fmtCtx->pb->error = 0;
+                        _fmtCtx->pb->eof_reached = 0;
+                        avio_seek(_fmtCtx->pb, savedPbPos, 0);
+                    }
+                    avformat_flush(_fmtCtx);
+
+                    // proceed even if seek failed
+                }
+            }
         }
 
         long startTime = 0;
