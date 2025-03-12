@@ -71,9 +71,13 @@ public class SubtitlesDownloaderDialogVM : Bindable, IDialogAware
             return;
         }
 
-        // TODO: L: prefer user-configured languages instead of "English"
         var query = result
-            .OrderByDescending(r => r.LanguageName == "English") // English first
+            .OrderByDescending(r =>
+            {
+                // prefer user-configured languages
+                return FL.PlayerConfig.Subtitles.Languages.Any(l =>
+                    l.Equals(Language.Get(r.ISO639)));
+            })
             .ThenBy(r => r.LanguageName)
             .ThenByDescending(r => r.SubDownloadsCnt)
             .ThenBy(r => r.SubFileName);
