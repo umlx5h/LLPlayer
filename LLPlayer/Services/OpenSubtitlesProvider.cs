@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Text;
 using System.Xml.Serialization;
 using FlyleafLib;
+using LLPlayer.Extensions;
 
 namespace LLPlayer.Services;
 
@@ -92,7 +93,7 @@ public class OpenSubtitlesProvider
 
             foreach (var member in response.Params.Param.Value.Struct.Member)
             {
-                var propertyName = member.Name.ToUpperFirst();
+                var propertyName = member.Name.ToUpperFirstChar();
                 switch (propertyName)
                 {
                     case nameof(loginResponse.Token):
@@ -205,7 +206,7 @@ $"""
                 SearchResponse searchResponse = new();
                 foreach (var member in record.Struct.Member)
                 {
-                    var propertyName = member.Name.ToUpperFirst();
+                    var propertyName = member.Name.ToUpperFirstChar();
 
                     var property = typeof(SearchResponse).GetProperty(propertyName);
                     if (property != null && property.CanWrite)
@@ -316,7 +317,7 @@ $"""
 
             foreach (var member in data.Struct.Member)
             {
-                var propertyName = member.Name.ToUpperFirst();
+                var propertyName = member.Name.ToUpperFirstChar();
                 switch (propertyName)
                 {
                     case nameof(downloadResponse.Data):
@@ -486,18 +487,4 @@ public class MethodResponse
 
     [XmlElement("params")]
     public Params Params { get; set; }
-}
-
-static class StringExtensions
-{
-    public static string ToUpperFirst(this string s)
-    {
-        if (string.IsNullOrEmpty(s))
-            throw new ArgumentException("There is no first letter");
-
-        Span<char> a = stackalloc char[s.Length];
-        s.AsSpan(1).CopyTo(a.Slice(1));
-        a[0] = char.ToUpper(s[0]);
-        return new string(a);
-    }
 }

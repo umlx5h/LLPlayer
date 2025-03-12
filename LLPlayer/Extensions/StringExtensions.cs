@@ -37,4 +37,17 @@ public static class StringExtensions
 
         return char.ToLower(input[0]) + input.Substring(1);
     }
+
+    /// <summary>
+    /// Convert only the first character to upper case
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    public static string ToUpperFirstChar(this string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return input;
+
+        return char.ToUpper(input[0]) + input.Substring(1);
+    }
 }
