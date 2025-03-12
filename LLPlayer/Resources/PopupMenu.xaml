@@ -588,9 +588,10 @@ AncestorType={x:Type MenuItem}}}">
         </MenuItem>
 
         <MenuItem Header="App" Icon="{materialDesign:PackIcon ApplicationExport}">
-            <MenuItem Header="Launch New App" Command="{Binding FL.Action.CmdAppNew}" Icon="{materialDesign:PackIcon Kind=Launch}"/>
-            <MenuItem Header="Exit App" Command="{Binding FL.Action.CmdAppExit}" Icon="{materialDesign:PackIcon Kind=ExitToApp}"/>
+            <MenuItem Header="Launch App" Command="{Binding FL.Action.CmdAppNew}" Icon="{materialDesign:PackIcon Kind=Launch}"/>
+            <MenuItem Header="Clone App" Command="{Binding FL.Action.CmdAppClone}" Icon="{materialDesign:PackIcon Kind=ContentCopy}"/>
             <MenuItem Header="Restart App" Command="{Binding FL.Action.CmdAppRestart}" Icon="{materialDesign:PackIcon Kind=Restart}"/>
+            <MenuItem Header="Exit App" Command="{Binding FL.Action.CmdAppExit}" Icon="{materialDesign:PackIcon Kind=ExitToApp}"/>
         </MenuItem>
 
         <Separator />

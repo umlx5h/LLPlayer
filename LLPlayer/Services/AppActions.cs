@@ -83,8 +83,9 @@ public class AppActions
             [CustomKeyBindingAction.OpenWindowCheatSheet] = CmdOpenWindowCheatSheet.Execute,
 
             [CustomKeyBindingAction.AppNew] = CmdAppNew.Execute,
-            [CustomKeyBindingAction.AppExit] = CmdAppExit.Execute,
+            [CustomKeyBindingAction.AppClone] = CmdAppClone.Execute,
             [CustomKeyBindingAction.AppRestart] = CmdAppRestart.Execute,
+            [CustomKeyBindingAction.AppExit] = CmdAppExit.Execute,
         };
     }
 
@@ -468,16 +469,8 @@ public class AppActions
         Process.Start(exePath);
     });
 
-    public DelegateCommand CmdAppExit => field ?? new(() =>
+    public DelegateCommand CmdAppClone => field ?? new(() =>
     {
-        Application.Current.Shutdown();
-    });
-
-    public DelegateCommand CmdAppRestart => field ?? new(() =>
-    {
-        var prevPlaylist = _player.Playlist.Selected;
-
-        // Launch New App with current url if opened
         string exePath = Process.GetCurrentProcess().MainModule!.FileName;
 
         ProcessStartInfo startInfo = new()
@@ -486,14 +479,27 @@ public class AppActions
             UseShellExecute = false
         };
 
+        // Launch New App with current url if opened
+        var prevPlaylist = _player.Playlist.Selected;
         if (prevPlaylist != null)
         {
             startInfo.ArgumentList.Add(prevPlaylist.DirectUrl);
         }
 
         Process.Start(startInfo);
+    });
 
-        // Exit Current App
+    public DelegateCommand CmdAppRestart => field ?? new(() =>
+    {
+        // Clone
+        CmdAppClone.Execute();
+
+        // Exit
+        CmdAppExit.Execute();
+    });
+
+    public DelegateCommand CmdAppExit => field ?? new(() =>
+    {
         Application.Current.Shutdown();
     });
     #endregion
@@ -671,12 +677,14 @@ public enum CustomKeyBindingAction
     [Description("Open Cheat Sheet Window")]
     OpenWindowCheatSheet,
 
-    [Description("Launch New Application Instance")]
+    [Description("Launch New Application")]
     AppNew,
-    [Description("Exit the application")]
-    AppExit,
-    [Description("Restart the application")]
+    [Description("Launch Clone Application")]
+    AppClone,
+    [Description("Restart Application")]
     AppRestart,
+    [Description("Exit Application")]
+    AppExit,
 }
 
 public enum KeyBindingActionGroup
@@ -743,8 +751,9 @@ public static class KeyBindingActionExtensions
 
             // TODO: L: review group
             case CustomKeyBindingAction.AppNew:
-            case CustomKeyBindingAction.AppExit:
+            case CustomKeyBindingAction.AppClone:
             case CustomKeyBindingAction.AppRestart:
+            case CustomKeyBindingAction.AppExit:
                 return KeyBindingActionGroup.Other;
 
             default:
