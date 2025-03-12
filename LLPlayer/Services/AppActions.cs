@@ -267,7 +267,7 @@ public class AppActions
 
     private void SubsDistanceActionInternal(bool increase)
     {
-        _config.Subs.SubsDistanceInitial += _config.Subs.SubsDistanceOffset * (increase ? 1 : -1);
+        _config.Subs.SubsDistance += _config.Subs.SubsDistanceOffset * (increase ? 1 : -1);
     }
 
     public DelegateCommand<bool?> CmdSubsTextCopy => field ?? new((suppressOsd) =>

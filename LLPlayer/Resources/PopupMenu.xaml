@@ -438,7 +438,7 @@ AncestorType={x:Type MenuItem}}}">
                 <MenuItem Header="Decrease" Command="{Binding FL.Action.CmdSubsSecondarySizeDecrease}" Icon="{materialDesign:PackIcon Kind=Minus}"/>
             </MenuItem>
 
-            <MenuItem Header="{Binding FL.Config.Subs.SubsDistanceInitial}" HeaderStringFormat="Distance ({0})">
+            <MenuItem Header="{Binding FL.Config.Subs.SubsDistance}" HeaderStringFormat="Distance ({0})">
                 <MenuItem Header="Increase" Command="{Binding FL.Action.CmdSubsDistanceIncrease}" Icon="{materialDesign:PackIcon Kind=Plus}"/>
                 <MenuItem Header="Decrease" Command="{Binding FL.Action.CmdSubsDistanceDecrease}" Icon="{materialDesign:PackIcon Kind=Minus}"/>
             </MenuItem>

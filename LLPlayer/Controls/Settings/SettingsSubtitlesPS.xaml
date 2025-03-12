@@ -86,7 +86,7 @@
                             Text="Primary/Secondary Distance" />
                         <TextBox
                             Width="100"
-                            Text="{Binding FL.Config.Subs.SubsDistanceInitial}"
+                            Text="{Binding FL.Config.Subs.SubsDistance}"
                             helpers:TextBoxHelper.OnlyNumeric="Uint"/>
                     </StackPanel>
 

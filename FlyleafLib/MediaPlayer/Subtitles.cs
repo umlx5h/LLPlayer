@@ -92,7 +92,9 @@ public class SubsBitmapPosition : NotifyPropertyChanged
         if (_player.Subtitles == null ||
             _player.Subtitles[_subIndex].Data.Bitmap == null ||
             _player.Subtitles[_subIndex].Data.BitmapPosition == null ||
-            _player.SubtitlesDecoders[_subIndex].SubtitlesStream == null)
+            _player.SubtitlesDecoders[_subIndex].SubtitlesStream == null ||
+            _player.SubtitlesDecoders[_subIndex].Width == 0 ||
+            _player.SubtitlesDecoders[_subIndex].Height == 0)
         {
             return;
         }

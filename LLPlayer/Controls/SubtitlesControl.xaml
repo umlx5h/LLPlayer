@@ -113,7 +113,7 @@
                 Visibility="{Binding FL.Player.Subtitles[1].Data.IsDisplaying, Converter={StaticResource BooleanToVisibilityConv}, FallbackValue=Collapsed, TargetNullValue=Collapsed}"
                 Foreground="#FFFFFF"
                 Opacity="{Binding FL.Config.Subs.SubsSeparatorOpacity}"
-                Height="{Binding FL.Config.Subs.SubsDistance}" />
+                Height="{Binding FL.Config.Subs.SubsDistanceFix}" />
 
             <!-- Secondary -->
             <Grid

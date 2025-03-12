@@ -262,6 +262,11 @@ public class AppConfigSubs : Bindable
         get;
         set
         {
+            if (value <= 0)
+            {
+                return;
+            }
+
             if (Set(ref field, value))
             {
                 OnPropertyChanged(nameof(SubsFontSizeFix));
@@ -270,7 +275,7 @@ public class AppConfigSubs : Bindable
     } = 44;
 
     [JsonIgnore]
-    public double SubsFontSizeFix => GetAdjustFontSize(SubsFontSize);
+    public double SubsFontSizeFix => GetFixFontSize(SubsFontSize);
 
     // Secondary Subtitle Size
     [JsonIgnore]
@@ -279,6 +284,11 @@ public class AppConfigSubs : Bindable
         get;
         set
         {
+            if (value <= 0)
+            {
+                return;
+            }
+
             if (Set(ref field, value))
             {
                 OnPropertyChanged(nameof(SubsFontSize2Fix));
@@ -287,9 +297,9 @@ public class AppConfigSubs : Bindable
     }
 
     [JsonIgnore]
-    public double SubsFontSize2Fix => GetAdjustFontSize(SubsFontSize2);
+    public double SubsFontSize2Fix => GetFixFontSize(SubsFontSize2);
 
-    private double GetAdjustFontSize(double fontSize)
+    private double GetFixFontSize(double fontSize)
     {
         double scaleFactor = Viewport.Width / 1920;
         double size = fontSize * scaleFactor;
@@ -342,7 +352,7 @@ public class AppConfigSubs : Bindable
     public double SubsPositionOffset { get; set => Set(ref field, value); } = 2.0;
     public int SubsFontSizeOffset { get; set => Set(ref field, value); } = 2;
     public double SubsBitmapScaleOffset { get; set => Set(ref field, value); } = 4;
-    public double SubsDistanceOffset { get; set => Set(ref field, value); } = 5;
+    public double SubsDistanceOffset { get; set => Set(ref field, value); } = 8;
 
     #endregion
 
@@ -411,9 +421,9 @@ public class AppConfigSubs : Bindable
     } = 3.0;
 
     [JsonIgnore]
-    public double SubsDistance { get; set => Set(ref field, value); }
+    public double SubsDistanceFix { get; set => Set(ref field, value); }
 
-    public double SubsDistanceInitial
+    public double SubsDistance
     {
         get;
         set
@@ -428,7 +438,7 @@ public class AppConfigSubs : Bindable
                 UpdateSubsDistance();
             }
         }
-    } = 11;
+    } = 26;
 
     public double SubsSeparatorMaxWidth { get; set => Set(ref field, value); } = 280;
     public double SubsSeparatorOpacity
@@ -479,16 +489,10 @@ public class AppConfigSubs : Bindable
         if (!Loaded)
             return;
 
-        if (FL.Player.Playlist.Selected != null)
-        {
-            int videoHeight = FL.Player.VideoDecoder.Height;
-            float viewportHeight = Viewport.Height;
+        float scaleFactor = Viewport.Height / 1080;
+        double newDistance = SubsDistance * scaleFactor;
 
-            float ratio = viewportHeight / videoHeight;
-            double newDistance = SubsDistanceInitial * ratio;
-
-            SubsDistance = newDistance;
-        }
+        SubsDistanceFix = newDistance;
     }
 
     private void UpdateSubsMargin()
