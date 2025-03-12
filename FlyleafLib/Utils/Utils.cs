@@ -92,6 +92,18 @@ public static partial class Utils
     }
 
     /// <summary>
+    /// Begin Invokes the UI thread if required to execute the specified action
+    /// </summary>
+    /// <param name="action"></param>
+    public static void UIIfRequired(Action action)
+    {
+        if (Thread.CurrentThread.ManagedThreadId == Application.Current.Dispatcher.Thread.ManagedThreadId)
+            action();
+        else
+            Application.Current.Dispatcher.BeginInvoke(action);
+    }
+
+    /// <summary>
     /// Invokes the UI thread to execute the specified action
     /// </summary>
     /// <param name="action"></param>

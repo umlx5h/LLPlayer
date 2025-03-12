@@ -11,6 +11,7 @@ using FlyleafLib.MediaPlayer;
 using FlyleafLib.MediaPlayer.Translation.Services;
 using LLPlayer.Extensions;
 using MaterialDesignThemes.Wpf;
+using Vortice.Mathematics;
 using Color = System.Windows.Media.Color;
 using Colors = System.Windows.Media.Colors;
 using Size = System.Windows.Size;
@@ -210,9 +211,14 @@ public class AppConfigSubs : Bindable
 
     public void FlyleafHostLoaded()
     {
+        Viewport = FL.Player.renderer.GetViewport;
+
         FL.Player.renderer.ViewportChanged += (sender, args) =>
         {
-            Utils.UI(UpdateSubsConfig);
+            Utils.UIIfRequired(() =>
+            {
+                Viewport = FL.Player.renderer.GetViewport;
+            });
         };
     }
 
@@ -222,14 +228,78 @@ public class AppConfigSubs : Bindable
         _subsPositionInitial = SubsPosition;
     }
 
+    [JsonIgnore]
+    public Viewport Viewport
+    {
+        get;
+        private set
+        {
+            var prev = Viewport;
+            if (Set(ref field, value))
+            {
+                if ((int)prev.Width != (int)value.Width)
+                {
+                    // update font size if width changed
+                    OnPropertyChanged(nameof(SubsFontSizeFix));
+                    OnPropertyChanged(nameof(SubsFontSize2Fix));
+                }
+
+                if ((int)prev.Height != (int)value.Height ||
+                    (int)prev.Y != (int)value.Y)
+                {
+                    // update font margin/distance if height/Y changed
+                    UpdateSubsConfig();
+                }
+            }
+        }
+    }
+
     public string SubsFontFamily { get; set => Set(ref field, value); } = "Segoe UI";
 
     // Primary Subtitle Size
-    public double SubsFontSize { get; set => Set(ref field, value); } = 44;
+    public double SubsFontSize
+    {
+        get;
+        set
+        {
+            if (Set(ref field, value))
+            {
+                OnPropertyChanged(nameof(SubsFontSizeFix));
+            }
+        }
+    } = 44;
+
+    [JsonIgnore]
+    public double SubsFontSizeFix => GetAdjustFontSize(SubsFontSize);
 
     // Secondary Subtitle Size
     [JsonIgnore]
-    public double SubsFontSize2 { get; set => Set(ref field, value); }
+    public double SubsFontSize2
+    {
+        get;
+        set
+        {
+            if (Set(ref field, value))
+            {
+                OnPropertyChanged(nameof(SubsFontSize2Fix));
+            }
+        }
+    }
+
+    [JsonIgnore]
+    public double SubsFontSize2Fix => GetAdjustFontSize(SubsFontSize2);
+
+    private double GetAdjustFontSize(double fontSize)
+    {
+        double scaleFactor = Viewport.Width / 1920;
+        double size = fontSize * scaleFactor;
+        if (size > 0)
+        {
+            return size;
+        }
+
+        return fontSize;
+    }
 
     public Color SubsFontColor { get; set => Set(ref field, value); } = Colors.White;
 
@@ -400,12 +470,8 @@ public class AppConfigSubs : Bindable
         if (!Loaded)
             return;
 
-        // Avoid unnecessary updates
-        if (FL.Player.Subtitles[0].Enabled || FL.Player.Subtitles[1].Enabled)
-        {
-            UpdateSubsDistance();
-            UpdateSubsMargin();
-        }
+        UpdateSubsDistance();
+        UpdateSubsMargin();
     }
 
     private void UpdateSubsDistance()
@@ -416,7 +482,7 @@ public class AppConfigSubs : Bindable
         if (FL.Player.Playlist.Selected != null)
         {
             int videoHeight = FL.Player.VideoDecoder.Height;
-            float viewportHeight = FL.Player.renderer.GetViewport.Height;
+            float viewportHeight = Viewport.Height;
 
             float ratio = viewportHeight / videoHeight;
             double newDistance = SubsDistanceInitial * ratio;
@@ -432,10 +498,8 @@ public class AppConfigSubs : Bindable
 
         // Set the margin from the top based on Viewport, not Window
         // Allow going above or below the Viewport
-        var viewport = FL.Player.renderer.GetViewport;
-
-        float offset = viewport.Y;
-        float height = viewport.Height;
+        float offset = Viewport.Y;
+        float height = Viewport.Height;
 
         double marginTop = height * (SubsPosition / 100.0);
         double marginTopFix = marginTop + offset;
@@ -471,7 +535,7 @@ public class AppConfigSubs : Bindable
     {
         double subHeight = SubsPanelSize.Height;
 
-        double bottomMargin = (FL!.Player.renderer.GetViewport.Height * (SubsFixOverflowMargin / 100.0));
+        double bottomMargin = Viewport.Height * (SubsFixOverflowMargin / 100.0);
 
         if (subHeight + marginTop + bottomMargin > _rootConfig.ScreenHeight)
         {

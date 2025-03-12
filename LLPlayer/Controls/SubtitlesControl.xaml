@@ -76,7 +76,7 @@
                 <local:SelectableSubtitleText
                     x:Name="SubtitlePrimaryText"
                     FontFamily="{Binding FL.Config.Subs.SubsFontFamily}"
-                    FontSizeInitial="{Binding FL.Config.Subs.SubsFontSize}"
+                    FontSize="{Binding FL.Config.Subs.SubsFontSizeFix}"
                     FontWeight="{Binding FL.Config.Subs.SubsFontWeight}"
                     FontStretch="{Binding FL.Config.Subs.SubsFontStretch}"
                     FontStyle="{Binding FL.Config.Subs.SubsFontStyle}"
@@ -120,7 +120,7 @@
                 Visibility="{Binding FL.Player.Subtitles[1].Data.IsVisible, Converter={StaticResource BooleanToVisibilityConv}, FallbackValue=Collapsed, TargetNullValue=Collapsed}" >
                 <local:SelectableSubtitleText
                     FontFamily="{Binding FL.Config.Subs.SubsFontFamily}"
-                    FontSizeInitial="{Binding FL.Config.Subs.SubsFontSize2}"
+                    FontSize="{Binding FL.Config.Subs.SubsFontSize2Fix}"
                     FontWeight="{Binding FL.Config.Subs.SubsFontWeight}"
                     FontStretch="{Binding FL.Config.Subs.SubsFontStretch}"
                     FontStyle="{Binding FL.Config.Subs.SubsFontStyle}"

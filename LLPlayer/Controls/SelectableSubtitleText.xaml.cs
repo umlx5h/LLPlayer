@@ -4,9 +4,8 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
+using FlyleafLib;
 using LLPlayer.Extensions;
-using LLPlayer.ViewModels;
-using LLPlayer.Views;
 
 namespace LLPlayer.Controls;
 
@@ -62,15 +61,6 @@ public partial class SelectableSubtitleText : UserControl
     }
 
     private string _textFix;
-
-    public static readonly DependencyProperty FontSizeInitialProperty =
-        DependencyProperty.Register(nameof(FontSizeInitial), typeof(double), typeof(SelectableSubtitleText), new FrameworkPropertyMetadata(12.0, OnSizeChanged));
-
-    public double FontSizeInitial
-    {
-        get => (double)GetValue(FontSizeInitialProperty);
-        set => SetValue(FontSizeInitialProperty, value);
-    }
 
     public static readonly DependencyProperty FillProperty =
         OutlinedTextBlock.FillProperty.AddOwner(typeof(SelectableSubtitleText));
@@ -145,12 +135,6 @@ public partial class SelectableSubtitleText : UserControl
     {
         var ctl = (SelectableSubtitleText)d;
         ctl.SetText((string)e.NewValue);
-    }
-
-    private static void OnSizeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        var ctl = (SelectableSubtitleText)d;
-        ctl.UpdateSize();
     }
 
     private void SetText(string text)
@@ -463,27 +447,6 @@ public partial class SelectableSubtitleText : UserControl
             RaiseEvent(args);
             e.Handled = true;
         }
-    }
-
-    private void UpdateSize()
-    {
-        if (ActualWidth > 0 && Application.Current.MainWindow is MainWindow mainWindow
-            && mainWindow.DataContext is MainWindowVM mainViewModel)
-        {
-            // Adjust by reducing the size so that FontSizeInitial is used when the screen width is 1920
-            double scaleFactor = mainViewModel.FL.Player.renderer.GetViewport.Width / 1920;
-
-            var size = FontSizeInitial * scaleFactor;
-            if (size > 0)
-            {
-                FontSize = size;
-            }
-        }
-    }
-
-    private void Root_OnSizeChanged(object sender, SizeChangedEventArgs e)
-    {
-        UpdateSize();
     }
 }
 
