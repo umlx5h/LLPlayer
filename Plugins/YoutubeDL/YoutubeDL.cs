@@ -57,6 +57,13 @@ namespace FlyleafLib.Plugins
 
         private Format GetAudioOnly(YoutubeDLJson ytdl)
         {
+            // Prefer best with no video and protocol
+            // Prioritize m3u8 protocol because https is very slow on YouTube
+            var m3u8Formats = ytdl.formats.Where(f => f.protocol == "m3u8_native").ToList();
+            for (int i = m3u8Formats.Count - 1; i >= 0; i--)
+                if (HasAudio(m3u8Formats[i]) && !HasVideo(m3u8Formats[i]))
+                    return m3u8Formats[i];
+
             // Prefer best with no video (dont waste bandwidth)
             for (int i = ytdl.formats.Count - 1; i >= 0; i--)
                 if (HasAudio(ytdl.formats[i]) && !HasVideo(ytdl.formats[i]))
