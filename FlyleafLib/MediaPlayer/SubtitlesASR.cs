@@ -299,11 +299,6 @@ public class WhisperExecuter
         //    waveStream.Position = 0;
         //}
 
-        using var logger = LogProvider.AddLogger((level, s) =>
-        {
-            if (CanDebug) Log.Debug($"[Whisper.net] [{level.ToString()}] {s}");
-        });
-
         if (_config.Subtitles.WhisperRuntimeLibraries.Count >= 1)
         {
             RuntimeOptions.RuntimeLibraryOrder = [.. _config.Subtitles.WhisperRuntimeLibraries];
@@ -313,9 +308,15 @@ public class WhisperExecuter
             RuntimeOptions.RuntimeLibraryOrder = [RuntimeLibrary.Cpu, RuntimeLibrary.CpuNoAvx]; // fallback to default
         }
 
-        if (CanDebug) Log.Debug($"Use whisper runtime libraries ({string.Join(",", RuntimeOptions.RuntimeLibraryOrder)})");
+        using IDisposable logger = CanDebug
+            ? LogProvider.AddLogger((level, s) => Log.Debug($"[Whisper.net] [{level.ToString()}] {s}"))
+            : Disposable.Empty;
+
+        if (CanDebug) Log.Debug($"Selecting whisper runtime libraries from ({string.Join(",", RuntimeOptions.RuntimeLibraryOrder)})");
 
         using WhisperFactory whisperFactory = WhisperFactory.FromPath(_config.Subtitles.WhisperModel.ModelFilePath);
+
+        if (CanDebug) Log.Debug($"Selected whisper runtime library '{RuntimeOptions.LoadedLibrary}'");
 
         WhisperProcessorBuilder whisperBuilder = whisperFactory.CreateBuilder();
         await using WhisperProcessor processor = _config.Subtitles.WhisperParameters.ConfigureBuilder(whisperBuilder).Build();
