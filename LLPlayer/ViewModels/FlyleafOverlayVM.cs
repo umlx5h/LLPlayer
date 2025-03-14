@@ -86,6 +86,7 @@ public class FlyleafOverlayVM : Bindable
         FL.FlyleafHost.Surface.MouseDoubleClick += SurfaceOnMouseDoubleClick;
         FL.FlyleafHost.Surface.MouseLeftButtonDown += SurfaceOnMouseLeftButtonDown;
         FL.FlyleafHost.Surface.MouseLeftButtonUp += SurfaceOnMouseLeftButtonUp;
+        FL.FlyleafHost.Surface.MouseMove += SurfaceOnMouseMove;
         FL.FlyleafHost.Surface.LostMouseCapture += SurfaceOnLostMouseCapture;
     }
 
@@ -142,6 +143,7 @@ public class FlyleafOverlayVM : Bindable
 
     private bool _isLeftDragging;
     private Point _downPoint;
+    private Point _downCursorPoint;
     private long _downTick;
 
     private void SurfaceOnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -159,20 +161,7 @@ public class FlyleafOverlayVM : Bindable
         if (!FL.FlyleafHost.IsFullScreen && FL.FlyleafHost.Owner.WindowState == WindowState.Normal)
         {
             // normal window: window dragging
-
-            bool prevEnabled = FL.Player.Activity.IsEnabled;
-            // prevent to activate seek bar when mouse over
-            if (!FL.Config.SeekBarShowOnlyMouseOver)
-            {
-                FL.Player.Activity.IsEnabled = false;
-            }
-
-            FL.FlyleafHost.Owner.DragMove();
-
-            if (!FL.Config.SeekBarShowOnlyMouseOver && prevEnabled)
-            {
-                FL.Player.Activity.IsEnabled = true;
-            }
+            DragMoveOwner();
 
             MouseLeftButtonUpAction(downPoint, downTick);
         }
@@ -182,6 +171,50 @@ public class FlyleafOverlayVM : Bindable
             _isLeftDragging = true;
             _downPoint = downPoint;
             _downTick = downTick;
+
+            _downCursorPoint = e.GetPosition((IInputElement)sender);
+        }
+    }
+
+    // When left dragging while maximized, move window back to normal and move window
+    private void SurfaceOnMouseMove(object sender, MouseEventArgs e)
+    {
+        if (!_isLeftDragging || e.LeftButton != MouseButtonState.Pressed)
+            return;
+
+        if (FL.FlyleafHost!.Owner.WindowState != WindowState.Maximized)
+            return;
+
+        Point curPoint = e.GetPosition((IInputElement)sender);
+
+        // distinguish between mouse click and dragging (to prevent misfire)
+        if (Math.Abs(curPoint.X - _downCursorPoint.X) >= 60 ||
+            Math.Abs(curPoint.Y - _downCursorPoint.Y) >= 60)
+        {
+            _isLeftDragging = false;
+
+            // change to normal window
+            FL.FlyleafHost.Owner.WindowState = WindowState.Normal;
+
+            // start dragging
+            DragMoveOwner();
+        }
+    }
+
+    private void DragMoveOwner()
+    {
+        bool prevEnabled = FL.Player.Activity.IsEnabled;
+        // prevent to activate seek bar when mouse over
+        if (!FL.Config.SeekBarShowOnlyMouseOver)
+        {
+            FL.Player.Activity.IsEnabled = false;
+        }
+
+        FL.FlyleafHost!.Owner.DragMove();
+
+        if (!FL.Config.SeekBarShowOnlyMouseOver && prevEnabled)
+        {
+            FL.Player.Activity.IsEnabled = true;
         }
     }
 
