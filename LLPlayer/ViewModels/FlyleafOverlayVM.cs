@@ -91,23 +91,37 @@ public class FlyleafOverlayVM : Bindable
 
     private void SurfaceOnMouseUp(object sender, MouseButtonEventArgs e)
     {
-        // Middle click: seek to current subtitle
-        if (e.ChangedButton == MouseButton.Middle)
+        switch (e.ChangedButton)
         {
-            bool ctrlDown = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl);
-            if (ctrlDown)
-            {
-                // CTRL + Middle click: Reset zoom
-                FL.Player.ResetZoom();
-                e.Handled = true;
-                return;
-            }
+            // Middle click: seek to current subtitle
+            case MouseButton.Middle:
+                bool ctrlDown = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl);
+                if (ctrlDown)
+                {
+                    // CTRL + Middle click: Reset zoom
+                    FL.Player.ResetZoom();
+                    e.Handled = true;
+                    return;
+                }
 
-            if (FL.Player.Subtitles[0].Enabled)
-            {
-                FL.Player.Subtitles.CurSeek();
-            }
-            e.Handled = true;
+                if (FL.Player.Subtitles[0].Enabled)
+                {
+                    FL.Player.Subtitles.CurSeek();
+                }
+                e.Handled = true;
+                break;
+
+            // X1 click: subtitles prev seek with fallback
+            case MouseButton.XButton1:
+                FL.Player.Subtitles.PrevSeekFallback();
+                e.Handled = true;
+                break;
+
+            // X2 click: subtitles next seek with fallback
+            case MouseButton.XButton2:
+                FL.Player.Subtitles.NextSeekFallback();
+                e.Handled = true;
+                break;
         }
     }
 

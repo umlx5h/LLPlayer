@@ -195,6 +195,22 @@
                                         Text="Seek to current subtitle if available" />
                                 </StackPanel>
 
+                                <StackPanel Orientation="Horizontal" Margin="0 0 0 10">
+                                    <TextBlock
+                                        Text="X1 Click"
+                                        Width="200" />
+                                    <TextBlock
+                                        Text="Seek to the previous subtitle or backwards" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Margin="0 0 0 10">
+                                    <TextBlock
+                                        Text="X2 Click"
+                                        Width="200" />
+                                    <TextBlock
+                                        Text="Seek to the next subtitle or forwards" />
+                                </StackPanel>
+
                                 <StackPanel Orientation="Horizontal" Margin="0 0 0 10"
                                             Visibility="{Binding FL.Config.MouseWheelToVolumeUpDown, Converter={StaticResource BooleanToVisibilityConv}}">
                                     <TextBlock
