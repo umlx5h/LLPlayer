@@ -485,6 +485,12 @@ public partial class DecoderContext
                 OpenSuggestedData();
             }
 
+            if (VideoDemuxer.Chapters.Count == 0 && Playlist.Selected.Chapters.Count > 0)
+            {
+                foreach (var chapter in Playlist.Selected.Chapters)
+                    VideoDemuxer.Chapters.Add(chapter);
+            }
+
             return args;
         } catch (Exception e)
         {

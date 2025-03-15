@@ -47,6 +47,9 @@ public class PlaylistItem : DemuxerInput
     public string   OriginalTitle           { get => _OriginalTitle; set => SetUI(ref _OriginalTitle, value ?? "", false); }
     string _OriginalTitle = "";
 
+    public List<Demuxer.Chapter>
+                    Chapters                { get; set; } = new();
+
     public int      Season                  { get; set; }
     public int      Episode                 { get; set; }
     public int      Year                    { get; set; }

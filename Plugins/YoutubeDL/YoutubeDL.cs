@@ -8,7 +8,7 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-
+using FlyleafLib.MediaFramework.MediaDemuxer;
 using FlyleafLib.MediaFramework.MediaPlaylist;
 using FlyleafLib.MediaFramework.MediaStream;
 
@@ -258,6 +258,16 @@ namespace FlyleafLib.Plugins
             Log.Debug($"Adding {item.Title}");
 
             item.DirectUrl = ytdl.webpage_url;
+
+            if (ytdl.chapters != null && ytdl.chapters.Count > 0)
+            {
+                item.Chapters.AddRange(ytdl.chapters.Select(c => new Demuxer.Chapter()
+                {
+                    StartTime = TimeSpan.FromSeconds(c.start_time).Ticks,
+                    EndTime = TimeSpan.FromSeconds(c.end_time).Ticks,
+                    Title = c.title
+                }));
+            }
 
             // If no formats still could have a single format attched to the main root class
             if (ytdl.formats == null)

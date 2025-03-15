@@ -44,7 +44,9 @@ namespace FlyleafLib.Plugins
                         formats         { get; set; }
         //public List<Thumbnail>
         //                thumbnails      { get; set; }
-
+        public List<Chapter>
+                        chapters
+                                        { get; set; }
         //public double   like_count      { get; set; }
         //public double   dislike_count   { get; set; }
         //public string   channel         { get; set; }
@@ -95,6 +97,13 @@ namespace FlyleafLib.Plugins
             public string url   { get; set; }
             public string name  { get; set; }
         }
+    }
+
+    public class Chapter
+    {
+        public double start_time { get; set; }
+        public double end_time   { get; set; }
+        public string title      { get; set; }
     }
 
     public class Format
