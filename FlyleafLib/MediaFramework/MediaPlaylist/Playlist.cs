@@ -131,6 +131,8 @@ public class Playlist : NotifyPropertyChanged
             Items.Add(item);
             Items[^1].Index = Items.Count - 1;
 
+            UpdatePrevNextItem();
+
             if (tag != null)
                 item.AddTag(tag, pluginName);
         };
