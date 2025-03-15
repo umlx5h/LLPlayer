@@ -11,8 +11,6 @@ public partial class PopupMenu : ResourceDictionary
         InitializeComponent();
     }
 
-    private bool _prevActivityEnabled;
-
     private void PopUpMenu_OnOpened(object sender, RoutedEventArgs e)
     {
         // TODO: L: should validate that the clipboard content is a video file?
@@ -22,10 +20,6 @@ public partial class PopupMenu : ResourceDictionary
         // Don't hide the seek bar while displaying the context menu
         if (sender is ContextMenu menu && menu.DataContext is FlyleafOverlayVM vm)
         {
-            if (!_prevActivityEnabled)
-            {
-                _prevActivityEnabled = vm.FL.Player.Activity.IsEnabled;
-            }
             vm.FL.Player.Activity.IsEnabled = false;
         }
     }
@@ -34,11 +28,7 @@ public partial class PopupMenu : ResourceDictionary
     {
         if (sender is ContextMenu menu && menu.DataContext is FlyleafOverlayVM vm)
         {
-            if (_prevActivityEnabled)
-            {
-                vm.FL.Player.Activity.IsEnabled = true;
-            }
-            _prevActivityEnabled = false;
+            vm.FL.Player.Activity.IsEnabled = true;
         }
     }
 }

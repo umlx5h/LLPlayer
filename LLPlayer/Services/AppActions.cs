@@ -364,16 +364,10 @@ public class AppActions
 
     public DelegateCommand CmdOpenWindowSettings => field ?? new(() =>
     {
-        // Keep the seek bar visible at all times while the settings screen is open.
-        int prevTimeout = _player.Activity.Timeout;
-
         if (_player.IsPlaying)
         {
             _player.Pause();
         }
-
-        _player.Activity.IsEnabled = false;
-        _player.Activity.Timeout = 0;
 
         // Detects configuration changes necessary for restart
         // TODO: L: refactor
@@ -395,6 +389,7 @@ public class AppActions
             }
         }
 
+        _player.Activity.ForceFullActive();
         _dialogService.ShowSingleton(nameof(SettingsDialog), result =>
         {
             // Activate as it may be minimized for some reason
@@ -426,15 +421,6 @@ public class AppActions
                     }
                 }
             }
-
-            // Closing the app while settings is open may cause it to be null.
-            if (_player.Activity.Timeout == 0)
-            {
-                _player.Activity.Timeout = prevTimeout;
-            }
-
-            _player.Activity.IsEnabled = true;
-
         }, false);
     });
 

@@ -222,7 +222,7 @@ Right Click: Open Context Menu</ToolTip>
                             <MouseBinding Command="{Binding FL.Player.Commands.OpenFromFileDialog}" MouseAction="LeftClick" />
                         </TextBlock.InputBindings>
                         <TextBlock.ContextMenu>
-                            <ContextMenu Style="{StaticResource FlyleafContextMenu}" Opened="OnContextMenuOnOpened" Closed="OnContextMenuOnClosed">
+                            <ContextMenu Style="{StaticResource FlyleafContextMenu}" Opened="OnContextMenuOnOpened" Closed="OnContextMenuOnClosed" MouseMove="OnContextMenuOnMouseMove">
                                 <MenuItem Header="Open next" Command="{Binding FL.Action.CmdOpenNextFile}" />
                                 <MenuItem Header="Open prev" Command="{Binding FL.Action.CmdOpenPrevFile}" />
                                 <MenuItem Header="Open path" Command="{Binding FL.Action.CmdOpenCurrentPath}" />

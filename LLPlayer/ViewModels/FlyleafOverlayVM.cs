@@ -176,8 +176,8 @@ public class FlyleafOverlayVM : Bindable
 
     private void DragMoveOwner()
     {
-        bool prevEnabled = FL.Player.Activity.IsEnabled;
-        // prevent to activate seek bar when mouse over
+        // (!SeekBarShowOnlyMouseOver) always show cursor when moving
+        // (SeekBarShowOnlyMouseOver)  prevent to activate seek bar
         if (!FL.Config.SeekBarShowOnlyMouseOver)
         {
             FL.Player.Activity.IsEnabled = false;
@@ -185,7 +185,7 @@ public class FlyleafOverlayVM : Bindable
 
         FL.FlyleafHost!.Owner.DragMove();
 
-        if (!FL.Config.SeekBarShowOnlyMouseOver && prevEnabled)
+        if (!FL.Config.SeekBarShowOnlyMouseOver)
         {
             FL.Player.Activity.IsEnabled = true;
         }

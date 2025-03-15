@@ -30,6 +30,21 @@ public partial class FlyleafBar : UserControl
         LostFocus += OnMouseLeave;
         MouseLeave += OnMouseLeave;
 
+        FL.Config.PropertyChanged += (sender, args) =>
+        {
+            if (args.PropertyName == nameof(FL.Config.SeekBarShowOnlyMouseOver))
+            {
+                // Avoided a problem in which Opacity was set to 0 when switching settings and was not displayed.
+                FL.Player.Activity.ForceFullActive();
+                IsShowing = true;
+
+                if (FL.Config.SeekBarShowOnlyMouseOver && !MyCard.IsMouseOver)
+                {
+                    IsShowing = false;
+                }
+            }
+        };
+
         FL.Player.Activity.PropertyChanged += (sender, args) =>
         {
             switch (args.PropertyName)
@@ -97,10 +112,9 @@ public partial class FlyleafBar : UserControl
 
     private void OnMouseLeave(object sender, RoutedEventArgs e)
     {
-        if (FL.Config.SeekBarShowOnlyMouseOver)
+        if (FL.Config.SeekBarShowOnlyMouseOver && FL.Player.Activity.IsEnabled)
         {
-            if (FL.Player.Activity.IsEnabled)
-                IsShowing = false;
+            IsShowing = false;
         }
         else
         {
@@ -110,10 +124,9 @@ public partial class FlyleafBar : UserControl
 
     private void OnMouseEnter(object sender, MouseEventArgs e)
     {
-        if (FL.Config.SeekBarShowOnlyMouseOver)
+        if (FL.Config.SeekBarShowOnlyMouseOver && FL.Player.Activity.IsEnabled)
         {
-            if (FL.Player.Activity.IsEnabled)
-                IsShowing = true;
+            IsShowing = true;
         }
         else
         {
@@ -144,13 +157,12 @@ public partial class FlyleafBar : UserControl
             // Do not hide seek bar when context menu is displayed (register once)
             btn.ContextMenu.Opened += OnContextMenuOnOpened;
             btn.ContextMenu.Closed += OnContextMenuOnClosed;
+            btn.ContextMenu.MouseMove += OnContextMenuOnMouseMove;
             btn.ContextMenu.PlacementTarget = btn;
         }
         btn.ContextMenu.IsOpen = true;
     }
 
-    // TODO: L: Addresses the problem of disappearing after consecutive clicks
-    // of the SeekBar button when SeekBarShowOnlyMouseOver = true.
     private void OnContextMenuOnOpened(object o, RoutedEventArgs args)
     {
         SetActivity(false);
@@ -159,6 +171,12 @@ public partial class FlyleafBar : UserControl
     private void OnContextMenuOnClosed(object o, RoutedEventArgs args)
     {
         SetActivity(true);
+    }
+
+    private void OnContextMenuOnMouseMove(object o, MouseEventArgs args)
+    {
+        // this is necessary to keep PopupMenu visible when opened in succession when SeekBarShowOnlyMouseOver
+        SetActivity(false);
     }
 }
 
