@@ -160,6 +160,8 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
         get => status;
         private set
         {
+            var prev = _Status;
+
             if (Set(ref _Status, value))
             {
                 // Loop Playback
@@ -171,12 +173,18 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
                         Seek(seekMs);
                     }
                 }
+
+                if (prev == Status.Opening || value == Status.Opening)
+                {
+                    Raise(nameof(IsOpening));
+                }
             }
         }
     }
 
     Status _Status = Status.Stopped, status = Status.Stopped;
     public bool         IsPlaying           => status == Status.Playing;
+    public bool         IsOpening           => status == Status.Opening;
 
     /// <summary>
     /// Whether the player's status is capable of accepting playback commands

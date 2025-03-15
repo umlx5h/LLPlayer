@@ -20,39 +20,12 @@ public class FlyleafOverlayVM : Bindable
         FL = fl;
     }
 
-    /// <summary>
-    /// Whether a video file is being loaded or not (for Spinner)
-    /// </summary>
-    public bool IsLoading { get; set => Set(ref field, value); }
-
     // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
     public DelegateCommand CmdOnLoaded => field ??= new(() =>
     {
         SetupOSDStatus();
         SetupFlyleafContextMenu();
         SetupFlyleafKeybindings();
-
-        FL.Player.Opening += (sender, args) =>
-        {
-            if (!args.IsSubtitles)
-            {
-                Utils.UI(() =>
-                {
-                    IsLoading = true;
-                });
-            }
-
-        };
-        FL.Player.OpenCompleted += (sender, args) =>
-        {
-            if (!args.IsSubtitles)
-            {
-                Utils.UI(() =>
-                {
-                    IsLoading = false;
-                });
-            }
-        };
 
         FL.Config.FlyleafHostLoaded();
     });

@@ -93,7 +93,7 @@
                 Height="50"
                 Style="{StaticResource MaterialDesignCircularProgressBar}"
                 Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
-                Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConv}}" />
+                Visibility="{Binding FL.Player.IsOpening, Converter={StaticResource BooleanToVisibilityConv}}" />
 
             <!--Error Message-->
             <TextBox VerticalAlignment="Center" HorizontalAlignment="Center" Margin="10" d:Text="Error Message" FontSize="16" IsReadOnly="True" BorderThickness="0" Text="{Binding FL.Player.LastError}" Foreground="{DynamicResource MaterialDesign.Brush.Primary}" TextWrapping="Wrap">
