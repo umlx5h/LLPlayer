@@ -78,57 +78,63 @@ public class MainWindowVM : Bindable
 
         FL.Player.PropertyChanged += (sender, args) =>
         {
-            if (args.PropertyName == nameof(FL.Player.CurTime))
+            switch (args.PropertyName)
             {
-                double prevValue = TaskBarProgressValue;
-                double newValue = (double)FL.Player.CurTime / FL.Player.Duration;
+                case nameof(FL.Player.CurTime):
+                {
+                    double prevValue = TaskBarProgressValue;
+                    double newValue = (double)FL.Player.CurTime / FL.Player.Duration;
 
-                if (Math.Abs(newValue - prevValue) >= 0.01) // prevent frequent update
-                {
-                    TaskBarProgressValue = newValue;
-                }
-            }
-            if (args.PropertyName == nameof(FL.Player.Status))
-            {
-                switch (FL.Player.Status)
-                {
-                    case Status.Stopped:
-                        // reset
-                        Title = App.Name;
-                        TaskBarProgressState = TaskbarItemProgressState.None;
-                        TaskBarProgressValue = 0;
-                        break;
-                    case Status.Playing:
-                        TaskBarProgressState = TaskbarItemProgressState.Normal;
-                        break;
-                    case Status.Opening:
-                        TaskBarProgressState = TaskbarItemProgressState.Indeterminate;
-                        TaskBarProgressValue = 0;
-                        break;
-                    case Status.Paused:
-                        TaskBarProgressState = TaskbarItemProgressState.Paused;
-                        break;
-                    case Status.Ended:
-                        TaskBarProgressState = TaskbarItemProgressState.Paused;
-                        TaskBarProgressValue = 1;
-                        break;
-                    case Status.Failed:
-                        TaskBarProgressState = TaskbarItemProgressState.Error;
-                        break;
-                }
+                    if (Math.Abs(newValue - prevValue) >= 0.01) // prevent frequent update
+                    {
+                        TaskBarProgressValue = newValue;
+                    }
 
-                // Action Button in TaskBar
-                switch (FL.Player.Status)
-                {
-                    case Status.Paused:
-                    case Status.Playing:
-                        PlayPauseVisibility = Visibility.Visible;
-                        PlayPauseImageSource = FL.Player.Status == Status.Playing ? PauseIcon : PlayIcon;
-                        break;
-                    default:
-                        PlayPauseVisibility = Visibility.Collapsed;
-                        break;
+                    break;
                 }
+                case nameof(FL.Player.Status):
+                    // Progress in TaskBar (and title)
+                    switch (FL.Player.Status)
+                    {
+                        case Status.Stopped:
+                            // reset
+                            Title = App.Name;
+                            TaskBarProgressState = TaskbarItemProgressState.None;
+                            TaskBarProgressValue = 0;
+                            break;
+                        case Status.Playing:
+                            TaskBarProgressState = TaskbarItemProgressState.Normal;
+                            break;
+                        case Status.Opening:
+                            TaskBarProgressState = TaskbarItemProgressState.Indeterminate;
+                            TaskBarProgressValue = 0;
+                            break;
+                        case Status.Paused:
+                            TaskBarProgressState = TaskbarItemProgressState.Paused;
+                            break;
+                        case Status.Ended:
+                            TaskBarProgressState = TaskbarItemProgressState.Paused;
+                            TaskBarProgressValue = 1;
+                            break;
+                        case Status.Failed:
+                            TaskBarProgressState = TaskbarItemProgressState.Error;
+                            break;
+                    }
+
+                    // Action Button in TaskBar
+                    switch (FL.Player.Status)
+                    {
+                        case Status.Paused:
+                        case Status.Playing:
+                            PlayPauseVisibility = Visibility.Visible;
+                            PlayPauseImageSource = FL.Player.Status == Status.Playing ? PauseIcon : PlayIcon;
+                            break;
+                        default:
+                            PlayPauseVisibility = Visibility.Collapsed;
+                            break;
+                    }
+
+                    break;
             }
         };
 

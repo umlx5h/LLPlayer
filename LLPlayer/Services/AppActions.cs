@@ -378,14 +378,12 @@ public class AppActions
 
         void ConfigOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(_config.IsDarkTitlebar))
+            switch (e.PropertyName)
             {
-                requiredRestart = true;
-            }
-
-            if (e.PropertyName == nameof(_player.Config.Subtitles.WhisperRuntimeLibraries))
-            {
-                requiredRestart = true;
+                case nameof(_config.IsDarkTitlebar):
+                case nameof(_player.Config.Subtitles.WhisperRuntimeLibraries):
+                    requiredRestart = true;
+                    break;
             }
         }
 
