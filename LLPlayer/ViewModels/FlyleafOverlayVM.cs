@@ -212,7 +212,9 @@ public class FlyleafOverlayVM : Bindable
 
         if (downPoint == upPoint // if not moved at all
             ||
-            Stopwatch.GetElapsedTime(downTick) <= TimeSpan.FromMilliseconds(200)) // clicked within 200ms
+            Stopwatch.GetElapsedTime(downTick) <= TimeSpan.FromMilliseconds(200)
+            &&                   // if click within 200ms and not so much moved
+            Math.Abs(upPoint.X - downPoint.X) < 60 && Math.Abs(upPoint.Y - upPoint.Y) < 60)
         {
             SingleClickAction();
         }
