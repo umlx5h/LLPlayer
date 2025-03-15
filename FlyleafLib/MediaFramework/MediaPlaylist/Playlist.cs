@@ -102,6 +102,8 @@ public class Playlist : NotifyPropertyChanged
         _Url        = null;
         _Title      = null;
         _Selected   = null;
+        PrevItem    = null;
+        NextItem    = null;
         IOStream    = null;
         FolderBase  = null;
         Completed   = false;
