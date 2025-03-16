@@ -460,6 +460,8 @@ public unsafe class AudioReader : IDisposable
             MemoryStream waveStream = new(); // MemoryStream does not need to be disposed for releasing memory
             TimeSpan waveDuration = TimeSpan.Zero; // for logging
 
+            const int waveHeaderSize = 44;
+
             // Stream processing is performed by dividing the audio by a certain size and passing it to whisper.
             long chunkSize = _config.Subtitles.ASRChunkSize;
             // Also split by elapsed seconds for live
@@ -470,8 +472,8 @@ public unsafe class AudioReader : IDisposable
             WriteWavHeader(waveStream, targetSampleRate, targetChannel);
 
             int chunkCnt = 0;
-            long framePts = AV_NOPTS_VALUE;
             TimeSpan? chunkStart = null;
+            long framePts = AV_NOPTS_VALUE;
 
             long startTime = 0;
             if (_fmtCtx->start_time != AV_NOPTS_VALUE)
@@ -608,12 +610,13 @@ public unsafe class AudioReader : IDisposable
 
                         chunkStart = null;
                         chunkSw.Restart();
+                        framePts = AV_NOPTS_VALUE;
                     }
                 }
             }
 
             // Process remaining
-            if (waveStream.Length > 0 && framePts != AV_NOPTS_VALUE)
+            if (waveStream.Length > waveHeaderSize && framePts != AV_NOPTS_VALUE)
             {
                 TimeSpan chunkEnd = TimeSpan.FromSeconds(framePts * av_q2d(_stream->time_base));
                 chunkCnt++;
