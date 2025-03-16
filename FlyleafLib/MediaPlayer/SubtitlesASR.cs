@@ -410,6 +410,8 @@ public unsafe class AudioReader : IDisposable
         // Consumer: Run whisper
         Task consumerTask = Task.Run(() =>
         {
+            using WhisperExecuter whisperExecuter = new(_config);
+
             while (channel.Reader.WaitToReadAsync(token).AsTask().GetAwaiter().GetResult())
             {
                 // Use TryPeek() to reduce the channel capacity by one.
@@ -421,7 +423,6 @@ public unsafe class AudioReader : IDisposable
                     if (CanDebug) Log.Debug(
                             $"Reading chunk from channel (chunkNo: {chunk.ChunkNumber}, start: {chunk.Start}, end: {chunk.End})");
 
-                    WhisperExecuter whisperExecuter = new(_config);
                     IAsyncEnumerator<SubtitleASRData> result = whisperExecuter
                         .Do(chunk.Stream, chunk.Start, chunk.End, chunk.ChunkNumber, token)
                         .GetAsyncEnumerator(token);
@@ -776,16 +777,48 @@ public unsafe class AudioReader : IDisposable
     }
 }
 
-public class WhisperExecuter
+public class WhisperExecuter : IDisposable
 {
     private readonly Config _config;
 
     private readonly LogHandler Log;
+    private readonly IDisposable _logger;
+    private readonly WhisperFactory _factory;
+    private readonly WhisperProcessor _processor;
 
     public WhisperExecuter(Config config)
     {
         _config = config;
         Log = new LogHandler(("[#1]").PadRight(8, ' ') + " [WhisperExecute] ");
+
+        if (_config.Subtitles.WhisperRuntimeLibraries.Count >= 1)
+        {
+            RuntimeOptions.RuntimeLibraryOrder = [.. _config.Subtitles.WhisperRuntimeLibraries];
+        }
+        else
+        {
+            RuntimeOptions.RuntimeLibraryOrder = [RuntimeLibrary.Cpu, RuntimeLibrary.CpuNoAvx]; // fallback to default
+        }
+
+        _logger = CanDebug
+            ? LogProvider.AddLogger((level, s) => Log.Debug($"[Whisper.net] [{level.ToString()}] {s}"))
+            : Disposable.Empty;
+
+        if (CanDebug) Log.Debug($"Selecting whisper runtime libraries from ({string.Join(",", RuntimeOptions.RuntimeLibraryOrder)})");
+
+        _factory = WhisperFactory.FromPath(_config.Subtitles.WhisperModel.ModelFilePath);
+
+        if (CanDebug) Log.Debug($"Selected whisper runtime library '{RuntimeOptions.LoadedLibrary}'");
+
+        WhisperProcessorBuilder whisperBuilder = _factory.CreateBuilder();
+        _processor = _config.Subtitles.WhisperParameters.ConfigureBuilder(whisperBuilder).Build();
+    }
+
+    public void Dispose()
+    {
+        _processor.DisposeAsync().AsTask().Wait();
+        _factory.Dispose();
+        _logger.Dispose();
     }
 
     public async IAsyncEnumerable<SubtitleASRData> Do(MemoryStream waveStream, TimeSpan chunkStart, TimeSpan chunkEnd, int chunkCnt, [EnumeratorCancellation] CancellationToken token)
@@ -797,29 +830,7 @@ public class WhisperExecuter
         //    waveStream.Position = 0;
         //}
 
-        if (_config.Subtitles.WhisperRuntimeLibraries.Count >= 1)
-        {
-            RuntimeOptions.RuntimeLibraryOrder = [.. _config.Subtitles.WhisperRuntimeLibraries];
-        }
-        else
-        {
-            RuntimeOptions.RuntimeLibraryOrder = [RuntimeLibrary.Cpu, RuntimeLibrary.CpuNoAvx]; // fallback to default
-        }
-
-        using IDisposable logger = CanDebug
-            ? LogProvider.AddLogger((level, s) => Log.Debug($"[Whisper.net] [{level.ToString()}] {s}"))
-            : Disposable.Empty;
-
-        if (CanDebug) Log.Debug($"Selecting whisper runtime libraries from ({string.Join(",", RuntimeOptions.RuntimeLibraryOrder)})");
-
-        using WhisperFactory whisperFactory = WhisperFactory.FromPath(_config.Subtitles.WhisperModel.ModelFilePath);
-
-        if (CanDebug) Log.Debug($"Selected whisper runtime library '{RuntimeOptions.LoadedLibrary}'");
-
-        WhisperProcessorBuilder whisperBuilder = whisperFactory.CreateBuilder();
-        await using WhisperProcessor processor = _config.Subtitles.WhisperParameters.ConfigureBuilder(whisperBuilder).Build();
-
-        await foreach (var result in processor.ProcessAsync(waveStream, token).ConfigureAwait(false))
+        await foreach (var result in _processor.ProcessAsync(waveStream, token).ConfigureAwait(false))
         {
             token.ThrowIfCancellationRequested();
 
