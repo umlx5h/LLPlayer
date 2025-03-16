@@ -635,7 +635,7 @@ public class Subtitle : NotifyPropertyChanged
 
         TimeSpan curTime = new(_player.CurTime);
 
-        Task.Factory.StartNew(() =>
+        Task.Run(() =>
             {
                 bool isDone;
 
@@ -649,7 +649,7 @@ public class Subtitle : NotifyPropertyChanged
                     // re-enable spinner because it is running
                     _player.SubtitlesManager[_subIndex].StartLoading();
                 }
-            }, TaskCreationOptions.LongRunning)
+            })
             .ContinueWith(t =>
             {
                 // TODO: L: error handling - restore state gracefully?
@@ -657,7 +657,7 @@ public class Subtitle : NotifyPropertyChanged
                 {
                     var ex = t.Exception.Flatten().InnerException;
 
-                    _player.RaiseUnknownErrorOccurred($"Cannot execute ASR: {ex?.Message}", UnknownErrorType.ASR, ex);
+                    _player.RaiseUnknownErrorOccurred($"Cannot execute ASR: {ex?.Message}", UnknownErrorType.ASR, t.Exception);
                 }
             }, TaskContinuationOptions.OnlyOnFaulted);
 

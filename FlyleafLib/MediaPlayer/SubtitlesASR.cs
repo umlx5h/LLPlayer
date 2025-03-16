@@ -2,7 +2,10 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Channels;
+using System.Threading.Tasks;
 using Whisper.net;
 using Whisper.net.LibraryLoader;
 using Whisper.net.Logger;
@@ -278,84 +281,6 @@ public class SubtitlesASR
     }
 }
 
-public class WhisperExecuter
-{
-    private readonly Config _config;
-
-    private readonly LogHandler Log;
-
-    public WhisperExecuter(Config config)
-    {
-        _config = config;
-        Log = new LogHandler(("[#1]").PadRight(8, ' ') + " [WhisperExecute] ");
-    }
-
-    public async IAsyncEnumerable<SubtitleASRData> Do(MemoryStream waveStream, TimeSpan chunkStart, TimeSpan chunkEnd, int chunkCnt, CancellationToken token = default)
-    {
-        // Output wav file for debugging
-        //using (FileStream fs = new($"subtitlewhisper-{chunkCnt}.wav", FileMode.Create, FileAccess.Write))
-        //{
-        //    waveStream.WriteTo(fs);
-        //    waveStream.Position = 0;
-        //}
-
-        if (_config.Subtitles.WhisperRuntimeLibraries.Count >= 1)
-        {
-            RuntimeOptions.RuntimeLibraryOrder = [.. _config.Subtitles.WhisperRuntimeLibraries];
-        }
-        else
-        {
-            RuntimeOptions.RuntimeLibraryOrder = [RuntimeLibrary.Cpu, RuntimeLibrary.CpuNoAvx]; // fallback to default
-        }
-
-        using IDisposable logger = CanDebug
-            ? LogProvider.AddLogger((level, s) => Log.Debug($"[Whisper.net] [{level.ToString()}] {s}"))
-            : Disposable.Empty;
-
-        if (CanDebug) Log.Debug($"Selecting whisper runtime libraries from ({string.Join(",", RuntimeOptions.RuntimeLibraryOrder)})");
-
-        using WhisperFactory whisperFactory = WhisperFactory.FromPath(_config.Subtitles.WhisperModel.ModelFilePath);
-
-        if (CanDebug) Log.Debug($"Selected whisper runtime library '{RuntimeOptions.LoadedLibrary}'");
-
-        WhisperProcessorBuilder whisperBuilder = whisperFactory.CreateBuilder();
-        await using WhisperProcessor processor = _config.Subtitles.WhisperParameters.ConfigureBuilder(whisperBuilder).Build();
-
-        await foreach (var result in processor.ProcessAsync(waveStream, token))
-        {
-            token.ThrowIfCancellationRequested();
-
-            TimeSpan start = chunkStart.Add(result.Start);
-            TimeSpan end = chunkStart.Add(result.End);
-            if (end > chunkEnd)
-            {
-                // Shorten by 20 ms to prevent the next subtitle from being covered
-                end = chunkEnd.Subtract(TimeSpan.FromMilliseconds(20));
-            }
-
-            SubtitleASRData sub = new()
-            {
-                Text = result.Text.Trim(), // remove leading whitespace
-                StartTime = start,
-                EndTime = end,
-#if DEBUG
-                ChunkNo = chunkCnt,
-                StartTimeChunk = result.Start,
-                EndTimeChunk = result.End,
-#endif
-                Language = result.Language
-            };
-
-            Log.Debug(string.Format("{0}->{1} ({2}->{3}): {4}",
-                start, end,
-                result.Start, result.End,
-                result.Text));
-
-            yield return sub;
-        }
-    }
-}
-
 public unsafe class AudioReader : IDisposable
 {
     private readonly Config _config;
@@ -366,6 +291,9 @@ public unsafe class AudioReader : IDisposable
     private SwrContext* _swrContext = null;
     private AVPacket* _packet = null;
     private AVFrame* _frame = null;
+
+    private bool _isFile;
+
     private readonly LogHandler Log;
 
     public AudioReader(Config config)
@@ -412,44 +340,24 @@ public unsafe class AudioReader : IDisposable
 
         avcodec_open2(_codecCtx, _codec, null)
             .ThrowExceptionIfError("avcodec_open2");
+
+        _isFile = File.Exists(url);
     }
+
+    private record struct AudioChunk(MemoryStream Stream, int ChunkNumber, TimeSpan Start, TimeSpan End);
 
     /// <summary>
     /// Extract audio files in WAV format and run Whisper
     /// </summary>
     /// <param name="curTime">Current playback timestamp, from which whisper is run</param>
     /// <param name="addSub">Action to process one result</param>
-    /// <param name="token"></param>
+    /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="OperationCanceledException"></exception>
-    public void ReadAll(TimeSpan curTime, Action<SubtitleASRData> addSub, CancellationToken token = default)
+    public void ReadAll(TimeSpan curTime, Action<SubtitleASRData> addSub, CancellationToken cancellationToken)
     {
-        int ret = -1;
-
         _packet = av_packet_alloc();
         _frame = av_frame_alloc();
-
-        // When passing the audio file to Whisper, it must be converted to a 16000 sample rate WAV file.
-        // For this purpose, the ffmpeg API is used to perform the conversion.
-        // Audio files are divided by a certain size, stored in memory, and passed by memory stream.
-        int targetSampleRate = 16000;
-        int targetChannel = 1;
-        MemoryStream waveStream = new();
-        TimeSpan waveDuration = TimeSpan.Zero; // for logging
-
-        // Stream processing is performed by dividing the audio by a certain size and passing it to whisper.
-        // TODO: L: Review this process as subtitles may be cut off in the middle.
-        long chunkSize = _config.Subtitles.ASRChunkSize;
-        // Also split by elapsed seconds for live
-        TimeSpan chunkElapsed = TimeSpan.FromSeconds(_config.Subtitles.ASRChunkSeconds);
-        Stopwatch chunkSw = new();
-        chunkSw.Start();
-
-        int chunkCnt = 0;
-        long framePts = AV_NOPTS_VALUE;
-        TimeSpan? chunkStart = null;
-
-        WriteWavHeader(waveStream, targetSampleRate, targetChannel);
 
         // Whisper from the current playback position
         // TODO: L: Fold back and allow the first half to run as well.
@@ -460,7 +368,7 @@ public unsafe class AudioReader : IDisposable
             long ticks = curTime.Subtract(TimeSpan.FromSeconds(10)).Ticks;
             // Seek if later than 30 seconds (Seek before 10 seconds)
             // TODO: L: m2ts seek problem?
-            ret = avformat_seek_file(_fmtCtx, -1, long.MinValue, ticks / 10, ticks / 10, SeekFlags.Any);
+            int ret = avformat_seek_file(_fmtCtx, -1, long.MinValue, ticks / 10, ticks / 10, SeekFlags.Any);
             if (ret < 0)
             {
                 Log.Info($"Seek failed 1/2 (retrying) {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
@@ -484,170 +392,254 @@ public unsafe class AudioReader : IDisposable
             }
         }
 
-        long startTime = 0;
-        if (_fmtCtx->start_time != AV_NOPTS_VALUE)
+        // Assume a network stream and parallelize the reading of packets and the execution of whisper.
+        // For network video, increase capacity as downloads may take longer.
+        // (concern that memory usage will increase by three times the chunk size)
+        int capacity = _isFile ? 1 : 2;
+        BoundedChannelOptions channelOptions = new(capacity)
         {
+            SingleReader = true,
+            SingleWriter = true,
+        };
+        Channel<AudioChunk> channel = Channel.CreateBounded<AudioChunk>(channelOptions);
+
+        // own cancellation for producer/consumer
+        var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        CancellationToken token = cts.Token;
+
+        // Consumer: Run whisper
+        Task consumerTask = Task.Run(() =>
+        {
+            while (channel.Reader.WaitToReadAsync(token).AsTask().GetAwaiter().GetResult())
+            {
+                // Use TryPeek() to reduce the channel capacity by one.
+                if (!channel.Reader.TryPeek(out AudioChunk chunk))
+                    throw new InvalidOperationException("can not peek AudioChunk from channel");
+
+                try
+                {
+                    if (CanDebug) Log.Debug(
+                            $"Reading chunk from channel (chunkNo: {chunk.ChunkNumber}, start: {chunk.Start}, end: {chunk.End})");
+
+                    WhisperExecuter whisperExecuter = new(_config);
+                    IAsyncEnumerator<SubtitleASRData> result = whisperExecuter
+                        .Do(chunk.Stream, chunk.Start, chunk.End, chunk.ChunkNumber, token)
+                        .GetAsyncEnumerator(token);
+                    while (result.MoveNextAsync().AsTask().GetAwaiter().GetResult())
+                    {
+                        addSub(result.Current);
+                    }
+                }
+                finally
+                {
+                    chunk.Stream.Dispose();
+
+                    if (!channel.Reader.TryRead(out _))
+                        throw new InvalidOperationException("can not discard AudioChunk from channel");
+                }
+            }
+        }, token);
+
+        // Producer: Extract WAV and pass to consumer
+        Task producerTask = Task.Run(() =>
+        {
+            // When passing the audio file to Whisper, it must be converted to a 16000 sample rate WAV file.
+            // For this purpose, the ffmpeg API is used to perform the conversion.
+            // Audio files are divided by a certain size, stored in memory, and passed by memory stream.
+            int targetSampleRate = 16000;
+            int targetChannel = 1;
+            MemoryStream waveStream = new(); // MemoryStream does not need to be disposed for releasing memory
+            TimeSpan waveDuration = TimeSpan.Zero; // for logging
+
+            // Stream processing is performed by dividing the audio by a certain size and passing it to whisper.
+            long chunkSize = _config.Subtitles.ASRChunkSize;
+            // Also split by elapsed seconds for live
+            TimeSpan chunkElapsed = TimeSpan.FromSeconds(_config.Subtitles.ASRChunkSeconds);
+            Stopwatch chunkSw = new();
+            chunkSw.Start();
+
+            WriteWavHeader(waveStream, targetSampleRate, targetChannel);
+
+            int chunkCnt = 0;
+            long framePts = AV_NOPTS_VALUE;
+            TimeSpan? chunkStart = null;
+
+            long startTime = 0;
+            if (_fmtCtx->start_time != AV_NOPTS_VALUE)
+            {
+                // 0.1us (tick)
+                startTime = _fmtCtx->start_time * 10;
+            }
+
             // 0.1us (tick)
-            startTime = _fmtCtx->start_time * 10;
-        }
-        // 0.1us (tick)
-        double timebase = av_q2d(_stream->time_base) * 10000.0 * 1000.0;
+            double timebase = av_q2d(_stream->time_base) * 10000.0 * 1000.0;
 
-        int demuxErrors = 0;
-        int decodeErrors = 0;
+            int demuxErrors = 0;
+            int decodeErrors = 0;
 
-        while (true)
-        {
-            ret = av_read_frame(_fmtCtx, _packet);
-            if (ret == AVERROR_EOF)
+            int ret = -1;
+
+            while (true)
             {
-                break;
-            }
+                token.ThrowIfCancellationRequested();
 
-            if (ret != 0)
-            {
-                // demux error
-                av_packet_unref(_packet);
-                if (CanWarn) Log.Warn($"av_read_frame: {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
-
-                if (++demuxErrors == _config.Demuxer.MaxErrors)
-                {
-                    ret.ThrowExceptionIfError("av_read_frame");
-                }
-            }
-
-            if (token.IsCancellationRequested)
-            {
-                av_packet_unref(_packet);
-                break;
-            }
-
-            // Discard all but the selected audio stream.
-            if (_packet->stream_index != _stream->index)
-            {
-                av_packet_unref(_packet);
-                continue;
-            }
-
-            ret = avcodec_send_packet(_codecCtx, _packet);
-            if (ret == AVERROR(EAGAIN))
-            {
-                continue;
-            }
-
-            if (ret != 0)
-            {
-                // decoder error
-                av_packet_unref(_packet);
-                if (CanWarn) Log.Warn($"avcodec_send_packet: {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
-
-                if (++decodeErrors == _config.Decoder.MaxErrors)
-                {
-                    ret.ThrowExceptionIfError("avcodec_send_packet");
-                }
-
-                continue;
-            }
-
-            av_packet_unref(_packet);
-
-            while (ret >= 0)
-            {
-                ret = avcodec_receive_frame(_codecCtx, _frame);
-                if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+                ret = av_read_frame(_fmtCtx, _packet);
+                if (ret == AVERROR_EOF)
                 {
                     break;
                 }
-                ret.ThrowExceptionIfError("avcodec_receive_frame");
 
-                if (_frame->best_effort_timestamp != AV_NOPTS_VALUE)
+                if (ret != 0)
                 {
-                    framePts = _frame->best_effort_timestamp;
-                }
-                else if (_frame->pts != AV_NOPTS_VALUE)
-                {
-                    framePts = _frame->pts;
-                }
-                else
-                {
-                    // Certain encoders sometimes cannot get pts (APE, Musepack)
-                    framePts += _frame->duration;
-                }
+                    // demux error
+                    av_packet_unref(_packet);
+                    if (CanWarn) Log.Warn($"av_read_frame: {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
 
-                waveDuration = waveDuration.Add(new TimeSpan((long)(_frame->duration * timebase)));
-
-                if (chunkStart == null)
-                {
-                    chunkStart = new TimeSpan((long)(framePts * timebase) - startTime);
-                    if (chunkStart.Value.Ticks < 0)
+                    if (++demuxErrors == _config.Demuxer.MaxErrors)
                     {
-                        // Correct to 0 if negative
-                        chunkStart = new TimeSpan(0);
+                        ret.ThrowExceptionIfError("av_read_frame");
                     }
                 }
 
-                ResampleTo(waveStream, _frame, targetSampleRate, targetChannel);
-
-                // TODO: L: want it to split at the silent part
-                if (waveStream.Length >= chunkSize || chunkSw.Elapsed >= chunkElapsed)
+                // Discard all but the selected audio stream.
+                if (_packet->stream_index != _stream->index)
                 {
-                    Log.Info($"Process chunk:{chunkCnt + 1} (sizeMB: {waveStream.Length / 1024 / 1024}, duration: {waveDuration}, elapsed: {chunkSw.Elapsed})");
-                    ProcessChunk(waveStream, framePts);
+                    av_packet_unref(_packet);
+                    continue;
+                }
 
-                    waveStream = new MemoryStream();
-                    WriteWavHeader(waveStream, targetSampleRate, targetChannel);
-                    waveDuration = TimeSpan.Zero;
+                ret = avcodec_send_packet(_codecCtx, _packet);
+                if (ret == AVERROR(EAGAIN))
+                {
+                    continue;
+                }
 
-                    chunkStart = null;
-                    chunkSw.Restart();
+                if (ret != 0)
+                {
+                    // decoder error
+                    av_packet_unref(_packet);
+                    if (CanWarn) Log.Warn($"avcodec_send_packet: {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
+
+                    if (++decodeErrors == _config.Decoder.MaxErrors)
+                    {
+                        ret.ThrowExceptionIfError("avcodec_send_packet");
+                    }
+
+                    continue;
+                }
+
+                av_packet_unref(_packet);
+
+                while (ret >= 0)
+                {
+                    ret = avcodec_receive_frame(_codecCtx, _frame);
+                    if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+                    {
+                        break;
+                    }
+                    ret.ThrowExceptionIfError("avcodec_receive_frame");
+
+                    if (_frame->best_effort_timestamp != AV_NOPTS_VALUE)
+                    {
+                        framePts = _frame->best_effort_timestamp;
+                    }
+                    else if (_frame->pts != AV_NOPTS_VALUE)
+                    {
+                        framePts = _frame->pts;
+                    }
+                    else
+                    {
+                        // Certain encoders sometimes cannot get pts (APE, Musepack)
+                        framePts += _frame->duration;
+                    }
+
+                    waveDuration = waveDuration.Add(new TimeSpan((long)(_frame->duration * timebase)));
+
+                    if (chunkStart == null)
+                    {
+                        chunkStart = new TimeSpan((long)(framePts * timebase) - startTime);
+                        if (chunkStart.Value.Ticks < 0)
+                        {
+                            // Correct to 0 if negative
+                            chunkStart = new TimeSpan(0);
+                        }
+                    }
+
+                    ResampleTo(waveStream, _frame, targetSampleRate, targetChannel);
+
+                    // TODO: L: want it to split at the silent part
+                    if (waveStream.Length >= chunkSize || chunkSw.Elapsed >= chunkElapsed)
+                    {
+                        TimeSpan chunkEnd = TimeSpan.FromSeconds(framePts * av_q2d(_stream->time_base));
+                        chunkCnt++;
+
+                        if (CanInfo) Log.Info(
+                            $"Process chunk (chunkNo: {chunkCnt}, sizeMB: {waveStream.Length / 1024 / 1024}, duration: {waveDuration}, elapsed: {chunkSw.Elapsed})");
+
+                        UpdateWavHeader(waveStream);
+                        waveStream.Position = 0;
+
+                        AudioChunk chunk = new(waveStream, chunkCnt, chunkStart.Value, chunkEnd);
+
+                        if (CanDebug) Log.Debug($"Writing chunk to channel ({chunkCnt})");
+                        // if channel capacity reached, it will be waited
+                        channel.Writer.WriteAsync(chunk, token).AsTask().Wait(token);
+                        if (CanDebug) Log.Debug($"Done writing chunk to channel ({chunkCnt})");
+
+                        waveStream = new MemoryStream();
+                        WriteWavHeader(waveStream, targetSampleRate, targetChannel);
+                        waveDuration = TimeSpan.Zero;
+
+                        chunkStart = null;
+                        chunkSw.Restart();
+                    }
                 }
             }
-        }
 
-        if (!token.IsCancellationRequested)
-        {
             // Process remaining
             if (waveStream.Length > 0 && framePts != AV_NOPTS_VALUE)
             {
-                Log.Info($"Process remaining:{chunkCnt + 1} (sizeMB: {waveStream.Length / 1024 / 1024}, duration: {waveDuration}, elapsed: {chunkSw.Elapsed})");
-                ProcessChunk(waveStream, framePts);
+                TimeSpan chunkEnd = TimeSpan.FromSeconds(framePts * av_q2d(_stream->time_base));
+                chunkCnt++;
+
+                if (CanInfo) Log.Info(
+                    $"Process last chunk (chunkNo: {chunkCnt}, sizeMB: {waveStream.Length / 1024 / 1024}, duration: {waveDuration}, elapsed: {chunkSw.Elapsed})");
+
+                UpdateWavHeader(waveStream);
+                waveStream.Position = 0;
+
+                AudioChunk chunk = new(waveStream, chunkCnt, chunkStart!.Value, chunkEnd);
+
+                if (CanDebug) Log.Debug($"Writing last chunk to channel ({chunkCnt})");
+                channel.Writer.WriteAsync(chunk, token).AsTask().Wait(token);
+                if (CanDebug) Log.Debug($"Done writing last chunk to channel ({chunkCnt})");
             }
-        }
+        }, token);
 
-        waveStream.Dispose();
+        // complete channel
+        producerTask.ContinueWith(t => channel.Writer.Complete(), token);
 
-        return;
+        // When an exception occurs in both consumer and producer, the other is canceled.
+        consumerTask.ContinueWith(t =>
+            cts.Cancel(), TaskContinuationOptions.OnlyOnFaulted);
+        producerTask.ContinueWith(t =>
+            cts.Cancel(), TaskContinuationOptions.OnlyOnFaulted);
 
-        void ProcessChunk(MemoryStream stream, long endPts)
+        try
         {
-            chunkCnt++;
-
-            UpdateWavHeader(stream);
-            stream.Position = 0;
-
-            TimeSpan chunkEnd = TimeSpan.FromSeconds(endPts * av_q2d(_stream->time_base));
-            //Debug.WriteLine("chunk: " + chunkCnt);
-            //Debug.WriteLine("duration: " + chunkEnd.Subtract(chunkStart.Value));
-            //Debug.WriteLine("duration sec: " + chunkEnd.Subtract(chunkStart.Value).TotalSeconds);
-            //Debug.WriteLine($"range: {chunkStart} - {chunkEnd}");
-
-            try
+            Task.WhenAll(consumerTask, producerTask).Wait();
+        }
+        catch (AggregateException ex)
+        {
+            if (cancellationToken.IsCancellationRequested)
             {
-                // TODO: L: slightly leaking memory?
-                WhisperExecuter whisperExecuter = new(_config);
-                IAsyncEnumerator<SubtitleASRData> result = whisperExecuter
-                    .Do(stream, chunkStart!.Value, chunkEnd, chunkCnt, token).GetAsyncEnumerator(token);
-                while (result.MoveNextAsync().AsTask().GetAwaiter().GetResult())
-                {
-                    addSub(result.Current);
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                Log.Debug("Whisper canceled");
+                // canceled by caller
+                if (CanDebug) Log.Debug("Whisper canceled");
+                return;
             }
 
-            stream.Dispose();
+            // canceled because of exceptions
+            throw;
         }
     }
 
@@ -781,6 +773,84 @@ public unsafe class AudioReader : IDisposable
         }
 
         _isDisposed = true;
+    }
+}
+
+public class WhisperExecuter
+{
+    private readonly Config _config;
+
+    private readonly LogHandler Log;
+
+    public WhisperExecuter(Config config)
+    {
+        _config = config;
+        Log = new LogHandler(("[#1]").PadRight(8, ' ') + " [WhisperExecute] ");
+    }
+
+    public async IAsyncEnumerable<SubtitleASRData> Do(MemoryStream waveStream, TimeSpan chunkStart, TimeSpan chunkEnd, int chunkCnt, [EnumeratorCancellation] CancellationToken token)
+    {
+        // Output wav file for debugging
+        //using (FileStream fs = new($"subtitlewhisper-{chunkCnt}.wav", FileMode.Create, FileAccess.Write))
+        //{
+        //    waveStream.WriteTo(fs);
+        //    waveStream.Position = 0;
+        //}
+
+        if (_config.Subtitles.WhisperRuntimeLibraries.Count >= 1)
+        {
+            RuntimeOptions.RuntimeLibraryOrder = [.. _config.Subtitles.WhisperRuntimeLibraries];
+        }
+        else
+        {
+            RuntimeOptions.RuntimeLibraryOrder = [RuntimeLibrary.Cpu, RuntimeLibrary.CpuNoAvx]; // fallback to default
+        }
+
+        using IDisposable logger = CanDebug
+            ? LogProvider.AddLogger((level, s) => Log.Debug($"[Whisper.net] [{level.ToString()}] {s}"))
+            : Disposable.Empty;
+
+        if (CanDebug) Log.Debug($"Selecting whisper runtime libraries from ({string.Join(",", RuntimeOptions.RuntimeLibraryOrder)})");
+
+        using WhisperFactory whisperFactory = WhisperFactory.FromPath(_config.Subtitles.WhisperModel.ModelFilePath);
+
+        if (CanDebug) Log.Debug($"Selected whisper runtime library '{RuntimeOptions.LoadedLibrary}'");
+
+        WhisperProcessorBuilder whisperBuilder = whisperFactory.CreateBuilder();
+        await using WhisperProcessor processor = _config.Subtitles.WhisperParameters.ConfigureBuilder(whisperBuilder).Build();
+
+        await foreach (var result in processor.ProcessAsync(waveStream, token).ConfigureAwait(false))
+        {
+            token.ThrowIfCancellationRequested();
+
+            TimeSpan start = chunkStart.Add(result.Start);
+            TimeSpan end = chunkStart.Add(result.End);
+            if (end > chunkEnd)
+            {
+                // Shorten by 20 ms to prevent the next subtitle from being covered
+                end = chunkEnd.Subtract(TimeSpan.FromMilliseconds(20));
+            }
+
+            SubtitleASRData sub = new()
+            {
+                Text = result.Text.Trim(), // remove leading whitespace
+                StartTime = start,
+                EndTime = end,
+#if DEBUG
+                ChunkNo = chunkCnt,
+                StartTimeChunk = result.Start,
+                EndTimeChunk = result.End,
+#endif
+                Language = result.Language
+            };
+
+            if (CanDebug) Log.Debug(string.Format("{0}->{1} ({2}->{3}): {4}",
+                start, end,
+                result.Start, result.End,
+                result.Text));
+
+            yield return sub;
+        }
     }
 }
 

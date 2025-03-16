@@ -1081,7 +1081,7 @@ public class Config : NotifyPropertyChanged
         /// Chunk seconds when processing ASR with audio stream
         /// In the case of network streams, etc., the size is small and can be divided by specifying the number of seconds.
         /// </summary>
-        public int ASRChunkSeconds { get; set => Set(ref field, value); } = 15;
+        public int ASRChunkSeconds { get; set => Set(ref field, value); } = 20;
         #endregion
 
         #region OCR
