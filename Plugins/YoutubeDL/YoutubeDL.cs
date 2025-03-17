@@ -87,8 +87,8 @@ namespace FlyleafLib.Plugins
                 where   HasVideo(format) && format.height <= Config.Video.MaxVerticalResolution && (!Regex.IsMatch(format.protocol, "dash", RegexOptions.IgnoreCase) || format.vcodec.ToLower() == "vp9")
                 orderby format.width    descending,
                         format.height   descending,
-                        format.protocol descending, // prefer m3u8 over https
-                        format.vcodec,              // prefer avc over vp09 (because YT can't seek vp09 at all)
+                        format.protocol descending, // prefer m3u8 over https (for performance)
+                        format.vcodec   descending, // prefer vp09 over avc   (for performance)
                         format.tbr      descending,
                         format.fps      descending
                 select  format;
