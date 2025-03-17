@@ -39,6 +39,8 @@ public class Config : NotifyPropertyChanged
             foreach (var opt in defaultOptions)
                 Plugins[plugin.Name].Add(opt.Key, opt.Value);
         }
+        // save default plugin options for later
+        _PluginsDefault = Plugins;
 
         Player.config = this;
         Demuxer.config = this;
@@ -71,6 +73,48 @@ public class Config : NotifyPropertyChanged
         config.Demuxer.config = config;
 
         config.Subtitles.SetChildren();
+
+        // Restore the plugin options initialized by the constructor, as they are overwritten during deserialization.
+
+        // Remove removed plugin options
+        foreach (var plugin in config.Plugins)
+        {
+            // plugin deleted
+            if (!config._PluginsDefault.ContainsKey(plugin.Key))
+            {
+                config.Plugins.Remove(plugin.Key);
+                continue;
+            }
+
+            // plugin option deleted
+            foreach (var opt in plugin.Value)
+            {
+                if (!config._PluginsDefault[plugin.Key].ContainsKey(opt.Key))
+                {
+                    config.Plugins[plugin.Key].Remove(opt.Key);
+                }
+            }
+        }
+
+        // Restore added plugin options
+        foreach (var plugin in config._PluginsDefault)
+        {
+            // plugin added
+            if (!config.Plugins.ContainsKey(plugin.Key))
+            {
+                config.Plugins[plugin.Key] = plugin.Value;
+                continue;
+            }
+
+            // plugin option added
+            foreach (var opt in plugin.Value)
+            {
+                if (!config.Plugins[plugin.Key].ContainsKey(opt.Key))
+                {
+                    config.Plugins[plugin.Key][opt.Key] = opt.Value;
+                }
+            }
+        }
 
         return config;
     }
@@ -124,6 +168,9 @@ public class Config : NotifyPropertyChanged
 
     public SerializableDictionary<string, SerializableDictionary<string, string>>
                             Plugins     { get; set; } = new();
+    private
+           SerializableDictionary<string, SerializableDictionary<string, string>>
+                            _PluginsDefault;
     public class PlayerConfig : NotifyPropertyChanged
     {
         public PlayerConfig Clone()

@@ -43,7 +43,7 @@
                     </ItemsControl.Template>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <DockPanel>
+                            <DockPanel Margin="0 0 0 5">
                                 <TextBlock
                                     Width="180"
                                     Text="{Binding Key, Mode=OneWay}" />
