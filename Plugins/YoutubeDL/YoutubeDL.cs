@@ -46,7 +46,8 @@ namespace FlyleafLib.Plugins
         public override SerializableDictionary<string, string> GetDefaultOptions()
             => new()
             {
-                { "ExtraArguments", "" } // TBR: Restore default functionality with --cookies-from-browser {defaultBrowser} || https://github.com/yt-dlp/yt-dlp/issues/7271
+                { "ExtraArguments", "" }, // TBR: Restore default functionality with --cookies-from-browser {defaultBrowser} || https://github.com/yt-dlp/yt-dlp/issues/7271
+                { "MaxVideoHeight", "720" },
             };
 
         public override void OnInitializing()
@@ -81,10 +82,17 @@ namespace FlyleafLib.Plugins
             // TODO: Expose in settings (vCodecs Blacklist) || Create a HW decoding failed list dynamic (check also for whitelist)
             List<string> vCodecsBlacklist = [];
 
+            int maxHeight;
+
+            if (int.TryParse(Options["MaxVideoHeight"], out var height) && height > 0)
+                maxHeight = Math.Min(Config.Video.MaxVerticalResolution, height);
+            else
+                maxHeight = Config.Video.MaxVerticalResolution;
+
             // Video Streams Order based on Screen Resolution
             var iresults =
                 from    format in ytdl.formats
-                where   HasVideo(format) && format.height <= Config.Video.MaxVerticalResolution && (!Regex.IsMatch(format.protocol, "dash", RegexOptions.IgnoreCase) || format.vcodec.ToLower() == "vp9")
+                where   HasVideo(format) && format.height <= maxHeight && (!Regex.IsMatch(format.protocol, "dash", RegexOptions.IgnoreCase) || format.vcodec.ToLower() == "vp9")
                 orderby format.width    descending,
                         format.height   descending,
                         format.protocol descending, // prefer m3u8 over https (for performance)
