@@ -48,6 +48,7 @@ namespace FlyleafLib.Plugins
             {
                 { "ExtraArguments", "" }, // TBR: Restore default functionality with --cookies-from-browser {defaultBrowser} || https://github.com/yt-dlp/yt-dlp/issues/7271
                 { "MaxVideoHeight", "720" },
+                { "SkipGeneratedSubs", "False" }
             };
 
         public override void OnInitializing()
@@ -371,6 +372,10 @@ namespace FlyleafLib.Plugins
                             if (Language.Get(subtitle1.Key) == Config.Subtitles.Languages[0])
                                 found = true;
 
+                            if (bool.TryParse(Options["SkipGeneratedSubs"], out var isSkip))
+                                if (isSkip && subtitle.url.Contains("/api/timedtext"))
+                                    continue;
+
                             AddExternalStream(new ExternalSubtitlesStream()
                             {
                                 Downloaded  = true,
@@ -396,6 +401,10 @@ namespace FlyleafLib.Plugins
 
                                 if (subtitle.ext.ToLower() != "vtt")
                                     continue;
+
+                                if (bool.TryParse(Options["SkipGeneratedSubs"], out var isSkip))
+                                    if (isSkip && subtitle.url.Contains("/api/timedtext"))
+                                        continue;
 
                                 AddExternalStream(new ExternalSubtitlesStream()
                                 {
