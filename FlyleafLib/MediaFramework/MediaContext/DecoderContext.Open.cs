@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -927,8 +928,8 @@ public partial class DecoderContext
 
         string error = null;
 
-        SerializableDictionary<string, string> formatOpt = null;
-        SerializableDictionary<string, string> copied = null;
+        Dictionary<string, string> formatOpt = null;
+        Dictionary<string, string> copied = null;
 
         try
         {
@@ -936,7 +937,7 @@ public partial class DecoderContext
             if (Playlist.InputType == InputType.Web)
             {
                 formatOpt = Config.Demuxer.GetFormatOptPtr(demuxer.Type);
-                copied = new SerializableDictionary<string, string>();
+                copied = new Dictionary<string, string>();
 
                 foreach (var opt in formatOpt)
                     copied.Add(opt.Key, opt.Value);

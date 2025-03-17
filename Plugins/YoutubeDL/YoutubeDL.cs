@@ -43,7 +43,7 @@ namespace FlyleafLib.Plugins
         long                sessionId = -1; // same for playlists
         int                 retries;
 
-        public override SerializableDictionary<string, string> GetDefaultOptions()
+        public override Dictionary<string, string> GetDefaultOptions()
             => new()
             {
                 { "ExtraArguments", "" }, // TBR: Restore default functionality with --cookies-from-browser {defaultBrowser} || https://github.com/yt-dlp/yt-dlp/issues/7271
