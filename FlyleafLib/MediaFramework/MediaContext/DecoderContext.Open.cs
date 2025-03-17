@@ -485,11 +485,7 @@ public partial class DecoderContext
                 OpenSuggestedData();
             }
 
-            if (VideoDemuxer.Chapters.Count == 0 && Playlist.Selected.Chapters.Count > 0)
-            {
-                foreach (var chapter in Playlist.Selected.Chapters)
-                    VideoDemuxer.Chapters.Add(chapter);
-            }
+            LoadPlaylistChapters();
 
             return args;
         } catch (Exception e)
@@ -610,6 +606,8 @@ public partial class DecoderContext
                 if (!args.Success)
                     return args;
             }
+
+            LoadPlaylistChapters();
 
             extStream.Enabled = true;
 
@@ -987,6 +985,17 @@ public partial class DecoderContext
             }
 
             OpenedPlugin?.OnBufferingCompleted();
+        }
+    }
+
+    private void LoadPlaylistChapters()
+    {
+        if (Playlist.Selected != null && Playlist.Selected.Chapters.Count > 0 && MainDemuxer.Chapters.Count == 0)
+        {
+            foreach (var chapter in Playlist.Selected.Chapters)
+            {
+                MainDemuxer.Chapters.Add(chapter);
+            }
         }
     }
     #endregion
