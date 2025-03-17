@@ -48,7 +48,8 @@ namespace FlyleafLib.Plugins
             {
                 { "ExtraArguments", "" }, // TBR: Restore default functionality with --cookies-from-browser {defaultBrowser} || https://github.com/yt-dlp/yt-dlp/issues/7271
                 { "MaxVideoHeight", "720" },
-                { "SkipGeneratedSubs", "False" }
+                { "SkipGeneratedSubs", "False" },
+                { "PreferVideoWithAudio", "False" },
             };
 
         public override void OnInitializing()
@@ -111,7 +112,7 @@ namespace FlyleafLib.Plugins
                     orderby format.width    descending,
                             format.height   descending,
                             format.protocol descending,
-                            format.vcodec,
+                            format.vcodec   descending,
                             format.tbr      descending,
                             format.fps      descending
                     select  format;
@@ -126,7 +127,11 @@ namespace FlyleafLib.Plugins
             double bestHeight = results[0].height;
 
             // Choose from the best resolution (0. with acodec and not blacklisted 1. not blacklisted 2. any)
-            int priority = 0;
+            int priority = 1;
+            if (bool.TryParse(Options["PreferVideoWithAudio"], out var v) && v)
+            {
+                priority = 0;
+            }
             while (priority < 3)
             {
                 for (int i = 0; i < results.Count; i++)
