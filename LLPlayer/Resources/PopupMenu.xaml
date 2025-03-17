@@ -103,18 +103,7 @@
             </MenuItem.ItemContainerStyle>
             <MenuItem.ItemTemplate>
                 <DataTemplate>
-                    <TextBlock>
-                        <TextBlock.Text>
-                            <MultiBinding StringFormat=" {0}x{1} @{2} ({3}) [{4}]">
-                                <Binding Path="Width"/>
-                                <Binding Path="Height"/>
-                                <Binding Path="FPS"/>
-                                <Binding Path="Codec"/>
-                                <Binding Path="Protocol"/>
-                                <!--<Binding Path="HasAudio"/>-->
-                            </MultiBinding>
-                        </TextBlock.Text>
-                    </TextBlock>
+                    <TextBlock Text="{Binding DisplayMember}" />
                 </DataTemplate>
             </MenuItem.ItemTemplate>
         </MenuItem>

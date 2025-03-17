@@ -7,4 +7,7 @@ public class ExternalVideoStream : ExternalStream
     public int      Width           { get; set; }
 
     public bool     HasAudio        { get; set; }
+
+    public string   DisplayMember =>
+        $"{Width}x{Height} @{Math.Round(FPS, 2, MidpointRounding.AwayFromZero)} ({Codec}) [{Protocol}]{(HasAudio ? "" : " [NA]")}";
 }
