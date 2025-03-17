@@ -5,7 +5,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Serialization;
 
 using FlyleafLib.MediaFramework.MediaDecoder;
 using FlyleafLib.MediaFramework.MediaFrame;
@@ -147,14 +146,12 @@ public class Config : NotifyPropertyChanged
     /// <summary>
     /// Whether configuration has been loaded from file
     /// </summary>
-    [XmlIgnore]
     [JsonIgnore]
     public bool             Loaded      { get; private set; }
 
     /// <summary>
     /// The path that this configuration has been loaded from
     /// </summary>
-    [XmlIgnore]
     [JsonIgnore]
     public string           LoadedPath  { get; private set; }
 
@@ -688,7 +685,6 @@ public class Config : NotifyPropertyChanged
         /// <summary>
         /// The max resolution that the current system can achieve and will be used from the input/stream suggester plugins
         /// </summary>
-        [XmlIgnore]
         [JsonIgnore]
         public int              MaxVerticalResolutionAuto   { get; internal set; }
 
@@ -701,7 +697,6 @@ public class Config : NotifyPropertyChanged
         /// <summary>
         /// The max resolution that is currently used (based on Auto/Custom)
         /// </summary>
-        [XmlIgnore]
         [JsonIgnore]
         public int              MaxVerticalResolution       => MaxVerticalResolutionCustom == 0 ? (MaxVerticalResolutionAuto != 0 ? MaxVerticalResolutionAuto : 1080) : MaxVerticalResolutionCustom;
 
@@ -1078,7 +1073,6 @@ public class Config : NotifyPropertyChanged
         /// <summary>
         /// Subtitles parser (can be used for custom parsing)
         /// </summary>
-        [XmlIgnore]
         [JsonIgnore]
         public Action<SubtitlesFrame>
                                 Parser              { get; set; } = ParseSubtitles.Parse;
@@ -1271,14 +1265,12 @@ public class EngineConfig
     /// <summary>
     /// Whether configuration has been loaded from file
     /// </summary>
-    [XmlIgnore]
     [JsonIgnore]
     public bool     Loaded                  { get; private set; }
 
     /// <summary>
     /// The path that this configuration has been loaded from
     /// </summary>
-    [XmlIgnore]
     [JsonIgnore]
     public string   LoadedPath              { get; private set; }
 

@@ -2,7 +2,6 @@
 using System.Globalization;
 using System.Text.Json.Serialization;
 using System.Windows;
-using System.Xml.Serialization;
 
 namespace FlyleafLib;
 
@@ -17,31 +16,24 @@ public class Language : IEquatable<Language>
     string _CultureName;
 
     [JsonIgnore]
-    [XmlIgnore]
     public string       TopEnglishName    { get; private set; }
 
     [JsonIgnore]
-    [XmlIgnore]
     public CultureInfo  Culture         { get; private set; }
 
     [JsonIgnore]
-    [XmlIgnore]
     public CultureInfo  TopCulture      { get; private set; }
 
     [JsonIgnore]
-    [XmlIgnore]
     public string       ISO6391         { get; private set; }
 
     [JsonIgnore]
-    [XmlIgnore]
     public string       IdSubLanguage   { get; private set; } // Can search for online subtitles with this id
 
     [JsonIgnore]
-    [XmlIgnore]
     public string       OriginalInput   { get; private set; } // Only for Undetermined language (return clone)
 
     [JsonIgnore]
-    [XmlIgnore]
     public bool         IsRTL           { get; private set; }
 
     public override string ToString() => OriginalInput ?? TopEnglishName;
