@@ -155,7 +155,7 @@ public class FlyleafOverlayVM : Bindable
         if (!_isLeftDragging || e.LeftButton != MouseButtonState.Pressed)
             return;
 
-        if (FL.FlyleafHost!.Owner.WindowState != WindowState.Maximized)
+        if (FL.FlyleafHost!.IsFullScreen || FL.FlyleafHost.Owner.WindowState != WindowState.Maximized)
             return;
 
         Point curPoint = e.GetPosition((IInputElement)sender);
