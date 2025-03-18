@@ -352,7 +352,7 @@ public class AppConfigSubs : Bindable
     public double SubsPositionOffset { get; set => Set(ref field, value); } = 2.0;
     public int SubsFontSizeOffset { get; set => Set(ref field, value); } = 2;
     public double SubsBitmapScaleOffset { get; set => Set(ref field, value); } = 4;
-    public double SubsDistanceOffset { get; set => Set(ref field, value); } = 8;
+    public double SubsDistanceOffset { get; set => Set(ref field, value); } = 5;
 
     #endregion
 
@@ -438,7 +438,7 @@ public class AppConfigSubs : Bindable
                 UpdateSubsDistance();
             }
         }
-    } = 26;
+    } = 16;
 
     public double SubsSeparatorMaxWidth { get; set => Set(ref field, value); } = 280;
     public double SubsSeparatorOpacity
