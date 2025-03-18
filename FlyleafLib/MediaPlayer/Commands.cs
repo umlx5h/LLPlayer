@@ -303,6 +303,12 @@ public class Commands
             return;
         }
 
+        if (!player.Audio.IsOpened)
+        {
+            // not opened
+            return;
+        }
+
         if (!player.SubtitlesASR.CanExecute(out string err))
         {
             player.RaiseKnownErrorOccurred(err, KnownErrorType.Configuration);

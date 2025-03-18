@@ -652,9 +652,14 @@ public class Subtitle : NotifyPropertyChanged
             })
             .ContinueWith(t =>
             {
-                // TODO: L: error handling - restore state gracefully?
                 if (t.IsFaulted)
                 {
+                    if (_player.SubtitlesManager[_subIndex].Subs.Count == 0)
+                    {
+                        // reset if not single subtitles generated
+                        Disable();
+                    }
+
                     var ex = t.Exception.Flatten().InnerException;
 
                     _player.RaiseUnknownErrorOccurred($"Cannot execute ASR: {ex?.Message}", UnknownErrorType.ASR, t.Exception);
