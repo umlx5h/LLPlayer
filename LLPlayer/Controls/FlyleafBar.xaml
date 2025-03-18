@@ -213,7 +213,7 @@
                         </Button.Style>
                     </Button>
                     <materialDesign:PackIcon Kind="VideoInputAntenna" Height="20" Width="20" Foreground="{DynamicResource MaterialDesign.Brush.Secondary}" VerticalAlignment="Center" Visibility="{Binding FL.Player.IsLive, Converter={StaticResource BooleanToVisibilityConv}, FallbackValue=Collapsed, TargetNullValue=Collapsed}"/>
-                    <TextBlock VerticalAlignment="Center" FontStyle="Italic" Margin="5,0,0,0" Text="{Binding FL.Player.Playlist.Selected.Title}" Cursor="Hand">
+                    <TextBlock VerticalAlignment="Center" FontStyle="Italic" FontSize="14" Margin="5,4,0,0" Text="{Binding FL.Player.Playlist.Selected.Title}" Cursor="Hand">
                         <TextBlock.ToolTip>
                             <ToolTip xml:space="preserve">Left Click: Open File Dialog
 Right Click: Open Context Menu</ToolTip>
