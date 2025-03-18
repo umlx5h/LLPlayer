@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -281,16 +282,16 @@ public class SubtitlesASR
     }
 }
 
-public unsafe class AudioReader : IDisposable
+public class AudioReader : IDisposable
 {
     private readonly Config _config;
-    private AVFormatContext* _fmtCtx = null;
-    private AVStream* _stream = null;
-    private AVCodec* _codec = null;
-    private AVCodecContext* _codecCtx = null;
-    private SwrContext* _swrContext = null;
-    private AVPacket* _packet = null;
-    private AVFrame* _frame = null;
+    private unsafe AVFormatContext* _fmtCtx = null;
+    private unsafe AVStream* _stream = null;
+    private unsafe AVCodec* _codec = null;
+    private unsafe AVCodecContext* _codecCtx = null;
+    private unsafe SwrContext* _swrContext = null;
+    private unsafe AVPacket* _packet = null;
+    private unsafe AVFrame* _frame = null;
 
     private bool _isFile;
 
@@ -302,7 +303,7 @@ public unsafe class AudioReader : IDisposable
         Log = new LogHandler(("[#1]").PadRight(8, ' ') + " [AudioReader   ] ");
     }
 
-    public void Open(string url, int streamIndex)
+    public unsafe void Open(string url, int streamIndex)
     {
         fixed (AVFormatContext** pFmtCtx = &_fmtCtx)
             avformat_open_input(pFmtCtx, url, null, null)
@@ -356,38 +357,41 @@ public unsafe class AudioReader : IDisposable
     /// <exception cref="OperationCanceledException"></exception>
     public void ReadAll(TimeSpan curTime, Action<SubtitleASRData> addSub, CancellationToken cancellationToken)
     {
-        _packet = av_packet_alloc();
-        _frame = av_frame_alloc();
-
-        // Whisper from the current playback position
-        // TODO: L: Fold back and allow the first half to run as well.
-        if (curTime > TimeSpan.FromSeconds(30))
+        unsafe
         {
-            long savedPbPos = _fmtCtx->pb != null ? _fmtCtx->pb->pos : 0;
+            _packet = av_packet_alloc();
+            _frame = av_frame_alloc();
 
-            long ticks = curTime.Subtract(TimeSpan.FromSeconds(10)).Ticks;
-            // Seek if later than 30 seconds (Seek before 10 seconds)
-            // TODO: L: m2ts seek problem?
-            int ret = avformat_seek_file(_fmtCtx, -1, long.MinValue, ticks / 10, ticks / 10, SeekFlags.Any);
-            if (ret < 0)
+            // Whisper from the current playback position
+            // TODO: L: Fold back and allow the first half to run as well.
+            if (curTime > TimeSpan.FromSeconds(30))
             {
-                Log.Info($"Seek failed 1/2 (retrying) {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
-                ret = avformat_seek_file(_fmtCtx, -1, ticks / 10, ticks / 10, long.MaxValue, SeekFlags.Any);
+                long savedPbPos = _fmtCtx->pb != null ? _fmtCtx->pb->pos : 0;
+
+                long ticks = curTime.Subtract(TimeSpan.FromSeconds(10)).Ticks;
+                // Seek if later than 30 seconds (Seek before 10 seconds)
+                // TODO: L: m2ts seek problem?
+                int ret = avformat_seek_file(_fmtCtx, -1, long.MinValue, ticks / 10, ticks / 10, SeekFlags.Any);
                 if (ret < 0)
                 {
-                    Log.Warn($"Seek failed 2/2 {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
-
-                    // (from Demuxer) Flush required because of seek failure
-                    if (_fmtCtx->pb != null)
+                    Log.Info($"Seek failed 1/2 (retrying) {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
+                    ret = avformat_seek_file(_fmtCtx, -1, ticks / 10, ticks / 10, long.MaxValue, SeekFlags.Any);
+                    if (ret < 0)
                     {
-                        avio_flush(_fmtCtx->pb);
-                        _fmtCtx->pb->error = 0;
-                        _fmtCtx->pb->eof_reached = 0;
-                        avio_seek(_fmtCtx->pb, savedPbPos, 0);
-                    }
-                    avformat_flush(_fmtCtx);
+                        Log.Warn($"Seek failed 2/2 {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
 
-                    // proceed even if seek failed
+                        // (from Demuxer) Flush required because of seek failure
+                        if (_fmtCtx->pb != null)
+                        {
+                            avio_flush(_fmtCtx->pb);
+                            _fmtCtx->pb->error = 0;
+                            _fmtCtx->pb->eof_reached = 0;
+                            avio_seek(_fmtCtx->pb, savedPbPos, 0);
+                        }
+                        avformat_flush(_fmtCtx);
+
+                        // proceed even if seek failed
+                    }
                 }
             }
         }
@@ -412,11 +416,45 @@ public unsafe class AudioReader : IDisposable
         Lock lockMemoryStreamPool = new();
 
         // Consumer: Run whisper
-        Task consumerTask = Task.Run(() =>
-        {
-            using WhisperExecuter whisperExecuter = new(_config);
+        Task consumerTask = Task.Run(DoConsumer, token);
 
-            while (channel.Reader.WaitToReadAsync(token).AsTask().GetAwaiter().GetResult())
+        // Producer: Extract WAV and pass to consumer
+        Task producerTask = Task.Run(DoProducer, token);
+
+        // complete channel
+        producerTask.ContinueWith(t =>
+            channel.Writer.Complete(), token);
+
+        // When an exception occurs in both consumer and producer, the other is canceled.
+        consumerTask.ContinueWith(t =>
+            cts.Cancel(), TaskContinuationOptions.OnlyOnFaulted);
+        producerTask.ContinueWith(t =>
+            cts.Cancel(), TaskContinuationOptions.OnlyOnFaulted);
+
+        try
+        {
+            Task.WhenAll(consumerTask, producerTask).Wait();
+        }
+        catch (AggregateException ex)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                // canceled by caller
+                if (CanDebug) Log.Debug("Whisper canceled");
+                return;
+            }
+
+            // canceled because of exceptions
+            throw;
+        }
+
+        return;
+
+        async Task DoConsumer()
+        {
+            await using WhisperExecuter whisperExecuter = new(_config);
+
+            while (await channel.Reader.WaitToReadAsync(token))
             {
                 // Use TryPeek() to reduce the channel capacity by one.
                 if (!channel.Reader.TryPeek(out AudioChunk chunk))
@@ -427,12 +465,10 @@ public unsafe class AudioReader : IDisposable
                     if (CanDebug) Log.Debug(
                             $"Reading chunk from channel (chunkNo: {chunk.ChunkNumber}, start: {chunk.Start}, end: {chunk.End})");
 
-                    IAsyncEnumerator<SubtitleASRData> result = whisperExecuter
-                        .Do(chunk.Stream, chunk.Start, chunk.End, chunk.ChunkNumber, token)
-                        .GetAsyncEnumerator(token);
-                    while (result.MoveNextAsync().AsTask().GetAwaiter().GetResult())
+                    var iter = whisperExecuter.Do(chunk.Stream, chunk.Start, chunk.End, chunk.ChunkNumber, token);
+                    await foreach (var result in iter)
                     {
-                        addSub(result.Current);
+                        addSub(result);
                     }
                 }
                 finally
@@ -447,10 +483,9 @@ public unsafe class AudioReader : IDisposable
                         throw new InvalidOperationException("can not discard AudioChunk from channel");
                 }
             }
-        }, token);
+        }
 
-        // Producer: Extract WAV and pass to consumer
-        Task producerTask = Task.Run(() =>
+        unsafe void DoProducer()
         {
             // When passing the audio file to Whisper, it must be converted to a 16000 sample rate WAV file.
             // For this purpose, the ffmpeg API is used to perform the conversion.
@@ -588,7 +623,6 @@ public unsafe class AudioReader : IDisposable
                             $"Process chunk (chunkNo: {chunkCnt}, sizeMB: {waveStream.Length / 1024 / 1024}, duration: {waveDuration}, elapsed: {chunkSw.Elapsed})");
 
                         UpdateWavHeader(waveStream);
-                        waveStream.Position = 0;
 
                         AudioChunk chunk = new(waveStream, chunkCnt, chunkStart.Value, chunkEnd);
 
@@ -625,7 +659,6 @@ public unsafe class AudioReader : IDisposable
                     $"Process last chunk (chunkNo: {chunkCnt}, sizeMB: {waveStream.Length / 1024 / 1024}, duration: {waveDuration}, elapsed: {chunkSw.Elapsed})");
 
                 UpdateWavHeader(waveStream);
-                waveStream.Position = 0;
 
                 AudioChunk chunk = new(waveStream, chunkCnt, chunkStart!.Value, chunkEnd);
 
@@ -633,38 +666,12 @@ public unsafe class AudioReader : IDisposable
                 channel.Writer.WriteAsync(chunk, token).AsTask().Wait(token);
                 if (CanDebug) Log.Debug($"Done writing last chunk to channel ({chunkCnt})");
             }
-        }, token);
-
-        // complete channel
-        producerTask.ContinueWith(t => channel.Writer.Complete(), token);
-
-        // When an exception occurs in both consumer and producer, the other is canceled.
-        consumerTask.ContinueWith(t =>
-            cts.Cancel(), TaskContinuationOptions.OnlyOnFaulted);
-        producerTask.ContinueWith(t =>
-            cts.Cancel(), TaskContinuationOptions.OnlyOnFaulted);
-
-        try
-        {
-            Task.WhenAll(consumerTask, producerTask).Wait();
-        }
-        catch (AggregateException ex)
-        {
-            if (cancellationToken.IsCancellationRequested)
-            {
-                // canceled by caller
-                if (CanDebug) Log.Debug("Whisper canceled");
-                return;
-            }
-
-            // canceled because of exceptions
-            throw;
         }
     }
 
     private static void WriteWavHeader(Stream stream, int sampleRate, int channels)
     {
-        BinaryWriter writer = new(stream);
+        using BinaryWriter writer = new(stream, Encoding.UTF8, true);
         writer.Write(['R', 'I', 'F', 'F']);
         writer.Write(0); // placeholder for file size
         writer.Write(['W', 'A', 'V', 'E']);
@@ -687,9 +694,10 @@ public unsafe class AudioReader : IDisposable
         stream.Write(BitConverter.GetBytes((int)(fileSize - 8)), 0, 4);
         stream.Seek(40, SeekOrigin.Begin);
         stream.Write(BitConverter.GetBytes((int)(fileSize - 44)), 0, 4);
+        stream.Position = 0;
     }
 
-    private void ResampleTo(Stream toStream, AVFrame* frame, int targetSampleRate, int targetChannel)
+    private unsafe void ResampleTo(Stream toStream, AVFrame* frame, int targetSampleRate, int targetChannel)
     {
         AVChannelLayout outLayout;
         av_channel_layout_default(&outLayout, targetChannel);
@@ -741,7 +749,7 @@ public unsafe class AudioReader : IDisposable
 
     private bool _isDisposed;
 
-    public void Dispose()
+    public unsafe void Dispose()
     {
         if (_isDisposed)
             return;
@@ -795,7 +803,7 @@ public unsafe class AudioReader : IDisposable
     }
 }
 
-public class WhisperExecuter : IDisposable
+public class WhisperExecuter : IAsyncDisposable
 {
     private readonly Config _config;
 
@@ -832,9 +840,9 @@ public class WhisperExecuter : IDisposable
         _processor = _config.Subtitles.WhisperParameters.ConfigureBuilder(whisperBuilder).Build();
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
-        _processor.DisposeAsync().AsTask().Wait();
+        await _processor.DisposeAsync();
         _factory.Dispose();
         _logger.Dispose();
     }
