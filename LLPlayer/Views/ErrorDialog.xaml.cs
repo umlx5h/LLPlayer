@@ -7,6 +7,8 @@ namespace LLPlayer.Views;
 
 public partial class ErrorDialog : UserControl
 {
+    private ErrorDialogVM VM => (ErrorDialogVM)DataContext;
+
     public ErrorDialog()
     {
         InitializeComponent();
@@ -44,6 +46,12 @@ public partial class ErrorDialog : UserControl
             e.Command == ApplicationCommands.Paste)
         {
             e.Handled = true;
+
+            if (e.Command == ApplicationCommands.Copy)
+            {
+                // instead trigger copy command
+                VM.CmdCopyMessage.Execute();
+            }
         }
     }
 }
