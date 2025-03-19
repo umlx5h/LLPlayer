@@ -653,7 +653,10 @@ public class AppConfigTheme : Bindable
                 _paletteHelper.SetTheme(cur);
             }
         }
-    } = (Color)ColorConverter.ConvertFromString("#E91E63"); // Pink
+    } = (Color)ColorConverter.ConvertFromString("#D23D6F"); // Pink
+    // Desaturate and lighten from material pink 500
+    // https://m2.material.io/design/color/the-color-system.html#tools-for-picking-colors
+    // $ pastel color E91E63 | pastel desaturate 0.2 | pastel lighten 0.015
 
     public Color SecondaryColor
     {
