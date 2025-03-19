@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -411,9 +412,7 @@ public class AudioReader : IDisposable
         var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         CancellationToken token = cts.Token;
 
-        // ConcurrentBag<T> leaks memory?, so use Queue
-        Queue<MemoryStream> memoryStreamPool = new();
-        Lock lockMemoryStreamPool = new();
+        ConcurrentStack<MemoryStream> memoryStreamPool = new();
 
         // Consumer: Run whisper
         Task consumerTask = Task.Run(DoConsumer, token);
@@ -474,10 +473,7 @@ public class AudioReader : IDisposable
                 finally
                 {
                     chunk.Stream.SetLength(0);
-                    lock (lockMemoryStreamPool)
-                    {
-                        memoryStreamPool.Enqueue(chunk.Stream);
-                    }
+                    memoryStreamPool.Push(chunk.Stream);
 
                     if (!channel.Reader.TryRead(out _))
                         throw new InvalidOperationException("can not discard AudioChunk from channel");
@@ -631,13 +627,10 @@ public class AudioReader : IDisposable
                         channel.Writer.WriteAsync(chunk, token).AsTask().Wait(token);
                         if (CanDebug) Log.Debug($"Done writing chunk to channel ({chunkCnt})");
 
-                        lock (lockMemoryStreamPool)
-                        {
-                            if (memoryStreamPool.TryDequeue(out var stream))
-                                waveStream = stream;
-                            else
-                                waveStream = new MemoryStream();
-                        }
+                        if (memoryStreamPool.TryPop(out var stream))
+                            waveStream = stream;
+                        else
+                            waveStream = new MemoryStream();
 
                         WriteWavHeader(waveStream, targetSampleRate, targetChannel);
                         waveDuration = TimeSpan.Zero;
