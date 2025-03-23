@@ -135,10 +135,10 @@ $ git clone git@github.com:umlx5h/LLPlayer.git
 
 2. **Open Project**
 
-Install Visual Studio or JetBrains Rider and open the following sln file.
+Install Visual Studio or JetBrains Rider and open the following slnx file.
 
 ```bash
-$ ./LLPlayer.sln
+$ ./LLPlayer.slnx
 ```
 
 3. **Build**

@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/Plugins/">
+    <Project Path="Plugins/YoutubeDL/YoutubeDL.csproj" />
+  </Folder>
+  <Project Path="FlyleafLib/FlyleafLib.csproj" />
+  <Project Path="FlyleafLibTests/FlyleafLibTests.csproj" />
+  <Project Path="LLPlayer/LLPlayer.csproj" />
+  <Project Path="WpfColorFontDialog/WpfColorFontDialog.csproj" />
+</Solution>
