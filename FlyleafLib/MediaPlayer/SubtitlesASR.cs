@@ -805,6 +805,9 @@ public class WhisperExecuter : IAsyncDisposable
     private readonly WhisperFactory _factory;
     private readonly WhisperProcessor _processor;
 
+    private readonly bool _isLanguageDetect;
+    private string? _detectedLanguage;
+
     public WhisperExecuter(Config config)
     {
         _config = config;
@@ -831,6 +834,8 @@ public class WhisperExecuter : IAsyncDisposable
 
         WhisperProcessorBuilder whisperBuilder = _factory.CreateBuilder();
         _processor = _config.Subtitles.WhisperParameters.ConfigureBuilder(whisperBuilder).Build();
+
+        _isLanguageDetect = _config.Subtitles.WhisperParameters.LanguageDetection;
     }
 
     public async ValueTask DisposeAsync()
@@ -849,6 +854,14 @@ public class WhisperExecuter : IAsyncDisposable
         //    waveStream.Position = 0;
         //}
 
+        // If language detection is on, set detected language manually
+        // TODO: L: Currently this is set because language information is managed for the entire subtitle,
+        // but if language information is maintained for each subtitle, it should not be set.
+        if (_isLanguageDetect && _detectedLanguage is not null)
+        {
+            _processor.ChangeLanguage(_detectedLanguage);
+        }
+
         await foreach (var result in _processor.ProcessAsync(waveStream, token).ConfigureAwait(false))
         {
             token.ThrowIfCancellationRequested();
@@ -859,6 +872,11 @@ public class WhisperExecuter : IAsyncDisposable
             {
                 // Shorten by 20 ms to prevent the next subtitle from being covered
                 end = chunkEnd.Subtract(TimeSpan.FromMilliseconds(20));
+            }
+
+            if (_detectedLanguage is null && !string.IsNullOrEmpty(result.Language))
+            {
+                _detectedLanguage = result.Language;
             }
 
             SubtitleASRData sub = new()
