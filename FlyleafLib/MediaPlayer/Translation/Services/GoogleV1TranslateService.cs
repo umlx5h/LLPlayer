@@ -112,7 +112,7 @@ public class GoogleV1TranslateService : ITranslateService
 
     public async Task<string> TranslateAsync(string text, CancellationToken token)
     {
-        string jsonResultString;
+        string jsonResultString = "";
 
         try
         {
@@ -132,8 +132,14 @@ public class GoogleV1TranslateService : ITranslateService
         }
         catch (Exception ex)
         {
-            // timeout
-            throw new TranslationException($"Cannot request to GoogleV1: {ex.Message}", ex);
+            // timeout and other error
+            throw new TranslationException($"Cannot request to GoogleV1: {ex.Message}", ex)
+            {
+                Data =
+                {
+                    ["response"] = jsonResultString
+                }
+            };
         }
 
         try
@@ -146,7 +152,13 @@ public class GoogleV1TranslateService : ITranslateService
         }
         catch (Exception ex)
         {
-            throw new TranslationException("Cannot parse response as JSON", ex);
+            throw new TranslationException($"Cannot parse response as JSON: {ex.Message}", ex)
+            {
+                Data =
+                {
+                    ["response"] = jsonResultString
+                }
+            };
         }
     }
 }

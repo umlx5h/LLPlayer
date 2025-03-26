@@ -86,10 +86,25 @@ public class OpenSubtitlesProvider
         LoginResponse loginResponse = new();
         using (var reader = new StringReader(content))
         {
-            MethodResponse? response = serializer.Deserialize(reader) as MethodResponse;
-
-            if (response == null)
-                throw new InvalidOperationException($"Can't parse the login content: {content}");
+            MethodResponse? response = null;
+            try
+            {
+                response = serializer.Deserialize(reader) as MethodResponse;
+                if (response == null)
+                {
+                    throw new InvalidOperationException("response is not MethodResponse");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Can't parse the login content: {ex.Message}", ex)
+                {
+                    Data =
+                    {
+                        ["login_content"] = content
+                    }
+                };
+            }
 
             foreach (var member in response.Params.Param.Value.Struct.Member)
             {
@@ -189,10 +204,25 @@ $"""
 
         using (StringReader reader = new(content))
         {
-            var response = serializer.Deserialize(reader) as MethodResponse;
-
-            if (response == null)
-                throw new InvalidOperationException($"Can't parse the search content: {content}");
+            MethodResponse? response = null;
+            try
+            {
+                response = serializer.Deserialize(reader) as MethodResponse;
+                if (response == null)
+                {
+                    throw new InvalidOperationException("response is not MethodResponse");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Can't parse the search content: {ex.Message}", ex)
+                {
+                    Data =
+                    {
+                        ["search_content"] = content
+                    }
+                };
+            }
 
             if (!response.Params.Param.Value.Struct.Member.Any(m => m.Name == "status" && m.Value.String == "200 OK"))
                 throw new InvalidOperationException("Can't get the search result, status is not 200.");
@@ -301,10 +331,25 @@ $"""
 
         using (StringReader reader = new(content))
         {
-            var response = serializer.Deserialize(reader) as MethodResponse;
-
-            if (response == null)
-                throw new InvalidOperationException($"Can't parse the download result: {content}");
+            MethodResponse? response = null;
+            try
+            {
+                response = serializer.Deserialize(reader) as MethodResponse;
+                if (response == null)
+                {
+                    throw new InvalidOperationException("response is not MethodResponse");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Can't parse the download content: {ex.Message}", ex)
+                {
+                    Data =
+                    {
+                        ["download_content"] = content
+                    }
+                };
+            }
 
             if (!response.Params.Param.Value.Struct.Member.Any(m => m.Name == "status" && m.Value.String == "200 OK"))
                 throw new InvalidOperationException("Can't get the download result, status is not 200.");

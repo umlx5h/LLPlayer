@@ -87,7 +87,7 @@ public class DeepLXTranslateService : ITranslateService
             throw new InvalidOperationException("must be initialized");
         }
 
-        string jsonResultString;
+        string jsonResultString = "";
 
         try
         {
@@ -113,7 +113,13 @@ public class DeepLXTranslateService : ITranslateService
         }
         catch (Exception ex)
         {
-            throw new TranslationException($"Cannot request to DeepL: {ex.Message}", ex);
+            throw new TranslationException($"Cannot request to DeepL: {ex.Message}", ex)
+            {
+                Data =
+                {
+                    ["response"] = jsonResultString
+                }
+            };
         }
 
         try
@@ -123,7 +129,13 @@ public class DeepLXTranslateService : ITranslateService
         }
         catch (Exception ex)
         {
-            throw new TranslationException("Cannot parse response as JSON", ex);
+            throw new TranslationException($"Cannot parse response as JSON: {ex.Message}", ex)
+            {
+                Data =
+                {
+                    ["response"] = jsonResultString
+                }
+            };
         }
     }
 

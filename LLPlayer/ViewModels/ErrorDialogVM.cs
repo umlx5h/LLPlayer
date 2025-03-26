@@ -1,5 +1,7 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Media;
+using System.Text;
 using System.Windows;
 using LLPlayer.Extensions;
 using LLPlayer.Services;
@@ -25,13 +27,13 @@ public class ErrorDialogVM : Bindable, IDialogAware
             if (Set(ref field, value))
             {
                 OnPropertyChanged(nameof(HasException));
-                OnPropertyChanged(nameof(ExceptionDetail));
+                ExceptionDetail = value == null ? "" : GetExceptionWithAllData(value);
             }
         }
     }
     public bool HasException => Exception != null;
 
-    public string ExceptionDetail => Exception == null ? "" : Exception.ToString();
+    public string ExceptionDetail { get; set => Set(ref field, value); }
 
     public bool IsUnknown
     {
@@ -73,7 +75,7 @@ public class ErrorDialogVM : Bindable, IDialogAware
 
 
                     ```
-                    {Exception}
+                    {ExceptionDetail}
                     ```
                     """;
         }
@@ -92,6 +94,62 @@ public class ErrorDialogVM : Bindable, IDialogAware
     {
         RequestClose.Invoke(ButtonResult.OK);
     });
+
+    private static string GetExceptionWithAllData(Exception ex)
+    {
+        string exceptionInfo = ex.ToString();
+
+        // Collect all Exception.Data to dictionary
+        Dictionary<object, object> allData = new();
+        CollectExceptionData(ex, allData);
+
+        if (allData.Count == 0)
+        {
+            // not found Exception.Data
+            return exceptionInfo;
+        }
+
+        // found Exception.Data
+        StringBuilder sb = new();
+        sb.Append(exceptionInfo);
+
+        sb.AppendLine();
+        sb.AppendLine();
+        sb.AppendLine("---------------------- All Exception Data ----------------------");
+        foreach (var (i, entry) in allData.Index())
+        {
+            sb.AppendLine($"  [{entry.Key}]: {entry.Value}");
+            if (i != allData.Count - 1)
+            {
+                sb.AppendLine();
+            }
+        }
+
+        return sb.ToString();
+    }
+
+    private static void CollectExceptionData(Exception? ex, Dictionary<object, object> allData)
+    {
+        if (ex == null) return;
+
+        foreach (DictionaryEntry entry in ex.Data)
+        {
+            allData.TryAdd(entry.Key, entry.Value);
+        }
+
+        if (ex.InnerException != null)
+        {
+            CollectExceptionData(ex.InnerException, allData);
+        }
+
+        if (ex is AggregateException aggregateEx)
+        {
+            foreach (var innerEx in aggregateEx.InnerExceptions)
+            {
+                CollectExceptionData(innerEx, allData);
+            }
+        }
+    }
 
     #region IDialogAware
     public string Title => "Error Occured";
