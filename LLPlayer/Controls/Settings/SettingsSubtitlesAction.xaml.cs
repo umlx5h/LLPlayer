@@ -17,20 +17,6 @@ public partial class SettingsSubtitlesAction : UserControl
 
         DataContext = ((App)Application.Current).Container.Resolve<SettingsSubtitlesActionVM>();
     }
-
-    private void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
-    {
-        // TODO: L: refactor
-        try
-        {
-            Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
-            e.Handled = true;
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show("Failed to open link" + ex.Message);
-        }
-    }
 }
 
 public class SettingsSubtitlesActionVM : Bindable

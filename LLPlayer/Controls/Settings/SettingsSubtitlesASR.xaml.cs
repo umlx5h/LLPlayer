@@ -19,19 +19,6 @@ public partial class SettingsSubtitlesASR : UserControl
 
         DataContext = ((App)Application.Current).Container.Resolve<SettingsSubtitlesASRVM>();
     }
-
-    private void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
-    {
-        try
-        {
-            Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
-            e.Handled = true;
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show("Failed to open link" + ex.Message);
-        }
-    }
 }
 
 public class SettingsSubtitlesASRVM : Bindable

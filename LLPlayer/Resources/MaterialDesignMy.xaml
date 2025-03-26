@@ -10,6 +10,15 @@
         <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
 
+    <Style TargetType="Hyperlink">
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Secondary}" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Secondary.Light}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
     <Style
         TargetType="{x:Type MenuItem}"
         x:Key="MaterialDesignMenuItem"

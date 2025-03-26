@@ -173,19 +173,12 @@ public class TesseractDownloadDialogVM : Bindable, IDialogAware
         if (!Directory.Exists(TesseractModel.ModelsDirectory))
             return;
 
-        try
+        Process.Start(new ProcessStartInfo
         {
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = TesseractModel.ModelsDirectory,
-                UseShellExecute = true,
-                CreateNoWindow = true
-            });
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Failed to open folder: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
+            FileName = TesseractModel.ModelsDirectory,
+            UseShellExecute = true,
+            CreateNoWindow = true
+        });
     });
     // ReSharper restore NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 

@@ -298,7 +298,7 @@ Note that this does not work for bitmap subtitles. In that case, please use OCR 
 
                     <TextBlock Margin="5 10 5 0">
                         You can send subtitle text to your browser via the clipboard and work with browser extensions such as Yomitan and 10ten.
-                        See <Hyperlink NavigateUri="https://github.com/umlx5h/LLPlayer/wiki/Browser-Extensions-Integration" RequestNavigate="Hyperlink_RequestNavigate">this link</Hyperlink>
+                        See <Hyperlink NavigateUri="https://github.com/umlx5h/LLPlayer/wiki/Browser-Extensions-Integration" helpers:HyperlinkHelper.OpenInBrowser="True">this link</Hyperlink>
                         for more information.
                     </TextBlock>
                 </StackPanel>
@@ -319,7 +319,7 @@ Note that this does not work for bitmap subtitles. In that case, please use OCR 
                         (For Japanese-speaking learners of English)
                         <LineBreak />
                         It can be linked to the PDIC dictionary tool.
-                        See <Hyperlink NavigateUri="https://github.com/umlx5h/LLPlayer/wiki/PDIC-Integration-(For-Japanese-users)" RequestNavigate="Hyperlink_RequestNavigate">this link</Hyperlink>
+                        See <Hyperlink NavigateUri="https://github.com/umlx5h/LLPlayer/wiki/PDIC-Integration-(For-Japanese-users)" helpers:HyperlinkHelper.OpenInBrowser="True">this link</Hyperlink>
                         for more information.
                     </TextBlock>
                 </StackPanel>

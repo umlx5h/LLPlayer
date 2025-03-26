@@ -7,6 +7,7 @@
              xmlns:vm="clr-namespace:LLPlayer.ViewModels"
              xmlns:flyleaf="clr-namespace:FlyleafLib;assembly=FlyleafLib"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             xmlns:helpers="clr-namespace:LLPlayer.Extensions"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:SettingsSubtitlesOCRVM}"
              d:Foreground="White"
@@ -206,7 +207,7 @@
 
                     <TextBlock Grid.Column="0" Grid.Row="2" Margin="5 10 5 0">
                         You will need to install a language pack on your OS or install an OCR engine using
-                        <Hyperlink NavigateUri="https://learn.microsoft.com/en-us/windows/powertoys/text-extractor#supported-languages" RequestNavigate="Hyperlink_RequestNavigate">
+                        <Hyperlink NavigateUri="https://learn.microsoft.com/en-us/windows/powertoys/text-extractor#supported-languages" helpers:HyperlinkHelper.OpenInBrowser="True">
                             this link
                         </Hyperlink>
                         as a reference.
