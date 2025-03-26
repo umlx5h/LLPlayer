@@ -1,4 +1,5 @@
 ﻿using Whisper.net;
+using Whisper.net.LibraryLoader;
 
 namespace FlyleafLib;
 
@@ -6,6 +7,8 @@ namespace FlyleafLib;
 // TODO: L: Add other options
 public class WhisperParameters : NotifyPropertyChanged
 {
+    public RuntimeLibrary? LoadedLibrary => RuntimeOptions.LoadedLibrary;
+
     // For UI
     public string LanguageName
     {

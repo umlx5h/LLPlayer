@@ -337,7 +337,14 @@ Do not specify more than CPU threads."
                         </StackPanel>
                     </Grid>
 
-                    <TextBlock Grid.Column="0" Grid.Row="2" Margin="5 10 5 0">
+                    <StackPanel Orientation="Horizontal" Margin="0 10 0 0">
+                        <TextBlock>
+                            <Run Text="Loaded Option: " />
+                            <Run FontWeight="Bold" Text="{Binding FL.PlayerConfig.Subtitles.WhisperParameters.LoadedLibrary, Mode=OneWay, TargetNullValue=Not Loaded}" />
+                        </TextBlock>
+                    </StackPanel>
+
+                    <TextBlock Margin="5 10 5 0">
                         Some runtimes require the installation of a toolkit or others beforehand. Please check
                         <Hyperlink NavigateUri="https://github.com/sandrohanea/whisper.net?tab=readme-ov-file#runtimes-description" helpers:HyperlinkHelper.OpenInBrowser="True">
                             this link
