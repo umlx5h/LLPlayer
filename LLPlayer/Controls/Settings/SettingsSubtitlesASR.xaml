@@ -397,7 +397,7 @@
                                         <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
                                             <ToolTipService.ToolTip>
                                                 <TextBlock
-                                                    Text="The model is automatically downloaded at the first run. Note that if the size is large, it will take longer. Models ending in .en are only available in English."
+                                                    Text="The model is automatically downloaded at the first run. Note that if the size is large, it will take longer. Models starting with distil- and ending in .en are only available in English."
                                                     TextWrapping="Wrap"
                                                     MaxWidth="400" />
                                             </ToolTipService.ToolTip>
