@@ -67,7 +67,15 @@ public enum ColorRange : int
 public enum SubOCREngineType
 {
     Tesseract,
-    MicrosoftOCR,
+    MicrosoftOCR
+}
+
+public enum SubASREngineType
+{
+    [Description("whisper.cpp")]
+    WhisperCpp,
+    [Description("faster-whisper (Recommended)")]
+    FasterWhisper
 }
 
 public class GPUOutput

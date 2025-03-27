@@ -1,9 +1,14 @@
 ﻿using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Globalization;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
+using CliWrap.Builders;
 using FlyleafLib;
+using FlyleafLib.MediaPlayer;
 using LLPlayer.Extensions;
 using LLPlayer.Services;
 using LLPlayer.Views;
@@ -33,7 +38,7 @@ public class SettingsSubtitlesASRVM : Bindable
 
         LoadDownloadedModels();
 
-        foreach (RuntimeLibrary library in FL.PlayerConfig.Subtitles.WhisperRuntimeLibraries)
+        foreach (RuntimeLibrary library in FL.PlayerConfig.Subtitles.WhisperCppConfig.RuntimeLibraries)
         {
             SelectedLibraries.Add(library);
         }
@@ -51,11 +56,15 @@ public class SettingsSubtitlesASRVM : Bindable
         {
             WhisperLanguages.Add(lang);
         }
+
+        ActiveEngineTabNo = (int)FL.PlayerConfig.Subtitles.ASREngine;
     }
+
+    public int ActiveEngineTabNo { get; }
 
     public ObservableCollection<WhisperLanguage> WhisperLanguages { get; } = new();
 
-    // TODO: L: Considering moving it because it's quite a lot of code.
+    #region whisper.cpp
     public ObservableCollection<RuntimeLibrary> AvailableLibraries { get; } = new();
     public ObservableCollection<RuntimeLibrary> SelectedLibraries { get; } = new();
 
@@ -93,36 +102,36 @@ public class SettingsSubtitlesASRVM : Bindable
     private void SelectedLibrariesOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         // Apply to config
-        FL.PlayerConfig.Subtitles.WhisperRuntimeLibraries = [.. SelectedLibraries];
+        FL.PlayerConfig.Subtitles.WhisperCppConfig.RuntimeLibraries = [.. SelectedLibraries];
     }
 
     private void LoadDownloadedModels()
     {
-        WhisperModel? prevSelected = FL.PlayerConfig.Subtitles.WhisperModel;
-        FL.PlayerConfig.Subtitles.WhisperModel = null;
+        WhisperCppModel? prevSelected = FL.PlayerConfig.Subtitles.WhisperCppConfig.Model;
+        FL.PlayerConfig.Subtitles.WhisperCppConfig.Model = null;
         DownloadModels.Clear();
 
-        List<WhisperModel> models = WhisperModelLoader.LoadDownloadedModels();
+        List<WhisperCppModel> models = WhisperCppModelLoader.LoadDownloadedModels();
         foreach (var model in models)
         {
             DownloadModels.Add(model);
         }
 
-        FL.PlayerConfig.Subtitles.WhisperModel = DownloadModels.FirstOrDefault(m => m.Equals(prevSelected));
+        FL.PlayerConfig.Subtitles.WhisperCppConfig.Model = DownloadModels.FirstOrDefault(m => m.Equals(prevSelected));
 
-        if (FL.PlayerConfig.Subtitles.WhisperModel == null && DownloadModels.Count == 1)
+        if (FL.PlayerConfig.Subtitles.WhisperCppConfig.Model == null && DownloadModels.Count == 1)
         {
             // automatically set first downloaded model
-            FL.PlayerConfig.Subtitles.WhisperModel = DownloadModels.First();
+            FL.PlayerConfig.Subtitles.WhisperCppConfig.Model = DownloadModels.First();
         }
     }
 
-    public ObservableCollection<WhisperModel> DownloadModels { get; set => Set(ref field, value); } = new();
+    public ObservableCollection<WhisperCppModel> DownloadModels { get; set => Set(ref field, value); } = new();
 
     // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
     public DelegateCommand CmdDownloadModel => field ??= new(() =>
     {
-        _dialogService.ShowDialog(nameof(WhisperDownloadDialog));
+        _dialogService.ShowDialog(nameof(WhisperModelDownloadDialog));
 
         LoadDownloadedModels();
     });
@@ -166,5 +175,77 @@ public class SettingsSubtitlesASRVM : Bindable
             OnPropertyChanged(nameof(CanMoveDown));
         }
     }).ObservesCanExecute(() => CanMoveDown);
+    #endregion
+
+    #region faster-whisper
+    public DelegateCommand CmdDownloadEngine => field ??= new(() =>
+    {
+        _dialogService.ShowDialog(nameof(WhisperEngineDownloadDialog));
+
+        // update binding of downloaded state forcefully
+        var prev = FL.PlayerConfig.Subtitles.ASREngine;
+        FL.PlayerConfig.Subtitles.ASREngine = SubASREngineType.WhisperCpp;
+        FL.PlayerConfig.Subtitles.ASREngine = prev;
+    });
+
+    public DelegateCommand CmdOpenModelFolder => field ??= new(() =>
+    {
+        if (!Directory.Exists(WhisperConfig.ModelsDirectory))
+            return;
+
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = WhisperConfig.ModelsDirectory,
+            UseShellExecute = true,
+            CreateNoWindow = true
+        });
+    });
+
+    public DelegateCommand CmdCopyDebugCommand => field ??= new(() =>
+    {
+        var cmdBase = FasterWhisperASRService.BuildCommand(FL.PlayerConfig.Subtitles.FasterWhisperConfig,
+            FL.PlayerConfig.Subtitles.WhisperConfig);
+
+        var sampleWavePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "kennedy.wav");
+        ArgumentsBuilder args = new();
+        args.Add(sampleWavePath);
+
+        string addedArgs = args.Build();
+
+        var cmd = cmdBase.WithArguments($"{cmdBase.Arguments} {addedArgs}");
+        Clipboard.SetText(cmd.CommandToText());
+    });
+
+    public DelegateCommand CmdCopyHelpCommand => field ??= new(() =>
+    {
+        var cmdBase = FasterWhisperASRService.BuildCommand(FL.PlayerConfig.Subtitles.FasterWhisperConfig,
+            FL.PlayerConfig.Subtitles.WhisperConfig);
+
+        var cmd = cmdBase.WithArguments("--help");
+        Clipboard.SetText(cmd.CommandToText());
+    });
+#endregion
     // ReSharper restore NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
+}
+
+[ValueConversion(typeof(Enum), typeof(bool))]
+public class ASREngineDownloadedConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is SubASREngineType engine)
+        {
+            if (engine == SubASREngineType.FasterWhisper)
+            {
+                if (File.Exists(FasterWhisperConfig.DefaultEnginePath))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
 }

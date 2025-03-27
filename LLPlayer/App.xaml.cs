@@ -42,7 +42,8 @@ public partial class App : PrismApplication
         containerRegistry.RegisterDialog<SubtitlesDownloaderDialog>();
         containerRegistry.RegisterDialog<SubtitlesExportDialog>();
         containerRegistry.RegisterDialog<CheatSheetDialog>();
-        containerRegistry.RegisterDialog<WhisperDownloadDialog>();
+        containerRegistry.RegisterDialog<WhisperModelDownloadDialog>();
+        containerRegistry.RegisterDialog<WhisperEngineDownloadDialog>();
         containerRegistry.RegisterDialog<TesseractDownloadDialog>();
         containerRegistry.RegisterDialog<ErrorDialog>();
     }

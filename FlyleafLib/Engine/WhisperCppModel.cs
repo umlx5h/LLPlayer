@@ -4,10 +4,8 @@ using Whisper.net.Ggml;
 
 namespace FlyleafLib;
 
-public class WhisperModel : NotifyPropertyChanged
+public class WhisperCppModel : NotifyPropertyChanged
 {
-    public static string ModelsDirectory { get; } = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "whispermodels");
-
     public GgmlType Model { get; set; }
 
     [JsonIgnore]
@@ -34,7 +32,7 @@ public class WhisperModel : NotifyPropertyChanged
     }
 
     [JsonIgnore]
-    public string ModelFilePath => Path.Combine(ModelsDirectory, ModelFileName);
+    public string ModelFilePath => Path.Combine(WhisperConfig.ModelsDirectory, ModelFileName);
 
     [JsonIgnore]
     public bool Downloaded => Size > 0;
@@ -43,7 +41,7 @@ public class WhisperModel : NotifyPropertyChanged
 
     public override bool Equals(object? obj)
     {
-        if (obj is not WhisperModel model)
+        if (obj is not WhisperCppModel model)
             return false;
 
         return model.Model == Model;

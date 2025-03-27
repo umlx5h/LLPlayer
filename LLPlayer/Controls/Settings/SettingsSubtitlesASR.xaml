@@ -7,11 +7,29 @@
              xmlns:flyleaf="clr-namespace:FlyleafLib;assembly=FlyleafLib"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:helpers="clr-namespace:LLPlayer.Extensions"
+             xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+             xmlns:diagnostics="clr-namespace:System.Diagnostics;assembly=System.Diagnostics.Process"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:SettingsSubtitlesASRVM}"
              d:Foreground="White"
              d:Background="Black"
              d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <local:ASREngineDownloadedConverter x:Key="ASREngineDownloadedConv" />
+
+        <ObjectDataProvider x:Key="SubASREngineTypeEnum" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="flyleaf:SubASREngineType"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+
+        <ObjectDataProvider x:Key="ProcessPriorityClassEnum" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="diagnostics:ProcessPriorityClass"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+    </UserControl.Resources>
+
     <ScrollViewer>
         <StackPanel>
             <TextBlock
@@ -20,51 +38,68 @@
                 FontWeight="Bold"
                 Margin="0 0 0 16" />
 
-            <GroupBox Header="Whisper Models">
+            <GroupBox Header="Whisper Common">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
+                            FontSize="14"
+                            FontWeight="Medium"
                             Width="180">
-                            Use Whisper Model
-                            <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
-                                <ToolTipService.ToolTip>
-                                    <TextBlock
-                                        Text="Larger models increase load and accuracy. Please choose the appropriate model for your hardware. Models ending in .en are only available in English."
-                                        TextWrapping="Wrap"
-                                        MaxWidth="400" />
-                                </ToolTipService.ToolTip>
-                                <materialDesign:PackIcon
-                                    Kind="Information"
-                                    Width="16" Height="16"
-                                    Margin="4 0 0 0" />
-                            </InlineUIContainer>
+                            <Hyperlink Cursor="Help" NavigateUri="https://github.com/umlx5h/LLPlayer/wiki/Whisper-Engine" helpers:HyperlinkHelper.OpenInBrowser="True">
+                                Whisper Engine
+                            </Hyperlink>
                         </TextBlock>
                         <ComboBox
                             Width="220"
-                            ItemsSource="{Binding DownloadModels}"
-                            SelectedItem="{Binding FL.PlayerConfig.Subtitles.WhisperModel}">
+                            ItemsSource="{Binding Source={StaticResource SubASREngineTypeEnum}}"
+                            SelectedItem="{Binding FL.PlayerConfig.Subtitles.ASREngine}">
                             <ComboBox.ItemTemplate>
-                                <DataTemplate DataType="{x:Type flyleaf:WhisperModel}">
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding Model}" VerticalAlignment="Center" />
-                                        <TextBlock Text="{Binding Size, Converter={StaticResource FileSizeHumanConv}, StringFormat=' ({0})'}" VerticalAlignment="Center" />
-                                    </StackPanel>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource EnumToDescriptionConv}}"/>
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
+
                         <Button
                             Margin="10 0 0 0"
-                            Content="Download Model"
-                            Command="{Binding CmdDownloadModel}" />
+                            Command="{Binding CmdDownloadEngine}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedSecondaryButton}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding FL.PlayerConfig.Subtitles.ASREngine}" Value="FasterWhisper">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <materialDesign:PackIcon Grid.Column="0" Width="18" Height="18" VerticalAlignment="Center" Background="#01000000">
+                                    <materialDesign:PackIcon.Style>
+                                        <Style TargetType="materialDesign:PackIcon">
+                                            <Setter Property="Kind" Value="Cancel" />
+                                            <Setter Property="ToolTip" Value="Not Downloaded" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding FL.PlayerConfig.Subtitles.ASREngine, Converter={StaticResource ASREngineDownloadedConv}}" Value="True">
+                                                    <Setter Property="Kind" Value="CheckBold" />
+                                                    <Setter Property="ToolTip" Value="Downloaded" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </materialDesign:PackIcon.Style>
+                                </materialDesign:PackIcon>
+                                <TextBlock Grid.Column="1" FontSize="14" Margin="5 0 0 0" FontWeight="Medium" VerticalAlignment="Center" Text="Download Engine" />
+                            </Grid>
+                        </Button>
                     </StackPanel>
-                </StackPanel>
-            </GroupBox>
 
-            <GroupBox Header="Whisper Parameters">
-                <StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
-                            Width="200">
+                            Width="180">
                             Audio Language
                             <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
                                 <ToolTipService.ToolTip>
@@ -82,19 +117,19 @@
                         <ComboBox
                             Width="100"
                             ItemsSource="{Binding WhisperLanguages}"
-                            IsEnabled="{Binding FL.PlayerConfig.Subtitles.WhisperParameters.LanguageDetection, Converter={StaticResource InvertBooleanConv}}"
+                            IsEnabled="{Binding FL.PlayerConfig.Subtitles.WhisperConfig.LanguageDetection, Converter={StaticResource InvertBooleanConv}}"
                             DisplayMemberPath="EnglishName"
                             SelectedValuePath="Code"
-                            SelectedValue="{Binding FL.PlayerConfig.Subtitles.WhisperParameters.Language}" />
+                            SelectedValue="{Binding FL.PlayerConfig.Subtitles.WhisperConfig.Language}" />
                         <CheckBox
                             Margin="15 0 0 0"
-                            IsChecked="{Binding FL.PlayerConfig.Subtitles.WhisperParameters.LanguageDetection}"
+                            IsChecked="{Binding FL.PlayerConfig.Subtitles.WhisperConfig.LanguageDetection}"
                             Content="Auto Detect" />
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
-                            Width="200">
+                            Width="180">
                             Translate to English
                             <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
                                 <ToolTipService.ToolTip>
@@ -110,104 +145,432 @@
                             </InlineUIContainer>
                         </TextBlock>
                         <ToggleButton
-                            IsChecked="{Binding FL.PlayerConfig.Subtitles.WhisperParameters.Translate}" />
+                            IsChecked="{Binding FL.PlayerConfig.Subtitles.WhisperConfig.Translate}" />
                     </StackPanel>
-
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Width="200">
-                            Threads
-                            <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
-                                <ToolTipService.ToolTip>
-                                    <TextBlock
-                                        Text="Specify the number of threads. This will increase the load, but will speed up subtitle generation.
-Do not specify more than CPU threads."
-                                        TextWrapping="Wrap"
-                                        MaxWidth="400" />
-                                </ToolTipService.ToolTip>
-                                <materialDesign:PackIcon
-                                    Kind="Information"
-                                    Width="16" Height="16"
-                                    Margin="4 0 0 0" />
-                            </InlineUIContainer>
-                        </TextBlock>
-                        <TextBox
-                            Width="100"
-                            Text="{Binding FL.PlayerConfig.Subtitles.WhisperParameters.Threads, Converter={StaticResource NullableIntConv}}"
-                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
-                    </StackPanel>
-
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Width="200">
-                            MaxSegmentLength
-                            <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
-                                <ToolTipService.ToolTip>
-                                    <TextBlock
-                                        Text="You can limit the number of characters per subtitle. If the default subtitle is too long, you can adjust it by specifying the number of characters."
-                                        TextWrapping="Wrap"
-                                        MaxWidth="400" />
-                                </ToolTipService.ToolTip>
-                                <materialDesign:PackIcon
-                                    Kind="Information"
-                                    Width="16" Height="16"
-                                    Margin="4 0 0 0" />
-                            </InlineUIContainer>
-                        </TextBlock>
-                        <TextBox
-                            Width="100"
-                            Text="{Binding FL.PlayerConfig.Subtitles.WhisperParameters.MaxSegmentLength, Converter={StaticResource NullableIntConv}}"
-                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
-                    </StackPanel>
-
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Width="200"
-                            Text="MaxTokensPerSegment" />
-                        <TextBox
-                            Width="100"
-                            Text="{Binding FL.PlayerConfig.Subtitles.WhisperParameters.MaxTokensPerSegment, Converter={StaticResource NullableIntConv}}"
-                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
-                    </StackPanel>
-
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Width="200"
-                            Text="SplitOnWord" />
-                        <ToggleButton
-                            IsChecked="{Binding FL.PlayerConfig.Subtitles.WhisperParameters.SplitOnWord}" />
-                    </StackPanel>
-
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Width="200"
-                            Text="NoSpeechThreshold" />
-                        <TextBox
-                            Width="100"
-                            Text="{Binding FL.PlayerConfig.Subtitles.WhisperParameters.NoSpeechThreshold, Converter={StaticResource NullableIntConv}}"
-                            helpers:TextBoxHelper.OnlyNumeric="Double" />
-                    </StackPanel>
-
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Width="200"
-                            Text="NoContext" />
-                        <ToggleButton
-                            IsChecked="{Binding FL.PlayerConfig.Subtitles.WhisperParameters.NoContext}" />
-                    </StackPanel>
-
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Width="200"
-                            Text="AudioContextSize" />
-                        <TextBox
-                            Width="100"
-                            Text="{Binding FL.PlayerConfig.Subtitles.WhisperParameters.AudioContextSize, Converter={StaticResource NullableIntConv}}"
-                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
-                    </StackPanel>
-
                 </StackPanel>
             </GroupBox>
+
+            <TabControl
+                SelectedIndex="{Binding ActiveEngineTabNo, Mode=OneTime}"
+                Margin="20"
+                materialDesign:ColorZoneAssist.Mode="SecondaryMid" >
+                <TabItem Header="whisper.cpp">
+                    <StackPanel Margin="0 10 0 0">
+                        <GroupBox Header="whisper.cpp config">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock
+                                        Width="200">
+                                        Whisper Model
+                                        <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                            <ToolTipService.ToolTip>
+                                                <TextBlock
+                                                    Text="Larger models increase load and accuracy. Please choose the appropriate model for your hardware. Models ending in .en are only available in English."
+                                                    TextWrapping="Wrap"
+                                                    MaxWidth="400" />
+                                            </ToolTipService.ToolTip>
+                                            <materialDesign:PackIcon
+                                                Kind="Information"
+                                                Width="16" Height="16"
+                                                Margin="4 0 0 0" />
+                                        </InlineUIContainer>
+                                    </TextBlock>
+                                    <ComboBox
+                                        Width="200"
+                                        ItemsSource="{Binding DownloadModels}"
+                                        SelectedItem="{Binding FL.PlayerConfig.Subtitles.WhisperCppConfig.Model}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type flyleaf:WhisperCppModel}">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Model}" VerticalAlignment="Center" />
+                                                    <TextBlock Text="{Binding Size, Converter={StaticResource FileSizeHumanConv}, StringFormat=' ({0})'}" VerticalAlignment="Center" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <Button
+                                        Margin="10 0 0 0"
+                                        Content="Download Model"
+                                        Style="{StaticResource MaterialDesignRaisedSecondaryButton}"
+                                        Command="{Binding CmdDownloadModel}" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock
+                                        Width="200">
+                                        Threads
+                                        <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                            <ToolTipService.ToolTip>
+                                                <TextBlock
+                                                    Text="Specify the number of threads. This will increase the load, but will speed up subtitle generation.
+            Do not specify more than CPU threads."
+                                                    TextWrapping="Wrap"
+                                                    MaxWidth="400" />
+                                            </ToolTipService.ToolTip>
+                                            <materialDesign:PackIcon
+                                                Kind="Information"
+                                                Width="16" Height="16"
+                                                Margin="4 0 0 0" />
+                                        </InlineUIContainer>
+                                    </TextBlock>
+                                    <TextBox
+                                        Width="100"
+                                        Text="{Binding FL.PlayerConfig.Subtitles.WhisperCppConfig.Threads, Converter={StaticResource NullableIntConv}}"
+                                        helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock
+                                        Width="200">
+                                        MaxSegmentLength
+                                        <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                            <ToolTipService.ToolTip>
+                                                <TextBlock
+                                                    Text="You can limit the number of characters per subtitle. If the default subtitle is too long, you can adjust it by specifying the number of characters."
+                                                    TextWrapping="Wrap"
+                                                    MaxWidth="400" />
+                                            </ToolTipService.ToolTip>
+                                            <materialDesign:PackIcon
+                                                Kind="Information"
+                                                Width="16" Height="16"
+                                                Margin="4 0 0 0" />
+                                        </InlineUIContainer>
+                                    </TextBlock>
+                                    <TextBox
+                                        Width="100"
+                                        Text="{Binding FL.PlayerConfig.Subtitles.WhisperCppConfig.MaxSegmentLength, Converter={StaticResource NullableIntConv}}"
+                                        helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock
+                                        Width="200"
+                                        Text="MaxTokensPerSegment" />
+                                    <TextBox
+                                        Width="100"
+                                        Text="{Binding FL.PlayerConfig.Subtitles.WhisperCppConfig.MaxTokensPerSegment, Converter={StaticResource NullableIntConv}}"
+                                        helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock
+                                        Width="200"
+                                        Text="SplitOnWord" />
+                                    <ToggleButton
+                                        IsChecked="{Binding FL.PlayerConfig.Subtitles.WhisperCppConfig.SplitOnWord}" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock
+                                        Width="200"
+                                        Text="NoSpeechThreshold" />
+                                    <TextBox
+                                        Width="100"
+                                        Text="{Binding FL.PlayerConfig.Subtitles.WhisperCppConfig.NoSpeechThreshold, Converter={StaticResource NullableIntConv}}"
+                                        helpers:TextBoxHelper.OnlyNumeric="Double" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock
+                                        Width="200"
+                                        Text="NoContext" />
+                                    <ToggleButton
+                                        IsChecked="{Binding FL.PlayerConfig.Subtitles.WhisperCppConfig.NoContext}" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock
+                                        Width="200"
+                                        Text="AudioContextSize" />
+                                    <TextBox
+                                        Width="100"
+                                        Text="{Binding FL.PlayerConfig.Subtitles.WhisperCppConfig.AudioContextSize, Converter={StaticResource NullableIntConv}}"
+                                        helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                                </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox Header="whisper.cpp hardware options (Required to restart to apply changes)">
+                            <StackPanel>
+                                <Grid Margin="10 0 40 0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0" Margin="5 0">
+                                        <TextBlock Text="Available Options" Margin="0 0 0 5" FontSize="14" FontWeight="Bold" />
+
+                                        <ListBox
+                                            ItemsSource="{Binding AvailableLibraries}"
+                                            SelectedItem="{Binding SelectedAvailable}"
+                                            BorderThickness="1"
+                                            BorderBrush="{DynamicResource MaterialDesign.Brush.Primary}" />
+                                    </StackPanel>
+
+                                    <!-- Buttons -->
+                                    <StackPanel Grid.Column="1" Margin="0" VerticalAlignment="Center">
+                                        <Button
+                                            ToolTip="Move Right"
+                                            Style="{StaticResource MaterialDesignIconButton}"
+                                            HorizontalAlignment="Center"
+                                            Width="30"
+                                            Height="30"
+                                            Command="{Binding CmdMoveRight}"
+                                            CommandParameter="{Binding}">
+                                            <materialDesign:PackIcon Kind="ArrowRightBold" />
+                                        </Button>
+
+                                        <Button
+                                            ToolTip="Move Left"
+                                            Style="{StaticResource MaterialDesignIconButton}"
+                                            HorizontalAlignment="Center"
+                                            Width="30"
+                                            Height="30"
+                                            Command="{Binding CmdMoveLeft}"
+                                            CommandParameter="{Binding}">
+                                            <materialDesign:PackIcon Kind="ArrowLeftBold" />
+                                        </Button>
+
+                                        <Button
+                                            ToolTip="Move Up (right selected libraries)"
+                                            Style="{StaticResource MaterialDesignIconButton}"
+                                            HorizontalAlignment="Center"
+                                            Margin="0 15 0 0"
+                                            Width="30"
+                                            Height="30"
+                                            Command="{Binding CmdMoveUp}"
+                                            CommandParameter="{Binding}">
+                                            <materialDesign:PackIcon Kind="ArrowUpBoldOutline" />
+                                        </Button>
+
+                                        <Button
+                                            ToolTip="Move Down (right selected libraries)"
+                                            Style="{StaticResource MaterialDesignIconButton}"
+                                            HorizontalAlignment="Center"
+                                            Width="30"
+                                            Height="30"
+                                            Command="{Binding CmdMoveDown}"
+                                            CommandParameter="{Binding}">
+                                            <materialDesign:PackIcon Kind="ArrowDownBoldOutline" />
+                                        </Button>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="2" Margin="5 0">
+                                        <TextBlock Text="Selected Options (Priority to the above)" Margin="0 0 0 5" FontSize="14" FontWeight="Bold" />
+
+                                        <ListBox
+                                            ItemsSource="{Binding SelectedLibraries}"
+                                            SelectedItem="{Binding SelectedSelected}"
+                                            BorderThickness="1"
+                                            BorderBrush="{DynamicResource MaterialDesign.Brush.Primary}" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <StackPanel Orientation="Horizontal" Margin="0 10 0 0">
+                                    <TextBlock>
+                                        <Run Text="Loaded Option: " />
+                                        <Run FontWeight="Bold" Text="{Binding FL.PlayerConfig.Subtitles.WhisperCppConfig.LoadedLibrary, Mode=OneWay, TargetNullValue=Not Loaded}" />
+                                    </TextBlock>
+                                </StackPanel>
+
+                                <TextBlock Margin="5 10 5 0">
+                                    Some runtimes require the installation of a toolkit or others beforehand. Please check
+                                    <Hyperlink NavigateUri="https://github.com/sandrohanea/whisper.net?tab=readme-ov-file#runtimes-description" helpers:HyperlinkHelper.OpenInBrowser="True">
+                                        this link
+                                    </Hyperlink>
+                                    for details.
+                                </TextBlock>
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+                </TabItem>
+                <TabItem Header="faster-whisper">
+                    <StackPanel Margin="0 10 0 0">
+                        <GroupBox Header="faster-whisper config">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock
+                                        Width="180">
+                                        Whisper Model
+                                        <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                            <ToolTipService.ToolTip>
+                                                <TextBlock
+                                                    Text="The model is automatically downloaded at the first run. Note that if the size is large, it will take longer. Models ending in .en are only available in English."
+                                                    TextWrapping="Wrap"
+                                                    MaxWidth="400" />
+                                            </ToolTipService.ToolTip>
+                                            <materialDesign:PackIcon
+                                                Kind="Information"
+                                                Width="16" Height="16"
+                                                Margin="4 0 0 0" />
+                                        </InlineUIContainer>
+                                    </TextBlock>
+                                    <ComboBox
+                                       Width="160"
+                                       ItemsSource="{Binding Source={x:Static flyleaf:FasterWhisperConfig.ModelOptions}}"
+                                       SelectedItem="{Binding FL.PlayerConfig.Subtitles.FasterWhisperConfig.Model}" />
+
+                                    <Button
+                                        ToolTip="Open Folder"
+                                        Style="{StaticResource MaterialDesignIconButton}"
+                                        Margin="10 0 0 0"
+                                        Width="30"
+                                        Height="30"
+                                        HorizontalAlignment="Center"
+                                        Command="{Binding CmdOpenModelFolder}">
+                                        <materialDesign:PackIcon Kind="Folder" />
+                                    </Button>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock
+                                        Width="180">
+                                        Use Manual Engine
+                                        <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                            <ToolTipService.ToolTip>
+                                                <TextBlock
+                                                    Text="Default: Whisper\Faster-Whisper-XXL\faster-whisper-xxl.exe"
+                                                    TextWrapping="Wrap"
+                                                    MaxWidth="400" />
+                                            </ToolTipService.ToolTip>
+                                            <materialDesign:PackIcon
+                                                Kind="Information"
+                                                Width="16" Height="16"
+                                                Margin="4 0 0 0" />
+                                        </InlineUIContainer>
+                                    </TextBlock>
+                                    <ToggleButton
+                                        IsChecked="{Binding FL.PlayerConfig.Subtitles.FasterWhisperConfig.UseManualEngine}" />
+                                </StackPanel>
+
+                                <DockPanel
+                                    Visibility="{Binding FL.PlayerConfig.Subtitles.FasterWhisperConfig.UseManualEngine, Converter={StaticResource BooleanToVisibilityConv}}">
+                                    <TextBlock
+                                        Width="180">
+                                        <Run Text="    Manual Engine Path" />
+                                        <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                            <ToolTipService.ToolTip>
+                                                <TextBlock
+                                                    Text="Specify the full path to faster-whisper-xxl.exe or whisper-faster.exe."
+                                                    TextWrapping="Wrap"
+                                                    MaxWidth="400" />
+                                            </ToolTipService.ToolTip>
+                                            <materialDesign:PackIcon
+                                                Kind="Information"
+                                                Width="16" Height="16"
+                                                Margin="4 0 0 0" />
+                                        </InlineUIContainer>
+                                    </TextBlock>
+                                    <TextBox
+                                        HorizontalContentAlignment="Left"
+                                        Text="{Binding FL.PlayerConfig.Subtitles.FasterWhisperConfig.ManualEnginePath}" />
+                                </DockPanel>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock
+                                        Width="180">
+                                        Use Manual Model
+                                        <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                            <ToolTipService.ToolTip>
+                                                <TextBlock
+                                                    Text="Default: whispermodels\"
+                                                    TextWrapping="Wrap"
+                                                    MaxWidth="400" />
+                                            </ToolTipService.ToolTip>
+                                            <materialDesign:PackIcon
+                                                Kind="Information"
+                                                Width="16" Height="16"
+                                                Margin="4 0 0 0" />
+                                        </InlineUIContainer>
+                                    </TextBlock>
+                                    <ToggleButton
+                                        IsChecked="{Binding FL.PlayerConfig.Subtitles.FasterWhisperConfig.UseManualModel}" />
+                                </StackPanel>
+
+                                <DockPanel
+                                    Visibility="{Binding FL.PlayerConfig.Subtitles.FasterWhisperConfig.UseManualModel, Converter={StaticResource BooleanToVisibilityConv}}">
+                                    <TextBlock
+                                        Width="180"
+                                        Text="    Manual Model Directory" />
+                                    <TextBox
+                                        HorizontalContentAlignment="Left"
+                                        Text="{Binding FL.PlayerConfig.Subtitles.FasterWhisperConfig.ManualModelDir}" />
+                                </DockPanel>
+
+                                <DockPanel>
+                                    <TextBlock
+                                        Width="180"
+                                        Text="Extra Arguments">
+                                        <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                            <ToolTipService.ToolTip>
+                                                <TextBlock
+                                                    TextWrapping="Wrap"
+                                                    MaxWidth="400">
+                                                    <Run Text="e.g. --device cpu"/>
+                                                    <LineBreak />
+                                                    <LineBreak />
+                                                    Additional arguments to faster-whisper-xxl.exe in string format. For details, execute the --help command from the Copy Help Command below.
+                                                </TextBlock>
+                                            </ToolTipService.ToolTip>
+                                            <materialDesign:PackIcon
+                                                Kind="Information"
+                                                Width="16" Height="16"
+                                                Margin="4 0 0 0" />
+                                        </InlineUIContainer>
+                                    </TextBlock>
+                                    <TextBox
+                                        HorizontalContentAlignment="Left"
+                                        Text="{Binding FL.PlayerConfig.Subtitles.FasterWhisperConfig.ExtraArguments}" />
+                                </DockPanel>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock
+                                        Width="180">
+                                        Process Priority
+                                        <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                            <ToolTipService.ToolTip>
+                                                <TextBlock
+                                                    Text="You can change the priority of the whisper process. If playback is affected, you can lower the priority."
+                                                    TextWrapping="Wrap"
+                                                    MaxWidth="400" />
+                                            </ToolTipService.ToolTip>
+                                            <materialDesign:PackIcon
+                                                Kind="Information"
+                                                Width="16" Height="16"
+                                                Margin="4 0 0 0" />
+                                        </InlineUIContainer>
+                                    </TextBlock>
+                                    <ComboBox
+                                        Width="100"
+                                        ItemsSource="{Binding Source={StaticResource ProcessPriorityClassEnum}}"
+                                        SelectedItem="{Binding FL.PlayerConfig.Subtitles.FasterWhisperConfig.ProcessPriority}" />
+                                </StackPanel>
+
+                                <Separator Margin="0 10" />
+
+                                <TextBlock Text="You can copy debugging commands to the clipboard, which can then be executed in PowerShell by pasting." Margin="0 0 0 6" />
+
+                                <StackPanel Orientation="Horizontal">
+                                    <Button
+                                        Content="Copy Debug Command"
+                                        Margin="0 0 10 0"
+                                        HorizontalAlignment="Left"
+                                        Command="{Binding CmdCopyDebugCommand}"/>
+
+                                    <Button
+                                        Content="Copy Help Command"
+                                        HorizontalAlignment="Left"
+                                        Command="{Binding CmdCopyHelpCommand}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+                </TabItem>
+            </TabControl>
+
+            <Separator Margin="0 20" />
 
             <GroupBox Header="ASR settings">
                 <StackPanel>
@@ -256,101 +619,6 @@ Do not specify more than CPU threads."
                             Text="{Binding FL.PlayerConfig.Subtitles.ASRChunkSeconds}"
                             helpers:TextBoxHelper.OnlyNumeric="Uint" />
                     </StackPanel>
-                </StackPanel>
-            </GroupBox>
-
-            <GroupBox Header="Whisper hardware options (Required to restart to apply changes)">
-                <StackPanel>
-                    <Grid Margin="10 0 40 0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-
-                        <StackPanel Grid.Column="0" Margin="5 0">
-                            <TextBlock Text="Available Options" Margin="0 0 0 5" FontSize="14" FontWeight="Bold" />
-
-                            <ListBox
-                                ItemsSource="{Binding AvailableLibraries}"
-                                SelectedItem="{Binding SelectedAvailable}"
-                                BorderThickness="1"
-                                BorderBrush="{DynamicResource MaterialDesign.Brush.Primary}" />
-                        </StackPanel>
-
-                        <!-- Buttons -->
-                        <StackPanel Grid.Column="1" Margin="0" VerticalAlignment="Center">
-                            <Button
-                                ToolTip="Move Right"
-                                Style="{StaticResource MaterialDesignIconButton}"
-                                HorizontalAlignment="Center"
-                                Width="30"
-                                Height="30"
-                                Command="{Binding CmdMoveRight}"
-                                CommandParameter="{Binding}">
-                                <materialDesign:PackIcon Kind="ArrowRightBold" />
-                            </Button>
-
-                            <Button
-                                ToolTip="Move Left"
-                                Style="{StaticResource MaterialDesignIconButton}"
-                                HorizontalAlignment="Center"
-                                Width="30"
-                                Height="30"
-                                Command="{Binding CmdMoveLeft}"
-                                CommandParameter="{Binding}">
-                                <materialDesign:PackIcon Kind="ArrowLeftBold" />
-                            </Button>
-
-                            <Button
-                                ToolTip="Move Up (right selected libraries)"
-                                Style="{StaticResource MaterialDesignIconButton}"
-                                HorizontalAlignment="Center"
-                                Margin="0 15 0 0"
-                                Width="30"
-                                Height="30"
-                                Command="{Binding CmdMoveUp}"
-                                CommandParameter="{Binding}">
-                                <materialDesign:PackIcon Kind="ArrowUpBoldOutline" />
-                            </Button>
-
-                            <Button
-                                ToolTip="Move Down (right selected libraries)"
-                                Style="{StaticResource MaterialDesignIconButton}"
-                                HorizontalAlignment="Center"
-                                Width="30"
-                                Height="30"
-                                Command="{Binding CmdMoveDown}"
-                                CommandParameter="{Binding}">
-                                <materialDesign:PackIcon Kind="ArrowDownBoldOutline" />
-                            </Button>
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="2" Margin="5 0">
-                            <TextBlock Text="Selected Options (Priority to the above)" Margin="0 0 0 5" FontSize="14" FontWeight="Bold" />
-
-                            <ListBox
-                                ItemsSource="{Binding SelectedLibraries}"
-                                SelectedItem="{Binding SelectedSelected}"
-                                BorderThickness="1"
-                                BorderBrush="{DynamicResource MaterialDesign.Brush.Primary}" />
-                        </StackPanel>
-                    </Grid>
-
-                    <StackPanel Orientation="Horizontal" Margin="0 10 0 0">
-                        <TextBlock>
-                            <Run Text="Loaded Option: " />
-                            <Run FontWeight="Bold" Text="{Binding FL.PlayerConfig.Subtitles.WhisperParameters.LoadedLibrary, Mode=OneWay, TargetNullValue=Not Loaded}" />
-                        </TextBlock>
-                    </StackPanel>
-
-                    <TextBlock Margin="5 10 5 0">
-                        Some runtimes require the installation of a toolkit or others beforehand. Please check
-                        <Hyperlink NavigateUri="https://github.com/sandrohanea/whisper.net?tab=readme-ov-file#runtimes-description" helpers:HyperlinkHelper.OpenInBrowser="True">
-                            this link
-                        </Hyperlink>
-                        for details.
-                    </TextBlock>
                 </StackPanel>
             </GroupBox>
         </StackPanel>

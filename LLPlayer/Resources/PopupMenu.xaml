@@ -233,7 +233,7 @@ AncestorType={x:Type MenuItem}}}">
                   ItemTemplate="{StaticResource MenuSubtitlesStreamsItemTemplate}"
                   ItemContainerStyle="{StaticResource MenuSubtitlesStreamsItemContainerStyle}" />
 
-        <MenuItem Header="{Binding FL.PlayerConfig.Subtitles.WhisperParameters.LanguageName}"
+        <MenuItem Header="{Binding FL.PlayerConfig.Subtitles.WhisperConfig.LanguageName}"
                   HeaderStringFormat="ASR ({0})"
                   Command="{Binding FL.Player.Commands.OpenSubtitlesASR}"
                   CommandParameter="0"
@@ -267,7 +267,7 @@ AncestorType={x:Type MenuItem}}}">
                   ItemTemplate="{StaticResource MenuSubtitlesStreamsItemTemplate}"
                   ItemContainerStyle="{StaticResource MenuSubtitlesStreamsItemContainerStyle}" />
 
-        <MenuItem Header="{Binding FL.PlayerConfig.Subtitles.WhisperParameters.LanguageName}"
+        <MenuItem Header="{Binding FL.PlayerConfig.Subtitles.WhisperConfig.LanguageName}"
                   HeaderStringFormat="ASR ({0})"
                   Command="{Binding FL.Player.Commands.OpenSubtitlesASR}"
                   CommandParameter="1"

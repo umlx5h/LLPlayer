@@ -1085,25 +1085,24 @@ public class Config : NotifyPropertyChanged
 
         #region ASR
         /// <summary>
-        /// ASR Whisper model
+        /// ASR Engine Type (Currently only supports OpenAI Whisper)
         /// </summary>
-        public WhisperModel WhisperModel
-        {
-            get;
-            // When binding in the configuration GUI, the check is set to false to update the current size.
-            set => Set(ref field, value, false);
-        }
+        public SubASREngineType ASREngine { get; set => Set(ref field, value); } = SubASREngineType.WhisperCpp;
 
         /// <summary>
-        /// ASR Whisper runtime option (hardware integration)
+        /// ASR OpenAI Whisper common config
         /// </summary>
-        public List<RuntimeLibrary> WhisperRuntimeLibraries { get; set => Set(ref field, value); }
-            = [RuntimeLibrary.Cpu, RuntimeLibrary.CpuNoAvx];
+        public WhisperConfig WhisperConfig { get; set => Set(ref field, value); } = new();
 
         /// <summary>
-        /// ASR Whisper runtime option (hardware integration)
+        /// ASR whisper.cpp config
         /// </summary>
-        public WhisperParameters WhisperParameters { get; set => Set(ref field, value); } = WhisperParameters.DefaultParameters();
+        public WhisperCppConfig WhisperCppConfig { get; set => Set(ref field, value); } = new();
+
+        /// <summary>
+        /// ASR Faster-Whisper config
+        /// </summary>
+        public FasterWhisperConfig FasterWhisperConfig { get; set => Set(ref field, value); } = new();
 
         /// <summary>
         /// Chunk size (MB) when processing ASR with audio stream

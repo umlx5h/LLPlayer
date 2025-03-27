@@ -12,7 +12,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-
+using CliWrap;
 using Microsoft.Win32;
 
 namespace FlyleafLib;
@@ -686,5 +686,15 @@ public static partial class Utils
                 // ignored
             }
         });
+    }
+
+    public static string CommandToText(this Command cmd)
+    {
+        if (cmd.TargetFilePath.Any(char.IsWhiteSpace))
+        {
+            return $"& \"{cmd.TargetFilePath}\" {cmd.Arguments}";
+        }
+
+        return cmd.ToString();
     }
 }

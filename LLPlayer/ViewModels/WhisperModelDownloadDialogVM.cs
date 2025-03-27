@@ -9,13 +9,13 @@ using Whisper.net.Ggml;
 
 namespace LLPlayer.ViewModels;
 
-public class WhisperDownloadDialogVM : Bindable, IDialogAware
+public class WhisperModelDownloadDialogVM : Bindable, IDialogAware
 {
     private const string TempExtension = ".tmp";
 
-    public WhisperDownloadDialogVM()
+    public WhisperModelDownloadDialogVM()
     {
-        List<WhisperModel> models = WhisperModelLoader.LoadAllModels();
+        List<WhisperCppModel> models = WhisperCppModelLoader.LoadAllModels();
         foreach (var model in models)
         {
             Models.Add(model);
@@ -35,9 +35,9 @@ public class WhisperDownloadDialogVM : Bindable, IDialogAware
         };
     }
 
-    public ObservableCollection<WhisperModel> Models { get; set => Set(ref field, value); } = new();
+    public ObservableCollection<WhisperCppModel> Models { get; set => Set(ref field, value); } = new();
 
-    public WhisperModel SelectedModel
+    public WhisperCppModel SelectedModel
     {
         get;
         set
@@ -68,7 +68,7 @@ public class WhisperDownloadDialogVM : Bindable, IDialogAware
         _cts = new CancellationTokenSource();
         CancellationToken token = _cts.Token;
 
-        WhisperModel downloadModel = SelectedModel;
+        WhisperCppModel downloadModel = SelectedModel;
         string tempModelPath = downloadModel.ModelFilePath + TempExtension;
 
         try
@@ -90,7 +90,7 @@ public class WhisperDownloadDialogVM : Bindable, IDialogAware
 
             long modelSize = await DownloadModelWithProgressAsync(downloadModel.Model, tempModelPath, token);
 
-            // After successful download, rename temporary file to final file]
+            // After successful download, rename temporary file to final file
             File.Move(tempModelPath, downloadModel.ModelFilePath);
 
             // Update downloaded status
@@ -147,7 +147,7 @@ public class WhisperDownloadDialogVM : Bindable, IDialogAware
         {
             StatusText = $"Model '{SelectedModel}' deleting...";
 
-            WhisperModel deleteModel = SelectedModel;
+            WhisperCppModel deleteModel = SelectedModel;
 
             // Delete model file if exists
             if (File.Exists(deleteModel.ModelFilePath))
@@ -163,20 +163,20 @@ public class WhisperDownloadDialogVM : Bindable, IDialogAware
         }
         catch (Exception ex)
         {
-            StatusText = $"Failed to download model: {ex.Message}";
+            StatusText = $"Failed to delete model: {ex.Message}";
         }
     }).ObservesCanExecute(() => CanDelete);
 
     public DelegateCommand CmdOpenFolder => field ??= new(() =>
     {
-        if (!Directory.Exists(WhisperModel.ModelsDirectory))
+        if (!Directory.Exists(WhisperConfig.ModelsDirectory))
             return;
 
         try
         {
             Process.Start(new ProcessStartInfo
             {
-                FileName = WhisperModel.ModelsDirectory,
+                FileName = WhisperConfig.ModelsDirectory,
                 UseShellExecute = true,
                 CreateNoWindow = true
             });

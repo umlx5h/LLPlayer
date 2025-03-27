@@ -641,7 +641,7 @@ public class Subtitle : NotifyPropertyChanged
 
                 using (_player.SubtitlesManager[_subIndex].StartLoading())
                 {
-                    isDone = _player.SubtitlesASR.Open(_subIndex, url, streamIndex, curTime);
+                    isDone = _player.SubtitlesASR.Execute(_subIndex, url, streamIndex, curTime);
                 }
 
                 if (!isDone)

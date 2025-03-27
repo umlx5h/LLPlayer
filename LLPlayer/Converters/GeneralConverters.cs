@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
+using LLPlayer.Services;
 
 namespace LLPlayer.Converters;
 [ValueConversion(typeof(bool), typeof(bool))]
@@ -64,6 +65,24 @@ public class EnumToStringConverter : IValueConverter
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
+}
+
+[ValueConversion(typeof(Enum), typeof(string))]
+public class EnumToDescriptionConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is Enum enumValue)
+        {
+            return enumValue.GetDescription();
+        }
+        return value.ToString() ?? "";
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
 }
 
 [ValueConversion(typeof(Enum), typeof(bool))]

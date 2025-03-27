@@ -5,9 +5,13 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using CliWrap;
+using CliWrap.Builders;
+using CliWrap.EventStream;
 using Whisper.net;
 using Whisper.net.LibraryLoader;
 using Whisper.net.Logger;
@@ -53,16 +57,47 @@ public class SubtitlesASR
     /// <returns></returns>
     public bool CanExecute(out string err)
     {
-        if (_config.Subtitles.WhisperModel == null)
+        if (_config.Subtitles.ASREngine == SubASREngineType.WhisperCpp)
         {
-            err = "The whisper model is not set. Please download it from the settings.";
-            return false;
-        }
+            if (_config.Subtitles.WhisperCppConfig.Model == null)
+            {
+                err = "whisper.cpp model is not set. Please download it from the settings.";
+                return false;
+            }
 
-        if (!File.Exists(_config.Subtitles.WhisperModel.ModelFilePath))
+            if (!File.Exists(_config.Subtitles.WhisperCppConfig.Model.ModelFilePath))
+            {
+                err = $"whisper.cpp model file '{_config.Subtitles.WhisperCppConfig.Model.ModelFileName}' does not exist in the folder. Please download it from the settings.";
+                return false;
+            }
+        }
+        else if (_config.Subtitles.ASREngine == SubASREngineType.FasterWhisper)
         {
-            err = $"The whisper model file '{_config.Subtitles.WhisperModel.ModelFileName}' does not exist in the folder. Please download it from the settings.";
-            return false;
+            if (_config.Subtitles.FasterWhisperConfig.UseManualEngine)
+            {
+                if (!File.Exists(_config.Subtitles.FasterWhisperConfig.ManualEnginePath))
+                {
+                    err = "faster-whisper engine does not exist in the manual path.";
+                    return false;
+                }
+            }
+            else
+            {
+                if (!File.Exists(FasterWhisperConfig.DefaultEnginePath))
+                {
+                    err = "faster-whisper engine is not downloaded. Please download it from the settings.";
+                    return false;
+                }
+            }
+
+            if (_config.Subtitles.FasterWhisperConfig.UseManualModel)
+            {
+                if (!Directory.Exists(_config.Subtitles.FasterWhisperConfig.ManualModelDir))
+                {
+                    err = "faster-whisper manual model directory does not exist.";
+                    return false;
+                }
+            }
         }
 
         err = "";
@@ -78,7 +113,7 @@ public class SubtitlesASR
     /// <param name="streamIndex">Audio streamIndex</param>
     /// <param name="curTime">Current playback timestamp, from which whisper is run</param>
     /// <returns>true: process completed, false: run in progress</returns>
-    public bool Open(int subIndex, string url, int streamIndex, TimeSpan curTime)
+    public bool Execute(int subIndex, string url, int streamIndex, TimeSpan curTime)
     {
         // When Dual ASR: Copy the other ASR result and return early
         if (SubIndexSet.Count > 0 && !SubIndexSet.Contains(subIndex))
@@ -451,7 +486,12 @@ public class AudioReader : IDisposable
 
         async Task DoConsumer()
         {
-            await using WhisperExecuter whisperExecuter = new(_config);
+            await using IASRService asrService = _config.Subtitles.ASREngine switch
+            {
+                SubASREngineType.WhisperCpp => new WhisperCppASRService(_config),
+                SubASREngineType.FasterWhisper => new FasterWhisperASRService(_config),
+                _ => throw new InvalidOperationException()
+            };
 
             while (await channel.Reader.WaitToReadAsync(token))
             {
@@ -464,10 +504,42 @@ public class AudioReader : IDisposable
                     if (CanDebug) Log.Debug(
                             $"Reading chunk from channel (chunkNo: {chunk.ChunkNumber}, start: {chunk.Start}, end: {chunk.End})");
 
-                    var iter = whisperExecuter.Do(chunk.Stream, chunk.Start, chunk.End, chunk.ChunkNumber, token);
-                    await foreach (var result in iter)
+                    //// Output wav file for debugging
+                    //await using (FileStream fs = new($"subtitlewhisper-{chunk.ChunkNumber}.wav", FileMode.Create, FileAccess.Write))
+                    //{
+                    //    chunk.Stream.WriteTo(fs);
+                    //    chunk.Stream.Position = 0;
+                    //}
+
+                    await foreach (var data in asrService.Do(chunk.Stream, token))
                     {
-                        addSub(result);
+                        TimeSpan start = chunk.Start.Add(data.start);
+                        TimeSpan end = chunk.Start.Add(data.end);
+                        if (end > chunk.End)
+                        {
+                            // Shorten by 20 ms to prevent the next subtitle from being covered
+                            end = chunk.End.Subtract(TimeSpan.FromMilliseconds(20));
+                        }
+
+                        SubtitleASRData subData = new()
+                        {
+                            Text = data.text,
+                            Language = data.language,
+                            StartTime = start,
+                            EndTime = end,
+#if DEBUG
+                            ChunkNo = chunk.ChunkNumber,
+                            StartTimeChunk = chunk.Start,
+                            EndTimeChunk = chunk.End
+#endif
+                        };
+
+                        if (CanDebug) Log.Debug(string.Format("{0}->{1} ({2}->{3}): {4}",
+                            start, end,
+                            chunk.Start, chunk.End,
+                            data.text));
+
+                        addSub(subData);
                     }
                 }
                 finally
@@ -796,7 +868,14 @@ public class AudioReader : IDisposable
     }
 }
 
-public class WhisperExecuter : IAsyncDisposable
+public interface IASRService : IAsyncDisposable
+{
+    public IAsyncEnumerable<(string text, TimeSpan start, TimeSpan end, string language)> Do(MemoryStream waveStream, CancellationToken token);
+}
+
+// https://github.com/sandrohanea/whisper.net
+// https://github.com/ggerganov/whisper.cpp
+public class WhisperCppASRService : IASRService
 {
     private readonly Config _config;
 
@@ -808,14 +887,14 @@ public class WhisperExecuter : IAsyncDisposable
     private readonly bool _isLanguageDetect;
     private string? _detectedLanguage;
 
-    public WhisperExecuter(Config config)
+    public WhisperCppASRService(Config config)
     {
         _config = config;
-        Log = new LogHandler(("[#1]").PadRight(8, ' ') + " [WhisperExecute] ");
+        Log = new LogHandler(("[#1]").PadRight(8, ' ') + " [WhisperCpp    ] ");
 
-        if (_config.Subtitles.WhisperRuntimeLibraries.Count >= 1)
+        if (_config.Subtitles.WhisperCppConfig.RuntimeLibraries.Count >= 1)
         {
-            RuntimeOptions.RuntimeLibraryOrder = [.. _config.Subtitles.WhisperRuntimeLibraries];
+            RuntimeOptions.RuntimeLibraryOrder = [.. _config.Subtitles.WhisperCppConfig.RuntimeLibraries];
         }
         else
         {
@@ -828,14 +907,14 @@ public class WhisperExecuter : IAsyncDisposable
 
         if (CanDebug) Log.Debug($"Selecting whisper runtime libraries from ({string.Join(",", RuntimeOptions.RuntimeLibraryOrder)})");
 
-        _factory = WhisperFactory.FromPath(_config.Subtitles.WhisperModel.ModelFilePath);
+        _factory = WhisperFactory.FromPath(_config.Subtitles.WhisperCppConfig.Model!.ModelFilePath);
 
         if (CanDebug) Log.Debug($"Selected whisper runtime library '{RuntimeOptions.LoadedLibrary}'");
 
         WhisperProcessorBuilder whisperBuilder = _factory.CreateBuilder();
-        _processor = _config.Subtitles.WhisperParameters.ConfigureBuilder(whisperBuilder).Build();
+        _processor = _config.Subtitles.WhisperCppConfig.ConfigureBuilder(_config.Subtitles.WhisperConfig, whisperBuilder).Build();
 
-        _isLanguageDetect = _config.Subtitles.WhisperParameters.LanguageDetection;
+        _isLanguageDetect = _config.Subtitles.WhisperConfig.LanguageDetection;
     }
 
     public async ValueTask DisposeAsync()
@@ -845,15 +924,8 @@ public class WhisperExecuter : IAsyncDisposable
         _logger.Dispose();
     }
 
-    public async IAsyncEnumerable<SubtitleASRData> Do(MemoryStream waveStream, TimeSpan chunkStart, TimeSpan chunkEnd, int chunkCnt, [EnumeratorCancellation] CancellationToken token)
+    public async IAsyncEnumerable<(string text, TimeSpan start, TimeSpan end, string language)> Do(MemoryStream waveStream, [EnumeratorCancellation] CancellationToken token)
     {
-        // Output wav file for debugging
-        //using (FileStream fs = new($"subtitlewhisper-{chunkCnt}.wav", FileMode.Create, FileAccess.Write))
-        //{
-        //    waveStream.WriteTo(fs);
-        //    waveStream.Position = 0;
-        //}
-
         // If language detection is on, set detected language manually
         // TODO: L: Currently this is set because language information is managed for the entire subtitle,
         // but if language information is maintained for each subtitle, it should not be set.
@@ -866,38 +938,271 @@ public class WhisperExecuter : IAsyncDisposable
         {
             token.ThrowIfCancellationRequested();
 
-            TimeSpan start = chunkStart.Add(result.Start);
-            TimeSpan end = chunkStart.Add(result.End);
-            if (end > chunkEnd)
-            {
-                // Shorten by 20 ms to prevent the next subtitle from being covered
-                end = chunkEnd.Subtract(TimeSpan.FromMilliseconds(20));
-            }
-
             if (_detectedLanguage is null && !string.IsNullOrEmpty(result.Language))
             {
                 _detectedLanguage = result.Language;
             }
 
-            SubtitleASRData sub = new()
+            string text = result.Text.Trim(); // remove leading whitespace
+
+            yield return (text, result.Start, result.End, result.Language);
+        }
+    }
+}
+
+// https://github.com/Purfview/whisper-standalone-win
+// Purfview's Stand-alone Faster-Whisper-XXL & Faster-Whisper
+// Do not support official OpenAI Whisper version
+public class FasterWhisperASRService : IASRService
+{
+    private readonly Config _config;
+
+    public FasterWhisperASRService(Config config)
+    {
+        _config = config;
+
+        _isLanguageDetect = _config.Subtitles.WhisperConfig.LanguageDetection;
+        _manualLanguage = _config.Subtitles.WhisperConfig.Language;
+        _cmdBase = BuildCommand(_config.Subtitles.FasterWhisperConfig, _config.Subtitles.WhisperConfig);
+
+        if (!_config.Subtitles.FasterWhisperConfig.UseManualModel)
+        {
+            WhisperConfig.EnsureModelsDirectory();
+        }
+    }
+
+    private readonly Command _cmdBase;
+    private readonly bool _isLanguageDetect;
+    private readonly string _manualLanguage;
+    private string? _detectedLanguage;
+
+    private static readonly Regex LanguageReg = new("^Detected language '(.+)' with probability");
+    // [08:15.050 --> 08:16.450] Text
+    private static readonly Regex SubShortReg = new(@"^\[\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}\.\d{3}\] ", RegexOptions.Compiled);
+    // [02:08:15.050 --> 02:08:16.450] Text
+    private static readonly Regex SubLongReg = new(@"^\[\d{2}:\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}:\d{2}\.\d{3}\] ", RegexOptions.Compiled);
+    private static readonly Regex EndReg = new("^Operation finished in:");
+
+    public ValueTask DisposeAsync()
+    {
+        return ValueTask.CompletedTask;
+    }
+
+    public static Command BuildCommand(FasterWhisperConfig config, WhisperConfig commonConfig)
+    {
+        string tempFolder = Path.GetTempPath();
+        string enginePath = config.UseManualEngine ? config.ManualEnginePath! : FasterWhisperConfig.DefaultEnginePath;
+
+        ArgumentsBuilder args = new();
+        args.Add("--output_dir").Add(tempFolder);
+        args.Add("--output_format").Add("srt");
+        args.Add("--verbose").Add("True");
+        args.Add("--beep_off");
+        args.Add("--model").Add(config.Model);
+        args.Add("--model_dir")
+            .Add(config.UseManualModel ? config.ManualModelDir! : WhisperConfig.ModelsDirectory);
+
+        if (commonConfig.Translate)
+            args.Add("--task").Add("translate");
+
+        if (!commonConfig.LanguageDetection)
+            args.Add("--language").Add(commonConfig.Language);
+
+        string arguments = args.Build();
+
+        if (!string.IsNullOrEmpty(config.ExtraArguments))
+        {
+            arguments += $" {config.ExtraArguments}";
+        }
+
+        Command cmd = Cli.Wrap(enginePath)
+            .WithArguments(arguments)
+            .WithValidation(CommandResultValidation.None);
+
+        if (config.ProcessPriority != ProcessPriorityClass.Normal)
+        {
+            cmd = cmd.WithResourcePolicy(builder =>
+                builder.SetPriority(config.ProcessPriority));
+        }
+
+        return cmd;
+    }
+
+    private static TimeSpan ParseTime(ReadOnlySpan<char> time, bool isLong)
+    {
+        if (isLong)
+        {
+            // 01:28:02.130
+            // hh:mm:ss.fff
+            int hours = int.Parse(time[..2]);
+            int minutes = int.Parse(time[3..5]);
+            int seconds = int.Parse(time[6..8]);
+            int milliseconds = int.Parse(time[9..12]);
+            return new TimeSpan(0, hours, minutes, seconds, milliseconds);
+        }
+        else
+        {
+            // 28:02.130
+            // mm:ss.fff
+            int minutes = int.Parse(time[..2]);
+            int seconds = int.Parse(time[3..5]);
+            int milliseconds = int.Parse(time[6..9]);
+            return new TimeSpan(0, 0, minutes, seconds, milliseconds);
+        }
+    }
+
+    public async IAsyncEnumerable<(string text, TimeSpan start, TimeSpan end, string language)> Do(MemoryStream waveStream, [EnumeratorCancellation] CancellationToken token)
+    {
+        string tempFilePath = Path.GetTempFileName();
+
+        // TODO: L: Currently not output option, so specify temp folder
+        // https://github.com/Purfview/whisper-standalone-win/issues/429
+        string outputFilePath = Path.ChangeExtension(tempFilePath, "srt");
+
+        // write WAV to tmp folder
+        await using (FileStream fileStream = new(tempFilePath, FileMode.Create, FileAccess.Write))
+        {
+            waveStream.WriteTo(fileStream);
+        }
+
+        CancellationTokenSource forceCts = new();
+        token.Register(() =>
+        {
+            // force kill if not exited when sending interrupt
+            forceCts.CancelAfter(5000);
+        });
+
+        try
+        {
+            string? lastLine = null;
+            StringBuilder output = new(); // for error output
+            Lock outputLock = new();
+            bool oneSuccess = false;
+
+            ArgumentsBuilder args = new();
+            if (_isLanguageDetect && !string.IsNullOrEmpty(_detectedLanguage))
             {
-                Text = result.Text.Trim(), // remove leading whitespace
-                StartTime = start,
-                EndTime = end,
-#if DEBUG
-                ChunkNo = chunkCnt,
-                StartTimeChunk = result.Start,
-                EndTimeChunk = result.End,
-#endif
-                Language = result.Language
-            };
+                args.Add("--language").Add(_detectedLanguage);
+            }
+            args.Add(tempFilePath);
+            string addedArgs = args.Build();
 
-            if (CanDebug) Log.Debug(string.Format("{0}->{1} ({2}->{3}): {4}",
-                start, end,
-                result.Start, result.End,
-                result.Text));
+            Command cmd = _cmdBase.WithArguments($"{_cmdBase.Arguments} {addedArgs}");
 
-            yield return sub;
+            await foreach (var cmdEvent in cmd.ListenAsync(Encoding.Default, Encoding.Default, forceCts.Token, token))
+            {
+                token.ThrowIfCancellationRequested();
+
+                if (cmdEvent is StandardErrorCommandEvent stdErr)
+                {
+                    lock (outputLock)
+                    {
+                        output.AppendLine(stdErr.Text);
+                    }
+
+                    continue;
+                }
+
+                if (cmdEvent is not StandardOutputCommandEvent stdOut)
+                {
+                    continue;
+                }
+
+                string line = stdOut.Text;
+
+                // process stdout
+                if (!oneSuccess)
+                {
+                    lock (outputLock)
+                    {
+                        output.AppendLine(line);
+                    }
+
+                }
+                if (string.IsNullOrEmpty(line))
+                {
+                    continue;
+                }
+
+                lastLine = line;
+
+                if (_isLanguageDetect && _detectedLanguage == null)
+                {
+                    var match = LanguageReg.Match(line);
+                    if (match.Success)
+                    {
+                        string languageName = match.Groups[1].Value;
+                        _detectedLanguage = WhisperLanguage.LanguageToCode[languageName];
+                    }
+
+                    continue;
+                }
+
+                bool isLong = false;
+
+                Match subtitleMatch = SubShortReg.Match(line);
+                if (!subtitleMatch.Success)
+                {
+                    subtitleMatch = SubLongReg.Match(line);
+                    if (!subtitleMatch.Success)
+                    {
+                        continue;
+                    }
+
+                    isLong = true;
+                }
+
+                ReadOnlySpan<char> lineSpan = line.AsSpan();
+
+                Range startRange = 1..10;
+                Range endRange = 15..24;
+                Range textRange = 26..;
+
+                if (isLong)
+                {
+                    startRange = 1..13;
+                    endRange = 18..30;
+                    textRange = 32..;
+                }
+
+                TimeSpan start = ParseTime(lineSpan[startRange], isLong);
+                TimeSpan end = ParseTime(lineSpan[endRange], isLong);
+                // because some languages have leading spaces
+                string text = lineSpan[textRange].Trim().ToString();
+
+                yield return (text, start, end, _isLanguageDetect ? _detectedLanguage! : _manualLanguage);
+
+                if (!oneSuccess)
+                {
+                    oneSuccess = true;
+                }
+            }
+
+            // validate if success
+            if (lastLine == null || !EndReg.Match(lastLine).Success)
+            {
+                throw new InvalidOperationException("Failed to execute faster-whisper")
+                {
+                    Data =
+                    {
+                        ["whisper_command"] = cmd.CommandToText(),
+                        ["whisper_output"] = output.ToString()
+                    }
+                };
+            }
+        }
+        finally
+        {
+            // delete tmp wave
+            if (File.Exists(tempFilePath))
+            {
+                File.Delete(tempFilePath);
+            }
+            // delete output srt
+            if (File.Exists(outputFilePath))
+            {
+                File.Delete(outputFilePath);
+            }
         }
     }
 }

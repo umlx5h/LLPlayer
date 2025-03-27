@@ -1,5 +1,4 @@
 ﻿using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Controls;
@@ -42,6 +41,13 @@ public class SettingsAboutVM : Bindable
                 Name = "sandrohanea/whisper.net",
                 Description = "Dotnet bindings for OpenAI Whisper (whisper.cpp)",
                 Url = "https://github.com/sandrohanea/whisper.net"
+            },
+
+            new LibraryInfo
+            {
+                Name = "Purfview/whisper-standalone-win",
+                Description = "Faster-Whisper standalone executables",
+                Url = "https://github.com/Purfview/whisper-standalone-win"
             },
 
             new LibraryInfo

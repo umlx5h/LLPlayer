@@ -29,6 +29,7 @@
     <conv:InvertBooleanConverter x:Key="InvertBooleanConv"/>
     <conv:ColorToBrushConverter x:Key="ColorToBrushConv"/>
     <conv:EnumToStringConverter x:Key="EnumToStringConv"/>
+    <conv:EnumToDescriptionConverter x:Key="EnumToDescriptionConv"/>
     <conv:EnumToBooleanConverter x:Key="EnumToBooleanConv" />
     <conv:KeyToStringConverter x:Key="KeyToStringConv"/>
     <conv:FileSizeHumanConverter x:Key="FileSizeHumanConv"/>

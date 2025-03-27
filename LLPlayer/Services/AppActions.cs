@@ -374,14 +374,14 @@ public class AppActions
         bool requiredRestart = false;
 
         _config.PropertyChanged += ConfigOnPropertyChanged;
-        _player.Config.Subtitles.PropertyChanged += ConfigOnPropertyChanged;
+        _player.Config.Subtitles.WhisperCppConfig.PropertyChanged += ConfigOnPropertyChanged;
 
         void ConfigOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             switch (e.PropertyName)
             {
                 case nameof(_config.IsDarkTitlebar):
-                case nameof(_player.Config.Subtitles.WhisperRuntimeLibraries):
+                case nameof(_player.Config.Subtitles.WhisperCppConfig.RuntimeLibraries):
                     requiredRestart = true;
                     break;
             }
@@ -397,7 +397,7 @@ public class AppActions
             }
 
             _config.PropertyChanged -= ConfigOnPropertyChanged;
-            _player.Config.Subtitles.PropertyChanged -= ConfigOnPropertyChanged;
+            _player.Config.Subtitles.WhisperCppConfig.PropertyChanged += ConfigOnPropertyChanged;
 
             if (result.Result == ButtonResult.OK)
             {

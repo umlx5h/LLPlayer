@@ -2,13 +2,12 @@
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
-using System.Windows;
 using FlyleafLib;
 using LLPlayer.Extensions;
 
 namespace LLPlayer.ViewModels;
 
-// TODO: L: consider commonization with WhisperDownloadDialogVM
+// TODO: L: consider commonization with WhisperModelDownloadDialogVM
 public class TesseractDownloadDialogVM : Bindable, IDialogAware
 {
     private const string TempExtension = ".tmp";
@@ -90,7 +89,7 @@ public class TesseractDownloadDialogVM : Bindable, IDialogAware
 
             long modelSize = await DownloadModelWithProgressAsync(downloadModel.LangCode, tempModelPath, token);
 
-            // After successful download, rename temporary file to final file]
+            // After successful download, rename temporary file to final file
             File.Move(tempModelPath, downloadModel.ModelFilePath);
 
             // Update downloaded status
@@ -164,7 +163,7 @@ public class TesseractDownloadDialogVM : Bindable, IDialogAware
         }
         catch (Exception ex)
         {
-            StatusText = $"Failed to download model: {ex.Message}";
+            StatusText = $"Failed to delete model: {ex.Message}";
         }
     }).ObservesCanExecute(() => CanDelete);
 

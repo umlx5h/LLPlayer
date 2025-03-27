@@ -1,15 +1,15 @@
-﻿<UserControl x:Class="LLPlayer.Views.WhisperDownloadDialog"
+﻿<UserControl x:Class="LLPlayer.Views.WhisperEngineDownloadDialog"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:vm="clr-namespace:LLPlayer.ViewModels"
+             xmlns:helpers="clr-namespace:LLPlayer.Extensions"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:local="clr-namespace:LLPlayer.Views"
              xmlns:prism="http://prismlibrary.com/"
-             xmlns:flyleaf="clr-namespace:FlyleafLib;assembly=FlyleafLib"
              mc:Ignorable="d"
-             d:DataContext="{d:DesignInstance vm:WhisperDownloadDialogVM}"
+             d:DataContext="{d:DesignInstance vm:WhisperEngineDownloadDialogVM}"
              d:Foreground="White"
              d:Background="Black"
              d:DesignHeight="450" d:DesignWidth="800">
@@ -36,28 +36,41 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Select model -->
-        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin=" 0 0 0 10">
-            <Label Content="Select Model:" VerticalAlignment="Center"/>
-            <ComboBox
-                ItemsSource="{Binding Models}"
-                SelectedItem="{Binding SelectedModel, Mode=TwoWay}"
-                Width="200" Margin="10,0,8,0">
-                <ComboBox.ItemTemplate>
-                    <DataTemplate DataType="{x:Type flyleaf:WhisperModel}">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <materialDesign:PackIcon
-                                Kind="Check" Width="20" Height="20"
-                                Foreground="{DynamicResource MaterialDesign.Brush.Primary}" Margin="0,0,5,0"
-                                Visibility="{Binding Downloaded, Converter={StaticResource BooleanToVisibilityHiddenConv}}" />
-                            <TextBlock Text="{Binding Model}" VerticalAlignment="Center" />
+        <!-- Select engine -->
+        <TextBlock Grid.Row="0" FontWeight="Bold" Margin="0 0 0 16">
+            Download <Hyperlink NavigateUri="{Binding Source={x:Static vm:WhisperEngineDownloadDialogVM.EngineURL}}" helpers:HyperlinkHelper.OpenInBrowser="True">
+                <TextBlock Text="{Binding Source={x:Static vm:WhisperEngineDownloadDialogVM.EngineFile}}"  />
+            </Hyperlink>
+        </TextBlock>
 
-                            <TextBlock Text="{Binding Size, Converter={StaticResource FileSizeHumanConv}, StringFormat=' ({0})'}" VerticalAlignment="Center"
-                                       Visibility="{Binding Downloaded, Converter={StaticResource BooleanToVisibilityConv}}"/>
-                        </StackPanel>
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>
+        <!-- Download & Cancel button -->
+        <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="0,0,0,10">
+            <Button
+                Content="Download"
+                Command="{Binding CmdDownloadEngine}"
+                Width="150"
+                Height="30"
+                Visibility="{Binding CmdDownloadEngine.IsExecuting, Converter={StaticResource BooleanToVisibilityInvertConv}}" />
+
+            <Button
+                Content="Cancel"
+                Command="{Binding CmdCancelDownloadEngine}"
+                Width="150"
+                Height="30"
+                Style="{StaticResource MaterialDesignPaperButton}"
+                Visibility="{Binding CmdDownloadEngine.IsExecuting, Converter={StaticResource BooleanToVisibilityConv}}"/>
+
+            <Button
+                Command="{Binding CmdDeleteEngine}"
+                Width="100"
+                Height="30"
+                Style="{StaticResource MaterialDesignFlatButton}"
+                Margin="10 0 0 0">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="Delete" Width="20" Height="20" VerticalAlignment="Center" />
+                    <TextBlock Text="Delete" Margin="5 0 0 0" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
 
             <Button
                 ToolTip="Open Folder"
@@ -70,41 +83,11 @@
             </Button>
         </StackPanel>
 
-        <!-- Download & Cancel button -->
-        <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="0,0,0,10">
-            <Button
-                Content="Download Model"
-                Command="{Binding CmdDownloadModel}"
-                Width="150"
-                Height="30"
-                Visibility="{Binding CmdDownloadModel.IsExecuting, Converter={StaticResource BooleanToVisibilityInvertConv}}" />
-
-            <Button
-                Content="Cancel"
-                Command="{Binding CmdCancelDownloadModel}"
-                Width="150"
-                Height="30"
-                Style="{StaticResource MaterialDesignPaperButton}"
-                Visibility="{Binding CmdDownloadModel.IsExecuting, Converter={StaticResource BooleanToVisibilityConv}}"/>
-
-            <Button
-                Command="{Binding CmdDeleteModel}"
-                Width="100"
-                Height="30"
-                Style="{StaticResource MaterialDesignFlatButton}"
-                Margin="10 0 0 0">
-                <StackPanel Orientation="Horizontal">
-                    <materialDesign:PackIcon Kind="Delete" Width="20" Height="20" VerticalAlignment="Center" />
-                    <TextBlock Text="Delete" Margin="5 0 0 0" VerticalAlignment="Center" />
-                </StackPanel>
-            </Button>
-        </StackPanel>
-
         <!-- Progress bar (hidden) -->
         <ProgressBar
             Grid.Row="2"
             Height="6"
-            Visibility="{Binding CmdDownloadModel.IsExecuting, Converter={StaticResource BooleanToVisibilityConv}}"
+            Visibility="{Binding CmdDownloadEngine.IsExecuting, Converter={StaticResource BooleanToVisibilityConv}}"
             Margin="0 0 0 10"
             IsIndeterminate="True" />
 
@@ -113,7 +96,7 @@
             Orientation="Horizontal"
             Grid.Row="3"
             Margin="0 0 0 10"
-            Visibility="{Binding CmdDownloadModel.IsExecuting, Converter={StaticResource BooleanToVisibilityConv}}">
+            Visibility="{Binding CmdDownloadEngine.IsExecuting, Converter={StaticResource BooleanToVisibilityConv}}">
             <TextBlock
                 Text="{Binding DownloadedSize, Converter={StaticResource FileSizeHumanConv}}"
                 FontWeight="Bold"/>
