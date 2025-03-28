@@ -79,7 +79,6 @@ public class OpenSubtitlesProvider
 """;
 
         var result = await _client.PostAsync(string.Empty, new StringContent(loginReqXml));
-        result.EnsureSuccessStatusCode();
         var content = await result.Content.ReadAsStringAsync();
 
         var serializer = new XmlSerializer(typeof(MethodResponse));
@@ -89,6 +88,7 @@ public class OpenSubtitlesProvider
             MethodResponse? response = null;
             try
             {
+                result.EnsureSuccessStatusCode();
                 response = serializer.Deserialize(reader) as MethodResponse;
                 if (response == null)
                 {
@@ -101,6 +101,7 @@ public class OpenSubtitlesProvider
                 {
                     Data =
                     {
+                        ["status_code"] = ((int)result.StatusCode).ToString(),
                         ["login_content"] = content
                     }
                 };
@@ -194,8 +195,6 @@ $"""
 """;
 
         var result = await _client.PostAsync(string.Empty, new StringContent(searchReqXml));
-        result.EnsureSuccessStatusCode();
-
         var content = await result.Content.ReadAsStringAsync();
 
         var serializer = new XmlSerializer(typeof(MethodResponse));
@@ -207,6 +206,7 @@ $"""
             MethodResponse? response = null;
             try
             {
+                result.EnsureSuccessStatusCode();
                 response = serializer.Deserialize(reader) as MethodResponse;
                 if (response == null)
                 {
@@ -219,6 +219,7 @@ $"""
                 {
                     Data =
                     {
+                        ["status_code"] = ((int)result.StatusCode).ToString(),
                         ["search_content"] = content
                     }
                 };
@@ -321,8 +322,6 @@ $"""
  """;
 
         var result = await _client.PostAsync(string.Empty, new StringContent(downloadReqXml));
-        result.EnsureSuccessStatusCode();
-
         var content = await result.Content.ReadAsStringAsync();
 
         XmlSerializer serializer = new(typeof(MethodResponse));
@@ -334,6 +333,7 @@ $"""
             MethodResponse? response = null;
             try
             {
+                result.EnsureSuccessStatusCode();
                 response = serializer.Deserialize(reader) as MethodResponse;
                 if (response == null)
                 {
@@ -346,6 +346,7 @@ $"""
                 {
                     Data =
                     {
+                        ["status_code"] = ((int)result.StatusCode).ToString(),
                         ["download_content"] = content
                     }
                 };

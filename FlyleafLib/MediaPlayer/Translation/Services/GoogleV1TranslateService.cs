@@ -113,6 +113,7 @@ public class GoogleV1TranslateService : ITranslateService
     public async Task<string> TranslateAsync(string text, CancellationToken token)
     {
         string jsonResultString = "";
+        int statusCode = -1;
 
         try
         {
@@ -121,6 +122,7 @@ public class GoogleV1TranslateService : ITranslateService
             using var result = await _httpClient.GetAsync(url, token).ConfigureAwait(false);
             jsonResultString = await result.Content.ReadAsStringAsync(token).ConfigureAwait(false);
 
+            statusCode = (int)result.StatusCode;
             result.EnsureSuccessStatusCode();
         }
         // Distinguish between timeout and cancel errors
@@ -137,6 +139,7 @@ public class GoogleV1TranslateService : ITranslateService
             {
                 Data =
                 {
+                    ["status_code"] = statusCode.ToString(),
                     ["response"] = jsonResultString
                 }
             };
@@ -156,6 +159,7 @@ public class GoogleV1TranslateService : ITranslateService
             {
                 Data =
                 {
+                    ["status_code"] = statusCode.ToString(),
                     ["response"] = jsonResultString
                 }
             };

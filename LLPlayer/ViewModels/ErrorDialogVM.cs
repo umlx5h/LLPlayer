@@ -134,7 +134,10 @@ public class ErrorDialogVM : Bindable, IDialogAware
 
         foreach (DictionaryEntry entry in ex.Data)
         {
-            allData.TryAdd(entry.Key, entry.Value);
+            if (entry.Value != null)
+            {
+                allData.TryAdd(entry.Key, entry.Value);
+            }
         }
 
         if (ex.InnerException != null)

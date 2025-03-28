@@ -88,6 +88,7 @@ public class DeepLXTranslateService : ITranslateService
         }
 
         string jsonResultString = "";
+        int statusCode = -1;
 
         try
         {
@@ -104,6 +105,7 @@ public class DeepLXTranslateService : ITranslateService
             using var result = await _httpClient.PostAsync("/translate", content, token).ConfigureAwait(false);
             jsonResultString = await result.Content.ReadAsStringAsync(token).ConfigureAwait(false);
 
+            statusCode = (int)result.StatusCode;
             result.EnsureSuccessStatusCode();
         }
         catch (OperationCanceledException ex)
@@ -117,6 +119,7 @@ public class DeepLXTranslateService : ITranslateService
             {
                 Data =
                 {
+                    ["status_code"] = statusCode.ToString(),
                     ["response"] = jsonResultString
                 }
             };
@@ -133,6 +136,7 @@ public class DeepLXTranslateService : ITranslateService
             {
                 Data =
                 {
+                    ["status_code"] = statusCode.ToString(),
                     ["response"] = jsonResultString
                 }
             };
