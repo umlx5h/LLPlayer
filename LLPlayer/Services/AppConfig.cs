@@ -129,7 +129,20 @@ public class AppConfig : Bindable
     #endregion
 
     // TODO: L: should be move to AppConfigSubs?
-    public bool SidebarLeft { get; set => Set(ref field, value); }
+    public bool SidebarLeft
+    {
+        get;
+        set
+        {
+            if (Set(ref field, value))
+            {
+                OnPropertyChanged(nameof(SidebarFlowDirection));
+            }
+        }
+    }
+
+    [JsonIgnore]
+    public FlowDirection SidebarFlowDirection => !SidebarLeft ? FlowDirection.LeftToRight : FlowDirection.RightToLeft;
 
     public int SidebarWidth { get; set => Set(ref field, value); } = 300;
 

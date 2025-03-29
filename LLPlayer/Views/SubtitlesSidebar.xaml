@@ -46,7 +46,15 @@
                     </Style>
 
                     <Style x:Key="SubPlayIconButton" TargetType="Button" BasedOn="{StaticResource SubIconButton}">
+                        <Setter Property="ToolTipService.Placement" Value="Left" />
+                        <Setter Property="ToolTipService.HorizontalOffset" Value="-10" />
+
                         <Style.Triggers>
+                            <DataTrigger Binding="{Binding DataContext.FL.Config.SidebarLeft, ElementName=SubtitleListBox}" Value="True">
+                                <Setter Property="ToolTipService.Placement" Value="Right" />
+                                <Setter Property="ToolTipService.HorizontalOffset" Value="10" />
+                            </DataTrigger>
+
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Primary}" />
                             </Trigger>
@@ -176,13 +184,13 @@
             <controls:WordPopup
                 x:Name="WordPopupControl"
                 IsSidebar="True"
-                SidebarLeft="{Binding FL.Config.SidebarLeft}"
                 MaxWidth="400" />
         </controls:NonTopmostPopup>
 
         <ListBox
             x:Name="SubtitleListBox"
             Grid.Row="1"
+            FlowDirection="{Binding FL.Config.SidebarFlowDirection}"
             FontSize="{Binding FL.Config.SidebarFontSize}"
             FontFamily="{Binding FL.Config.SidebarFontFamily}"
             BorderThickness="0"
@@ -222,6 +230,7 @@
                         <!--Text Subtitles-->
                         <DataTemplate x:Key="SubTextTemplate">
                             <controls:SelectableTextBox
+                                FlowDirection="{Binding DataContext.SubManager.Language.FlowDirection, ElementName=SubtitleListBox, FallbackValue=LeftToRight}"
                                 TextAlignment="Left"
                                 VerticalAlignment="Center"
                                 Foreground="{DynamicResource MaterialDesignBody}"
@@ -270,7 +279,7 @@
                         <Button
                             x:Name="PlayButton"
                             Grid.Column="0"
-                            ToolTipService.Placement="Left"
+                            FlowDirection="LeftToRight"
                             ToolTipService.InitialShowDelay="200"
                             ToolTip="{Binding StartTime, Converter={StaticResource TimeSpanToStringConv}}"
                             Command="{Binding DataContext.CmdSubPlay, ElementName=SubtitleListBox}"
@@ -285,7 +294,7 @@
 
                         <!-- Can use ContentTemplateSelecter?-->
                         <!-- Display text or bitmap -->
-                        <ContentControl Grid.Column="1" Content="{Binding}">
+                        <ContentControl Grid.Column="1" Content="{Binding}" FlowDirection="LeftToRight">
                             <ContentControl.Style>
                                 <Style TargetType="ContentControl">
                                     <Setter Property="ContentTemplate" Value="{StaticResource SubTextTemplate}" />
@@ -302,6 +311,7 @@
                         <Button
                             x:Name="SubSyncButton"
                             Grid.Column="2"
+                            FlowDirection="LeftToRight"
                             ToolTip="Adjust the delay so that this subtitle is currently playing."
                             Command="{Binding DataContext.CmdSubSync, ElementName=SubtitleListBox}"
                             CommandParameter="{Binding Index}"

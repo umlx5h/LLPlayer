@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Diagnostics;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -61,6 +62,15 @@ public partial class SelectableSubtitleText : UserControl
     }
 
     private string _textFix;
+
+    public static readonly DependencyProperty LanguageProperty =
+        DependencyProperty.Register(nameof(Language), typeof(Language), typeof(SelectableSubtitleText), new FrameworkPropertyMetadata(null, OnLanguageChanged));
+
+    public Language Language
+    {
+        get => (Language)GetValue(LanguageProperty);
+        set => SetValue(LanguageProperty, value);
+    }
 
     public static readonly DependencyProperty FillProperty =
         OutlinedTextBlock.FillProperty.AddOwner(typeof(SelectableSubtitleText));
@@ -137,6 +147,19 @@ public partial class SelectableSubtitleText : UserControl
         ctl.SetText((string)e.NewValue);
     }
 
+    private static void OnLanguageChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var ctl = (SelectableSubtitleText)d;
+        if (ctl.Language != null && ctl.Language.IsRTL)
+        {
+            ctl.wrapPanel.FlowDirection = FlowDirection.RightToLeft;
+        }
+        else
+        {
+            ctl.wrapPanel.FlowDirection = FlowDirection.LeftToRight;
+        }
+    }
+
     private void SetText(string text)
     {
         if (text == null)
@@ -204,7 +227,9 @@ public partial class SelectableSubtitleText : UserControl
                     TextWrapping = TextWrapping.Wrap,
                     StrokePosition = StrokePosition.Outside,
                     IsHitTestVisible = false,
-                    WordOffset = wordOffset
+                    WordOffset = wordOffset,
+                    // Fixed because the word itself is inverted
+                    FlowDirection = FlowDirection.LeftToRight
                 };
 
                 wordOffset += word.Length;
@@ -284,7 +309,7 @@ public partial class SelectableSubtitleText : UserControl
             if (_wordStart == word)
             {
                 // word clicked
-                Point wordPoint = word.TranslatePoint(default, wrapPanel);
+                Point wordPoint = word.TranslatePoint(default, Root);
 
                 WordClickedEventArgs args = new(WordClickedEvent)
                 {
@@ -310,96 +335,70 @@ public partial class SelectableSubtitleText : UserControl
                     (wordStart, wordEnd) = (wordEnd, wordStart);
                 }
 
-                int startIndex = -1;
-                int endIndex = -1;
+                List<FrameworkElement> elements = wrapPanel.Children.OfType<FrameworkElement>().ToList();
 
-                Point wordPoint = wordStart.TranslatePoint(default, wrapPanel);
+                int startIndex = elements.IndexOf((FrameworkElement)wordStart.Parent);
+                int endIndex = elements.IndexOf((FrameworkElement)wordEnd.Parent);
 
-                List<(double x, double width)> wordsPositions = [(wordPoint.X, wordStart.ActualWidth)];
-
-                int lineIndex = 0;
-
-                // Calculate width per line while retrieving words in the selection (for centering placement in popups)
-                List<string> words = wrapPanel.Children.OfType<FrameworkElement>().Select((fe, i) =>
+                if (startIndex == -1 || endIndex == -1)
                 {
-                    // TODO: L: refactor
-                    if (fe is Border { Child: OutlinedTextBlock word } && endIndex == -1)
+                    Debug.Assert(startIndex >= 0);
+                    Debug.Assert(endIndex >= 0);
+                    return;
+                }
+
+                var selectedElements = elements[startIndex..(endIndex + 1)];
+                var selectedWords = selectedElements.Select(fe =>
+                {
+                    switch (fe)
                     {
-                        if (word == wordStart)
-                        {
-                            startIndex = i;
-                        }
-                        else if (wordsPositions.Count == lineIndex)
-                        {
-                            Point startLinePoint = word.TranslatePoint(default, wrapPanel);
-                            wordsPositions.Add((startLinePoint.X, word.ActualWidth));
-                        }
-                        else if (startIndex != -1)
-                        {
-                            var cur = wordsPositions[lineIndex];
-                            wordsPositions[lineIndex] = (cur.x, cur.width + word.ActualWidth);
-                        }
-
-                        if (word == wordEnd)
-                        {
-                            endIndex = i;
-                        }
-
-                        if (startIndex != -1)
-                        {
+                        case Border { Child: OutlinedTextBlock word }:
                             return word.Text;
-                        }
-                    }
-
-                    // Separators or spaces other than the first word
-                    if (startIndex != -1 && endIndex == -1)
-                    {
-                        if (fe is OutlinedTextBlock splitter)
-                        {
-                            // separator
-                            var cur = wordsPositions[lineIndex];
-                            wordsPositions[lineIndex] = (cur.x, cur.width + splitter.ActualWidth);
-
+                        case OutlinedTextBlock splitter:
                             return splitter.Text;
-                        }
-
-                        if (fe is TextBlock space)
-                        {
-                            // whitespace
-                            var cur = wordsPositions[lineIndex];
-                            wordsPositions[lineIndex] = (cur.x, cur.width + space.ActualWidth);
-
+                        case TextBlock space:
                             return space.Text;
-                        }
-
-                        if (fe is NewLine)
-                        {
-                            lineIndex++;
+                        case NewLine:
+                            // convert to space
                             return " ";
-                        }
+                        default:
+                            throw new InvalidOperationException();
                     }
+                }).ToList();
+                string selectedText = string.Join(string.Empty, selectedWords);
 
-                    return null;
-                }).Where(w => w != null).ToList()!;
+                Point startPoint = wordStart.TranslatePoint(default, Root);
+                Point endPoint = wordEnd.TranslatePoint(default, Root);
 
-                var widestPos = wordsPositions.MaxBy(w => w.width);
+                // if different Y axis, then line break or text wrapping
+                double wordsX = 0;
+                double wordsWidth = wrapPanel.ActualWidth;
 
-                // Consider the case of ASR subtitles without line breaks, etc.
-                // TODO: L: Consideration of alternatives due to subtle misalignment
-                if (wrapPanel.ActualWidth < widestPos.width)
+                if (Math.Abs(startPoint.Y - endPoint.Y) < 1e-6)
                 {
-                    widestPos.width = wrapPanel.ActualWidth;
+                    // selection in one line
+
+                    if (wrapPanel.FlowDirection == FlowDirection.LeftToRight)
+                    {
+                        wordsX = startPoint.X;
+                        wordsWidth = endPoint.X + wordEnd.ActualWidth - startPoint.X;
+                    }
+                    else
+                    {
+                        wordsX = endPoint.X;
+                        wordsWidth = startPoint.X + wordStart.ActualWidth - endPoint.X;
+                    }
                 }
 
                 WordClickedEventArgs args = new(WordClickedEvent)
                 {
                     Mouse = MouseClick.Left,
-                    Words = string.Join(string.Empty, words),
+                    Words = selectedText,
                     IsWord = false,
                     Text = _textFix,
                     WordOffset = wordStart.WordOffset,
-                    WordsX = widestPos.x,
-                    WordsWidth = widestPos.width
+                    WordsX = wordsX,
+                    WordsWidth = wordsWidth
                 };
                 RaiseEvent(args);
             }
@@ -413,7 +412,7 @@ public partial class SelectableSubtitleText : UserControl
     {
         if (sender is Border { Child: OutlinedTextBlock word })
         {
-            Point wordPoint = word.TranslatePoint(default, wrapPanel);
+            Point wordPoint = word.TranslatePoint(default, Root);
 
             WordClickedEventArgs args = new(WordClickedEvent)
             {

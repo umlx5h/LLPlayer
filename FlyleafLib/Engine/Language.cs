@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Globalization;
 using System.Text.Json.Serialization;
+using System.Windows;
 using System.Xml.Serialization;
 
 namespace FlyleafLib;
@@ -39,6 +40,14 @@ public class Language : IEquatable<Language>
     [XmlIgnore]
     public string       OriginalInput   { get; private set; } // Only for Undetermined language (return clone)
 
+    [JsonIgnore]
+    [XmlIgnore]
+    public bool         IsRTL           { get; private set; }
+
+    [JsonIgnore]
+    [XmlIgnore]
+    public FlowDirection
+                        FlowDirection   { get; private set; }
 
     public override string ToString() => OriginalInput ?? TopEnglishName;
 
@@ -66,6 +75,23 @@ public class Language : IEquatable<Language>
 
     public static bool operator !=(Language lang1, Language lang2) => !(lang1 == lang2);
 
+    private static readonly HashSet<string> RTLCodes =
+    [
+        "ae",
+        "ar",
+        "dv",
+        "fa",
+        "ha",
+        "he",
+        "ks",
+        "ku",
+        "ps",
+        "sd",
+        "ug",
+        "ur",
+        "yi"
+    ];
+
     public static void Refresh(Language lang)
     {
         lang._CultureName = lang.Culture.Name;
@@ -77,6 +103,8 @@ public class Language : IEquatable<Language>
         lang.TopEnglishName = lang.TopCulture.EnglishName;
         lang.IdSubLanguage = lang.Culture.ThreeLetterISOLanguageName;
         lang.ISO6391 = lang.Culture.TwoLetterISOLanguageName;
+        lang.IsRTL = RTLCodes.Contains(lang.ISO6391);
+        lang.FlowDirection = lang.IsRTL ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
     }
 
     public static Language Get(CultureInfo cult)

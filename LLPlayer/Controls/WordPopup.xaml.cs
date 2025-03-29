@@ -62,15 +62,6 @@ public partial class WordPopup : UserControl, INotifyPropertyChanged
 
     public bool IsSidebar { get; set; }
 
-    public static readonly DependencyProperty SidebarLeftProperty =
-        DependencyProperty.Register(nameof(SidebarLeft), typeof(bool), typeof(WordPopup), new PropertyMetadata(false));
-
-    public bool SidebarLeft
-    {
-        get => (bool)GetValue(SidebarLeftProperty);
-        set => SetValue(SidebarLeftProperty, value);
-    }
-
     private void SubtitlesOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         switch (e.PropertyName)
@@ -352,18 +343,7 @@ public partial class WordPopup : UserControl, INotifyPropertyChanged
                 {
                     // for sidebar
                     PopupVerticalOffset = (((ListBoxItem)PopupPlacementTarget).ActualHeight - ActualHeight) / 2;
-
-                    if (!SidebarLeft)
-                    {
-                        // right sidebar
-                        PopupHorizontalOffset = -ActualWidth - 10;
-
-                    }
-                    else
-                    {
-                        // left sidebar
-                        PopupHorizontalOffset = ((ListBoxItem)PopupPlacementTarget).ActualWidth + 25;
-                    }
+                    PopupHorizontalOffset = -ActualWidth - 10;
                 }
                 else
                 {

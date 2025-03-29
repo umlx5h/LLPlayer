@@ -75,6 +75,7 @@
                 Visibility="{Binding FL.Player.Subtitles[0].Data.IsVisible, Converter={StaticResource BooleanToVisibilityConv}, FallbackValue=Collapsed, TargetNullValue=Collapsed}" >
                 <local:SelectableSubtitleText
                     x:Name="SubtitlePrimaryText"
+                    Language="{Binding FL.Player.SubtitlesManager[0].Language}"
                     FontFamily="{Binding FL.Config.Subs.SubsFontFamily}"
                     FontSize="{Binding FL.Config.Subs.SubsFontSizeFix}"
                     FontWeight="{Binding FL.Config.Subs.SubsFontWeight}"
@@ -119,6 +120,7 @@
             <Grid
                 Visibility="{Binding FL.Player.Subtitles[1].Data.IsVisible, Converter={StaticResource BooleanToVisibilityConv}, FallbackValue=Collapsed, TargetNullValue=Collapsed}" >
                 <local:SelectableSubtitleText
+                    Language="{Binding FL.Player.SubtitlesManager[1].Language}"
                     FontFamily="{Binding FL.Config.Subs.SubsFontFamily}"
                     FontSize="{Binding FL.Config.Subs.SubsFontSize2Fix}"
                     FontWeight="{Binding FL.Config.Subs.SubsFontWeight}"
