@@ -683,7 +683,7 @@ public class AppConfigTheme : Bindable
                 _paletteHelper.SetTheme(cur);
             }
         }
-    } = (Color)ColorConverter.ConvertFromString("#00BCD4"); // Cyan
+    } = (Color)ColorConverter.ConvertFromString("#00B8D4"); // Cyan
 }
 
 public interface IMenuAction : INotifyPropertyChanged, ICloneable

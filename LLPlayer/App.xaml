@@ -8,7 +8,7 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <materialDesign:BundledTheme BaseTheme="Dark" PrimaryColor="Pink" SecondaryColor="Cyan" />
+                <materialDesign:CustomColorTheme BaseTheme="Dark" PrimaryColor="#D23D6F" SecondaryColor="#00B8D4" />
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign2.Defaults.xaml" />
 
                 <ResourceDictionary Source="/Resources/MaterialDesignMy.xaml"/>
