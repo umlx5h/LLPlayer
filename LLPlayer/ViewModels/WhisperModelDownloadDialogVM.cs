@@ -198,7 +198,7 @@ public class WhisperModelDownloadDialogVM : Bindable, IDialogAware
     {
         DownloadedSize = 0;
 
-        await using Stream modelStream = await WhisperGgmlDownloader.GetGgmlModelAsync(modelType, default, token);
+        await using Stream modelStream = await WhisperGgmlDownloader.Default.GetGgmlModelAsync(modelType, default, token);
         await using FileStream fileWriter = File.OpenWrite(destinationPath);
 
         byte[] buffer = new byte[1024 * 128];
