@@ -103,6 +103,24 @@ public class EnumToBooleanConverter : IValueConverter
     }
 }
 
+[ValueConversion(typeof(Enum), typeof(Visibility))]
+public class EnumToVisibilityConverter : IValueConverter
+{
+    // value, parameter = Enum
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is not Enum enumValue || parameter is not Enum enumTarget)
+            return false;
+
+        return enumValue.Equals(enumTarget) ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
+
 [ValueConversion(typeof(Color), typeof(Brush))]
 public class ColorToBrushConverter : IValueConverter
 {

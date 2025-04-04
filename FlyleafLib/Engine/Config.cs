@@ -1172,7 +1172,12 @@ public class Config : NotifyPropertyChanged
         /// <summary>
         /// Number of concurrent requests to translation services
         /// </summary>
-        public int TranslateMaxConcurrent { get; set => Set(ref field, value); } = 4;
+        public int TranslateMaxConcurrent { get; set => Set(ref field, value); } = 2;
+
+        /// <summary>
+        /// Chat-style LLM API config
+        /// </summary>
+        public TranslateChatConfig TranslateChatConfig { get; set => Set(ref field, value); } = new();
         #endregion
     }
     public class DataConfig : NotifyPropertyChanged

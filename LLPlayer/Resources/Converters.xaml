@@ -31,6 +31,7 @@
     <conv:EnumToStringConverter x:Key="EnumToStringConv"/>
     <conv:EnumToDescriptionConverter x:Key="EnumToDescriptionConv"/>
     <conv:EnumToBooleanConverter x:Key="EnumToBooleanConv" />
+    <conv:EnumToVisibilityConverter x:Key="EnumToVisibilityConv" />
     <conv:KeyToStringConverter x:Key="KeyToStringConv"/>
     <conv:FileSizeHumanConverter x:Key="FileSizeHumanConv"/>
     <conv:NullableIntConverter x:Key="NullableIntConv" />

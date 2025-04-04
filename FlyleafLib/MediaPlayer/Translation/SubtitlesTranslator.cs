@@ -106,6 +106,7 @@ public class SubTranslator
 
         // Wait until it is not used before setting it to null.
         await _translationSemaphore.WaitAsync();
+        _translateService?.Dispose();
         _translateService = null;
         _translationSemaphore.Release();
     }
@@ -148,8 +149,17 @@ public class SubTranslator
 
             try
             {
-                _translateService = _translateServiceFactory.GetService(_config.TranslateServiceType);
-                _concurrentLimiter = new SemaphoreSlim(_config.TranslateMaxConcurrent);
+                _translateService = _translateServiceFactory.GetService(_config.TranslateServiceType, false);
+                if (_config.TranslateServiceType.IsLLM() &&
+                    _config.TranslateChatConfig.TranslateMethod == ChatTranslateMethod.KeepContext)
+                {
+                    // fixed to 1
+                    _concurrentLimiter = new SemaphoreSlim(1);
+                }
+                else
+                {
+                    _concurrentLimiter = new SemaphoreSlim(_config.TranslateMaxConcurrent);
+                }
                 _translateService.Initialize(srcLang, _config.TranslateTargetLanguage);
             }
             catch (TranslationConfigException ex)

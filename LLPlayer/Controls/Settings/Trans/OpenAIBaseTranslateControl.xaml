@@ -1,0 +1,92 @@
+﻿<UserControl x:Class="LLPlayer.Controls.Settings.TransControl.OpenAIBaseTranslateControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:LLPlayer.Controls.Settings.TransControl"
+             xmlns:helpers="clr-namespace:LLPlayer.Extensions"
+             xmlns:services="clr-namespace:FlyleafLib.MediaPlayer.Translation.Services;assembly=FlyleafLib"
+             d:DataContext="{d:DesignInstance services:OpenAIBaseTranslateSettings}"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <StackPanel>
+        <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
+            <TextBlock
+                Width="180"
+                Text="Endpoint" />
+            <TextBox
+                HorizontalContentAlignment="Left"
+                Width="300"
+                Text="{Binding Endpoint}" />
+            <Button
+                Command="{Binding CmdCheckEndpoint}"
+                Content="Check"
+                Margin="10 0 0 0" />
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
+            <TextBlock
+                Width="180"
+                Text="" />
+            <Button
+                Content="Set Default Endpoint"
+                Command="{Binding CmdSetDefaultEndpoint}" />
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
+            <TextBlock
+                Width="180"
+                Text="Timeout (ms)" />
+            <TextBox
+                Width="100"
+                Text="{Binding TimeoutMs}"
+                helpers:TextBoxHelper.OnlyNumeric="Uint" />
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
+            <TextBlock
+                Width="180"
+                Text="Timeout Health (ms)" />
+            <TextBox
+                Width="100"
+                Text="{Binding TimeoutHealthMs}"
+                helpers:TextBoxHelper.OnlyNumeric="Uint" />
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
+            <TextBlock
+                Width="180"
+                Text="Model" />
+            <ComboBox
+                Width="260"
+                ItemsSource="{Binding AvailableModels}"
+                IsEditable="True"
+                Text="{Binding Model, Mode=TwoWay}">
+            </ComboBox>
+            <Button
+                Command="{Binding CmdGetModels}"
+                Content="Get Models"
+                Margin="10 0 0 0" />
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
+            <TextBlock
+                Width="180"
+                Text="Debug" />
+            <Button
+                Command="{Binding CmdHelloModel}"
+                Content="Hello API"
+                Margin="10 0 0 0" />
+        </StackPanel>
+
+        <DockPanel Margin="0 0 0 8" Visibility="{Binding StatusAvailable, Converter={StaticResource BooleanToVisibilityConv}}">
+            <TextBlock
+                Width="180"
+                Text="[Status]" />
+            <TextBox
+                HorizontalContentAlignment="Left"
+                IsReadOnly="True"
+                Text="{Binding Status, Mode=OneWay}" />
+        </DockPanel>
+    </StackPanel>
+</UserControl>

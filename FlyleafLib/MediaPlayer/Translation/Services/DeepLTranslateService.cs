@@ -19,7 +19,7 @@ public class DeepLTranslateService : ITranslateService
         if (string.IsNullOrWhiteSpace(settings.ApiKey))
         {
             throw new TranslationConfigException(
-                "APIKey for the DeepL translation is not set. Please set it from the settings.");
+                $"API Key for {ServiceType} is not configured.");
         }
 
         _settings = settings;
@@ -29,43 +29,18 @@ public class DeepLTranslateService : ITranslateService
         });
     }
 
+    public TranslateServiceType ServiceType => TranslateServiceType.DeepL;
+
+    public void Dispose()
+    {
+        _translator.Dispose();
+    }
+
     public void Initialize(Language src, TargetLanguage target)
     {
-        string iso6391 = src.ISO6391;
-
-        if (src == Language.Unknown)
-        {
-            throw new TranslationConfigException("src language are unknown");
-        }
-
-        // Exception for same language
-        if (src.ISO6391 == target.ToISO6391())
-        {
-            throw new TranslationConfigException("src and target language are same");
-        }
-
-        if (!TranslateLanguage.Langs.TryGetValue(iso6391, out var srcLang))
-        {
-            throw new TranslationConfigException($"src language is not supported: {src.TopEnglishName}");
-        }
-
-        if (!srcLang.SupportedServices.HasFlag(TranslateServiceType.DeepL))
-        {
-            throw new TranslationConfigException($"src language is not supported by DeepL: {src.TopEnglishName}");
-        }
+        (TranslateLanguage srcLang, _) = this.TryGetLanguage(src, target);
 
         _srcLang = ToSourceCode(srcLang.ISO6391);
-
-        if (!TranslateLanguage.Langs.TryGetValue(target.ToISO6391(), out var targetLang))
-        {
-            throw new TranslationConfigException($"target language is not supported: {target.ToString()}");
-        }
-
-        if (!targetLang.SupportedServices.HasFlag(TranslateServiceType.DeepL))
-        {
-            throw new TranslationConfigException($"target language is not supported by DeepL: {target.ToString()}");
-        }
-
         _targetLang = ToTargetCode(target);
     }
 
@@ -113,7 +88,7 @@ public class DeepLTranslateService : ITranslateService
         catch (Exception ex)
         {
             // Timeout: DeepL.ConnectionException
-            throw new TranslationException($"Cannot translate with DeepL: {ex.Message}", ex);
+            throw new TranslationException($"Cannot request to {ServiceType}: {ex.Message}", ex);
         }
     }
 }

@@ -55,6 +55,18 @@ public class SettingsSubtitlesTransVM : Bindable
     }
 
     public ITranslateSettings SelectedServiceSettings { get; set => Set(ref field, value); }
+
+    // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
+    public DelegateCommand CmdSetDefaultPromptKeepContext => field ??= new(() =>
+    {
+        FL.PlayerConfig.Subtitles.TranslateChatConfig.PromptKeepContext = TranslateChatConfig.DefaultPromptKeepContext.ReplaceLineEndings("\n");
+    });
+
+    public DelegateCommand CmdSetDefaultPromptOneByOne => field ??= new(() =>
+    {
+        FL.PlayerConfig.Subtitles.TranslateChatConfig.PromptOneByOne = TranslateChatConfig.DefaultPromptOneByOne.ReplaceLineEndings("\n");
+    });
+    // ReSharper restore NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 }
 
 [ValueConversion(typeof(TargetLanguage), typeof(string))]
@@ -76,7 +88,7 @@ internal class TargetLanguageEnumToStringConverter : IValueConverter
 }
 
 [ValueConversion(typeof(TargetLanguage), typeof(string))]
-internal class TargetLanguageEnumToSupportedTranslateServiceConverter : IValueConverter
+internal class TargetLanguageEnumToNoSupportedTranslateServiceConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
@@ -84,27 +96,19 @@ internal class TargetLanguageEnumToSupportedTranslateServiceConverter : IValueCo
         {
             TranslateServiceType supported = enumValue.SupportedServiceType();
 
-            var types = Enum.GetValues<TranslateServiceType>().Where(t => t != TranslateServiceType.DeepLX).ToList();
+            // DeepL = DeepLX
+            List<TranslateServiceType> notSupported =
+               Enum.GetValues<TranslateServiceType>()
+                    .Where(t => t != TranslateServiceType.DeepLX)
+                    .Where(t => !supported.HasFlag(t))
+                    .ToList();
 
-            string text = "";
-
-            foreach (var (index, type) in types.Index())
+            if (notSupported.Count == 0)
             {
-                string status = "NG";
-                if (supported.HasFlag(type))
-                {
-                    status = "OK";
-                }
-
-                text += $"{status}: {type.ToString()}";
-
-                if (index < types.Count - 1)
-                {
-                    text += ", ";
-                }
+                return "[All supported]";
             }
 
-            return $"[{text}]";
+            return string.Join(',', notSupported.Select(t => t.ToString()));
         }
         return value?.ToString() ?? string.Empty;
     }

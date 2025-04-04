@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:LLPlayer.Controls.Settings"
+             xmlns:transControl="clr-namespace:LLPlayer.Controls.Settings.TransControl"
              xmlns:helpers="clr-namespace:LLPlayer.Extensions"
              xmlns:sys="clr-namespace:System;assembly=System.Runtime"
              xmlns:flyleafServices="clr-namespace:FlyleafLib.MediaPlayer.Translation.Services;assembly=FlyleafLib"
@@ -27,8 +28,20 @@
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
 
+        <ObjectDataProvider x:Key="ChatTranslateMethodEnum" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="flyleafTranslate:ChatTranslateMethod"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+
+        <ObjectDataProvider x:Key="ChatContextRetainPolicyEnum" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="flyleafTranslate:ChatContextRetainPolicy"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+
         <local:TargetLanguageEnumToStringConverter x:Key="TargetLanguageEnumToStringConv" />
-        <local:TargetLanguageEnumToSupportedTranslateServiceConverter x:Key="TargetLanguageEnumToSupportedTranslateServiceConv" />
+        <local:TargetLanguageEnumToNoSupportedTranslateServiceConverter x:Key="TargetLanguageEnumToNoSupportedTranslateServiceConv" />
 
         <!-- GoogleV1 -->
         <DataTemplate DataType="{x:Type flyleafServices:GoogleV1TranslateSettings}">
@@ -36,7 +49,7 @@
                 <DockPanel Margin="0 0 0 8">
                     <TextBlock
                         Width="180"
-                        Text="Google Endpoint" />
+                        Text="Endpoint" />
                     <TextBox
                         HorizontalContentAlignment="Left"
                         Text="{Binding Endpoint}" />
@@ -94,7 +107,7 @@
                 <DockPanel Margin="0 0 0 8">
                     <TextBlock
                         Width="180"
-                        Text="DeepL API Key" />
+                        Text="API Key" />
                     <TextBox
                         HorizontalContentAlignment="Left"
                         Text="{Binding ApiKey}" />
@@ -118,7 +131,7 @@
                 <DockPanel Margin="0 0 0 8">
                     <TextBlock
                         Width="180"
-                        Text="DeepLX Endpoint" />
+                        Text="Endpoint" />
                     <TextBox
                         HorizontalContentAlignment="Left"
                         Text="{Binding Endpoint}" />
@@ -135,6 +148,119 @@
                 </StackPanel>
             </StackPanel>
         </DataTemplate>
+
+        <!-- Ollama -->
+        <DataTemplate DataType="{x:Type flyleafServices:OllamaTranslateSettings}">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
+                    <TextBlock
+                        Width="180"
+                        Text="Endpoint" />
+                    <TextBox
+                        HorizontalContentAlignment="Left"
+                        Width="300"
+                        Text="{Binding Endpoint}" />
+                    <Button
+                        Command="{Binding CmdCheckEndpoint}"
+                        Content="Check"
+                        Margin="10 0 0 0" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
+                    <TextBlock
+                        Width="180"
+                        Text="Timeout (ms)" />
+                    <TextBox
+                        Width="100"
+                        Text="{Binding TimeoutMs}"
+                        helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
+                    <TextBlock
+                        Width="180"
+                        Text="Timeout Health (ms)" />
+                    <TextBox
+                        Width="100"
+                        Text="{Binding TimeoutHealthMs}"
+                        helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
+                    <TextBlock
+                        Width="180"
+                        Text="Model" />
+                    <ComboBox
+                        Width="260"
+                        ItemsSource="{Binding AvailableModels}"
+                        IsEditable="True"
+                        Text="{Binding Model, Mode=TwoWay}">
+                    </ComboBox>
+                    <Button
+                        Command="{Binding CmdGetModels}"
+                        Content="Get Models"
+                        Margin="10 0 0 0" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
+                    <TextBlock
+                        Width="180"
+                        Text="Debug" />
+                    <Button
+                        Command="{Binding CmdHelloModel}"
+                        Content="Hello API"
+                        Margin="10 0 0 0" />
+                </StackPanel>
+
+                <DockPanel Margin="0 0 0 8" Visibility="{Binding StatusAvailable, Converter={StaticResource BooleanToVisibilityConv}}">
+                    <TextBlock
+                        Width="180"
+                        Text="[Status]" />
+                    <TextBox
+                        HorizontalContentAlignment="Left"
+                        IsReadOnly="True"
+                        Text="{Binding Status, Mode=OneWay}" />
+                </DockPanel>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- OpenAI -->
+        <DataTemplate DataType="{x:Type flyleafServices:OpenAITranslateSettings}">
+            <StackPanel>
+                <DockPanel Margin="0 0 0 8">
+                    <TextBlock
+                        Width="180"
+                        Text="API Key" />
+                    <TextBox
+                        HorizontalContentAlignment="Left"
+                        Text="{Binding ApiKey}" />
+                </DockPanel>
+
+                <transControl:OpenAIBaseTranslateControl />
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type flyleafServices:ClaudeTranslateSettings}">
+            <StackPanel>
+                <DockPanel Margin="0 0 0 8">
+                    <TextBlock
+                        Width="180"
+                        Text="API Key" />
+                    <TextBox
+                        HorizontalContentAlignment="Left"
+                        Text="{Binding ApiKey}" />
+                </DockPanel>
+
+                <transControl:OpenAIBaseTranslateControl />
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type flyleafServices:LMStudioTranslateSettings}">
+            <StackPanel>
+                <transControl:OpenAIBaseTranslateControl />
+            </StackPanel>
+        </DataTemplate>
+
     </UserControl.Resources>
 
     <ScrollViewer>
@@ -179,21 +305,26 @@
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
                             Width="180"
-                            Text="Supported Service" />
+                            Text="No Supported Service" />
 
                         <TextBlock
                             Width="180"
-                            Text="{Binding FL.PlayerConfig.Subtitles.TranslateTargetLanguage, Converter={StaticResource TargetLanguageEnumToSupportedTranslateServiceConv}}" />
+                            Text="{Binding FL.PlayerConfig.Subtitles.TranslateTargetLanguage, Converter={StaticResource TargetLanguageEnumToNoSupportedTranslateServiceConv}}" />
                     </StackPanel>
                 </StackPanel>
             </GroupBox>
 
-            <GroupBox Header="Translation Service">
+            <GroupBox Header="Translation Engine">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
-                            Width="180"
-                            Text="Service" />
+                            FontSize="14"
+                            FontWeight="Medium"
+                            Width="180">
+                            <Hyperlink Cursor="Help" NavigateUri="https://github.com/umlx5h/LLPlayer/wiki/Translation-Engine" helpers:HyperlinkHelper.OpenInBrowser="True">
+                                Translation Engine
+                            </Hyperlink>
+                        </TextBlock>
                         <ComboBox
                             Width="100"
                             ItemsSource="{Binding Source={StaticResource TranslateServiceTypeEnum}}"
@@ -224,6 +355,216 @@
                             Width="100"
                             Text="{Binding FL.PlayerConfig.Subtitles.TranslateMaxConcurrent}"
                             helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="Translation Chat Config (for Ollama / LMStudio / OpenAI / Claude)">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180">
+                            Translate Chat Method
+                            <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                <ToolTipService.ToolTip>
+                                    <TextBlock
+                                        TextWrapping="Wrap"
+                                        MaxWidth="400">
+                                        <Run Text="[KeepContext]"/>
+                                        <LineBreak />
+                                        The previous subtitle and the translation result are sent together to the chat.
+                                        Translation accuracy is improved because context is taken into account.
+                                        Concurrent requests are not allowed.
+                                        <LineBreak />
+                                        <LineBreak />
+                                        <Run Text="[OneByOne]"/>
+                                        <LineBreak />
+                                        Subtitles are sent to the chat one at a time and translated. Translation accuracy will be lower, but it will be more stable. Concurrent requests are possible.
+                                    </TextBlock>
+                                </ToolTipService.ToolTip>
+                                <materialDesign:PackIcon
+                                    Kind="Information"
+                                    Width="16" Height="16"
+                                    Margin="4 0 0 0" />
+                            </InlineUIContainer>
+                        </TextBlock>
+                        <ComboBox
+                            Width="100"
+                            ItemsSource="{Binding Source={StaticResource ChatTranslateMethodEnum}}"
+                            SelectedItem="{Binding FL.PlayerConfig.Subtitles.TranslateChatConfig.TranslateMethod}" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Visibility="{Binding FL.PlayerConfig.Subtitles.TranslateChatConfig.TranslateMethod, Converter={StaticResource EnumToVisibilityConv}, ConverterParameter={x:Static flyleafTranslate:ChatTranslateMethod.KeepContext}}">
+                        <TextBlock
+                            Width="180">
+                            Subtitle Context Count
+                            <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                <ToolTipService.ToolTip>
+                                    <TextBlock
+                                        Text="The number of subtitles to be sent together. Increasing the number increases the accuracy of the translation, but also the load and tokens."
+                                        TextWrapping="Wrap"
+                                        MaxWidth="400" />
+                                </ToolTipService.ToolTip>
+                                <materialDesign:PackIcon
+                                    Kind="Information"
+                                    Width="16" Height="16"
+                                    Margin="4 0 0 0" />
+                            </InlineUIContainer>
+                        </TextBlock>
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.PlayerConfig.Subtitles.TranslateChatConfig.SubtitleContextCount}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Visibility="{Binding FL.PlayerConfig.Subtitles.TranslateChatConfig.TranslateMethod, Converter={StaticResource EnumToVisibilityConv}, ConverterParameter={x:Static flyleafTranslate:ChatTranslateMethod.KeepContext}}">
+                        <TextBlock
+                            Width="180">
+                            Context Retain Policy
+                            <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                <ToolTipService.ToolTip>
+                                    <TextBlock
+                                        TextWrapping="Wrap"
+                                        MaxWidth="400">
+                                        <Run Text="[Reset]"/>
+                                        <LineBreak />
+                                        Reset the message count to 0 when Subtitle Context Count is reached.
+                                        Immediately after reset, context is not taken into account, but the translation result is stable.
+                                        <LineBreak />
+                                        <LineBreak />
+                                        <Run Text="[KeepSize]"/>
+                                        <LineBreak />
+                                        It always adjusts the number of messages according to the Subtitle Context Count.
+                                        This increases accuracy because the translation is always context-sensitive, but once an incorrect result is generated, it tends to remain incorrect.
+                                    </TextBlock>
+                                </ToolTipService.ToolTip>
+                                <materialDesign:PackIcon
+                                    Kind="Information"
+                                    Width="16" Height="16"
+                                    Margin="4 0 0 0" />
+                            </InlineUIContainer>
+                        </TextBlock>
+                        <ComboBox
+                            Width="100"
+                            ItemsSource="{Binding Source={StaticResource ChatContextRetainPolicyEnum}}"
+                            SelectedItem="{Binding FL.PlayerConfig.Subtitles.TranslateChatConfig.ContextRetainPolicy}" />
+                    </StackPanel>
+
+                    <DockPanel Margin="0 0 0 8" Visibility="{Binding FL.PlayerConfig.Subtitles.TranslateChatConfig.TranslateMethod, Converter={StaticResource EnumToVisibilityConv}, ConverterParameter={x:Static flyleafTranslate:ChatTranslateMethod.KeepContext}}">
+                        <TextBlock
+                            Width="180">
+                            Chat Prompt (KeepContext)
+                            <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                <ToolTipService.ToolTip>
+                                    <TextBlock
+                                        TextWrapping="Wrap"
+                                        MaxWidth="400">
+                                        <Run Text="Prompt to send to chat. Certain strings will be replaced by the following."/>
+                                        <LineBreak />
+                                        <LineBreak />
+                                        {source_lang} -> English
+                                        <LineBreak />
+                                        {target_lang} -> Spanish
+                                    </TextBlock>
+                                </ToolTipService.ToolTip>
+                                <materialDesign:PackIcon
+                                    Kind="Information"
+                                    Width="16" Height="16"
+                                    Margin="4 0 0 0" />
+                            </InlineUIContainer>
+                        </TextBlock>
+
+                        <StackPanel>
+                            <TextBox
+                                BorderThickness="1"
+                                Padding="10"
+                                HorizontalContentAlignment="Left"
+                                TextAlignment="Left"
+                                VerticalAlignment="Top"
+                                VerticalContentAlignment="Top"
+                                AcceptsReturn="True"
+                                MaxHeight="300"
+                                TextWrapping="Wrap"
+                                Text="{Binding FL.PlayerConfig.Subtitles.TranslateChatConfig.PromptKeepContext}" />
+                            <Button
+                                Command="{Binding CmdSetDefaultPromptKeepContext}"
+                                HorizontalAlignment="Left"
+                                Content="Set Default"
+                                Margin="10 10 0 0" />
+                        </StackPanel>
+                    </DockPanel>
+
+                    <DockPanel Margin="0 0 0 8" Visibility="{Binding FL.PlayerConfig.Subtitles.TranslateChatConfig.TranslateMethod, Converter={StaticResource EnumToVisibilityConv}, ConverterParameter={x:Static flyleafTranslate:ChatTranslateMethod.OneByOne}}">
+                        <TextBlock
+                            Width="180">
+                            Chat Prompt (OneByOne)
+                            <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                <ToolTipService.ToolTip>
+                                    <TextBlock
+                                        TextWrapping="Wrap"
+                                        MaxWidth="400">
+                                        <Run Text="Prompt to send to chat. Certain strings will be replaced by the following."/>
+                                        <LineBreak />
+                                        <LineBreak />
+                                        {source_lang} -> English
+                                        <LineBreak />
+                                        {target_lang} -> Spanish
+                                        <LineBreak />
+                                        {source_text} -> Good morning.
+                                    </TextBlock>
+                                </ToolTipService.ToolTip>
+                                <materialDesign:PackIcon
+                                    Kind="Information"
+                                    Width="16" Height="16"
+                                    Margin="4 0 0 0" />
+                            </InlineUIContainer>
+                        </TextBlock>
+
+                        <StackPanel>
+                            <TextBox
+                                BorderThickness="1"
+                                Padding="10"
+                                HorizontalContentAlignment="Left"
+                                TextAlignment="Left"
+                                VerticalAlignment="Top"
+                                VerticalContentAlignment="Top"
+                                AcceptsReturn="True"
+                                MaxHeight="300"
+                                TextWrapping="Wrap"
+                                Text="{Binding FL.PlayerConfig.Subtitles.TranslateChatConfig.PromptOneByOne}" />
+                            <Button
+                                Command="{Binding CmdSetDefaultPromptOneByOne}"
+                                HorizontalAlignment="Left"
+                                Content="Set Default"
+                                Margin="10 10 0 0" />
+                        </StackPanel>
+                    </DockPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180">
+                            Include Target Language Region
+                            <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                <ToolTipService.ToolTip>
+                                    <TextBlock
+                                        TextWrapping="Wrap"
+                                        MaxWidth="400">
+                                        <Run Text="Whether to include regional information in the {target_lang} of the prompt as follows."/>
+                                        <LineBreak />
+                                        <LineBreak />
+                                        When On:  {target_lang} -> English (American), Chinese (Simplified)
+                                        <LineBreak />
+                                        When Off: {target_lang} -> English, Chinese
+                                    </TextBlock>
+                                </ToolTipService.ToolTip>
+                                <materialDesign:PackIcon
+                                    Kind="Information"
+                                    Width="16" Height="16"
+                                    Margin="4 0 0 0" />
+                            </InlineUIContainer>
+                        </TextBlock>
+                        <ToggleButton
+                            IsChecked="{Binding FL.PlayerConfig.Subtitles.TranslateChatConfig.IncludeTargetLangRegion}" />
                     </StackPanel>
                 </StackPanel>
             </GroupBox>

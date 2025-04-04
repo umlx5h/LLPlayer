@@ -175,6 +175,10 @@ public class AppConfig : Bindable
             { nameof(GoogleV1TranslateSettings), typeof(GoogleV1TranslateSettings) },
             { nameof(DeepLTranslateSettings), typeof(DeepLTranslateSettings) },
             { nameof(DeepLXTranslateSettings), typeof(DeepLXTranslateSettings) },
+            { nameof(OllamaTranslateSettings), typeof(OllamaTranslateSettings) },
+            { nameof(LMStudioTranslateSettings), typeof(LMStudioTranslateSettings) },
+            { nameof(OpenAITranslateSettings), typeof(OpenAITranslateSettings) },
+            { nameof(ClaudeTranslateSettings), typeof(ClaudeTranslateSettings) }
         };
 
         JsonSerializerOptions jsonOptions = new()

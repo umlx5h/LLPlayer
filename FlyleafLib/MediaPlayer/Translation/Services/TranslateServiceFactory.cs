@@ -1,4 +1,6 @@
-﻿namespace FlyleafLib.MediaPlayer.Translation.Services;
+﻿using System.Collections.Generic;
+
+namespace FlyleafLib.MediaPlayer.Translation.Services;
 
 public class TranslateServiceFactory
 {
@@ -13,37 +15,34 @@ public class TranslateServiceFactory
     /// GetService
     /// </summary>
     /// <param name="serviceType"></param>
+    /// <param name="wordMode"></param>
     /// <returns></returns>
     /// <exception cref="TranslationConfigException"></exception>
     /// <exception cref="InvalidOperationException"></exception>
-    public ITranslateService GetService(TranslateServiceType serviceType)
+    public ITranslateService GetService(TranslateServiceType serviceType, bool wordMode)
     {
         switch (serviceType)
         {
             case TranslateServiceType.GoogleV1:
-                if (!_config.TranslateServiceSettings.TryGetValue(serviceType, out var g))
-                {
-                    // Default settings
-                    g = new GoogleV1TranslateSettings();
-                }
-
-                return new GoogleV1TranslateService((GoogleV1TranslateSettings)g);
+                return new GoogleV1TranslateService((GoogleV1TranslateSettings)_config.TranslateServiceSettings.GetValueOrDefault(serviceType, new GoogleV1TranslateSettings()));
 
             case TranslateServiceType.DeepL:
-                if (!_config.TranslateServiceSettings.TryGetValue(serviceType, out var d))
-                {
-                    throw new TranslationConfigException("DeepL Service settings is not configured");
-                }
-
-                return new DeepLTranslateService((DeepLTranslateSettings)d);
+                return new DeepLTranslateService((DeepLTranslateSettings)_config.TranslateServiceSettings.GetValueOrDefault(serviceType, new DeepLTranslateSettings()));
 
             case TranslateServiceType.DeepLX:
-                if (!_config.TranslateServiceSettings.TryGetValue(serviceType, out var dx))
-                {
-                    throw new TranslationConfigException("DeepLX Service settings is not configured");
-                }
+                return new DeepLXTranslateService((DeepLXTranslateSettings)_config.TranslateServiceSettings.GetValueOrDefault(serviceType, new DeepLXTranslateSettings()));
 
-                return new DeepLXTranslateService((DeepLXTranslateSettings)dx);
+            case TranslateServiceType.Ollama:
+                return new OllamaTranslateService((OllamaTranslateSettings)_config.TranslateServiceSettings.GetValueOrDefault(serviceType, new OllamaTranslateSettings()), _config.TranslateChatConfig, wordMode);
+
+            case TranslateServiceType.LMStudio:
+                return new OpenAIBaseTranslateService((LMStudioTranslateSettings)_config.TranslateServiceSettings.GetValueOrDefault(serviceType, new LMStudioTranslateSettings()), _config.TranslateChatConfig, wordMode);
+
+            case TranslateServiceType.OpenAI:
+                return new OpenAIBaseTranslateService((OpenAITranslateSettings)_config.TranslateServiceSettings.GetValueOrDefault(serviceType, new OpenAITranslateSettings()), _config.TranslateChatConfig, wordMode);
+
+            case TranslateServiceType.Claude:
+                return new OpenAIBaseTranslateService((ClaudeTranslateSettings)_config.TranslateServiceSettings.GetValueOrDefault(serviceType, new ClaudeTranslateSettings()), _config.TranslateChatConfig, wordMode);
         }
 
         throw new InvalidOperationException($"Translate service {serviceType} does not exist.");

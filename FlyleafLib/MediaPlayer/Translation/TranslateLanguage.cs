@@ -162,8 +162,17 @@ public class TranslateLanguage
 
     public TranslateLanguage(string name, string iso6391,
         TranslateServiceType supportedServices =
-            TranslateServiceType.GoogleV1 | TranslateServiceType.DeepL | TranslateServiceType.DeepLX)
+            TranslateServiceType.GoogleV1 | TranslateServiceType.DeepL)
     {
+        // all LLMs support all languages
+        supportedServices |= TranslateServiceTypeExtensions.LLMServices;
+
+        // DeepL = DeepLX, so flag is same
+        if (supportedServices.HasFlag(TranslateServiceType.DeepL))
+        {
+            supportedServices |= TranslateServiceType.DeepLX;
+        }
+
         Name = name;
         ISO6391 = iso6391;
         SupportedServices = supportedServices;

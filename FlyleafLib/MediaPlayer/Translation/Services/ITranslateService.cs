@@ -3,8 +3,10 @@ using System.Threading.Tasks;
 
 namespace FlyleafLib.MediaPlayer.Translation.Services;
 
-public interface ITranslateService
+public interface ITranslateService : IDisposable
 {
+    TranslateServiceType ServiceType { get; }
+
     /// <summary>
     /// Initialize
     /// </summary>
@@ -42,11 +44,42 @@ public enum TranslateServiceType
     /// DeepLX
     /// https://github.com/OwO-Network/DeepLX
     /// </summary>
-    DeepLX = 1 << 2
+    DeepLX = 1 << 2,
+
+    /// <summary>
+    /// Ollama
+    /// </summary>
+    Ollama = 1 << 3,
+
+    /// <summary>
+    /// LM Studio
+    /// </summary>
+    LMStudio = 1 << 4,
+
+    /// <summary>
+    /// OpenAI (ChatGPT)
+    /// </summary>
+    OpenAI = 1 << 5,
+
+    /// <summary>
+    /// Anthropic Claude
+    /// </summary>
+    Claude = 1 << 6,
 }
 
 public static class TranslateServiceTypeExtensions
 {
+    public static TranslateServiceType LLMServices =>
+        TranslateServiceType.Ollama |
+        TranslateServiceType.LMStudio |
+        TranslateServiceType.OpenAI |
+        TranslateServiceType.Claude;
+
+    public static bool IsLLM(this TranslateServiceType serviceType)
+    {
+        return LLMServices.HasFlag(serviceType);
+    }
+
     public static ITranslateSettings DefaultSettings(this TranslateServiceType serviceType)
     {
         switch (serviceType)
@@ -57,9 +90,66 @@ public static class TranslateServiceTypeExtensions
                 return new DeepLTranslateSettings();
             case TranslateServiceType.DeepLX:
                 return new DeepLXTranslateSettings();
+            case TranslateServiceType.Ollama:
+                return new OllamaTranslateSettings();
+            case TranslateServiceType.LMStudio:
+                return new LMStudioTranslateSettings();
+            case TranslateServiceType.OpenAI:
+                return new OpenAITranslateSettings();
+            case TranslateServiceType.Claude:
+                return new ClaudeTranslateSettings();
         }
 
         throw new InvalidOperationException();
+    }
+}
+
+public static class TranslateServiceHelper
+{
+    /// <summary>
+    /// TryGetLanguage
+    /// </summary>
+    /// <param name="service"></param>
+    /// <param name="src"></param>
+    /// <param name="target"></param>
+    /// <returns></returns>
+    /// <exception cref="TranslationConfigException"></exception>
+    public static (TranslateLanguage srcLang, TranslateLanguage targetLang) TryGetLanguage(this ITranslateService service, Language src, TargetLanguage target)
+    {
+        string iso6391 = src.ISO6391;
+
+        // TODO: L: Allow the user to choose auto-detection by translation provider?
+        if (src == Language.Unknown)
+        {
+            throw new TranslationConfigException("source language are unknown");
+        }
+
+        if (src.ISO6391 == target.ToISO6391())
+        {
+            throw new TranslationConfigException("source and target language are same");
+        }
+
+        if (!TranslateLanguage.Langs.TryGetValue(iso6391, out TranslateLanguage srcLang))
+        {
+            throw new TranslationConfigException($"source language is not supported: {src.TopEnglishName}");
+        }
+
+        if (!srcLang.SupportedServices.HasFlag(service.ServiceType))
+        {
+            throw new TranslationConfigException($"source language is not supported by {service.ServiceType}: {src.TopEnglishName}");
+        }
+
+        if (!TranslateLanguage.Langs.TryGetValue(target.ToISO6391(), out TranslateLanguage targetLang))
+        {
+            throw new TranslationConfigException($"target language is not supported: {target.ToString()}");
+        }
+
+        if (!targetLang.SupportedServices.HasFlag(service.ServiceType))
+        {
+            throw new TranslationConfigException($"target language is not supported by {service.ServiceType}: {src.TopEnglishName}");
+        }
+
+        return (srcLang, targetLang);
     }
 }
 

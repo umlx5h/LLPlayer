@@ -95,6 +95,7 @@ public partial class WordPopup : UserControl, INotifyPropertyChanged
 
     private void Clear()
     {
+        _translateService?.Dispose();
         _translateService = null;
         // clear cache
         _translateCache.Clear();
@@ -196,7 +197,7 @@ public partial class WordPopup : UserControl, INotifyPropertyChanged
         {
             try
             {
-                var service = _translateServiceFactory.GetService(FL.PlayerConfig.Subtitles.TranslateWordServiceType);
+                var service = _translateServiceFactory.GetService(FL.PlayerConfig.Subtitles.TranslateWordServiceType, true);
                 service.Initialize(srcLang, targetLang);
                 _translateService = service;
             }

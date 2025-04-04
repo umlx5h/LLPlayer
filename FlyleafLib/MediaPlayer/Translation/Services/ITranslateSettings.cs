@@ -1,9 +1,12 @@
-﻿using FlyleafLib.Controls.WPF;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
+using System.Net.Http;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
+using FlyleafLib.Controls.WPF;
 
 namespace FlyleafLib.MediaPlayer.Translation.Services;
 
@@ -118,9 +121,330 @@ public class DeepLTranslateSettings : NotifyPropertyChanged, ITranslateSettings
 public class DeepLXTranslateSettings : NotifyPropertyChanged, ITranslateSettings
 {
     // First request is abnormally slow on localhost, IPv6 related?
-    public string Endpoint { get; set => Set(ref field, value); } = "http://127.0.0.1:11188";
+    public string Endpoint { get; set => Set(ref field, value); } = "http://127.0.0.1:1188";
 
     public int TimeoutMs { get; set => Set(ref field, value); } = 10000;
+}
+
+// TODO: L: share code between Ollama and OpenAI?
+public class OllamaTranslateSettings : NotifyPropertyChanged, ITranslateSettings
+{
+    public string Endpoint { get; set => Set(ref field, value); } = "http://127.0.0.1:11434";
+    public string Model { get; set => Set(ref field, value); }
+    public int TimeoutMs { get; set => Set(ref field, value); } = 20000;
+    public int TimeoutHealthMs { get; set => Set(ref field, value); } = 2000;
+
+    /// <summary>
+    /// GetHttpClient
+    /// </summary>
+    /// <param name="healthCheck"></param>
+    /// <returns></returns>
+    /// <exception cref="TranslationConfigException"></exception>
+    internal HttpClient GetHttpClient(bool healthCheck = false)
+    {
+        if (string.IsNullOrWhiteSpace(Endpoint))
+        {
+            throw new TranslationConfigException(
+                "Endpoint for Ollama is not configured.");
+        }
+
+        if (!healthCheck)
+        {
+            if (string.IsNullOrWhiteSpace(Model))
+            {
+                throw new TranslationConfigException(
+                    "Model for Ollama is not configured.");
+            }
+        }
+
+        HttpClient client = new();
+        client.BaseAddress = new Uri(Endpoint);
+        client.Timeout = TimeSpan.FromMilliseconds(healthCheck ? TimeoutHealthMs : TimeoutMs);
+
+        return client;
+    }
+
+    #region For Settings
+    [JsonIgnore]
+    public ObservableCollection<string> AvailableModels { get; } = new();
+
+    [JsonIgnore]
+    public string Status
+    {
+        get;
+        set
+        {
+            if (Set(ref field, value))
+            {
+                Raise(nameof(StatusAvailable));
+            }
+        }
+    }
+
+    [JsonIgnore]
+    public bool StatusAvailable => !string.IsNullOrEmpty(Status);
+
+    [JsonIgnore]
+    public RelayCommand CmdCheckEndpoint => new(async void (_) =>
+    {
+        try
+        {
+            Status = "Checking...";
+            await LoadModels();
+            Status = "OK";
+        }
+        catch (Exception ex)
+        {
+            Status = $"NG: {ex.Message}";
+        }
+    });
+
+    [JsonIgnore]
+    public RelayCommand CmdGetModels => new(async void (_) =>
+    {
+        try
+        {
+            Status = "Checking...";
+            await LoadModels();
+            Status = ""; // clear
+        }
+        catch (Exception ex)
+        {
+            Status = $"NG: {ex.Message}";
+        }
+    });
+
+    [JsonIgnore]
+    public RelayCommand CmdHelloModel => new(async void (_) =>
+    {
+        Stopwatch sw = new();
+        sw.Start();
+        try
+        {
+            Status = "Waiting...";
+
+            await OllamaTranslateService.Hello(this);
+
+            Status = $"OK in {sw.Elapsed.TotalSeconds} secs";
+        }
+        catch (Exception ex)
+        {
+            Status = $"NG in {sw.Elapsed.TotalSeconds} secs: {ex.Message}";
+        }
+    });
+
+    private async Task LoadModels()
+    {
+        string prevModel = Model;
+        AvailableModels.Clear();
+
+        var models = await OllamaTranslateService.GetLoadedModels(this);
+        foreach (var model in models)
+        {
+            AvailableModels.Add(model);
+        }
+
+        if (!string.IsNullOrEmpty(prevModel))
+        {
+            Model = AvailableModels.FirstOrDefault(m => m == prevModel);
+        }
+    }
+    #endregion
+}
+
+public abstract class OpenAIBaseTranslateSettings : NotifyPropertyChanged, ITranslateSettings
+{
+    [JsonIgnore]
+    public abstract TranslateServiceType ServiceType { get; }
+    public abstract string Endpoint { get; set; }
+    public abstract string DefaultEndpoint { get; }
+    public string Model { get; set => Set(ref field, value); }
+    public int TimeoutMs { get; set => Set(ref field, value); } = 20000;
+    public int TimeoutHealthMs { get; set => Set(ref field, value); } = 2000;
+
+    /// <summary>
+    /// GetHttpClient
+    /// </summary>
+    /// <param name="healthCheck"></param>
+    /// <returns></returns>
+    /// <exception cref="TranslationConfigException"></exception>
+    internal virtual HttpClient GetHttpClient(bool healthCheck = false)
+    {
+        if (string.IsNullOrWhiteSpace(Endpoint))
+        {
+            throw new TranslationConfigException(
+                $"Endpoint for {ServiceType} is not configured.");
+        }
+
+        if (!healthCheck)
+        {
+            if (string.IsNullOrWhiteSpace(Model))
+            {
+                throw new TranslationConfigException(
+                    $"Model for {ServiceType} is not configured.");
+            }
+        }
+
+        HttpClient client = new();
+        client.BaseAddress = new Uri(Endpoint);
+        client.Timeout = TimeSpan.FromMilliseconds(healthCheck ? TimeoutHealthMs : TimeoutMs);
+
+        return client;
+    }
+
+    #region For Settings
+    [JsonIgnore]
+    public ObservableCollection<string> AvailableModels { get; } = new();
+
+    [JsonIgnore]
+    public string Status
+    {
+        get;
+        set
+        {
+            if (Set(ref field, value))
+            {
+                Raise(nameof(StatusAvailable));
+            }
+        }
+    }
+
+    [JsonIgnore]
+    public bool StatusAvailable => !string.IsNullOrEmpty(Status);
+
+    [JsonIgnore]
+    public RelayCommand CmdSetDefaultEndpoint => new((_) =>
+    {
+        Endpoint = DefaultEndpoint;
+    });
+
+    [JsonIgnore]
+    public RelayCommand CmdCheckEndpoint => new(async void (_) =>
+    {
+        try
+        {
+            Status = "Checking...";
+            await LoadModels();
+            Status = "OK";
+        }
+        catch (Exception ex)
+        {
+            Status = $"NG: {ex.Message}";
+        }
+    });
+
+    [JsonIgnore]
+    public RelayCommand CmdGetModels => new(async void (_) =>
+    {
+        try
+        {
+            Status = "Checking...";
+            await LoadModels();
+            Status = ""; // clear
+        }
+        catch (Exception ex)
+        {
+            Status = $"NG: {ex.Message}";
+        }
+    });
+
+    [JsonIgnore]
+    public RelayCommand CmdHelloModel => new(async void (_) =>
+    {
+        Stopwatch sw = new();
+        sw.Start();
+        try
+        {
+            Status = "Waiting...";
+
+            await OpenAIBaseTranslateService.Hello(this);
+
+            Status = $"OK in {sw.Elapsed.TotalSeconds} secs";
+        }
+        catch (Exception ex)
+        {
+            Status = $"NG in {sw.Elapsed.TotalSeconds} secs: {ex.Message}";
+        }
+    });
+
+    private async Task LoadModels()
+    {
+        string prevModel = Model;
+        AvailableModels.Clear();
+
+        var models = await OpenAIBaseTranslateService.GetLoadedModels(this);
+        foreach (var model in models)
+        {
+            AvailableModels.Add(model);
+        }
+
+        if (!string.IsNullOrEmpty(prevModel))
+        {
+            Model = AvailableModels.FirstOrDefault(m => m == prevModel);
+        }
+    }
+    #endregion
+}
+
+public class LMStudioTranslateSettings : OpenAIBaseTranslateSettings
+{
+    public override TranslateServiceType ServiceType => TranslateServiceType.LMStudio;
+    private const string _defaultEndpoint = "http://127.0.0.1:1234";
+    public override string DefaultEndpoint => _defaultEndpoint;
+    public override string Endpoint { get; set => Set(ref field, value); } = _defaultEndpoint;
+}
+
+public class OpenAITranslateSettings : OpenAIBaseTranslateSettings
+{
+    public override TranslateServiceType ServiceType => TranslateServiceType.OpenAI;
+    private const string _defaultEndpoint = "https://api.openai.com";
+    public override string DefaultEndpoint => _defaultEndpoint;
+    public override string Endpoint { get; set => Set(ref field, value); } = _defaultEndpoint;
+    public string ApiKey { get; set => Set(ref field, value); }
+
+    /// <summary>
+    /// GetHttpClient
+    /// </summary>
+    /// <param name="healthCheck"></param>
+    /// <returns></returns>
+    /// <exception cref="TranslationConfigException"></exception>
+    internal override HttpClient GetHttpClient(bool healthCheck = false)
+    {
+        if (string.IsNullOrWhiteSpace(ApiKey))
+        {
+            throw new TranslationConfigException(
+                $"API Key for {ServiceType} is not configured.");
+        }
+
+        HttpClient client = base.GetHttpClient(healthCheck);
+        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {ApiKey}");
+
+        return client;
+    }
+}
+
+public class ClaudeTranslateSettings : OpenAIBaseTranslateSettings
+{
+    public override TranslateServiceType ServiceType => TranslateServiceType.Claude;
+    private const string _defaultEndpoint = "https://api.anthropic.com";
+    public override string DefaultEndpoint => _defaultEndpoint;
+    public override string Endpoint { get; set => Set(ref field, value); } = _defaultEndpoint;
+    public string ApiKey { get; set => Set(ref field, value); }
+
+    internal override HttpClient GetHttpClient(bool healthCheck = false)
+    {
+        if (string.IsNullOrWhiteSpace(ApiKey))
+        {
+            throw new TranslationConfigException(
+                $"API Key for {ServiceType} is not configured.");
+        }
+
+        HttpClient client = base.GetHttpClient(healthCheck);
+        client.DefaultRequestHeaders.Add("x-api-key", ApiKey);
+        client.DefaultRequestHeaders.Add("anthropic-version", "2023-06-01");
+
+        return client;
+    }
 }
 
 public class LanguageRegionMember : NotifyPropertyChanged
