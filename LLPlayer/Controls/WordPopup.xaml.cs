@@ -41,6 +41,7 @@ public partial class WordPopup : UserControl, INotifyPropertyChanged
         _translateServiceFactory = new TranslateServiceFactory(FL.PlayerConfig.Subtitles);
 
         FL.PlayerConfig.Subtitles.PropertyChanged += SubtitlesOnPropertyChanged;
+        FL.PlayerConfig.Subtitles.TranslateChatConfig.PropertyChanged += ChatConfigOnPropertyChanged;
         FL.Player.SubtitlesManager[0].PropertyChanged += SubManagerOnPropertyChanged;
         FL.Config.Subs.PropertyChanged += SubsOnPropertyChanged;
 
@@ -73,6 +74,12 @@ public partial class WordPopup : UserControl, INotifyPropertyChanged
                 Clear();
                 break;
         }
+    }
+
+    private void ChatConfigOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        // Apply translating settings changes
+        Clear();
     }
 
     private void SubManagerOnPropertyChanged(object? sender, PropertyChangedEventArgs e)

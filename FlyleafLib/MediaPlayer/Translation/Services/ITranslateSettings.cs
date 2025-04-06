@@ -257,6 +257,7 @@ public abstract class OpenAIBaseTranslateSettings : NotifyPropertyChanged, ITran
     [JsonIgnore]
     public abstract TranslateServiceType ServiceType { get; }
     public abstract string Endpoint { get; set; }
+    [JsonIgnore]
     public abstract string DefaultEndpoint { get; }
     public string Model { get; set => Set(ref field, value); }
     public int TimeoutMs { get; set => Set(ref field, value); } = 20000;
@@ -388,16 +389,20 @@ public abstract class OpenAIBaseTranslateSettings : NotifyPropertyChanged, ITran
 
 public class LMStudioTranslateSettings : OpenAIBaseTranslateSettings
 {
+    [JsonIgnore]
     public override TranslateServiceType ServiceType => TranslateServiceType.LMStudio;
     private const string _defaultEndpoint = "http://127.0.0.1:1234";
+    [JsonIgnore]
     public override string DefaultEndpoint => _defaultEndpoint;
     public override string Endpoint { get; set => Set(ref field, value); } = _defaultEndpoint;
 }
 
 public class OpenAITranslateSettings : OpenAIBaseTranslateSettings
 {
+    [JsonIgnore]
     public override TranslateServiceType ServiceType => TranslateServiceType.OpenAI;
     private const string _defaultEndpoint = "https://api.openai.com";
+    [JsonIgnore]
     public override string DefaultEndpoint => _defaultEndpoint;
     public override string Endpoint { get; set => Set(ref field, value); } = _defaultEndpoint;
     public string ApiKey { get; set => Set(ref field, value); }
@@ -425,8 +430,10 @@ public class OpenAITranslateSettings : OpenAIBaseTranslateSettings
 
 public class ClaudeTranslateSettings : OpenAIBaseTranslateSettings
 {
+    [JsonIgnore]
     public override TranslateServiceType ServiceType => TranslateServiceType.Claude;
     private const string _defaultEndpoint = "https://api.anthropic.com";
+    [JsonIgnore]
     public override string DefaultEndpoint => _defaultEndpoint;
     public override string Endpoint { get; set => Set(ref field, value); } = _defaultEndpoint;
     public string ApiKey { get; set => Set(ref field, value); }
