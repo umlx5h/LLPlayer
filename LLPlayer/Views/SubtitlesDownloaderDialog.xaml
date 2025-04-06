@@ -74,6 +74,7 @@
                     <DataGridTextColumn Header="FileName" Binding="{Binding SubFileName}" Width="*" />
                     <DataGridTextColumn Header="Format" Binding="{Binding SubFormat}" Width="Auto" />
                     <DataGridTextColumn Header="Duration" Binding="{Binding SubLastTS}" Width="Auto" />
+                    <DataGridTextColumn Header="Year" Binding="{Binding MovieYear}" Width="Auto" />
                     <DataGridTextColumn Header="DownloadsCnt" Binding="{Binding SubDownloadsCnt}" Width="Auto" />
                     <DataGridTextColumn Header="Rate" Binding="{Binding SubRating}" Width="Auto" />
                 </DataGrid.Columns>
