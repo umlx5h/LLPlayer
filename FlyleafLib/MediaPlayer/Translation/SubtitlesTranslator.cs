@@ -80,7 +80,7 @@ public class SubTranslator
         if (e.PropertyName is
             nameof(Config.SubtitlesConfig.TranslateServiceType) or
             nameof(Config.SubtitlesConfig.TranslateTargetLanguage) or
-            nameof(Config.SubtitlesConfig.TranslateMaxConcurrent)
+            nameof(Config.SubtitlesConfig.TranslateMaxConcurrency)
             ||
             e.PropertyName == languageFallbackPropName)
         {
@@ -157,7 +157,7 @@ public class SubTranslator
             if (_translateTask == null && !_isReset)
             {
                 // singleton task
-                _translateTask = TranslateAheadAsync(newIndex, _config.TranslateCount);
+                _translateTask = TranslateAheadAsync(newIndex, _config.TranslateCountBackward, _config.TranslateCountForward);
                 _translateTask.ContinueWith((t) =>
                 {
                     // clear when completed
@@ -186,7 +186,7 @@ public class SubTranslator
                     }
                     else
                     {
-                        _concurrentLimiter = new SemaphoreSlim(_config.TranslateMaxConcurrent, _config.TranslateMaxConcurrent);
+                        _concurrentLimiter = new SemaphoreSlim(_config.TranslateMaxConcurrency, _config.TranslateMaxConcurrency);
                     }
                     _translateService.Initialize(_subManager.Language, _config.TranslateTargetLanguage);
                 }
@@ -194,7 +194,7 @@ public class SubTranslator
         }
     }
 
-    private async Task TranslateAheadAsync(int currentIndex, int count)
+    private async Task TranslateAheadAsync(int currentIndex, int countBackward, int countForward)
     {
         try
         {
@@ -203,13 +203,13 @@ public class SubTranslator
             _translationCancellation = new CancellationTokenSource();
 
             var token = _translationCancellation.Token;
-            int start = currentIndex;
-            if (start == -1)
+            int start = currentIndex - countBackward;
+            if (start < 0)
             {
                 start = 0;
             }
 
-            int end = Math.Min(start + count - 1, _subManager.Subs.Count - 1);
+            int end = Math.Min(start + countForward - 1, _subManager.Subs.Count - 1);
 
             List<Task> translationTasks = new();
 

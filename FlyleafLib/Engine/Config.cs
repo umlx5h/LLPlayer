@@ -1165,14 +1165,18 @@ public class Config : NotifyPropertyChanged
 
         /// <summary>
         /// Maximum count backward
-        /// TODO: L: Have each count before and after
         /// </summary>
-        public int TranslateCount { get; set => Set(ref field, value); } = 8;
+        public int TranslateCountBackward { get; set => Set(ref field, value); } = 1;
+
+        /// <summary>
+        /// Maximum count forward
+        /// </summary>
+        public int TranslateCountForward { get; set => Set(ref field, value); } = 12;
 
         /// <summary>
         /// Number of concurrent requests to translation services
         /// </summary>
-        public int TranslateMaxConcurrent { get; set => Set(ref field, value); } = 2;
+        public int TranslateMaxConcurrency { get; set => Set(ref field, value); } = 2;
 
         /// <summary>
         /// Chat-style LLM API config

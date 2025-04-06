@@ -340,10 +340,20 @@
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
                             Width="180"
-                            Text="Max Translate Count" />
+                            Text="Max Translate Count (Backward)" />
                         <TextBox
                             Width="100"
-                            Text="{Binding FL.PlayerConfig.Subtitles.TranslateCount}"
+                            Text="{Binding FL.PlayerConfig.Subtitles.TranslateCountBackward}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Max Translate Count (Forward)" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.PlayerConfig.Subtitles.TranslateCountForward}"
                             helpers:TextBoxHelper.OnlyNumeric="Uint" />
                     </StackPanel>
 
@@ -353,7 +363,7 @@
                             Text="Max Translate Concurrency" />
                         <TextBox
                             Width="100"
-                            Text="{Binding FL.PlayerConfig.Subtitles.TranslateMaxConcurrent}"
+                            Text="{Binding FL.PlayerConfig.Subtitles.TranslateMaxConcurrency}"
                             helpers:TextBoxHelper.OnlyNumeric="Uint" />
                     </StackPanel>
                 </StackPanel>
