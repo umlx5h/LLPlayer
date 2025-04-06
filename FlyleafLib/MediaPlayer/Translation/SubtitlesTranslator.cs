@@ -142,7 +142,15 @@ public class SubTranslator
         if (newIndex != -1 && _subManager.Subs.Any())
         {
             int indexDiff = Math.Abs(_oldIndex - newIndex);
+            bool isForward = newIndex > _oldIndex;
             _oldIndex = newIndex;
+
+            if ((isForward && indexDiff > _config.TranslateCountForward) ||
+                (!isForward && indexDiff > _config.TranslateCountBackward))
+            {
+                // Cancel a running translation request when a large seek is performed
+                await Cancel();
+            }
 
             // Prevent continuous firing when continuously switching subtitles with sub seek
             if (indexDiff == 1)
