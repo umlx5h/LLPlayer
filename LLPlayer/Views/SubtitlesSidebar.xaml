@@ -230,13 +230,20 @@
                         <!--Text Subtitles-->
                         <DataTemplate x:Key="SubTextTemplate">
                             <controls:SelectableTextBox
-                                FlowDirection="{Binding DataContext.SubManager.Language.FlowDirection, ElementName=SubtitleListBox, FallbackValue=LeftToRight}"
                                 TextAlignment="Left"
                                 VerticalAlignment="Center"
                                 Foreground="{DynamicResource MaterialDesignBody}"
                                 WordClicked="SelectableTextBox_OnWordClicked"
                                 materialDesign:TextFieldAssist.TextFieldCornerRadius="10"
                                 materialDesign:TextFieldAssist.DecorationVisibility="Hidden">
+
+                                <controls:SelectableTextBox.FlowDirection>
+                                    <MultiBinding Converter="{StaticResource SubTextFlowDirectionConv}" Mode="OneWay">
+                                        <Binding Path="UseTranslated" />
+                                        <Binding Path="DataContext.SubIndex" ElementName="SubtitleListBox" />
+                                        <Binding Path="DataContext.FL" ElementName="SubtitleListBox" />
+                                    </MultiBinding>
+                                </controls:SelectableTextBox.FlowDirection>
 
                                 <controls:SelectableTextBox.Text>
                                     <MultiBinding Converter="{StaticResource SubTextMaskConv}" Mode="OneWay">

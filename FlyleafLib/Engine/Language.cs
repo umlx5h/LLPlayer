@@ -44,11 +44,6 @@ public class Language : IEquatable<Language>
     [XmlIgnore]
     public bool         IsRTL           { get; private set; }
 
-    [JsonIgnore]
-    [XmlIgnore]
-    public FlowDirection
-                        FlowDirection   { get; private set; }
-
     public override string ToString() => OriginalInput ?? TopEnglishName;
 
     public override int GetHashCode() => ToString().GetHashCode();
@@ -59,6 +54,9 @@ public class Language : IEquatable<Language>
     {
         if (lang is null)
             return false;
+
+        if (object.ReferenceEquals(this, lang))
+            return true;
 
         if (lang.Culture == null && Culture == null)
         {
@@ -104,7 +102,6 @@ public class Language : IEquatable<Language>
         lang.IdSubLanguage = lang.Culture.ThreeLetterISOLanguageName;
         lang.ISO6391 = lang.Culture.TwoLetterISOLanguageName;
         lang.IsRTL = RTLCodes.Contains(lang.ISO6391);
-        lang.FlowDirection = lang.IsRTL ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
     }
 
     public static Language Get(CultureInfo cult)

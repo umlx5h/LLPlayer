@@ -304,7 +304,7 @@ partial class Player
                         {
                             if (!string.IsNullOrEmpty(cur.DisplayText))
                             {
-                                SubtitleDisplay(cur.DisplayText, i);
+                                SubtitleDisplay(cur.DisplayText, i, cur.UseTranslated);
                                 display = true;
                             }
                             else if (cur.IsBitmap && cur.Bitmap != null)
@@ -318,7 +318,8 @@ partial class Player
                                 sFramesPrev[i] = new SubtitlesFrame
                                 {
                                     timestamp = cur.StartTime.Ticks + Config.Subtitles[i].Delay,
-                                    duration = (uint)cur.Duration.TotalMilliseconds
+                                    duration = (uint)cur.Duration.TotalMilliseconds,
+                                    text = cur.DisplayText
                                 };
                             }
                         }
@@ -439,10 +440,15 @@ partial class Player
     /// </summary>
     /// <param name="text"></param>
     /// <param name="subIndex"></param>
-    public void SubtitleDisplay(string text, int subIndex)
+    /// <param name="isTranslated"></param>
+    public void SubtitleDisplay(string text, int subIndex, bool isTranslated)
     {
         UI(() =>
         {
+            Subtitles[subIndex].Data.Language = isTranslated
+                ? Config.Subtitles.TranslateLanguage
+                : SubtitlesManager[subIndex].Language;
+
             Subtitles[subIndex].Data.Text = text;
             Subtitles[subIndex].Data.Bitmap = null;
         });

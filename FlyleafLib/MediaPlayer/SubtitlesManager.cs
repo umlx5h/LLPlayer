@@ -1063,11 +1063,13 @@ public class SubtitleData : IDisposable, INotifyPropertyChanged, ICloneable
         get;
         set
         {
-            var prevIsTranslated = IsTranslated;
+            var prevUseTranslated = UseTranslated;
             if (Set(ref field, value))
             {
-                if (prevIsTranslated != IsTranslated)
-                    OnPropertyChanged(nameof(IsTranslated));
+                if (prevUseTranslated != UseTranslated)
+                {
+                    OnPropertyChanged(nameof(UseTranslated));
+                }
                 OnPropertyChanged(nameof(DisplayText));
             }
         }
@@ -1076,10 +1078,11 @@ public class SubtitleData : IDisposable, INotifyPropertyChanged, ICloneable
     public bool IsText => !string.IsNullOrEmpty(Text);
 
     public bool IsTranslated => TranslatedText != null;
+    public bool UseTranslated => EnabledTranslated && IsTranslated;
 
     public bool EnabledTranslated = true;
 
-    public string? DisplayText => EnabledTranslated && IsTranslated ? TranslatedText : Text;
+    public string? DisplayText => UseTranslated ? TranslatedText : Text;
 
     public List<SubStyle> SubStyles;
     public TimeSpan StartTime { get; set; }

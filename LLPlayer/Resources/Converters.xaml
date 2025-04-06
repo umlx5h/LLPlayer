@@ -39,6 +39,7 @@
     <!--Subtitle Converters-->
     <conv:WidthPercentageMultiConverter x:Key="WidthPercentageMultiConv"/>
     <conv:SubTextMaskConverter x:Key="SubTextMaskConv"/>
+    <conv:SubTextFlowDirectionConverter x:Key="SubTextFlowDirectionConv"/>
     <conv:ListItemIndexVisibilityConverter x:Key="ListItemIndexVisibilityConv"/>
     <conv:TimeSpanToStringConverter x:Key="TimeSpanToStringConv"/>
     <conv:SubBitmapImageSourceConverter x:Key="SubBitmapImageSourceConv"/>

@@ -344,7 +344,7 @@ unsafe partial class Player
                     {
                         if (!string.IsNullOrEmpty(cur.DisplayText))
                         {
-                            SubtitleDisplay(cur.DisplayText, i);
+                            SubtitleDisplay(cur.DisplayText, i, cur.UseTranslated);
                             display = true;
                         }
                         else if (cur.IsBitmap && cur.Bitmap != null)
@@ -358,7 +358,8 @@ unsafe partial class Player
                             sFramesPrev[i] = new SubtitlesFrame
                             {
                                 timestamp = cur.StartTime.Ticks + Config.Subtitles[i].Delay,
-                                duration = (uint)cur.Duration.TotalMilliseconds
+                                duration = (uint)cur.Duration.TotalMilliseconds,
+                                text = cur.DisplayText
                             };
                         }
                     }
@@ -675,7 +676,7 @@ unsafe partial class Player
                             if (cur != null && !string.IsNullOrEmpty(cur.Text))
                             {
                                 // Use OCR text subtitles if available
-                                SubtitleDisplay(cur.DisplayText, i);
+                                SubtitleDisplay(cur.DisplayText, i, cur.UseTranslated);
                             }
                             else
                             {
@@ -693,8 +694,8 @@ unsafe partial class Player
                         }
                         else
                         {
-                            // internal text sub
-                            SubtitleDisplay(sFrames[i].text, i);
+                            // internal text sub (does not support translate)
+                            SubtitleDisplay(sFrames[i].text, i, false);
                         }
                         sFramesPrev[i] = sFrames[i];
                         sFrames[i] = null;
@@ -736,7 +737,7 @@ unsafe partial class Player
                     bool display = false;
                     if (!string.IsNullOrEmpty(cur.DisplayText))
                     {
-                        SubtitleDisplay(cur.DisplayText, i);
+                        SubtitleDisplay(cur.DisplayText, i, cur.UseTranslated);
                         display = true;
                     }
                     else if (cur.IsBitmap && cur.Bitmap != null)
@@ -750,7 +751,8 @@ unsafe partial class Player
                         sFramesPrev[i] = new SubtitlesFrame
                         {
                             timestamp = cur.StartTime.Ticks + Config.Subtitles[i].Delay,
-                            duration = (uint)cur.Duration.TotalMilliseconds
+                            duration = (uint)cur.Duration.TotalMilliseconds,
+                            text = cur.DisplayText
                         };
                     }
                 }
@@ -764,7 +766,8 @@ unsafe partial class Player
                             sFramesPrev[i].timestamp == cur.StartTime.Ticks + Config.Subtitles[i].Delay &&
                             sFramesPrev[i].text != cur.DisplayText)
                         {
-                            SubtitleDisplay(cur.DisplayText, i);
+                            SubtitleDisplay(cur.DisplayText, i, cur.UseTranslated);
+                            sFramesPrev[i].text = cur.DisplayText;
                         }
                     }
                 }
@@ -957,7 +960,7 @@ unsafe partial class Player
                 var cur = SubtitlesManager[i].GetCurrent();
                 if (cur != null && !string.IsNullOrEmpty(cur.DisplayText))
                 {
-                    SubtitleDisplay(cur.DisplayText, i);
+                    SubtitleDisplay(cur.DisplayText, i, cur.UseTranslated);
                 }
                 else
                 {

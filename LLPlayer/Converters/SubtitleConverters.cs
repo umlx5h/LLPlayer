@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media.Imaging;
 using FlyleafLib.MediaPlayer;
+using LLPlayer.Services;
 
 namespace LLPlayer.Converters;
 
@@ -46,6 +47,37 @@ public class SubTextMaskConverter : IMultiValueConverter
 
             return show;
         }
+        return DependencyProperty.UnsetValue;
+    }
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+    {
+        throw new NotSupportedException();
+    }
+}
+
+public class SubTextFlowDirectionConverter : IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (values.Length != 3)
+        {
+            return DependencyProperty.UnsetValue;
+        }
+
+        if (values[0] is bool isTranslated &&
+            values[1] is int subIndex &&
+            values[2] is FlyleafManager fl)
+        {
+            var language = isTranslated ? fl.PlayerConfig.Subtitles.TranslateLanguage : fl.Player.SubtitlesManager[subIndex].Language;
+            if (language != null && language.IsRTL)
+            {
+                return FlowDirection.RightToLeft;
+            }
+
+            return FlowDirection.LeftToRight;
+        }
+
         return DependencyProperty.UnsetValue;
     }
 

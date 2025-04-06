@@ -75,7 +75,6 @@
                 Visibility="{Binding FL.Player.Subtitles[0].Data.IsVisible, Converter={StaticResource BooleanToVisibilityConv}, FallbackValue=Collapsed, TargetNullValue=Collapsed}" >
                 <local:SelectableSubtitleText
                     x:Name="SubtitlePrimaryText"
-                    Language="{Binding FL.Player.SubtitlesManager[0].Language}"
                     FontFamily="{Binding FL.Config.Subs.SubsFontFamily}"
                     FontSize="{Binding FL.Config.Subs.SubsFontSizeFix}"
                     FontWeight="{Binding FL.Config.Subs.SubsFontWeight}"
@@ -87,6 +86,7 @@
                     WidthPercentage="{Binding FL.Config.Subs.SubsWidthPercentage}"
                     IgnoreLineBreak="{Binding FL.Config.Subs.SubsIgnoreLineBreak}"
                     Text="{Binding FL.Player.Subtitles[0].Data.Text}"
+                    Language="{Binding FL.Player.Subtitles[0].Data.Language}"
                     IsPrimary="True"
                     WordClickedDown="SubtitlePrimaryText_OnWordClickedDown"
                     WordClicked="SelectableSubtitleText_OnWordClicked" />
@@ -120,7 +120,6 @@
             <Grid
                 Visibility="{Binding FL.Player.Subtitles[1].Data.IsVisible, Converter={StaticResource BooleanToVisibilityConv}, FallbackValue=Collapsed, TargetNullValue=Collapsed}" >
                 <local:SelectableSubtitleText
-                    Language="{Binding FL.Player.SubtitlesManager[1].Language}"
                     FontFamily="{Binding FL.Config.Subs.SubsFontFamily}"
                     FontSize="{Binding FL.Config.Subs.SubsFontSize2Fix}"
                     FontWeight="{Binding FL.Config.Subs.SubsFontWeight}"
@@ -132,6 +131,7 @@
                     WidthPercentage="{Binding FL.Config.Subs.SubsWidthPercentage}"
                     IgnoreLineBreak="{Binding FL.Config.Subs.SubsIgnoreLineBreak}"
                     Text="{Binding FL.Player.Subtitles[1].Data.Text}"
+                    Language="{Binding FL.Player.Subtitles[1].Data.Language}"
                     IsPrimary="False" />
 
                 <Border

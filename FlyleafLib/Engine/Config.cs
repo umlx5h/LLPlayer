@@ -1146,7 +1146,20 @@ public class Config : NotifyPropertyChanged
         /// <summary>
         /// Language to be translated to
         /// </summary>
-        public TargetLanguage TranslateTargetLanguage { get; set => Set(ref field, value); } = TargetLanguage.EnglishAmerican;
+        public TargetLanguage TranslateTargetLanguage
+        {
+            get;
+            set
+            {
+                if (Set(ref field, value))
+                {
+                    TranslateLanguage = Language.Get(value.ToISO6391());
+                }
+            }
+        } = TargetLanguage.EnglishAmerican;
+
+        [JsonIgnore]
+        public Language TranslateLanguage { get; private set; }
 
         /// <summary>
         /// Translation Service Type
