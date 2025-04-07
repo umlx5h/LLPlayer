@@ -287,6 +287,7 @@ public class SubTranslator
         try
         {
             long start = Stopwatch.GetTimestamp();
+            // TODO: L: review this process
             string text = sub.Text!.ReplaceLineEndings(" ");
             if (CanDebug) Log.Debug($"Translation Start {sub.Index} - {text}");
             string translated = await _translateService!.TranslateAsync(text, token).ConfigureAwait(false);

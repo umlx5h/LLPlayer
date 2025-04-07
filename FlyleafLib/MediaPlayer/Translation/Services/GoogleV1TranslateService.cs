@@ -104,7 +104,8 @@ public class GoogleV1TranslateService : ITranslateService
             using JsonDocument doc = JsonDocument.Parse(jsonResultString);
             resultTexts.AddRange(doc.RootElement[0].EnumerateArray().Select(arr => arr[0].GetString()!.Trim()));
 
-            return string.Join(Environment.NewLine, resultTexts);
+            //return string.Join(Environment.NewLine, resultTexts);
+            return string.Join(" ", resultTexts);
         }
         // Distinguish between timeout and cancel errors
         catch (OperationCanceledException ex)
