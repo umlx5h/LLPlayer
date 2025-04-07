@@ -18,7 +18,6 @@ public class SubTranslator
     private readonly int _subIndex;
 
     private ITranslateService? _translateService;
-    private SemaphoreSlim? _concurrentLimiter;
     private CancellationTokenSource? _translationCancellation;
     private readonly TranslateServiceFactory _translateServiceFactory;
     private Task? _translateTask;
@@ -79,8 +78,7 @@ public class SubTranslator
 
         if (e.PropertyName is
             nameof(Config.SubtitlesConfig.TranslateServiceType) or
-            nameof(Config.SubtitlesConfig.TranslateTargetLanguage) or
-            nameof(Config.SubtitlesConfig.TranslateMaxConcurrency)
+            nameof(Config.SubtitlesConfig.TranslateTargetLanguage)
             ||
             e.PropertyName == languageFallbackPropName)
         {
@@ -116,7 +114,6 @@ public class SubTranslator
             _isReset = true;
             await Cancel();
 
-            _concurrentLimiter = null;
             _translateService?.Dispose();
             _translateService = null;
         }
@@ -151,6 +148,11 @@ public class SubTranslator
                 // Cancel a running translation request when a large seek is performed
                 await Cancel();
             }
+            else if (_translateTask != null)
+            {
+                // for performance
+                return;
+            }
 
             // Prevent continuous firing when continuously switching subtitles with sub seek
             if (indexDiff == 1)
@@ -179,25 +181,20 @@ public class SubTranslator
     // initialize TranslateService lazily
     private void EnsureTranslationService()
     {
-        if (_translateService == null)
+        if (_translateService != null)
         {
-            lock (_initLock)
+            return;
+        }
+
+        // double-check lock pattern
+        lock (_initLock)
+        {
+            if (_translateService == null)
             {
-                if (_translateService == null)
-                {
-                    _translateService = _translateServiceFactory.GetService(_config.TranslateServiceType, false);
-                    if (_config.TranslateServiceType.IsLLM() &&
-                        _config.TranslateChatConfig.TranslateMethod == ChatTranslateMethod.KeepContext)
-                    {
-                        // fixed to 1
-                        _concurrentLimiter = new SemaphoreSlim(1, 1);
-                    }
-                    else
-                    {
-                        _concurrentLimiter = new SemaphoreSlim(_config.TranslateMaxConcurrency, _config.TranslateMaxConcurrency);
-                    }
-                    _translateService.Initialize(_subManager.Language, _config.TranslateTargetLanguage);
-                }
+                var service = _translateServiceFactory.GetService(_config.TranslateServiceType, false);
+                service.Initialize(_subManager.Language, _config.TranslateTargetLanguage);
+
+                Volatile.Write(ref _translateService, service);
             }
         }
     }
@@ -211,46 +208,61 @@ public class SubTranslator
             _translationCancellation = new CancellationTokenSource();
 
             var token = _translationCancellation.Token;
-            int start = currentIndex - countBackward;
-            if (start < 0)
-            {
-                start = 0;
-            }
-
+            int start = Math.Max(0, currentIndex - countBackward);
             int end = Math.Min(start + countForward - 1, _subManager.Subs.Count - 1);
 
-            List<Task> translationTasks = new();
-
+            List<SubtitleData> translateSubs = new();
             for (int i = start; i <= end; i++)
             {
                 if (token.IsCancellationRequested)
-                {
                     break;
-                }
-
                 if (i >= _subManager.Subs.Count)
-                {
                     break;
-                }
 
                 var sub = _subManager.Subs[i];
-
                 if (!sub.IsTranslated && !string.IsNullOrWhiteSpace(sub.Text))
                 {
-                    Task task = TranslateSubAsync(sub, token);
-                    translationTasks.Add(task);
-
-                    task.ContinueWith(t =>
-                    {
-                        // If one error occurs, cancel other requests for immediate exit
-                        _translationCancellation?.Cancel();
-                    }, TaskContinuationOptions.OnlyOnFaulted);
+                    translateSubs.Add(sub);
                 }
             }
 
-            if (translationTasks.Any())
+            if (translateSubs.Count == 0)
+                return;
+
+            int concurrency = _config.TranslateMaxConcurrency;
+
+            if (concurrency > 1 && _config.TranslateServiceType.IsLLM() &&
+                _config.TranslateChatConfig.TranslateMethod == ChatTranslateMethod.KeepContext)
             {
-                await Task.WhenAll(translationTasks).ConfigureAwait(false);
+                // fixed to 1
+                // it must be sequential because of maintaining context
+                concurrency = 1;
+            }
+
+            if (concurrency == 1)
+            {
+                // sequentially (important to maintain execution order for LLM)
+                foreach (var sub in translateSubs)
+                {
+                    await TranslateSubAsync(sub, token);
+                }
+            }
+            else
+            {
+                // concurrently
+                ParallelOptions parallelOptions = new()
+                {
+                    CancellationToken = token,
+                    MaxDegreeOfParallelism = concurrency
+                };
+
+                await Parallel.ForEachAsync(
+                    translateSubs,
+                    parallelOptions,
+                    async (sub, ct) =>
+                    {
+                        await TranslateSubAsync(sub, ct);
+                    }).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException)
@@ -281,15 +293,13 @@ public class SubTranslator
 
     private async Task TranslateSubAsync(SubtitleData sub, CancellationToken token)
     {
-        EnsureTranslationService();
-        await _concurrentLimiter!.WaitAsync(token).ConfigureAwait(false);
-
         try
         {
             long start = Stopwatch.GetTimestamp();
             // TODO: L: review this process
             string text = sub.Text!.ReplaceLineEndings(" ");
             if (CanDebug) Log.Debug($"Translation Start {sub.Index} - {text}");
+            EnsureTranslationService();
             string translated = await _translateService!.TranslateAsync(text, token).ConfigureAwait(false);
             sub.TranslatedText = translated;
 
@@ -303,10 +313,6 @@ public class SubTranslator
         {
             if (CanDebug) Log.Debug($"Translation Cancel {sub.Index}");
             throw;
-        }
-        finally
-        {
-            _concurrentLimiter?.Release();
         }
     }
 }
