@@ -7,6 +7,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using FlyleafLib;
 using LLPlayer.Extensions;
+using NMeCab.Specialized;
 
 namespace LLPlayer.Controls;
 
@@ -169,6 +170,8 @@ public partial class SelectableSubtitleText : UserControl
         }
     }
 
+    private static readonly Lazy<MeCabIpaDicTagger> MeCabTagger = new(() => MeCabIpaDicTagger.Create(), true);
+
     private void SetText(string text)
     {
         if (text == null)
@@ -197,15 +200,37 @@ public partial class SelectableSubtitleText : UserControl
 
         var wordOffset = 0;
 
+        //  SelectableTextBox uses char.IsPunctuation(), so use a regular expression for it.
+        // TODO: L: Sharing the code with TextBox
+        string splitPattern = @"((?:[^\P{P}'-]+|\s))";
+
         // Use an OutlinedTextBlock for each word to display the border Text and enclose it in a WrapPanel
         for (int i = 0; i < lines.Length; i++)
         {
-            //  SelectableTextBox uses char.IsPunctuation(), so use a regular expression for it.
-            // TODO: L: Sharing the code with TextBox
-            string splitPattern = @"((?:[^\P{P}'-]+|\s))";
+            List<string> words;
 
-            List<string> words = Regex.Split(lines[i], splitPattern)
-                .Where(w => w != "").ToList();
+            if (Language != null && Language.ISO6391 == "ja")
+            {
+                // word segmentation for Japanese
+                words = new List<string>();
+
+                // TODO: L: Also do word segmentation in sidebar
+                var nodes = MeCabTagger.Value.Parse(lines[i]);
+                foreach (var node in nodes)
+                {
+                    // If there are space-separated characters, such as English, add them manually since they are not on the Surface
+                    if (char.IsWhiteSpace(lines[i][node.BPos]))
+                    {
+                        words.Add(" ");
+                    }
+                    words.Add(node.Surface);
+                }
+            }
+            else
+            {
+                words = Regex.Split(lines[i], splitPattern)
+                    .Where(w => w != "").ToList();
+            }
 
             foreach (string word in words)
             {
@@ -262,7 +287,7 @@ public partial class SelectableSubtitleText : UserControl
                         // Set brush to Border because OutlinedTextBlock's character click judgment is only on the character.
                         //ref: https://stackoverflow.com/questions/50653308/hit-testing-a-transparent-element-in-a-transparent-window
                         Background = new SolidColorBrush(Color.FromArgb(1, 0, 0, 0)),
-                        Padding = new Thickness(1, 2, 1, 2),
+                        BorderThickness = new Thickness(1),
                         IsHitTestVisible = true,
                         Child = textBlock,
                         Cursor = Cursors.Hand,
@@ -276,10 +301,12 @@ public partial class SelectableSubtitleText : UserControl
                     // Change background color on mouse over
                     border.MouseEnter += (_, _) =>
                     {
+                        border.BorderBrush = SubIndex == 0 ? Brushes.Yellow : Brushes.Green;
                         border.Background = new SolidColorBrush(Color.FromArgb(80, 127, 127, 127));
                     };
                     border.MouseLeave += (_, _) =>
                     {
+                        border.BorderBrush = null;
                         border.Background = new SolidColorBrush(Color.FromArgb(1, 0, 0, 0));
                     };
 
