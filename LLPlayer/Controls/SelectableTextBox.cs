@@ -11,6 +11,24 @@ public class SelectableTextBox : TextBox
         DefaultStyleKeyProperty.OverrideMetadata(typeof(SelectableTextBox), new FrameworkPropertyMetadata(typeof(SelectableTextBox)));
     }
 
+    public static readonly DependencyProperty IsTranslatedProperty =
+        DependencyProperty.Register(nameof(IsTranslated), typeof(bool), typeof(SelectableTextBox), new FrameworkPropertyMetadata(false));
+
+    public bool IsTranslated
+    {
+        get => (bool)GetValue(IsTranslatedProperty);
+        set => SetValue(IsTranslatedProperty, value);
+    }
+
+    public static readonly DependencyProperty SubIndexProperty =
+        DependencyProperty.Register(nameof(SubIndex), typeof(int), typeof(SelectableTextBox), new FrameworkPropertyMetadata(0));
+
+    public int SubIndex
+    {
+        get => (int)GetValue(SubIndexProperty);
+        set => SetValue(SubIndexProperty, value);
+    }
+
     public static readonly RoutedEvent WordClickedEvent =
         EventManager.RegisterRoutedEvent(nameof(WordClicked), RoutingStrategy.Bubble, typeof(WordClickedEventHandler), typeof(SelectableTextBox));
 
@@ -112,6 +130,8 @@ public class SelectableTextBox : TextBox
                 Words = fixText,
                 IsWord = false,
                 Text = fixText,
+                IsTranslated = IsTranslated,
+                SubIndex = SubIndex,
                 WordOffset = 0,
                 Sender = this
             };
@@ -147,6 +167,8 @@ public class SelectableTextBox : TextBox
             Words = word,
             IsWord = true,
             Text = Text.ReplaceLineEndings(" "),
+            IsTranslated = IsTranslated,
+            SubIndex = SubIndex,
             WordOffset = start,
             Sender = this
         };
@@ -174,6 +196,8 @@ public class SelectableTextBox : TextBox
             Words = selectedText.ReplaceLineEndings(" "),
             IsWord = false,
             Text = Text.ReplaceLineEndings(" "),
+            IsTranslated = IsTranslated,
+            SubIndex = SubIndex,
             WordOffset = adjustedStart,
             Sender = this
         };

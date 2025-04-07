@@ -63,6 +63,15 @@ public partial class SelectableSubtitleText : UserControl
 
     private string _textFix;
 
+    public static readonly DependencyProperty IsTranslatedProperty =
+        DependencyProperty.Register(nameof(IsTranslated), typeof(bool), typeof(SelectableSubtitleText), new FrameworkPropertyMetadata(false));
+
+    public bool IsTranslated
+    {
+        get => (bool)GetValue(IsTranslatedProperty);
+        set => SetValue(IsTranslatedProperty, value);
+    }
+
     public static readonly DependencyProperty LanguageProperty =
         DependencyProperty.Register(nameof(Language), typeof(Language), typeof(SelectableSubtitleText), new FrameworkPropertyMetadata(null, OnLanguageChanged));
 
@@ -70,6 +79,15 @@ public partial class SelectableSubtitleText : UserControl
     {
         get => (Language)GetValue(LanguageProperty);
         set => SetValue(LanguageProperty, value);
+    }
+
+    public static readonly DependencyProperty SubIndexProperty =
+        DependencyProperty.Register(nameof(SubIndex), typeof(int), typeof(SelectableSubtitleText), new FrameworkPropertyMetadata(0));
+
+    public int SubIndex
+    {
+        get => (int)GetValue(SubIndexProperty);
+        set => SetValue(SubIndexProperty, value);
     }
 
     public static readonly DependencyProperty FillProperty =
@@ -124,15 +142,6 @@ public partial class SelectableSubtitleText : UserControl
     {
         get => (double)GetValue(StrokeThicknessInitialProperty);
         set => SetValue(StrokeThicknessInitialProperty, value);
-    }
-
-    public static readonly DependencyProperty IsPrimaryProperty =
-        DependencyProperty.Register(nameof(IsPrimary), typeof(bool), typeof(SelectableSubtitleText), new FrameworkPropertyMetadata(false));
-
-    public bool IsPrimary
-    {
-        get => (bool)GetValue(IsPrimaryProperty);
-        set => SetValue(IsPrimaryProperty, value);
     }
 
     private static void OnWidthPercentageChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -256,28 +265,23 @@ public partial class SelectableSubtitleText : UserControl
                         Padding = new Thickness(1, 2, 1, 2),
                         IsHitTestVisible = true,
                         Child = textBlock,
+                        Cursor = Cursors.Hand,
                     };
 
-                    if (IsPrimary)
+                    border.MouseLeftButtonDown += WordMouseLeftButtonDown;
+                    border.MouseLeftButtonUp += WordMouseLeftButtonUp;
+                    border.MouseRightButtonUp += WordMouseRightButtonUp;
+                    border.MouseUp += WordMouseMiddleButtonUp;
+
+                    // Change background color on mouse over
+                    border.MouseEnter += (_, _) =>
                     {
-                        border.Cursor = Cursors.Hand;
-
-                        // TODO: L: Currently set event handler for primary sub only, secondary sub should be enabled?
-                        border.MouseLeftButtonDown += WordMouseLeftButtonDown;
-                        border.MouseLeftButtonUp += WordMouseLeftButtonUp;
-                        border.MouseRightButtonUp += WordMouseRightButtonUp;
-                        border.MouseUp += WordMouseMiddleButtonUp;
-
-                        // Change background color on mouse over
-                        border.MouseEnter += (_, _) =>
-                        {
-                            border.Background = new SolidColorBrush(Color.FromArgb(80, 127, 127, 127));
-                        };
-                        border.MouseLeave += (_, _) =>
-                        {
-                            border.Background = new SolidColorBrush(Color.FromArgb(1, 0, 0, 0));
-                        };
-                    }
+                        border.Background = new SolidColorBrush(Color.FromArgb(80, 127, 127, 127));
+                    };
+                    border.MouseLeave += (_, _) =>
+                    {
+                        border.Background = new SolidColorBrush(Color.FromArgb(1, 0, 0, 0));
+                    };
 
                     wrapPanel.Children.Add(border);
                 }
@@ -317,6 +321,8 @@ public partial class SelectableSubtitleText : UserControl
                     Words = word.Text,
                     IsWord = true,
                     Text = _textFix,
+                    IsTranslated = IsTranslated,
+                    SubIndex = SubIndex,
                     WordOffset = word.WordOffset,
                     WordsX = wordPoint.X,
                     WordsWidth = word.ActualWidth
@@ -396,6 +402,8 @@ public partial class SelectableSubtitleText : UserControl
                     Words = selectedText,
                     IsWord = false,
                     Text = _textFix,
+                    IsTranslated = IsTranslated,
+                    SubIndex = SubIndex,
                     WordOffset = wordStart.WordOffset,
                     WordsX = wordsX,
                     WordsWidth = wordsWidth
@@ -420,6 +428,8 @@ public partial class SelectableSubtitleText : UserControl
                 Words = word.Text,
                 IsWord = true,
                 Text = _textFix,
+                IsTranslated = IsTranslated,
+                SubIndex = SubIndex,
                 WordOffset = word.WordOffset,
                 WordsX = wordPoint.X,
                 WordsWidth = word.ActualWidth
@@ -439,6 +449,8 @@ public partial class SelectableSubtitleText : UserControl
                 Words = _textFix,
                 IsWord = false,
                 Text = _textFix,
+                IsTranslated = IsTranslated,
+                SubIndex = SubIndex,
                 WordOffset = 0,
                 WordsX = 0,
                 WordsWidth = wrapPanel.ActualWidth

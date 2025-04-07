@@ -86,9 +86,10 @@
                     WidthPercentage="{Binding FL.Config.Subs.SubsWidthPercentage}"
                     IgnoreLineBreak="{Binding FL.Config.Subs.SubsIgnoreLineBreak}"
                     Text="{Binding FL.Player.Subtitles[0].Data.Text}"
+                    IsTranslated="{Binding FL.Player.Subtitles[0].Data.IsTranslated}"
                     Language="{Binding FL.Player.Subtitles[0].Data.Language}"
-                    IsPrimary="True"
-                    WordClickedDown="SubtitlePrimaryText_OnWordClickedDown"
+                    SubIndex="0"
+                    WordClickedDown="SelectableSubtitleText_OnWordClickedDown"
                     WordClicked="SelectableSubtitleText_OnWordClicked" />
 
                 <Border
@@ -131,8 +132,11 @@
                     WidthPercentage="{Binding FL.Config.Subs.SubsWidthPercentage}"
                     IgnoreLineBreak="{Binding FL.Config.Subs.SubsIgnoreLineBreak}"
                     Text="{Binding FL.Player.Subtitles[1].Data.Text}"
+                    IsTranslated="{Binding FL.Player.Subtitles[1].Data.IsTranslated}"
                     Language="{Binding FL.Player.Subtitles[1].Data.Language}"
-                    IsPrimary="False" />
+                    SubIndex="1"
+                    WordClickedDown="SelectableSubtitleText_OnWordClickedDown"
+                    WordClicked="SelectableSubtitleText_OnWordClicked" />
 
                 <Border
                     Visibility="{Binding FL.Player.Subtitles[1].Data.IsAbsolute, Converter={StaticResource BooleanToVisibilityInvertConv}, FallbackValue=Collapsed, TargetNullValue=Collapsed}"

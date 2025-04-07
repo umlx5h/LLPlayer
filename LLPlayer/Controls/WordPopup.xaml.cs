@@ -183,9 +183,15 @@ public partial class WordPopup : UserControl, INotifyPropertyChanged
         }
     }
 
-    private async ValueTask<string> TranslateWithCache(string text, CancellationToken token)
+    private async ValueTask<string> TranslateWithCache(string text, WordClickedEventArgs e, CancellationToken token)
     {
-        var srcLang = FL.Player.SubtitlesManager[0].Language;
+        // already translated by translator
+        if (e.IsTranslated)
+        {
+            return text;
+        }
+
+        var srcLang = FL.Player.SubtitlesManager[e.SubIndex].Language;
         var targetLang = FL.PlayerConfig.Subtitles.TranslateTargetLanguage;
 
         // Same language
@@ -329,7 +335,7 @@ public partial class WordPopup : UserControl, INotifyPropertyChanged
 
         try
         {
-            string result = await TranslateWithCache(source, _cts.Token);
+            string result = await TranslateWithCache(source, e, _cts.Token);
             TranslationText.Text = result;
             IsLoading = false;
         }

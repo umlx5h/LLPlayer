@@ -445,6 +445,7 @@ partial class Player
     {
         UI(() =>
         {
+            Subtitles[subIndex].Data.IsTranslated = isTranslated;
             Subtitles[subIndex].Data.Language = isTranslated
                 ? Config.Subtitles.TranslateLanguage
                 : SubtitlesManager[subIndex].Language;

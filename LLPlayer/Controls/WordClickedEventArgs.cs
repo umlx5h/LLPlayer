@@ -8,6 +8,8 @@ public class WordClickedEventArgs(RoutedEvent args) : RoutedEventArgs(args)
     public required string Words { get; init; }
     public required bool IsWord { get; init; }
     public required string Text { get; init; }
+    public required bool IsTranslated { get; init; }
+    public required int SubIndex { get; init; }
     public required int WordOffset { get; init; }
 
     // For screen subtitles

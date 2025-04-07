@@ -37,7 +37,7 @@ public partial class SubtitlesControl : UserControl
         await WordPopupControl.OnWordClicked(e);
     }
 
-    private void SubtitlePrimaryText_OnWordClickedDown(object? sender, EventArgs e)
+    private void SelectableSubtitleText_OnWordClickedDown(object? sender, EventArgs e)
     {
         // Assume drag and stop playback.
         if (FL.Player.Status == Status.Playing)

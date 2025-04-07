@@ -233,6 +233,8 @@
                                 TextAlignment="Left"
                                 VerticalAlignment="Center"
                                 Foreground="{DynamicResource MaterialDesignBody}"
+                                IsTranslated="{Binding UseTranslated}"
+                                SubIndex="{Binding DataContext.SubIndex, ElementName=SubtitleListBox}"
                                 WordClicked="SelectableTextBox_OnWordClicked"
                                 materialDesign:TextFieldAssist.TextFieldCornerRadius="10"
                                 materialDesign:TextFieldAssist.DecorationVisibility="Hidden">

@@ -285,6 +285,8 @@ public class SubsData : NotifyPropertyChanged
         }
     } = "";
 
+    public bool IsTranslated { get; set => Set(ref field, value); }
+
     public Language? Language { get; set => Set(ref field, value); }
 
     public void Reset()
