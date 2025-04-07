@@ -80,6 +80,13 @@ public class SettingsAboutVM : Bindable
 
             new LibraryInfo
             {
+                Name = "komutan/NMeCab",
+                Description = "Japanese morphological analyzer on .NET",
+                Url = "https://github.com/komutan/NMeCab"
+            },
+
+            new LibraryInfo
+            {
                 Name = "PrismLibrary/Prism",
                 Description = "A framework for building MVVM application",
                 Url = "https://github.com/PrismLibrary/Prism"

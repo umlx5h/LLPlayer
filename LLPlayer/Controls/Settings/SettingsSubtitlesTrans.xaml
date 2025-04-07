@@ -40,6 +40,8 @@
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
 
+        <local:TranslateServiceTypeEnumToStringConverter x:Key="TranslateServiceTypeEnumToStringConv" />
+        <local:TranslateServiceTypeEnumToUrlConverter x:Key="TranslateServiceTypeEnumToUrlConv" />
         <local:TargetLanguageEnumToStringConverter x:Key="TargetLanguageEnumToStringConv" />
         <local:TargetLanguageEnumToNoSupportedTranslateServiceConverter x:Key="TargetLanguageEnumToNoSupportedTranslateServiceConv" />
 
@@ -321,14 +323,20 @@
                             FontSize="14"
                             FontWeight="Medium"
                             Width="180">
-                            <Hyperlink Cursor="Help" NavigateUri="https://github.com/umlx5h/LLPlayer/wiki/Translation-Engine" helpers:HyperlinkHelper.OpenInBrowser="True">
+                            <Hyperlink Cursor="Help" NavigateUri="{Binding SelectedTranslateServiceType, Converter={StaticResource TranslateServiceTypeEnumToUrlConv}}" helpers:HyperlinkHelper.OpenInBrowser="True">
                                 Translation Engine
                             </Hyperlink>
                         </TextBlock>
                         <ComboBox
-                            Width="100"
+                            Width="180"
                             ItemsSource="{Binding Source={StaticResource TranslateServiceTypeEnum}}"
-                            SelectedItem="{Binding SelectedTranslateServiceType}" />
+                            SelectedItem="{Binding SelectedTranslateServiceType}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource TranslateServiceTypeEnumToStringConv}}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
                     </StackPanel>
 
                     <ContentControl Content="{Binding SelectedServiceSettings}" />
@@ -369,7 +377,7 @@
                 </StackPanel>
             </GroupBox>
 
-            <GroupBox Header="Translation Chat Config (for Ollama / LMStudio / OpenAI / Claude)">
+            <GroupBox Header="Translation Chat Config (for LLM API such as Ollama, OpenAI, etc...)">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock

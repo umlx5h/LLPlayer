@@ -27,7 +27,7 @@ public class TranslateChatConfig : NotifyPropertyChanged
 
     public ChatTranslateMethod TranslateMethod { get; set => Set(ref field, value); } = ChatTranslateMethod.KeepContext;
 
-    public int SubtitleContextCount { get; set => Set(ref field, value); } = 10;
+    public int SubtitleContextCount { get; set => Set(ref field, value); } = 6;
 
     public ChatContextRetainPolicy ContextRetainPolicy { get; set => Set(ref field, value); } = ChatContextRetainPolicy.Reset;
 

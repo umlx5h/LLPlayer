@@ -490,7 +490,7 @@ public class AppConfigSubs : Bindable
 
     public Color SubsStrokeColor { get; set => Set(ref field, value); } = Colors.Black;
 
-    public double SubsStrokeThickness { get; set => Set(ref field, value); } = 2.8;
+    public double SubsStrokeThickness { get; set => Set(ref field, value); } = 3.2;
 
     internal void UpdateSubsConfig()
     {

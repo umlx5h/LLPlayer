@@ -43,6 +43,7 @@ public partial class WordPopup : UserControl, INotifyPropertyChanged
         FL.PlayerConfig.Subtitles.PropertyChanged += SubtitlesOnPropertyChanged;
         FL.PlayerConfig.Subtitles.TranslateChatConfig.PropertyChanged += ChatConfigOnPropertyChanged;
         FL.Player.SubtitlesManager[0].PropertyChanged += SubManagerOnPropertyChanged;
+        FL.Player.SubtitlesManager[1].PropertyChanged += SubManagerOnPropertyChanged;
         FL.Config.Subs.PropertyChanged += SubsOnPropertyChanged;
 
         InitializeContextMenu();

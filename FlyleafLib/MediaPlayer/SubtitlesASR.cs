@@ -1054,9 +1054,7 @@ public class FasterWhisperASRService : IASRService
     public async IAsyncEnumerable<(string text, TimeSpan start, TimeSpan end, string language)> Do(MemoryStream waveStream, [EnumeratorCancellation] CancellationToken token)
     {
         string tempFilePath = Path.GetTempFileName();
-
-        // TODO: L: Currently not output option, so specify temp folder
-        // https://github.com/Purfview/whisper-standalone-win/issues/429
+        // because no output option
         string outputFilePath = Path.ChangeExtension(tempFilePath, "srt");
 
         // write WAV to tmp folder

@@ -87,6 +87,48 @@ internal class TargetLanguageEnumToStringConverter : IValueConverter
     }
 }
 
+[ValueConversion(typeof(TranslateServiceType), typeof(string))]
+internal class TranslateServiceTypeEnumToStringConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is TranslateServiceType enumValue)
+        {
+            if (enumValue.IsLLM())
+            {
+                return $"{enumValue} (LLM)";
+            }
+
+            return $"{enumValue}";
+        }
+        return value?.ToString() ?? string.Empty;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+[ValueConversion(typeof(TranslateServiceType), typeof(string))]
+internal class TranslateServiceTypeEnumToUrlConverter : IValueConverter
+{
+    private static string BaseUrl = "https://github.com/umlx5h/LLPlayer/wiki/Translation-Engine";
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is TranslateServiceType enumValue)
+        {
+            return $"{BaseUrl}#{enumValue.ToString().ToLower()}";
+        }
+        return BaseUrl;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
+
 [ValueConversion(typeof(TargetLanguage), typeof(string))]
 internal class TargetLanguageEnumToNoSupportedTranslateServiceConverter : IValueConverter
 {

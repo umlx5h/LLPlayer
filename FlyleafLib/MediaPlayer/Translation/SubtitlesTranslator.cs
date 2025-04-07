@@ -239,7 +239,7 @@ public class SubTranslator
                 concurrency = 1;
             }
 
-            if (concurrency == 1)
+            if (concurrency <= 1)
             {
                 // sequentially (important to maintain execution order for LLM)
                 foreach (var sub in translateSubs)

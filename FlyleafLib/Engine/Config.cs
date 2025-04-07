@@ -1189,7 +1189,16 @@ public class Config : NotifyPropertyChanged
         /// <summary>
         /// Number of concurrent requests to translation services
         /// </summary>
-        public int TranslateMaxConcurrency { get; set => Set(ref field, value); } = 2;
+        public int TranslateMaxConcurrency {
+            get;
+            set
+            {
+                if (value <= 0)
+                    return;
+
+                Set(ref field, value);
+            }
+        } = 2;
 
         /// <summary>
         /// Chat-style LLM API config
