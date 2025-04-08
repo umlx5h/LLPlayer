@@ -4,7 +4,7 @@
 
 <h3 align="center">The media player for language learning.</h3>
 
-<p align="center">A video player focused on subtitle-related features such as dual subtitles, AI-generated subtitles, real-time OCR, real-time translation, word lookup, and more!</p>
+<p align="center">A video player focused on subtitle-related features such as dual subtitles, AI-generated subtitles, real-time translation, word lookup, and more!</p>
 
 <p align="center">
 <a href="https://llplayer.com">Website</a> ·
@@ -25,7 +25,8 @@ LLPlayer has many features for language learning that are not available in norma
 
 - **Dual Subtitles:** Two subtitles can be displayed simultaneously. Both text subtitles and bitmap subtitles are supported.
 - **AI-generated subtitles (ASR):** Real-time automatic subtitle generation from any video and audio, powered by [OpenAI Whisper](https://github.com/openai/whisper). two engines [whisper.cpp](https://github.com/ggerganov/whisper.cpp) and [faster-whisper](https://github.com/SYSTRAN/faster-whisper) are supported.
-- **Real-time Translation:** Supports Google and DeepL API, **134** languages are currently supported!
+- **Real-time Translation:** Supports [many translation engines](https://github.com/umlx5h/LLPlayer/wiki/Translation-Engine), such as Google, DeepL, Ollama, LM Studio, OpenAI.
+- **Context-aware Translation:** Highly accurate translation by recognizing the context of subtitles using LLM.
 - **Real-time OCR subtitles:** Can convert bitmap subtitles to text subtitles in real time, powered by [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) and Microsoft OCR.
 - **Subtitles Sidebar:** Both text and bitmap are supported. Seek and word lookup available. Has anti-spoiler functionality.
 - **Instant word lookup:** Word lookup and browser searches can be performed on subtitle text.
@@ -76,12 +77,17 @@ Press `CTRL+.` or click the settings icon on the seek bar to open the settings w
 
 4. **Download Whisper Model for ASR**
 
-From `Subtitles > ASR` section, please download Whisper's models.
+From `Subtitles > ASR` section, please download Whisper's models for `whisper.cpp`.
 You can choose from a variety of models, the larger the size, the higher the load and accuracy.
 
 Note that models with `En` endings are only available in English.
 
 `Audio Language` allows you to manually set the language of the video (audio). The default is auto-detection.
+
+If you want to use the `faster-whisper` engine instead of `whisper.cpp`, please download the engine instead of models from the settings.
+With `faster-whisper`, selected model is automatically downloaded the first time, so no prior download is required.
+
+A description of each engine can be found [here](https://github.com/umlx5h/LLPlayer/wiki/Whisper-Engine).
 
 5. **Set Translation Target Language**
 
@@ -90,9 +96,9 @@ The `source language` is detected automatically.
 
 From `Subtitles > Translate` section, please set the `Target Language` at the top.
 
-The default translation engine is `Google Translate`.
+The default translation engine is `GoogleV1`.
 
-You can change it to `DeepL` from the settings below, but you will need to configure API key. (free for a certain amount of use)
+If you want to use another translation engine, you will need to configure it in settings. You will find detail information in [here](https://github.com/umlx5h/LLPlayer/wiki/Translation-Engine).
 
 6. **Play any videos with subtitles!**
 
@@ -168,22 +174,21 @@ Guiding Principles for LLPlayer
 
 - [ ] Stabilization of the application
 - [ ] Allow customizable mouse shortcuts
-- [ ] Documentation / More Help
+- [X] Documentation / More Help
 
 ### Later
 
 - [ ] Support for dictionary API or for specific languages (English, Japanese, ...)
 - [ ] Dedicated support for Japanese for watching anime.
-  - [ ] Word Segmentation Handling
+  - [X] Word Segmentation Handling
   - [ ] [Incorporate Yomitan or 10ten to video player](https://github.com/umlx5h/LLPlayer/issues/13)
 - [ ] Text-to-Speech integration
-- [ ] More translation engine such as local LLM
-  - [ ] Support translation as plugin?
+- [X] More translation engine such as local LLM
 
 ### Future
 
 - [ ] Cross-Platform Support using Avalonia (Linux / Mac)
-- [ ] Context-Aware Translation
+- [X] Context-Aware Translation
 - [ ] Word Management (reference to LingQ, Language Reactor)
 - [ ] Anki Integration
 
@@ -244,18 +249,17 @@ LLPlayer is mainly inspired by this with its functionality and interface.
 
 ## ❓ FAQ
 
-#### Q: Does ASR or OCR require network communication?
+#### Q: Does ASR or OCR or translation require network communication?
 
-AI subtitle generation (ASR) and OCR subtitles are all performed locally.  
+ASR (auto-generated subtitles) and OCR subtitles are all performed locally.  
 Therefore, no network communication occurs at all.
 
 However, the model needs to be downloaded only once for the first time, and this is the only place where network communication occurs.
 
-Network communication is required when using the translation function, but this is an optional feature, so it is possible to choose not to communicate at all.
-
+Translation works locally if you choose Ollama or LM Studio API.  
 Your privacy is fully guaranteed because it is free and OSS.
 
-#### Q: How can I speed up the ASR?
+#### Q: How can I speed up the ASR? (whisper.cpp)
 
 By default, only the CPU is used to generate subtitles.
 Setting `Threads` to `2 or more` from the ASR settings may improve performance.
@@ -300,6 +304,30 @@ You can download latest version executable from the following.
 https://github.com/yt-dlp/yt-dlp/releases/
 
 If you want to update, please download and copy it to the specified path.
+
+#### Q: What is the difference between VLC and LLPlayer?
+
+VLC is a general-purpose media player.  
+In contrast, LLPlayer has many useful features especially for language learning.
+
+|                                  | VLC                            | LLPlayer                          |
+| -------------------------------- | ------------------------------ | --------------------------------- |
+| Cross-Platform (Win, Linux, Mac) | ✔️                              | ❌                                 |
+| Auto-generated subtitles         | not yet (whisper.cpp)          | ✔️ (whisper.cpp, faster-whisper)   |
+| Real-time translation            | not yet (probably SeamlessM4T) | ✔️ (Google, DeepL, Ollama, OpenAI) |
+| Context-aware translation        | ❌ (probably)                   | ✔️ (by LLM)                        |
+| Word Translation                 | ❌                              | ✔️                                 |
+| Word Search                      | ❌                              | ✔️                                 |
+| Subtitle Sidebar                 | ❌                              | ✔️                                 |
+| Subtitle Seeking                 | ❌                              | ✔️                                 |
+| Dual Subtitles                   | ✔️ (awkward to use)             | ✔️                                 |
+
+#### Q: Why perform subtitle generation and translation in real time?
+
+Laziness is the main reason. Generating subtitles in advance is quite tedious, especially for online video.  
+ASR and translation can be performed from any playback position, so even if you only want to watch a portion of the video with subtitles, you can do so without waiting at all.
+
+In addition, advances in software and hardware allow for maximum accuracy in ASR and translation.
 
 ## 📝 LICENSE
 
