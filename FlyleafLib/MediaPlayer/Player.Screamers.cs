@@ -359,7 +359,7 @@ unsafe partial class Player
                             {
                                 timestamp = cur.StartTime.Ticks + Config.Subtitles[i].Delay,
                                 duration = (uint)cur.Duration.TotalMilliseconds,
-                                text = cur.DisplayText
+                                isTranslated = cur.UseTranslated
                             };
                         }
                     }
@@ -752,7 +752,7 @@ unsafe partial class Player
                         {
                             timestamp = cur.StartTime.Ticks + Config.Subtitles[i].Delay,
                             duration = (uint)cur.Duration.TotalMilliseconds,
-                            text = cur.DisplayText
+                            isTranslated = cur.UseTranslated
                         };
                     }
                 }
@@ -764,10 +764,10 @@ unsafe partial class Player
                         // If the subtitle currently playing is not translated, change to the translated for display
                         if (sFramesPrev[i] != null &&
                             sFramesPrev[i].timestamp == cur.StartTime.Ticks + Config.Subtitles[i].Delay &&
-                            sFramesPrev[i].text != cur.DisplayText)
+                            sFramesPrev[i].isTranslated != cur.UseTranslated)
                         {
                             SubtitleDisplay(cur.DisplayText, i, cur.UseTranslated);
-                            sFramesPrev[i].text = cur.DisplayText;
+                            sFramesPrev[i].isTranslated = cur.UseTranslated;
                         }
                     }
                 }

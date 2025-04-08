@@ -12,6 +12,9 @@ public class SubtitlesFrame : FrameBase
     public List<SubStyle> subStyles;
     public AVSubtitle sub;
     public SubtitlesFrameBitmap bitmap;
+
+    // for translation switch
+    public bool isTranslated;
 }
 
 public class SubtitlesFrameBitmap

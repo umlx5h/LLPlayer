@@ -260,7 +260,7 @@ public abstract class OpenAIBaseTranslateSettings : NotifyPropertyChanged, ITran
     [JsonIgnore]
     public abstract string DefaultEndpoint { get; }
     public string Model { get; set => Set(ref field, value); }
-    public int TimeoutMs { get; set => Set(ref field, value); } = 20000;
+    public int TimeoutMs { get; set => Set(ref field, value); } = 15000;
     public int TimeoutHealthMs { get; set => Set(ref field, value); } = 2000;
 
     /// <summary>
@@ -389,6 +389,11 @@ public abstract class OpenAIBaseTranslateSettings : NotifyPropertyChanged, ITran
 
 public class LMStudioTranslateSettings : OpenAIBaseTranslateSettings
 {
+    public LMStudioTranslateSettings()
+    {
+        TimeoutMs = 20000;
+    }
+
     [JsonIgnore]
     public override TranslateServiceType ServiceType => TranslateServiceType.LMStudio;
     private const string _defaultEndpoint = "http://127.0.0.1:1234";

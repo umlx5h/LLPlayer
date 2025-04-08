@@ -319,7 +319,7 @@ partial class Player
                                 {
                                     timestamp = cur.StartTime.Ticks + Config.Subtitles[i].Delay,
                                     duration = (uint)cur.Duration.TotalMilliseconds,
-                                    text = cur.DisplayText
+                                    isTranslated = cur.UseTranslated
                                 };
                             }
                         }
