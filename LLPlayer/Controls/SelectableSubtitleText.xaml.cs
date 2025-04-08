@@ -170,6 +170,11 @@ public partial class SelectableSubtitleText : UserControl
         }
     }
 
+    //  SelectableTextBox uses char.IsPunctuation(), so use a regular expression for it.
+    // TODO: L: Sharing the code with TextBox
+    private static readonly Regex WordSplitReg = new(@"((?:[^\P{P}'-]+|\s))", RegexOptions.Compiled);
+    private static readonly Regex WordSplitFullReg = new(@"^(?:[^\P{P}'-]+|\s)$", RegexOptions.Compiled);
+
     private static readonly Lazy<MeCabIpaDicTagger> MeCabTagger = new(() => MeCabIpaDicTagger.Create(), true);
 
     private void SetText(string text)
@@ -200,10 +205,6 @@ public partial class SelectableSubtitleText : UserControl
 
         var wordOffset = 0;
 
-        //  SelectableTextBox uses char.IsPunctuation(), so use a regular expression for it.
-        // TODO: L: Sharing the code with TextBox
-        string splitPattern = @"((?:[^\P{P}'-]+|\s))";
-
         // Use an OutlinedTextBlock for each word to display the border Text and enclose it in a WrapPanel
         for (int i = 0; i < lines.Length; i++)
         {
@@ -228,8 +229,7 @@ public partial class SelectableSubtitleText : UserControl
             }
             else
             {
-                words = Regex.Split(lines[i], splitPattern)
-                    .Where(w => w != "").ToList();
+                words = WordSplitReg.Split(lines[i]).Where(w => w != "").ToList();
             }
 
             foreach (string word in words)
@@ -252,7 +252,7 @@ public partial class SelectableSubtitleText : UserControl
                     continue;
                 }
 
-                bool isSplitChar = Regex.IsMatch(word, splitPattern);
+                bool isSplitChar = WordSplitFullReg.IsMatch(word);
 
                 OutlinedTextBlock textBlock = new()
                 {
