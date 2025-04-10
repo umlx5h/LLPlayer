@@ -159,7 +159,7 @@ public class SubTranslator
             {
                 if (_subManager.Subs[newIndex].Duration.TotalMilliseconds > 320)
                 {
-                    await Task.Delay(300, token).ConfigureAwait(false);
+                    await Task.Delay(300, token);
                 }
             }
             token.ThrowIfCancellationRequested();
@@ -167,12 +167,14 @@ public class SubTranslator
             if (_translateTask == null && !_isReset)
             {
                 // singleton task
-                _translateTask = TranslateAheadAsync(newIndex, _config.TranslateCountBackward, _config.TranslateCountForward);
-                _translateTask.ContinueWith((t) =>
+                // Ensure that it is not executed in the main thread because it scans all subtitles
+                Task task = Task.Run(async () =>
                 {
-                    // clear when completed
+                    await TranslateAheadAsync(newIndex, _config.TranslateCountBackward, _config.TranslateCountForward);
+                    // clear when completed (above line doesn't throw exception)
                     _translateTask = null;
-                });
+                }, token);
+                _translateTask = task;
             }
         }
     }
@@ -262,7 +264,7 @@ public class SubTranslator
                     async (sub, ct) =>
                     {
                         await TranslateSubAsync(sub, ct);
-                    }).ConfigureAwait(false);
+                    });
             }
         }
         catch (OperationCanceledException)
@@ -300,7 +302,7 @@ public class SubTranslator
             string text = sub.Text!.ReplaceLineEndings(" ");
             if (CanDebug) Log.Debug($"Translation Start {sub.Index} - {text}");
             EnsureTranslationService();
-            string translated = await _translateService!.TranslateAsync(text, token).ConfigureAwait(false);
+            string translated = await _translateService!.TranslateAsync(text, token);
             sub.TranslatedText = translated;
 
             if (CanDebug)
