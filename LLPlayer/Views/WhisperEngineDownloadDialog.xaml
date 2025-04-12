@@ -37,10 +37,11 @@
         </Grid.RowDefinitions>
 
         <!-- Select engine -->
-        <TextBlock Grid.Row="0" FontWeight="Bold" Margin="0 0 0 16">
-            Download <Hyperlink NavigateUri="{Binding Source={x:Static vm:WhisperEngineDownloadDialogVM.EngineURL}}" helpers:HyperlinkHelper.OpenInBrowser="True">
-                <TextBlock Text="{Binding Source={x:Static vm:WhisperEngineDownloadDialogVM.EngineFile}}"  />
-            </Hyperlink>
+        <TextBlock  Grid.Row="0" Margin="0 0 0 16" FontWeight="Bold">
+        Download <Hyperlink NavigateUri="{Binding Source={x:Static vm:WhisperEngineDownloadDialogVM.EngineURL}}" helpers:HyperlinkHelper.OpenInBrowser="True">
+                <TextBlock Text="{Binding Source={x:Static vm:WhisperEngineDownloadDialogVM.EngineFile}}" /></Hyperlink>
+                <LineBreak />
+            <Run FontWeight="Normal" Text="-> Whisper\Faster-Whisper-XXL\faster-whisper-xxl.exe"/>
         </TextBlock>
 
         <!-- Download & Cancel button -->
