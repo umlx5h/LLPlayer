@@ -147,6 +147,8 @@ Install Visual Studio or JetBrains Rider and open the following slnx file.
 $ ./LLPlayer.slnx
 ```
 
+In Visual Studio, You need to add preview support for slnx format from the setting beforehand.
+
 3. **Build**
 
 Select `LLPlayer` project and then build and run.
