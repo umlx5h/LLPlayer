@@ -175,7 +175,8 @@ public class FasterWhisperConfig : NotifyPropertyChanged
         "distil-large-v2",
         "distil-medium.en",
         "distil-small.en",
-        "distil-large-v3"
+        "distil-large-v3",
+        "distil-large-v3.5"
     ];
 
     public bool UseManualEngine { get; set => Set(ref field, value); }
