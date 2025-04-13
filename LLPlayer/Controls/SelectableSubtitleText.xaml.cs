@@ -145,6 +145,15 @@ public partial class SelectableSubtitleText : UserControl
         set => SetValue(StrokeThicknessInitialProperty, value);
     }
 
+    public static readonly DependencyProperty WordHoverBorderBrushProperty =
+        DependencyProperty.Register(nameof(WordHoverBorderBrush), typeof(Brush), typeof(SelectableSubtitleText), new FrameworkPropertyMetadata(Brushes.Cyan));
+
+    public Brush WordHoverBorderBrush
+    {
+        get => (Brush)GetValue(WordHoverBorderBrushProperty);
+        set => SetValue(WordHoverBorderBrushProperty, value);
+    }
+
     private static void OnWidthPercentageChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var ctl = (SelectableSubtitleText)d;
@@ -213,10 +222,9 @@ public partial class SelectableSubtitleText : UserControl
             if (Language != null && Language.ISO6391 == "ja")
             {
                 // word segmentation for Japanese
-                words = new List<string>();
-
                 // TODO: L: Also do word segmentation in sidebar
                 var nodes = MeCabTagger.Value.Parse(lines[i]);
+                words = new List<string>(nodes.Length);
                 foreach (var node in nodes)
                 {
                     // If there are space-separated characters, such as English, add them manually since they are not on the Surface
@@ -301,7 +309,7 @@ public partial class SelectableSubtitleText : UserControl
                     // Change background color on mouse over
                     border.MouseEnter += (_, _) =>
                     {
-                        border.BorderBrush = SubIndex == 0 ? Brushes.Yellow : Brushes.Green;
+                        border.BorderBrush = WordHoverBorderBrush;
                         border.Background = new SolidColorBrush(Color.FromArgb(80, 127, 127, 127));
                     };
                     border.MouseLeave += (_, _) =>
