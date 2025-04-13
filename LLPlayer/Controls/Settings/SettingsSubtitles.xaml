@@ -7,6 +7,7 @@
              xmlns:vm="clr-namespace:LLPlayer.ViewModels"
              xmlns:helpers="clr-namespace:LLPlayer.Extensions"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:LLPlayer.Controls.Settings.Controls"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:SettingsSubtitlesVM}"
              d:Foreground="White"
@@ -98,7 +99,7 @@
                             helpers:TextBoxHelper.OnlyNumeric="Double"/>
                     </StackPanel>
 
-                    <StackPanel Orientation="Horizontal" Margin="0 16 0 0">
+                    <StackPanel Orientation="Horizontal">
                         <TextBlock
                             Width="180"
                             Text="Fonts" />
@@ -107,22 +108,79 @@
                             Height="auto"
                             MaxHeight="100"
                             Command="{Binding FL.Action.CmdSetSubtitlesFont}">
-                            <StackPanel
-                                Orientation="Horizontal"
-                                Margin="3">
-                                <Rectangle
-                                    Margin=" 0 0 10 0"
-                                    Width="18"
-                                    Height="18"
-                                    Fill="{Binding FL.Config.Subs.SubsFontColor, Converter={StaticResource ColorToBrushConv}}"/>
-                                <TextBlock TextWrapping="Wrap" MaxWidth="200" VerticalAlignment="Center">
-                                    <Run Text="{Binding FL.Config.Subs.SubsFontFamily}"/>
-                                    <Run Text="("/>
-                                    <Run Text="{Binding FL.Config.Subs.SubsFontWeight}"/>
-                                    <Run Text="), "/>
-                                    <Run Text="{Binding FL.Config.Subs.SubsFontSize}"/>
-                                </TextBlock>
-                            </StackPanel>
+                            <TextBlock TextWrapping="Wrap" MaxWidth="200" VerticalAlignment="Center">
+                                <Run Text="{Binding FL.Config.Subs.SubsFontFamily}"/>
+                                <Run Text="("/>
+                                <Run Text="{Binding FL.Config.Subs.SubsFontWeight}"/>
+                                <Run Text="), "/>
+                                <Run Text="{Binding FL.Config.Subs.SubsFontSize}"/>
+                            </TextBlock>
+                        </Button>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0 0 0 16">
+                        <TextBlock
+                            Width="180"
+                            Text="Font Color" />
+                        <Button
+                            Background="{x:Null}"
+                            Padding="0"
+                            BorderThickness="0"
+                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}">
+                            <Button.CommandParameter>
+                                <controls:ColorPicker PickerColor="{Binding FL.Config.Subs.SubsFontColor, Mode=TwoWay}" />
+                            </Button.CommandParameter>
+                            <Rectangle
+                                Fill="{Binding FL.Config.Subs.SubsFontColor, Converter={StaticResource ColorToBrushConv}}"
+                                Width="30"
+                                Height="30" />
+                        </Button>
+                        <TextBlock Margin="10 0 0 0" Text="#" />
+                        <TextBox Width="55" MaxLength="6" helpers:TextBoxMiscHelper.IsHexValidationEnabled="True">
+                            <TextBox.Text>
+                                <Binding
+                                    Path="FL.Config.Subs.SubsFontColor"
+                                    Converter="{StaticResource ColorToHexConv}"
+                                    UpdateSourceTrigger="PropertyChanged">
+                                    <Binding.ValidationRules>
+                                        <StaticResource ResourceKey="ColorHexRule" />
+                                    </Binding.ValidationRules>
+                                </Binding>
+                            </TextBox.Text>
+                        </TextBox>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0 0 0 16">
+                        <TextBlock
+                            Width="180"
+                            Text="Stroke Color" />
+                        <Button
+                            Background="{x:Null}"
+                            Padding="0"
+                            BorderThickness="0"
+                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}">
+                            <Button.CommandParameter>
+                                <controls:ColorPicker PickerColor="{Binding FL.Config.Subs.SubsStrokeColor, Mode=TwoWay}" />
+                            </Button.CommandParameter>
+                            <Rectangle
+                                Fill="{Binding FL.Config.Subs.SubsStrokeColor, Converter={StaticResource ColorToBrushConv}}"
+                                Width="30"
+                                Height="30" />
+                        </Button>
+                        <TextBlock Margin="10 0 0 0" Text="#" />
+                        <TextBox Width="55" MaxLength="6" helpers:TextBoxMiscHelper.IsHexValidationEnabled="True">
+                            <TextBox.Text>
+                                <Binding
+                                    Path="FL.Config.Subs.SubsStrokeColor"
+                                    Converter="{StaticResource ColorToHexConv}"
+                                    UpdateSourceTrigger="PropertyChanged">
+                                    <Binding.ValidationRules>
+                                        <StaticResource ResourceKey="ColorHexRule" />
+                                    </Binding.ValidationRules>
+                                </Binding>
+                            </TextBox.Text>
+                        </TextBox>
+                    </StackPanel>
                         </Button>
                     </StackPanel>
                 </StackPanel>
@@ -242,7 +300,7 @@
                             helpers:TextBoxHelper.OnlyNumeric="Uint"/>
                     </StackPanel>
 
-                    <StackPanel Orientation="Horizontal" Margin="0 16 0 0">
+                    <StackPanel Orientation="Horizontal">
                         <TextBlock
                             Width="180"
                             Text="Fonts" />

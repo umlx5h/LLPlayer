@@ -23,9 +23,9 @@
             <TextBlock Text="#" VerticalAlignment="Center" />
             <TextBox
                 Margin="2 0 10 0"
-                Width="50"
+                Width="55"
                 MaxLength="6"
-                helpers:TextBoxValidateHelper.IsHexValidationEnabled="True"
+                helpers:TextBoxMiscHelper.IsHexValidationEnabled="True"
                 VerticalAlignment="Center">
                 <TextBox.Text>
                     <Binding

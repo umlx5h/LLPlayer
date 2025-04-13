@@ -27,7 +27,6 @@
                         <TextBlock
                             Width="180"
                             Text="Primary Color" />
-
                         <Button
                             Background="{x:Null}"
                             Padding="0"
@@ -36,16 +35,13 @@
                             <Button.CommandParameter>
                                 <controls:ColorPicker PickerColor="{Binding FL.Config.Theme.PrimaryColor, Mode=TwoWay}" />
                             </Button.CommandParameter>
-
                             <Rectangle
                                 Fill="{Binding FL.Config.Theme.PrimaryColor, Converter={StaticResource ColorToBrushConv}}"
                                 Width="30"
                                 Height="30" />
                         </Button>
-
                         <TextBlock Margin="10 0 0 0" Text="#" />
-
-                        <TextBox Width="50" MaxLength="6" helpers:TextBoxMiscHelper.IsHexValidationEnabled="True">
+                        <TextBox Width="55" MaxLength="6" helpers:TextBoxMiscHelper.IsHexValidationEnabled="True">
                             <TextBox.Text>
                                 <Binding
                                     Path="FL.Config.Theme.PrimaryColor"
@@ -63,7 +59,6 @@
                         <TextBlock
                             Width="180"
                             Text="Secondary Color" />
-
                         <Button
                             Background="{x:Null}"
                             Padding="0"
@@ -72,16 +67,13 @@
                             <Button.CommandParameter>
                                 <controls:ColorPicker PickerColor="{Binding FL.Config.Theme.SecondaryColor, Mode=TwoWay}" />
                             </Button.CommandParameter>
-
                             <Rectangle
                                 Fill="{Binding FL.Config.Theme.SecondaryColor, Converter={StaticResource ColorToBrushConv}}"
                                 Width="30"
                                 Height="30" />
                         </Button>
-
                         <TextBlock Margin="10 0 0 0" Text="#" />
-
-                        <TextBox Width="50" MaxLength="6" helpers:TextBoxMiscHelper.IsHexValidationEnabled="True">
+                        <TextBox Width="55" MaxLength="6" helpers:TextBoxMiscHelper.IsHexValidationEnabled="True">
                             <TextBox.Text>
                                 <Binding
                                     Path="FL.Config.Theme.SecondaryColor"
