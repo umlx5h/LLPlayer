@@ -11,9 +11,24 @@ public class WidthPercentageMultiConverter : IMultiValueConverter
 {
     public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
     {
-        if (values[0] is double actualWidth && values[1] is double percentage)
+        if (values[0] is double actualWidth &&
+            values[1] is double maxWidth &&
+            values[2] is double percentage)
         {
-            return actualWidth * (percentage / 100.0);
+            if (percentage >= 100.0)
+            {
+                // respect line break
+                return actualWidth;
+            }
+
+            var calcWidth = actualWidth * (percentage / 100.0);
+
+            if (maxWidth > 0)
+            {
+                return Math.Min(maxWidth, calcWidth);
+            }
+
+            return calcWidth;
         }
         return 0;
     }

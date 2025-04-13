@@ -16,6 +16,7 @@
         <local:AlignableWrapPanel.Width>
             <MultiBinding Converter="{StaticResource WidthPercentageMultiConv}">
                 <Binding Path="ActualWidth" RelativeSource="{RelativeSource AncestorType=Window}"/>
+                <Binding Path="MaxFixedWidth" Mode="OneWay"/>
                 <Binding Path="WidthPercentageFix" Mode="OneWay"/>
             </MultiBinding>
         </local:AlignableWrapPanel.Width>

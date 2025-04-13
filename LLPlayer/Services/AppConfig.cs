@@ -486,6 +486,20 @@ public class AppConfigSubs : Bindable
         }
     } = 66.0;
 
+    public double SubsMaxWidth
+    {
+        get;
+        set
+        {
+            if (value < 0)
+            {
+                return;
+            }
+
+            Set(ref field, value);
+        }
+    } = 0;
+
     public bool SubsIgnoreLineBreak { get; set => Set(ref field, value); }
 
     public Color SubsStrokeColor { get; set => Set(ref field, value); } = Colors.Black;

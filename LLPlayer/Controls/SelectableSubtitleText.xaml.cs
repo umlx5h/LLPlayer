@@ -130,6 +130,15 @@ public partial class SelectableSubtitleText : UserControl
     public static readonly DependencyProperty IgnoreLineBreakProperty =
         DependencyProperty.Register(nameof(IgnoreLineBreak), typeof(bool), typeof(SelectableSubtitleText), new FrameworkPropertyMetadata(false));
 
+    public double MaxFixedWidth
+    {
+        get => (double)GetValue(MaxFixedWidthProperty);
+        set => SetValue(MaxFixedWidthProperty, value);
+    }
+
+    public static readonly DependencyProperty MaxFixedWidthProperty =
+        DependencyProperty.Register(nameof(MaxFixedWidth), typeof(double), typeof(SelectableSubtitleText), new FrameworkPropertyMetadata(0.0));
+
     public bool IgnoreLineBreak
     {
         get => (bool)GetValue(IgnoreLineBreakProperty);

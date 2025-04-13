@@ -64,6 +64,29 @@
 
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
+                            Width="180">
+                            Max Width
+                            <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                <ToolTipService.ToolTip>
+                                    <TextBlock
+                                        Text="Sets the maximum width of the subtitle; if set to 0, no limit is set."
+                                        TextWrapping="Wrap"
+                                        MaxWidth="400" />
+                                </ToolTipService.ToolTip>
+                                <materialDesign:PackIcon
+                                    Kind="Information"
+                                    Width="16" Height="16"
+                                    Margin="4 0 0 0" />
+                            </InlineUIContainer>
+                        </TextBlock>
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.Config.Subs.SubsMaxWidth}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
                             Width="180"
                             Text="Ignore Line Break" />
                         <ToggleButton
