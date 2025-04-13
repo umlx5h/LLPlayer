@@ -336,6 +336,45 @@ public class AppConfigSubs : Bindable
 
     public string SubsFontStyle { get; set => Set(ref field, value); } = FontStyles.Normal.ToString();
 
+    public Color SubsBackgroundColor
+    {
+        get;
+        set
+        {
+            if (Set(ref field, value))
+            {
+                OnPropertyChanged(nameof(SubsBackgroundBrush));
+            }
+        }
+    } = Colors.Black;
+
+    public double SubsBackgroundOpacity
+    {
+        get;
+        set
+        {
+            if (value < 0.0 || value > 1.0)
+            {
+                return;
+            }
+
+            if (Set(ref field, value))
+            {
+                OnPropertyChanged(nameof(SubsBackgroundBrush));
+            }
+        }
+    } = 0; // default no background
+
+    [JsonIgnore]
+    public SolidColorBrush SubsBackgroundBrush
+    {
+        get
+        {
+            byte alpha = (byte)(SubsBackgroundOpacity * 255);
+            return new SolidColorBrush(Color.FromArgb(alpha, SubsBackgroundColor.R, SubsBackgroundColor.G, SubsBackgroundColor.B));
+        }
+    }
+
     [JsonIgnore]
     public Size SubsPanelSize
     {

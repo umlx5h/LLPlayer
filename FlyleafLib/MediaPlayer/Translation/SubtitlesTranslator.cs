@@ -170,10 +170,15 @@ public class SubTranslator
                 // Ensure that it is not executed in the main thread because it scans all subtitles
                 Task task = Task.Run(async () =>
                 {
-                    await TranslateAheadAsync(newIndex, _config.TranslateCountBackward, _config.TranslateCountForward);
-                    // clear when completed (above line doesn't throw exception)
-                    _translateTask = null;
-                }, token);
+                    try
+                    {
+                        await TranslateAheadAsync(newIndex, _config.TranslateCountBackward, _config.TranslateCountForward);
+                    }
+                    finally
+                    {
+                        _translateTask = null;
+                    }
+                });
                 _translateTask = task;
             }
         }

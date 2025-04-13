@@ -181,8 +181,49 @@
                             </TextBox.Text>
                         </TextBox>
                     </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0 0 0 16">
+                        <TextBlock
+                            Width="180"
+                            Text="Background Color" />
+                        <Button
+                            Background="{x:Null}"
+                            Padding="0"
+                            BorderThickness="0"
+                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}">
+                            <Button.CommandParameter>
+                                <controls:ColorPicker PickerColor="{Binding FL.Config.Subs.SubsBackgroundColor, Mode=TwoWay}" />
+                            </Button.CommandParameter>
+                            <Rectangle
+                                Fill="{Binding FL.Config.Subs.SubsBackgroundColor, Converter={StaticResource ColorToBrushConv}}"
+                                Width="30"
+                                Height="30" />
                         </Button>
+                        <TextBlock Margin="10 0 0 0" Text="#" />
+                        <TextBox Width="55" MaxLength="6" helpers:TextBoxMiscHelper.IsHexValidationEnabled="True">
+                            <TextBox.Text>
+                                <Binding
+                                    Path="FL.Config.Subs.SubsBackgroundColor"
+                                    Converter="{StaticResource ColorToHexConv}"
+                                    UpdateSourceTrigger="PropertyChanged">
+                                    <Binding.ValidationRules>
+                                        <StaticResource ResourceKey="ColorHexRule" />
+                                    </Binding.ValidationRules>
+                                </Binding>
+                            </TextBox.Text>
+                        </TextBox>
                     </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Background Opacity (0 - 1.0)" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.Config.Subs.SubsBackgroundOpacity}"
+                            helpers:TextBoxHelper.OnlyNumeric="Double" />
+                    </StackPanel>
+
                 </StackPanel>
             </GroupBox>
 

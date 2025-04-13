@@ -30,7 +30,8 @@ public class AlignableWrapPanel : Panel
             child.Measure(constraint);
             Size sz = child.DesiredSize;
 
-            if (curLineSize.Width + sz.Width > constraint.Width) //need to switch to another line
+            if (child is NewLine ||
+                curLineSize.Width + sz.Width > constraint.Width) //need to switch to another line
             {
                 panelSize.Width = Math.Max(curLineSize.Width, panelSize.Width);
                 panelSize.Height += curLineSize.Height;
@@ -66,9 +67,12 @@ public class AlignableWrapPanel : Panel
 
         for (int i = 0; i < children.Count; i++)
         {
-            Size sz = children[i].DesiredSize;
+            UIElement child = children[i];
 
-            if (curLineSize.Width + sz.Width > arrangeBounds.Width) //need to switch to another line
+            Size sz = child.DesiredSize;
+
+            if (child is NewLine ||
+                curLineSize.Width + sz.Width > arrangeBounds.Width) //need to switch to another line
             {
                 ArrangeLine(accumulatedHeight, curLineSize, arrangeBounds.Width, firstInLine, i);
 

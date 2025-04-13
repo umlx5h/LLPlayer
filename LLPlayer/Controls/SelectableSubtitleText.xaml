@@ -13,12 +13,12 @@
         x:Name="wrapPanel"
         HorizontalContentAlignment="Center"
         DataContext="{Binding ElementName=Root}">
-        <local:AlignableWrapPanel.Width>
+        <local:AlignableWrapPanel.MaxWidth>
             <MultiBinding Converter="{StaticResource WidthPercentageMultiConv}">
                 <Binding Path="ActualWidth" RelativeSource="{RelativeSource AncestorType=Window}"/>
                 <Binding Path="MaxFixedWidth" Mode="OneWay"/>
                 <Binding Path="WidthPercentageFix" Mode="OneWay"/>
             </MultiBinding>
-        </local:AlignableWrapPanel.Width>
+        </local:AlignableWrapPanel.MaxWidth>
     </local:AlignableWrapPanel>
 </UserControl>

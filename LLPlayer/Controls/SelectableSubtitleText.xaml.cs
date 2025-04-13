@@ -507,14 +507,4 @@ public partial class SelectableSubtitleText : UserControl
 
 public class NewLine : FrameworkElement
 {
-    public NewLine()
-    {
-        Height = 0;
-        var binding = new Binding
-        {
-            RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(AlignableWrapPanel), 1),
-            Path = new PropertyPath("ActualWidth")
-        };
-        BindingOperations.SetBinding(this, WidthProperty, binding);
-    }
 }
