@@ -31,7 +31,6 @@ public static class HyperlinkHelper
             bool newValue = (bool)e.NewValue;
             if (newValue)
             {
-                hyperlink.RequestNavigate -= OnRequestNavigate;
                 hyperlink.RequestNavigate += OnRequestNavigate;
             }
             else

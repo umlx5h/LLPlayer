@@ -6,73 +6,13 @@
              xmlns:local="clr-namespace:LLPlayer.Controls.Settings"
              xmlns:vm="clr-namespace:LLPlayer.ViewModels"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:LLPlayer.Controls.Settings.Controls"
+             xmlns:helpers="clr-namespace:LLPlayer.Extensions"
              mc:Ignorable="d"
-             d:DataContext="{d:DesignInstance local:SettingsThemes}"
+             d:DataContext="{d:DesignInstance vm:SettingsDialogVM}"
              d:Foreground="White"
              d:Background="Black"
              d:DesignHeight="450" d:DesignWidth="800">
-    <UserControl.Resources>
-        <StackPanel
-            x:Key="ColorPickerDialog"
-            Margin="10"
-            Orientation="Vertical">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock
-                    Margin="0 0 10 0"
-                    Text="Current Color"
-                    VerticalAlignment="Center"/>
-                <Rectangle
-                    Margin="0 0 10 0"
-                    Width="20"
-                    Height="20"
-                    Fill="{Binding PickerColor, Converter={StaticResource ColorToBrushConv}}"
-                    VerticalAlignment="Center"/>
-                <TextBlock Text="#" VerticalAlignment="Center"/>
-                <TextBox
-                    Margin="2 0 10 0"
-                    Width="50"
-                    MaxLength="6"
-                    PreviewTextInput="ValidationHex"
-                    VerticalAlignment="Center">
-                    <TextBox.Text>
-                        <Binding
-                            Path="PickerColor"
-                            Converter="{StaticResource ColorToHexConv}"
-                            UpdateSourceTrigger="PropertyChanged">
-                            <Binding.ValidationRules>
-                                <local:ColorHexRule />
-                            </Binding.ValidationRules>
-                        </Binding>
-                    </TextBox.Text>
-                </TextBox>
-            </StackPanel>
-
-            <materialDesign:ColorPicker
-                Color="{Binding PickerColor, Delay=15}"
-                Width="400"
-                Height="150"
-                Margin="0 20 0 0" />
-
-            <StackPanel
-                Margin="10"
-                Orientation="Horizontal"
-                HorizontalAlignment="Center">
-                <Button
-                    Margin="0 0 20 0"
-                    Width="80"
-                    Content="OK"
-                    FontWeight="ExtraBold"
-                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
-                    CommandParameter="apply" />
-                <Button
-                    Width="80"
-                    Content="Cancel"
-                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
-                    CommandParameter="cancel" />
-            </StackPanel>
-        </StackPanel>
-
-    </UserControl.Resources>
     <ScrollViewer>
         <StackPanel>
             <TextBlock
@@ -92,12 +32,10 @@
                             Background="{x:Null}"
                             Padding="0"
                             BorderThickness="0"
-                            materialDesign:DialogHost.DialogOpenedAttached="ColorPickerDialog_Primary_OnDialogOpened"
-                            materialDesign:DialogHost.DialogClosedAttached="ColorPickerDialog_OnDialogClosed"
-
-
-                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                            CommandParameter="{StaticResource ColorPickerDialog}">
+                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}">
+                            <Button.CommandParameter>
+                                <controls:ColorPicker PickerColor="{Binding FL.Config.Theme.PrimaryColor, Mode=TwoWay}" />
+                            </Button.CommandParameter>
 
                             <Rectangle
                                 Fill="{Binding FL.Config.Theme.PrimaryColor, Converter={StaticResource ColorToBrushConv}}"
@@ -107,14 +45,14 @@
 
                         <TextBlock Margin="10 0 0 0" Text="#" />
 
-                        <TextBox Width="50" MaxLength="6" PreviewTextInput="ValidationHex">
+                        <TextBox Width="50" MaxLength="6" helpers:TextBoxMiscHelper.IsHexValidationEnabled="True">
                             <TextBox.Text>
                                 <Binding
                                     Path="FL.Config.Theme.PrimaryColor"
                                     Converter="{StaticResource ColorToHexConv}"
                                     UpdateSourceTrigger="PropertyChanged">
                                     <Binding.ValidationRules>
-                                        <local:ColorHexRule />
+                                        <StaticResource ResourceKey="ColorHexRule" />
                                     </Binding.ValidationRules>
                                 </Binding>
                             </TextBox.Text>
@@ -130,10 +68,10 @@
                             Background="{x:Null}"
                             Padding="0"
                             BorderThickness="0"
-                            materialDesign:DialogHost.DialogOpenedAttached="ColorPickerDialog_Secondary_OnDialogOpened"
-                            materialDesign:DialogHost.DialogClosedAttached="ColorPickerDialog_OnDialogClosed"
-                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                            CommandParameter="{StaticResource ColorPickerDialog}">
+                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}">
+                            <Button.CommandParameter>
+                                <controls:ColorPicker PickerColor="{Binding FL.Config.Theme.SecondaryColor, Mode=TwoWay}" />
+                            </Button.CommandParameter>
 
                             <Rectangle
                                 Fill="{Binding FL.Config.Theme.SecondaryColor, Converter={StaticResource ColorToBrushConv}}"
@@ -143,14 +81,14 @@
 
                         <TextBlock Margin="10 0 0 0" Text="#" />
 
-                        <TextBox Width="50" MaxLength="6" PreviewTextInput="ValidationHex">
+                        <TextBox Width="50" MaxLength="6" helpers:TextBoxMiscHelper.IsHexValidationEnabled="True">
                             <TextBox.Text>
                                 <Binding
                                     Path="FL.Config.Theme.SecondaryColor"
                                     Converter="{StaticResource ColorToHexConv}"
                                     UpdateSourceTrigger="PropertyChanged">
                                     <Binding.ValidationRules>
-                                        <local:ColorHexRule />
+                                        <StaticResource ResourceKey="ColorHexRule" />
                                     </Binding.ValidationRules>
                                 </Binding>
                             </TextBox.Text>
