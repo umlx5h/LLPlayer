@@ -8,8 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Data;
 
-using static Flyleaf.FFmpeg.ffmpegEx;
-
 using FlyleafLib.MediaFramework.MediaProgram;
 using FlyleafLib.MediaFramework.MediaStream;
 using FlyleafLib.MediaPlayer;
@@ -88,7 +86,7 @@ public unsafe class Demuxer : RunThreadBase
     public DataStream               DataStream      { get; private set; }
 
     // Audio/Video Stream's HLSPlaylist
-    internal HLSPlaylist*           HLSPlaylist     { get; private set; }
+    internal playlist*              HLSPlaylist     { get; private set; }
 
     // Media Packets
     public PacketQueue              Packets         { get; private set; }

@@ -130,18 +130,6 @@ public unsafe partial class AudioDecoder
         }
     }
 
-    // TBR: Private FFmpeg struct to access min/max samples
-    struct FilterLink
-    {
-        public AVFilterLink pub;
-        public AVFilterGraph *graph;
-        public long current_pts;
-        public long current_pts_us;
-        public int min_samples;
-        public int max_samples;
-        //...
-    }
-
     private void DisposeFilters()
     {
         if (filterGraph == null)
