@@ -126,7 +126,13 @@ public static class TranslateServiceHelper
 
         if (src.ISO6391 == target.ToISO6391())
         {
-            throw new TranslationConfigException("source and target language are same");
+            // Only chinese allow translation between regions (Simplified <-> Traditional)
+            // Portuguese, French, and English are not permitted.
+            // TODO: L: review this validation?
+            if (target is not (TargetLanguage.ChineseSimplified or TargetLanguage.ChineseTraditional))
+            {
+                throw new TranslationConfigException("source and target language are same");
+            }
         }
 
         if (!TranslateLanguage.Langs.TryGetValue(iso6391, out TranslateLanguage srcLang))
