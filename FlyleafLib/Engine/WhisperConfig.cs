@@ -110,6 +110,7 @@ public class WhisperCppConfig : NotifyPropertyChanged
     public float? NoSpeechThreshold { get; set => Set(ref field, value); }
     public bool NoContext { get; set => Set(ref field, value); }
     public int? AudioContextSize { get; set => Set(ref field, value); }
+    public string Prompt { get; set => Set(ref field, value); } = string.Empty;
 
     public WhisperProcessorBuilder ConfigureBuilder(WhisperConfig whisperConfig, WhisperProcessorBuilder builder)
     {
@@ -143,6 +144,9 @@ public class WhisperCppConfig : NotifyPropertyChanged
 
         if (AudioContextSize is > 0)
             builder.WithAudioContextSize(AudioContextSize.Value);
+
+        if (!string.IsNullOrWhiteSpace(Prompt))
+            builder.WithPrompt(Prompt);
 
         // auto set
         if (MaxSegmentLength is > 0 || MaxSegmentLength is > 0)
@@ -184,7 +188,7 @@ public class FasterWhisperConfig : NotifyPropertyChanged
     public bool UseManualModel { get; set => Set(ref field, value); }
     public string? ManualModelDir { get; set => Set(ref field, value); }
     public string Model { get; set => Set(ref field, value); } = "tiny";
-    public string ExtraArguments { get; set => Set(ref field, value); } = "";
+    public string ExtraArguments { get; set => Set(ref field, value); } = string.Empty;
 
     public ProcessPriorityClass ProcessPriority { get; set => Set(ref field, value); } = ProcessPriorityClass.Normal;
 }

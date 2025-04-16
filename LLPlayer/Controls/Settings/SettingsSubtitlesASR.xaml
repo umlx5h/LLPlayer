@@ -287,6 +287,15 @@
                                         Text="{Binding FL.PlayerConfig.Subtitles.WhisperCppConfig.AudioContextSize, Converter={StaticResource NullableIntConv}}"
                                         helpers:TextBoxHelper.OnlyNumeric="Uint" />
                                 </StackPanel>
+
+                                <DockPanel>
+                                    <TextBlock
+                                        Width="200"
+                                        Text="Prompt" />
+                                    <TextBox
+                                        HorizontalContentAlignment="Left"
+                                        Text="{Binding FL.PlayerConfig.Subtitles.WhisperCppConfig.Prompt}" />
+                                </DockPanel>
                             </StackPanel>
                         </GroupBox>
 

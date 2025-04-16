@@ -1010,7 +1010,7 @@ public class FasterWhisperASRService : IASRService
 
         string arguments = args.Build();
 
-        if (!string.IsNullOrEmpty(config.ExtraArguments))
+        if (!string.IsNullOrWhiteSpace(config.ExtraArguments))
         {
             arguments += $" {config.ExtraArguments}";
         }
