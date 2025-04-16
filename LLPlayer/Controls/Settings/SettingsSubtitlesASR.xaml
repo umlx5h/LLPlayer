@@ -290,11 +290,42 @@
 
                                 <DockPanel>
                                     <TextBlock
-                                        Width="200"
-                                        Text="Prompt" />
-                                    <TextBox
-                                        HorizontalContentAlignment="Left"
-                                        Text="{Binding FL.PlayerConfig.Subtitles.WhisperCppConfig.Prompt}" />
+                                        Width="200">
+                                        Prompt
+                                        <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                            <ToolTipService.ToolTip>
+                                                <TextBlock
+                                                    Text="You may be able to customize the output. For example, you can control whether the output is in Simplified or Traditional Chinese."
+                                                    TextWrapping="Wrap"
+                                                    MaxWidth="400" />
+                                            </ToolTipService.ToolTip>
+                                            <materialDesign:PackIcon
+                                                Kind="Information"
+                                                Width="16" Height="16"
+                                                Margin="4 0 0 0" />
+                                        </InlineUIContainer>
+                                    </TextBlock>
+
+                                    <StackPanel>
+                                        <TextBox
+                                            BorderThickness="1"
+                                            Padding="10"
+                                            HorizontalContentAlignment="Left"
+                                            TextAlignment="Left"
+                                            VerticalAlignment="Top"
+                                            VerticalContentAlignment="Top"
+                                            AcceptsReturn="True"
+                                            MaxHeight="300"
+                                            TextWrapping="Wrap"
+                                            Text="{Binding FL.PlayerConfig.Subtitles.WhisperCppConfig.Prompt}" />
+                                        <ComboBox
+                                            Margin="20 10 0 0"
+                                            materialDesign:HintAssist.Hint="Preset"
+                                            Style="{StaticResource MaterialDesignFloatingHintComboBox}"
+                                            ItemsSource="{Binding PromptPresets}"
+                                            DisplayMemberPath="Key"
+                                            SelectedValue="{Binding SelectedPromptPreset, Mode=TwoWay}" />
+                                    </StackPanel>
                                 </DockPanel>
                             </StackPanel>
                         </GroupBox>
@@ -529,9 +560,26 @@
                                                 Margin="4 0 0 0" />
                                         </InlineUIContainer>
                                     </TextBlock>
-                                    <TextBox
-                                        HorizontalContentAlignment="Left"
-                                        Text="{Binding FL.PlayerConfig.Subtitles.FasterWhisperConfig.ExtraArguments}" />
+
+                                    <StackPanel>
+                                        <TextBox
+                                            BorderThickness="1"
+                                            Padding="10"
+                                            HorizontalContentAlignment="Left"
+                                            TextAlignment="Left"
+                                            VerticalAlignment="Top"
+                                            VerticalContentAlignment="Top"
+                                            MaxHeight="300"
+                                            TextWrapping="Wrap"
+                                            Text="{Binding FL.PlayerConfig.Subtitles.FasterWhisperConfig.ExtraArguments}" />
+                                        <ComboBox
+                                            Margin="20 10 0 0"
+                                            materialDesign:HintAssist.Hint="Preset"
+                                            Style="{StaticResource MaterialDesignFloatingHintComboBox}"
+                                            ItemsSource="{Binding ExtraArgumentsPresets}"
+                                            DisplayMemberPath="Key"
+                                            SelectedValue="{Binding SelectedExtraArgumentsPreset, Mode=TwoWay}" />
+                                    </StackPanel>
                                 </DockPanel>
 
                                 <StackPanel Orientation="Horizontal">

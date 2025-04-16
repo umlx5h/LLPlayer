@@ -128,6 +128,27 @@ public class SettingsSubtitlesASRVM : Bindable
 
     public ObservableCollection<WhisperCppModel> DownloadModels { get; set => Set(ref field, value); } = new();
 
+    public OrderedDictionary<string, string> PromptPresets { get; } = new()
+    {
+        ["Use Chinese (Simplified), with punctuation"] = "以下是普通话的句子。",
+        ["Use Chinese (Traditional), with punctuation"] = "以下是普通話的句子。"
+    };
+
+    public KeyValuePair<string, string>? SelectedPromptPreset
+    {
+        get;
+        set
+        {
+            if (Set(ref field, value))
+            {
+                if (value.HasValue)
+                {
+                    FL.PlayerConfig.Subtitles.WhisperCppConfig.Prompt = value.Value.Value;
+                }
+            }
+        }
+    }
+
     // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
     public DelegateCommand CmdDownloadModel => field ??= new(() =>
     {
@@ -178,6 +199,29 @@ public class SettingsSubtitlesASRVM : Bindable
     #endregion
 
     #region faster-whisper
+    public OrderedDictionary<string, string> ExtraArgumentsPresets { get; } = new()
+    {
+        ["Use CUDA device"] = "--device cuda",
+        ["Use CPU device"] = "--device cpu",
+        ["Use Chinese (Simplified), with punctuation"] = "--initial_prompt \"以下是普通话的句子。\"",
+        ["Use Chinese (Traditional), with punctuation"] = "--initial_prompt \"以下是普通話的句子。\""
+    };
+
+    public KeyValuePair<string, string>? SelectedExtraArgumentsPreset
+    {
+        get;
+        set
+        {
+            if (Set(ref field, value))
+            {
+                if (value.HasValue)
+                {
+                    FL.PlayerConfig.Subtitles.FasterWhisperConfig.ExtraArguments = value.Value.Value;
+                }
+            }
+        }
+    }
+
     public DelegateCommand CmdDownloadEngine => field ??= new(() =>
     {
         _dialogService.ShowDialog(nameof(WhisperEngineDownloadDialog));
