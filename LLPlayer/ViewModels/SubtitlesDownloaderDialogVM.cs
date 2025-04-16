@@ -146,8 +146,12 @@ public class SubtitlesDownloaderDialogVM : Bindable, IDialogAware
 
                     if (stream.Language.ISO6391 != sub.ISO639)
                     {
-                        stream.Language = Language.Get(sub.ISO639);
-                        FL.Player.SubtitlesManager[0].LanguageSource = stream.Language;
+                        var lang = Language.Get(sub.ISO639);
+                        if (!string.IsNullOrEmpty(lang.IdSubLanguage) && lang.IdSubLanguage != "und")
+                        {
+                            stream.Language = lang;
+                            FL.Player.SubtitlesManager[0].LanguageSource = stream.Language;
+                        }
                     }
                 }
             }
