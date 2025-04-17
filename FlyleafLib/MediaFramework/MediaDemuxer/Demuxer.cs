@@ -1034,7 +1034,7 @@ public unsafe class Demuxer : RunThreadBase
                     //if (VideoStream.FixTimestamps && Duration > 0)
                         //ret = av_seek_frame(fmtCtx, -1, (long)((ticks/(double)Duration) * avio_size(fmtCtx->pb)), AVSEEK_FLAG_BYTE);
                     //else
-                    ret = ticks == StartTime
+                    ret = ticks == StartTime // we should also call this if we seek anywhere within the first Gop
                         ? avformat_seek_file(fmtCtx, -1, 0, 0, 0, 0)
                         : av_seek_frame(fmtCtx, -1, ticks / 10, forward ? SeekFlags.Frame : SeekFlags.Backward);
 
