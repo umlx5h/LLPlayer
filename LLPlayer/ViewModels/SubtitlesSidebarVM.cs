@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
+using System.Windows.Data;
 using FlyleafLib;
 using FlyleafLib.MediaPlayer;
 using LLPlayer.Extensions;
@@ -8,13 +9,57 @@ namespace LLPlayer.ViewModels;
 
 public class SubtitlesSidebarVM : Bindable, IDisposable
 {
+    private string _subtitleSearchText = string.Empty;
+    public string SubtitleSearchText
+    {
+        get => _subtitleSearchText;
+        set
+        {
+            if (Set(ref _subtitleSearchText, value))
+            {
+                FilterSubtitles();
+            }
+        }
+    }
+
+    public DelegateCommand CmdSearchSubtitle => field ??= new(() =>
+    {
+        FilterSubtitles();
+    });
+
+    public ICollectionView FilteredSubs { get; private set; }
+
+    private void FilterSubtitles()
+    {
+        if (FilteredSubs == null) return;
+        FilteredSubs.Filter = obj =>
+        {
+            if (obj is not SubtitleData sub)
+                return false;
+            if (string.IsNullOrWhiteSpace(SubtitleSearchText))
+                return true;
+            return sub.Text?.IndexOf(SubtitleSearchText.Trim(), StringComparison.OrdinalIgnoreCase) >= 0;
+        };
+        FilteredSubs.Refresh();
+    }
+
     public FlyleafManager FL { get; }
+
+    // Call this after loading new subtitles to backup the full list
+    public void BackupAllSubs()
+    {
+        SubManager?.BackupAllSubs();
+    }
 
     public SubtitlesSidebarVM(FlyleafManager fl)
     {
         FL = fl;
 
         FL.Config.PropertyChanged += OnConfigOnPropertyChanged;
+
+        // Initialize filtered view for the sidebar
+        FilteredSubs = CollectionViewSource.GetDefaultView(SubManager.Subs);
+        FilterSubtitles();
     }
 
     private void OnConfigOnPropertyChanged(object? sender, PropertyChangedEventArgs args)
@@ -39,7 +84,9 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
 
     public int SubIndex => !FL.Config.SidebarShowSecondary ? 0 : 1;
 
+    // Expose filtered subtitles if available
     public SubManager SubManager => FL.Player.SubtitlesManager[SubIndex];
+
 
     // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 
@@ -104,6 +151,11 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
             }
         }
 
+        if (index.Value < 0 || index.Value >= SubManager.Subs.Count)
+        {
+            ErrorDialogHelper.ShowKnownErrorPopup("Subtitle index out of range.", "Subtitle Play");
+            return;
+        }
         var sub = SubManager.Subs[index.Value];
         FL.Player.SeekAccurate(sub.StartTime, SubIndex);
     });
@@ -115,6 +167,11 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
             return;
         }
 
+        if (index.Value < 0 || index.Value >= SubManager.Subs.Count)
+        {
+            ErrorDialogHelper.ShowKnownErrorPopup("Subtitle index out of range.", "Subtitle Sync");
+            return;
+        }
         var sub = SubManager.Subs[index.Value];
         var newDelay = FL.Player.CurTime - sub.StartTime.Ticks;
 
@@ -126,3 +183,4 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
 
     // ReSharper restore NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 }
+
