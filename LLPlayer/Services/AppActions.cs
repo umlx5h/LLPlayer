@@ -566,8 +566,13 @@ public class AppActions
     public void SaveAllConfig()
     {
         _config.Save(App.AppConfigPath);
-        _player.Config.Save(App.PlayerConfigPath, AppConfig.GetJsonSerializerOptions());
-        Engine.Config.Save(App.EngineConfigPath, AppConfig.GetJsonSerializerOptions());
+
+        var opts = AppConfig.GetJsonSerializerOptions();
+        _player.Config.Version = App.Version;
+        _player.Config.Save(App.PlayerConfigPath, opts);
+
+        Engine.Config.Version = App.Version;
+        Engine.Config.Save(App.EngineConfigPath, opts);
     }
 
     private enum SubsSizeActionType

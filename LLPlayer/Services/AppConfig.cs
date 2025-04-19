@@ -30,6 +30,8 @@ public class AppConfig : Bindable
         Subs.Initialize(this, fl);
     }
 
+    public string Version { get; set; }
+
     /// <summary>
     /// State to skip the setter run when reading JSON
     /// </summary>
@@ -55,6 +57,7 @@ public class AppConfig : Bindable
 
     public void Save(string path)
     {
+        Version = App.Version;
         File.WriteAllText(path, JsonSerializer.Serialize(this, GetJsonSerializerOptions()));
 
         Subs.SaveAfter();

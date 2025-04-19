@@ -16,7 +16,13 @@ public static class FlyleafLoader
         {
             try
             {
-                engineConfig = EngineConfig.Load(App.EngineConfigPath, AppConfig.GetJsonSerializerOptions());
+                var opts = AppConfig.GetJsonSerializerOptions();
+                engineConfig = EngineConfig.Load(App.EngineConfigPath, opts);
+                if (engineConfig.Version != App.Version)
+                {
+                    engineConfig.Version = App.Version;
+                    engineConfig.Save(App.EngineConfigPath, opts);
+                }
             }
             catch (Exception ex)
             {
@@ -47,7 +53,14 @@ public static class FlyleafLoader
         {
             try
             {
-                config = Config.Load(App.PlayerConfigPath, AppConfig.GetJsonSerializerOptions());
+                var opts = AppConfig.GetJsonSerializerOptions();
+                config = Config.Load(App.PlayerConfigPath, opts);
+
+                if (config.Version != App.Version)
+                {
+                    config.Version = App.Version;
+                    config.Save(App.PlayerConfigPath, opts);
+                }
                 useConfig = true;
             }
             catch (Exception ex)

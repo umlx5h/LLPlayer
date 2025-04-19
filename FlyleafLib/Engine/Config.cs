@@ -143,6 +143,8 @@ public class Config : NotifyPropertyChanged
         Subtitles.SetPlayer(player);
     }
 
+    public string           Version     { get; set; }
+
     /// <summary>
     /// Whether configuration has been loaded from file
     /// </summary>
@@ -1230,6 +1232,8 @@ public class Config : NotifyPropertyChanged
 /// </summary>
 public class EngineConfig
 {
+    public string   Version                 { get; set; }
+
     /// <summary>
     /// It will not initiallize audio and will be disabled globally
     /// </summary>

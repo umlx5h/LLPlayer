@@ -35,6 +35,12 @@ public class FlyleafManager
             try
             {
                 config = AppConfig.Load(App.AppConfigPath);
+
+                if (config.Version != App.Version)
+                {
+                    config.Version = App.Version;
+                    config.Save(App.AppConfigPath);
+                }
             }
             catch (Exception ex)
             {
