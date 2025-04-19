@@ -112,6 +112,13 @@ public class SubManager : INotifyPropertyChanged
             s.Index = idx++;
             Subs.Add(s);
         }
+        // Clamp CurrentIndex to valid range after filtering
+        if (CurrentIndex >= Subs.Count)
+            CurrentIndex = Subs.Count - 1;
+        if (CurrentIndex < 0 && Subs.Count > 0)
+            CurrentIndex = 0;
+        if (Subs.Count == 0)
+            CurrentIndex = -1;
     }
 
     // Restore Subs to all items
@@ -245,17 +252,11 @@ public class SubManager : INotifyPropertyChanged
     {
         lock (_subsLocker)
         {
-            if (Subs.Count == 0 || CurrentIndex == -1)
-            {
+            if (Subs.Count == 0 || CurrentIndex < 0 || CurrentIndex >= Subs.Count)
                 return null;
-            }
-
-            Debug.Assert(CurrentIndex < Subs.Count);
 
             if (State == PositionState.Showing)
-            {
                 return Subs[CurrentIndex];
-            }
 
             return null;
         }
