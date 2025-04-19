@@ -535,8 +535,26 @@ public class AudioReader : IDisposable
             // TODO: L: Fold back and allow the first half to run as well.
             if (curTime > TimeSpan.FromSeconds(30))
             {
-                // TODO: L: m2ts seek problem?
-                _ = _demuxer.Seek(curTime.Ticks, false);
+                // copy from DecoderContext.CalcSeekTimestamp()
+                long startTime = _demuxer.hlsCtx == null ? _demuxer.StartTime : _demuxer.hlsCtx->first_timestamp * 10;
+                long ticks = curTime.Ticks + startTime;
+
+                bool forward = false;
+
+                if (_demuxer.Type == MediaType.Audio) ticks -= _config.Audio.Delay;
+
+                if (ticks < startTime)
+                {
+                    ticks = startTime;
+                    forward = true;
+                }
+                else if (ticks > startTime + _demuxer.Duration - (50 * 10000))
+                {
+                    ticks = Math.Max(startTime, startTime + _demuxer.Duration - (50 * 10000));
+                    forward = false;
+                }
+
+                _ = _demuxer.Seek(ticks, forward);
             }
 
             // When passing the audio file to Whisper, it must be converted to a 16000 sample rate WAV file.
