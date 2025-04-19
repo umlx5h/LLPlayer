@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="LLPlayer.Views.SubtitlesSidebar"
+<UserControl x:Class="LLPlayer.Views.SubtitlesSidebar"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -169,6 +169,19 @@
                     Command="{Binding CmdSwapSidebarPosition}"
                     ToolTip="Swap sidebar position"
                     Content="{materialDesign:PackIcon Kind=SwapHorizontal}" />
+
+            <!-- Subtitle Search -->
+            <TextBox Width="140"
+                     Margin="8,0,0,0"
+                     VerticalAlignment="Center"
+                     Text="{Binding SubtitleSearchText, UpdateSourceTrigger=PropertyChanged}"
+                     ToolTip="Search subtitles..."
+                     materialDesign:HintAssist.Hint="Search subtitles"/>
+            <Button Style="{StaticResource IconButton}"
+                    Command="{Binding CmdSearchSubtitle}"
+                    ToolTip="Search"
+                    Margin="2,0,0,0"
+                    Content="{materialDesign:PackIcon Kind=Magnify}" />
         </StackPanel>
 
         <controls:NonTopmostPopup

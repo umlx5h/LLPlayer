@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using FlyleafLib;
 using FlyleafLib.MediaPlayer;
 using LLPlayer.Extensions;
@@ -8,13 +8,68 @@ namespace LLPlayer.ViewModels;
 
 public class SubtitlesSidebarVM : Bindable, IDisposable
 {
+    private string _subtitleSearchText = string.Empty;
+    public string SubtitleSearchText
+    {
+        get => _subtitleSearchText;
+        set
+        {
+            if (Set(ref _subtitleSearchText, value))
+            {
+                FilterSubtitles();
+            }
+        }
+    }
+
+    public DelegateCommand CmdSearchSubtitle => field ??= new(() =>
+    {
+        FilterSubtitles();
+    });
+
+    private void FilterSubtitles()
+    {
+        if (SubManager == null) return;
+        if (string.IsNullOrWhiteSpace(SubtitleSearchText))
+        {
+            SubManager.RestoreAllSubs();
+        }
+        else
+        {
+            var query = SubtitleSearchText.Trim().ToLower();
+            SubManager.SetFilteredSubs(SubManager.AllSubs.Where(s => !string.IsNullOrEmpty(s.Text) && s.Text.ToLower().Contains(query)));
+        }
+    }
+
     public FlyleafManager FL { get; }
+
+    // Call this after loading new subtitles to backup the full list
+    public void BackupAllSubs()
+    {
+        SubManager?.BackupAllSubs();
+    }
 
     public SubtitlesSidebarVM(FlyleafManager fl)
     {
         FL = fl;
 
         FL.Config.PropertyChanged += OnConfigOnPropertyChanged;
+
+        // Attach to SubManager.Subs changes to keep AllSubs up to date
+        bool allSubsBackedUp = false;
+        SubManager.Subs.CollectionChanged += (s, e) =>
+        {
+            // Only backup once, when Subs is first populated (avoid overwriting AllSubs with filtered results)
+            if (!allSubsBackedUp && SubManager.Subs.Count > 0)
+            {
+                SubManager.BackupAllSubs();
+                allSubsBackedUp = true;
+            }
+            // Reset flag if all subtitles are cleared (e.g. on new file load)
+            if (SubManager.Subs.Count == 0)
+            {
+                allSubsBackedUp = false;
+            }
+        };
     }
 
     private void OnConfigOnPropertyChanged(object? sender, PropertyChangedEventArgs args)
@@ -39,7 +94,9 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
 
     public int SubIndex => !FL.Config.SidebarShowSecondary ? 0 : 1;
 
-    public SubManager SubManager => FL.Player.SubtitlesManager[SubIndex];
+    // Expose filtered subtitles if available
+public SubManager SubManager => FL.Player.SubtitlesManager[SubIndex];
+
 
     // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 
@@ -126,3 +183,4 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
 
     // ReSharper restore NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 }
+

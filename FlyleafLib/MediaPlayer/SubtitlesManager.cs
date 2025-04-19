@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -91,6 +91,30 @@ public class SubManager : INotifyPropertyChanged
     /// Must be sorted with timestamp to perform binary search.
     /// </summary>
     public BulkObservableCollection<SubtitleData> Subs { get; } = new();
+
+    // Backup of all loaded subtitles for filtering
+    private List<SubtitleData> _allSubs = new();
+    public List<SubtitleData> AllSubs => _allSubs;
+
+    // Call this after loading or updating Subs
+    public void BackupAllSubs()
+    {
+        _allSubs = Subs.ToList();
+    }
+
+    // Replace Subs with a filtered list
+    public void SetFilteredSubs(IEnumerable<SubtitleData> filtered)
+    {
+        Subs.Clear();
+        foreach (var s in filtered)
+            Subs.Add(s);
+    }
+
+    // Restore Subs to all items
+    public void RestoreAllSubs()
+    {
+        SetFilteredSubs(_allSubs);
+    }
 
     /// <summary>
     /// True when addition to Subs is running... (Reading all subtitles, OCR, ASR)
