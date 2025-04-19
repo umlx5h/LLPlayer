@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Windows.Data;
 using FlyleafLib;
 using FlyleafLib.MediaPlayer;
 using LLPlayer.Extensions;
@@ -26,18 +27,20 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
         FilterSubtitles();
     });
 
+    public ICollectionView FilteredSubs { get; private set; }
+
     private void FilterSubtitles()
     {
-        if (SubManager == null) return;
-        if (string.IsNullOrWhiteSpace(SubtitleSearchText))
+        if (FilteredSubs == null) return;
+        FilteredSubs.Filter = obj =>
         {
-            SubManager.RestoreAllSubs();
-        }
-        else
-        {
-            var query = SubtitleSearchText.Trim().ToLower();
-            SubManager.SetFilteredSubs(SubManager.AllSubs.Where(s => !string.IsNullOrEmpty(s.Text) && s.Text.ToLower().Contains(query)));
-        }
+            if (obj is not SubtitleData sub)
+                return false;
+            if (string.IsNullOrWhiteSpace(SubtitleSearchText))
+                return true;
+            return sub.Text?.IndexOf(SubtitleSearchText.Trim(), StringComparison.OrdinalIgnoreCase) >= 0;
+        };
+        FilteredSubs.Refresh();
     }
 
     public FlyleafManager FL { get; }
@@ -53,6 +56,10 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
         FL = fl;
 
         FL.Config.PropertyChanged += OnConfigOnPropertyChanged;
+
+        // Initialize filtered view for the sidebar
+        FilteredSubs = CollectionViewSource.GetDefaultView(SubManager.Subs);
+        FilterSubtitles();
     }
 
     private void OnConfigOnPropertyChanged(object? sender, PropertyChangedEventArgs args)
@@ -78,7 +85,7 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
     public int SubIndex => !FL.Config.SidebarShowSecondary ? 0 : 1;
 
     // Expose filtered subtitles if available
-public SubManager SubManager => FL.Player.SubtitlesManager[SubIndex];
+    public SubManager SubManager => FL.Player.SubtitlesManager[SubIndex];
 
 
     // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract

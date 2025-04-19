@@ -211,7 +211,7 @@
             VirtualizingStackPanel.ScrollUnit="Pixel"
             VirtualizingStackPanel.VirtualizationMode="Recycling"
             VerticalContentAlignment="Top"
-            ItemsSource="{Binding SubManager.Subs}"
+            ItemsSource="{Binding FilteredSubs}"
             SelectedIndex="{Binding SubManager.CurrentIndex, Mode=OneWay}"
             SelectionChanged="SubtitleListBox_SelectionChanged"
             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
