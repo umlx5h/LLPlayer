@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Text.Json;
@@ -147,7 +147,7 @@ public class AppConfig : Bindable
     [JsonIgnore]
     public FlowDirection SidebarFlowDirection => !SidebarLeft ? FlowDirection.LeftToRight : FlowDirection.RightToLeft;
 
-    public int SidebarWidth { get; set => Set(ref field, value); } = 300;
+    public int SidebarWidth { get; set => Set(ref field, value); } = 440;
 
     public int SidebarSubPadding { get; set => Set(ref field, value); } = 5;
 

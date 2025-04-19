@@ -106,8 +106,12 @@ public class SubManager : INotifyPropertyChanged
     public void SetFilteredSubs(IEnumerable<SubtitleData> filtered)
     {
         Subs.Clear();
+        int idx = 0;
         foreach (var s in filtered)
+        {
+            s.Index = idx++;
             Subs.Add(s);
+        }
     }
 
     // Restore Subs to all items

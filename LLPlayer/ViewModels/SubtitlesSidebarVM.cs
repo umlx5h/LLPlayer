@@ -144,6 +144,11 @@ public SubManager SubManager => FL.Player.SubtitlesManager[SubIndex];
             }
         }
 
+        if (index.Value < 0 || index.Value >= SubManager.Subs.Count)
+        {
+            ErrorDialogHelper.ShowKnownErrorPopup("Subtitle index out of range.", "Subtitle Play");
+            return;
+        }
         var sub = SubManager.Subs[index.Value];
         FL.Player.SeekAccurate(sub.StartTime, SubIndex);
     });
@@ -155,6 +160,11 @@ public SubManager SubManager => FL.Player.SubtitlesManager[SubIndex];
             return;
         }
 
+        if (index.Value < 0 || index.Value >= SubManager.Subs.Count)
+        {
+            ErrorDialogHelper.ShowKnownErrorPopup("Subtitle index out of range.", "Subtitle Sync");
+            return;
+        }
         var sub = SubManager.Subs[index.Value];
         var newDelay = FL.Player.CurTime - sub.StartTime.Ticks;
 
