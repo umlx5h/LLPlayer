@@ -12,6 +12,9 @@ using System.Threading.Tasks;
 using CliWrap;
 using CliWrap.Builders;
 using CliWrap.EventStream;
+using FlyleafLib.MediaFramework.MediaDecoder;
+using FlyleafLib.MediaFramework.MediaDemuxer;
+using FlyleafLib.MediaFramework.MediaStream;
 using Whisper.net;
 using Whisper.net.LibraryLoader;
 using Whisper.net.Logger;
@@ -111,9 +114,10 @@ public class SubtitlesASR
     /// <param name="subIndex">0: Primary, 1: Secondary</param>
     /// <param name="url">media file path</param>
     /// <param name="streamIndex">Audio streamIndex</param>
+    /// <param name="type">Demuxer type</param>
     /// <param name="curTime">Current playback timestamp, from which whisper is run</param>
     /// <returns>true: process completed, false: run in progress</returns>
-    public bool Execute(int subIndex, string url, int streamIndex, TimeSpan curTime)
+    public bool Execute(int subIndex, string url, int streamIndex, MediaType type, TimeSpan curTime)
     {
         // When Dual ASR: Copy the other ASR result and return early
         if (SubIndexSet.Count > 0 && !SubIndexSet.Contains(subIndex))
@@ -186,12 +190,17 @@ public class SubtitlesASR
 
         lock (_locker)
         {
-            _cts = new CancellationTokenSource();
             SubIndexSet.Add(subIndex);
 
-            using AudioReader reader = new(_config);
+            _cts = new CancellationTokenSource();
+            using AudioReader reader = new(_config, subIndex);
+            reader.Open(url, streamIndex, type, _cts.Token);
 
-            reader.Open(url, streamIndex);
+            if (_cts.Token.IsCancellationRequested)
+            {
+                return true;
+            }
+
             reader.ReadAll(curTime, data =>
             {
                 if (_cts.Token.IsCancellationRequested)
@@ -321,62 +330,62 @@ public class SubtitlesASR
 public class AudioReader : IDisposable
 {
     private readonly Config _config;
-    private unsafe AVFormatContext* _fmtCtx = null;
-    private unsafe AVStream* _stream = null;
-    private unsafe AVCodec* _codec = null;
-    private unsafe AVCodecContext* _codecCtx = null;
-    private unsafe SwrContext* _swrContext = null;
+    private readonly int _subIndex;
+
+    private Demuxer? _demuxer;
+    private AudioDecoder? _decoder;
+    private AudioStream? _stream;
+
     private unsafe AVPacket* _packet = null;
     private unsafe AVFrame* _frame = null;
+    private unsafe SwrContext* _swrContext = null;
 
     private bool _isFile;
 
     private readonly LogHandler Log;
 
-    public AudioReader(Config config)
+    public AudioReader(Config config, int subIndex)
     {
         _config = config;
+        _subIndex = subIndex;
         Log = new LogHandler(("[#1]").PadRight(8, ' ') + " [AudioReader   ] ");
     }
 
-    public unsafe void Open(string url, int streamIndex)
+    public void Open(string url, int streamIndex, MediaType type, CancellationToken token)
     {
-        fixed (AVFormatContext** pFmtCtx = &_fmtCtx)
-            avformat_open_input(pFmtCtx, url, null, null)
-                .ThrowExceptionIfError("avformat_open_input");
+        _demuxer = new Demuxer(_config.Demuxer, type, _subIndex + 1, false);
 
-        avformat_find_stream_info(_fmtCtx, null)
-            .ThrowExceptionIfError("avformat_find_stream_info");
-
-        // Select an audio stream for a given index
-        bool streamFound = _fmtCtx->nb_streams >= streamIndex + 1 &&
-                           _fmtCtx->streams[streamIndex]->codecpar->codec_type == AVMediaType.Audio;
-        if (!streamFound)
+        token.Register(() =>
         {
-            throw new InvalidOperationException($"No audio stream was found for the streamIndex:{streamIndex}");
+            if (_demuxer != null)
+                _demuxer.Interrupter.ForceInterrupt = 1;
+        });
+
+        _demuxer.Log.Prefix = _demuxer.Log.Prefix.Replace("Demuxer: ", "DemuxerA:");
+        string? error = _demuxer.Open(url);
+
+        if (error != null)
+        {
+            if (token.IsCancellationRequested)
+                return;
+
+            throw new InvalidOperationException($"demuxer open error: {error}");
         }
 
-        _stream = _fmtCtx->streams[streamIndex];
+        _stream = (AudioStream)_demuxer.AVStreamToStream[streamIndex];
 
-        _codec = avcodec_find_decoder(_stream->codecpar->codec_id);
-        if (_codec is null)
+        _decoder = new AudioDecoder(_config, _subIndex + 1);
+        _decoder.Log.Prefix = _decoder.Log.Prefix.Replace("Decoder: ", "DecoderA:");
+
+        error = _decoder.Open(_stream);
+
+        if (error != null)
         {
-            throw new InvalidOperationException("avcodec_find_decoder");
+            if (token.IsCancellationRequested)
+                return;
+
+            throw new InvalidOperationException($"decoder open error: {error}");
         }
-
-        _codecCtx = avcodec_alloc_context3(_codec);
-        if (_codecCtx is null)
-        {
-            throw new InvalidOperationException("avcodec_alloc_context3");
-        }
-
-        avcodec_parameters_to_context(_codecCtx, _stream->codecpar)
-            .ThrowExceptionIfError("avcodec_parameters_to_context");
-
-        _codecCtx->pkt_timebase = _fmtCtx->streams[_stream->index]->time_base;
-
-        avcodec_open2(_codecCtx, _codec, null)
-            .ThrowExceptionIfError("avcodec_open2");
 
         _isFile = File.Exists(url);
     }
@@ -393,44 +402,8 @@ public class AudioReader : IDisposable
     /// <exception cref="OperationCanceledException"></exception>
     public void ReadAll(TimeSpan curTime, Action<SubtitleASRData> addSub, CancellationToken cancellationToken)
     {
-        unsafe
-        {
-            _packet = av_packet_alloc();
-            _frame = av_frame_alloc();
-
-            // Whisper from the current playback position
-            // TODO: L: Fold back and allow the first half to run as well.
-            if (curTime > TimeSpan.FromSeconds(30))
-            {
-                long savedPbPos = _fmtCtx->pb != null ? _fmtCtx->pb->pos : 0;
-
-                long ticks = curTime.Subtract(TimeSpan.FromSeconds(10)).Ticks;
-                // Seek if later than 30 seconds (Seek before 10 seconds)
-                // TODO: L: m2ts seek problem?
-                int ret = avformat_seek_file(_fmtCtx, -1, long.MinValue, ticks / 10, ticks / 10, SeekFlags.Any);
-                if (ret < 0)
-                {
-                    Log.Info($"Seek failed 1/2 (retrying) {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
-                    ret = avformat_seek_file(_fmtCtx, -1, ticks / 10, ticks / 10, long.MaxValue, SeekFlags.Any);
-                    if (ret < 0)
-                    {
-                        Log.Warn($"Seek failed 2/2 {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
-
-                        // (from Demuxer) Flush required because of seek failure
-                        if (_fmtCtx->pb != null)
-                        {
-                            avio_flush(_fmtCtx->pb);
-                            _fmtCtx->pb->error = 0;
-                            _fmtCtx->pb->eof_reached = 0;
-                            avio_seek(_fmtCtx->pb, savedPbPos, 0);
-                        }
-                        avformat_flush(_fmtCtx);
-
-                        // proceed even if seek failed
-                    }
-                }
-            }
-        }
+        if (_demuxer == null || _decoder == null || _stream == null)
+            throw new InvalidOperationException("Open() is not called");
 
         // Assume a network stream and parallelize the reading of packets and the execution of whisper.
         // For network video, increase capacity as downloads may take longer.
@@ -555,6 +528,17 @@ public class AudioReader : IDisposable
 
         unsafe void DoProducer()
         {
+            _packet = av_packet_alloc();
+            _frame = av_frame_alloc();
+
+            // Whisper from the current playback position
+            // TODO: L: Fold back and allow the first half to run as well.
+            if (curTime > TimeSpan.FromSeconds(30))
+            {
+                // TODO: L: m2ts seek problem?
+                _ = _demuxer.Seek(curTime.Ticks, false);
+            }
+
             // When passing the audio file to Whisper, it must be converted to a 16000 sample rate WAV file.
             // For this purpose, the ffmpeg API is used to perform the conversion.
             // Audio files are divided by a certain size, stored in memory, and passed by memory stream.
@@ -578,60 +562,60 @@ public class AudioReader : IDisposable
             TimeSpan? chunkStart = null;
             long framePts = AV_NOPTS_VALUE;
 
-            long startTime = 0;
-            if (_fmtCtx->start_time != AV_NOPTS_VALUE)
-            {
-                // 0.1us (tick)
-                startTime = _fmtCtx->start_time * 10;
-            }
-
-            // 0.1us (tick)
-            double timebase = av_q2d(_stream->time_base) * 10000.0 * 1000.0;
-
             int demuxErrors = 0;
             int decodeErrors = 0;
 
-            int ret = -1;
-
-            while (true)
+            while (!token.IsCancellationRequested)
             {
-                token.ThrowIfCancellationRequested();
-
-                ret = av_read_frame(_fmtCtx, _packet);
-                if (ret == AVERROR_EOF)
-                {
-                    break;
-                }
+                _demuxer.Interrupter.ReadRequest();
+                int ret = av_read_frame(_demuxer.fmtCtx, _packet);
 
                 if (ret != 0)
                 {
-                    // demux error
                     av_packet_unref(_packet);
+
+                    if (_demuxer.Interrupter.Timedout)
+                    {
+                        if (token.IsCancellationRequested)
+                            break;
+
+                        ret.ThrowExceptionIfError("av_read_frame (timed out)");
+                    }
+
+                    if (ret == AVERROR_EOF || token.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
+                    // demux error
                     if (CanWarn) Log.Warn($"av_read_frame: {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
 
                     if (++demuxErrors == _config.Demuxer.MaxErrors)
                     {
                         ret.ThrowExceptionIfError("av_read_frame");
                     }
+                    continue;
                 }
 
                 // Discard all but the selected audio stream.
-                if (_packet->stream_index != _stream->index)
+                if (_packet->stream_index != _stream.StreamIndex)
                 {
                     av_packet_unref(_packet);
                     continue;
                 }
 
-                ret = avcodec_send_packet(_codecCtx, _packet);
-                if (ret == AVERROR(EAGAIN))
-                {
-                    continue;
-                }
+                ret = avcodec_send_packet(_decoder.CodecCtx, _packet);
+                av_packet_unref(_packet);
 
                 if (ret != 0)
                 {
+                    if (ret == AVERROR(EAGAIN))
+                    {
+                        // Receive_frame and send_packet both returned EAGAIN, which is an API violation.
+                        ret.ThrowExceptionIfError("avcodec_send_packet (EAGAIN)");
+                    }
+
                     // decoder error
-                    av_packet_unref(_packet);
                     if (CanWarn) Log.Warn($"avcodec_send_packet: {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
 
                     if (++decodeErrors == _config.Decoder.MaxErrors)
@@ -642,11 +626,9 @@ public class AudioReader : IDisposable
                     continue;
                 }
 
-                av_packet_unref(_packet);
-
                 while (ret >= 0)
                 {
-                    ret = avcodec_receive_frame(_codecCtx, _frame);
+                    ret = avcodec_receive_frame(_decoder.CodecCtx, _frame);
                     if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
                     {
                         break;
@@ -667,11 +649,11 @@ public class AudioReader : IDisposable
                         framePts += _frame->duration;
                     }
 
-                    waveDuration = waveDuration.Add(new TimeSpan((long)(_frame->duration * timebase)));
+                    waveDuration = waveDuration.Add(new TimeSpan((long)(_frame->duration * _stream.Timebase)));
 
                     if (chunkStart == null)
                     {
-                        chunkStart = new TimeSpan((long)(framePts * timebase) - startTime);
+                        chunkStart = new TimeSpan((long)(framePts * _stream.Timebase) - _demuxer.StartTime);
                         if (chunkStart.Value.Ticks < 0)
                         {
                             // Correct to 0 if negative
@@ -684,7 +666,7 @@ public class AudioReader : IDisposable
                     // TODO: L: want it to split at the silent part
                     if (waveStream.Length >= chunkSize || chunkSw.Elapsed >= chunkElapsed)
                     {
-                        TimeSpan chunkEnd = TimeSpan.FromSeconds(framePts * av_q2d(_stream->time_base));
+                        TimeSpan chunkEnd = new TimeSpan((long)(framePts * _stream.Timebase) - _demuxer.StartTime);
                         chunkCnt++;
 
                         if (CanInfo) Log.Info(
@@ -714,10 +696,13 @@ public class AudioReader : IDisposable
                 }
             }
 
+            token.ThrowIfCancellationRequested();
+
             // Process remaining
             if (waveStream.Length > waveHeaderSize && framePts != AV_NOPTS_VALUE)
             {
-                TimeSpan chunkEnd = TimeSpan.FromSeconds(framePts * av_q2d(_stream->time_base));
+                TimeSpan chunkEnd = new TimeSpan((long)(framePts * _stream.Timebase) - _demuxer.StartTime);
+
                 chunkCnt++;
 
                 if (CanInfo) Log.Info(
@@ -762,6 +747,9 @@ public class AudioReader : IDisposable
         stream.Position = 0;
     }
 
+    private byte[] _sampledBuf;
+    private int _sampledBufSize;
+
     private unsafe void ResampleTo(Stream toStream, AVFrame* frame, int targetSampleRate, int targetChannel)
     {
         AVChannelLayout outLayout;
@@ -790,26 +778,37 @@ public class AudioReader : IDisposable
 
         // ffmpeg ref: https://github.com/FFmpeg/FFmpeg/blob/504df09c34607967e4109b7b114ee084cf15a3ae/libavfilter/af_aresample.c#L171-L227
         double ratio = targetSampleRate * 1.0 / frame->sample_rate; // 16000:44100=0.36281179138321995
-        int n_out = (int)(frame->nb_samples * ratio) + 32;
+        int nOut = (int)(frame->nb_samples * ratio) + 32;
 
         long delay = swr_get_delay(_swrContext, targetSampleRate);
         if (delay > 0)
         {
-            n_out += (int)Math.Min(delay, Math.Max(4096, n_out));
+            nOut += (int)Math.Min(delay, Math.Max(4096, nOut));
+        }
+        int needed = nOut * outLayout.nb_channels * sizeof(ushort);
+
+        if (_sampledBufSize < needed)
+        {
+            _sampledBuf = new byte[needed];
+            _sampledBufSize = needed;
         }
 
-        byte* sampledBuf = stackalloc byte[n_out * outLayout.nb_channels * sizeof(ushort)];
-        int samplesPerChannel = swr_convert(
-                _swrContext,
-                &sampledBuf,
-                n_out,
-                frame->extended_data,
-                frame->nb_samples);
+        int samplesPerChannel;
+
+        fixed (byte* dst = _sampledBuf)
+        {
+            samplesPerChannel = swr_convert(
+                 _swrContext,
+                 &dst,
+                 nOut,
+                 frame->extended_data,
+                 frame->nb_samples);
+        }
         samplesPerChannel.ThrowExceptionIfError("swr_convert");
 
         int resampledDataSize = samplesPerChannel * outLayout.nb_channels * sizeof(ushort);
 
-        toStream.Write(new Span<byte>(sampledBuf, resampledDataSize));
+        toStream.Write(_sampledBuf, 0, resampledDataSize);
     }
 
     private bool _isDisposed;
@@ -846,22 +845,11 @@ public class AudioReader : IDisposable
             }
         }
 
-        // avcodec_alloc_context3
-        if (_codecCtx != null)
+        _decoder?.Dispose();
+        if (_demuxer != null)
         {
-            fixed (AVCodecContext** ptr = &_codecCtx)
-            {
-                avcodec_free_context(ptr);
-            }
-        }
-
-        // avformat_open_input
-        if (_fmtCtx != null)
-        {
-            fixed (AVFormatContext** ptr = &_fmtCtx)
-            {
-                avformat_close_input(ptr);
-            }
+            _demuxer.Interrupter.ForceInterrupt = 0;
+            _demuxer.Dispose();
         }
 
         _isDisposed = true;

@@ -573,14 +573,14 @@ public class Subtitle : NotifyPropertyChanged
         {
             // external sub
             // always load all bitmaps on memory with external subtitles
-            _player.SubtitlesManager.Open(_subIndex, extStream.Url, -1, true, extStream.Language);
+            _player.SubtitlesManager.Open(_subIndex, stream.Demuxer.Url, stream.StreamIndex, stream.Demuxer.Type, true, extStream.Language);
         }
         else
         {
             // internal sub
             // load all bitmaps on memory when cache enabled or OCR used
             bool useBitmap = Config.Subtitles.EnabledCached || SubtitlesSelectedHelper.GetMethod(_subIndex) == SelectSubMethod.OCR;
-            _player.SubtitlesManager.Open(_subIndex, Decoder.MainDemuxer.Url, stream.StreamIndex, useBitmap, stream.Language);
+            _player.SubtitlesManager.Open(_subIndex, stream.Demuxer.Url, stream.StreamIndex, stream.Demuxer.Type, useBitmap, stream.Language);
         }
 
         TimeSpan curTime = new(_player.CurTime);
@@ -635,6 +635,7 @@ public class Subtitle : NotifyPropertyChanged
         _enabledASR = true;
 
         var url = _player.AudioDecoder.Demuxer.Url;
+        var type = _player.AudioDecoder.Demuxer.Type;
         var streamIndex = _player.AudioDecoder.AudioStream.StreamIndex;
 
         TimeSpan curTime = new(_player.CurTime);
@@ -645,7 +646,7 @@ public class Subtitle : NotifyPropertyChanged
 
                 using (_player.SubtitlesManager[_subIndex].StartLoading())
                 {
-                    isDone = _player.SubtitlesASR.Execute(_subIndex, url, streamIndex, curTime);
+                    isDone = _player.SubtitlesASR.Execute(_subIndex, url, streamIndex, type, curTime);
                 }
 
                 if (!isDone)

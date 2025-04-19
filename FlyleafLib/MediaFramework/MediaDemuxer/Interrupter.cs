@@ -65,6 +65,7 @@ public unsafe class Interrupter
         if (!demuxer.Config.AllowTimeouts)
             return;
 
+        Timedout    = false;
         curTimeoutMs= demuxer.IsLive ? demuxer.Config.readLiveTimeoutMs: demuxer.Config.readTimeoutMs;
         sw.Restart();
     }

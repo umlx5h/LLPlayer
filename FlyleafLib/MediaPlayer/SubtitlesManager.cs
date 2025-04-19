@@ -3,18 +3,19 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using FlyleafLib.MediaFramework.MediaDecoder;
+using FlyleafLib.MediaFramework.MediaDemuxer;
 using FlyleafLib.MediaFramework.MediaFrame;
 using FlyleafLib.MediaFramework.MediaRenderer;
+using FlyleafLib.MediaFramework.MediaStream;
 using FlyleafLib.MediaPlayer.Translation;
 using static FlyleafLib.Logger;
 
@@ -43,13 +44,14 @@ public class SubtitlesManager
     /// </summary>
     /// <param name="subIndex">0: Primary, 1: Secondary</param>
     /// <param name="url">subtitle file path or video file path</param>
-    /// <param name="streamIndex">-1: subtitle file, >=0: streamIndex of internal subtitle</param>
+    /// <param name="streamIndex">streamIndex of subtitle</param>
+    /// <param name="type">demuxer media type</param>
     /// <param name="useBitmap">Use bitmap subtitles or immediately release bitmap if not used</param>
     /// <param name="lang">subtitle language</param>
-    public void Open(int subIndex, string url, int streamIndex, bool useBitmap, Language lang)
+    public void Open(int subIndex, string url, int streamIndex, MediaType type, bool useBitmap, Language lang)
     {
         // TODO: L: Add caching subtitle data for the same stream and URL?
-        this[subIndex].Open(url, streamIndex, useBitmap, lang);
+        this[subIndex].Open(url, streamIndex, type, useBitmap, lang);
     }
 
     public void SetCurrentTime(TimeSpan currentTime)
@@ -419,7 +421,7 @@ public class SubManager : INotifyPropertyChanged
         }
     }
 
-    public void Open(string url, int streamIndex, bool useBitmap, Language lang)
+    public void Open(string url, int streamIndex, MediaType type, bool useBitmap, Language lang)
     {
         // Asynchronously read subtitle timestamps and text
 
@@ -430,16 +432,16 @@ public class SubManager : INotifyPropertyChanged
         {
             using var loading = StartLoading();
 
-            _cts = new CancellationTokenSource();
-
-            using SubtitleReader reader = new(_config, _subIndex);
-
-            reader.Open(url, streamIndex);
-
             List<SubtitleData> subChunk = new();
 
             try
             {
+                _cts = new CancellationTokenSource();
+                using SubtitleReader reader = new(_config, _subIndex);
+                reader.Open(url, streamIndex, type, _cts.Token);
+
+                _cts.Token.ThrowIfCancellationRequested();
+
                 bool isFirst = true;
                 int subCnt = 0;
 
@@ -549,158 +551,68 @@ public class SubManager : INotifyPropertyChanged
 
 public unsafe class SubtitleReader : IDisposable
 {
-    private AVFormatContext* _fmtCtx = null;
-    private AVStream* _stream = null;
-    private AVCodec* _codec = null;
-    private AVPacket* _packet = null;
-    private AVCodecContext* _codecCtx = null;
-    private AVCodecDescriptor* _codecDescriptor = null;
-    private bool _isBitmap;
-
-    private AVIOContext* _avioCtx = null;
-    private byte* _inputData;
-    private int _inputDataSize;
     private readonly Config _config;
     private readonly LogHandler Log;
+    private readonly int _subIndex;
+
+    private Demuxer? _demuxer;
+    private SubtitlesDecoder? _decoder;
+    private SubtitlesStream? _stream;
+
+    private AVPacket* _packet = null;
 
     public SubtitleReader(Config config, int subIndex)
     {
         _config = config;
         Log = new LogHandler(("[#1]").PadRight(8, ' ') + $" [SubReader{subIndex + 1}    ] ");
+
+        _subIndex = subIndex;
     }
 
-    // If streamIndex is -1, search for the first subtitle stream
-    // If specified, use the stream of the specified index
-    public void Open(string url, int streamIndex = -1)
+    public void Open(string url, int streamIndex, MediaType type, CancellationToken token)
     {
-        // If it is an external .sub file, check if there is an .idx file, and if so, load it
-        if (streamIndex == -1 && url.EndsWith(".sub"))
+        _demuxer = new Demuxer(_config.Demuxer, type, _subIndex + 1, false);
+
+        token.Register(() =>
         {
-            var idxFile = url.Substring(0, url.Length - 3) + "idx";
-            if (File.Exists(idxFile))
+            if (_demuxer != null)
+                _demuxer.Interrupter.ForceInterrupt = 1;
+        });
+
+        _demuxer.Log.Prefix = _demuxer.Log.Prefix.Replace("Demuxer: ", "DemuxerS:");
+        string? error = _demuxer.Open(url);
+
+        if (error != null)
+        {
+            token.ThrowIfCancellationRequested(); // if canceled
+
+            throw new InvalidOperationException($"demuxer open error: {error}");
+        }
+
+        _stream = (SubtitlesStream)_demuxer.AVStreamToStream[streamIndex];
+
+        if (type == MediaType.Subs)
+        {
+
+            _stream.ExternalStream = new ExternalSubtitlesStream()
             {
-                url = idxFile;
-            }
+                Url = url,
+                IsBitmap = _stream.IsBitmap
+            };
+
+            _stream.ExternalStreamAdded();
         }
 
-        _fmtCtx = avformat_alloc_context();
+        _decoder = new SubtitlesDecoder(_config, _subIndex + 1);
+        _decoder.Log.Prefix = _decoder.Log.Prefix.Replace("Decoder: ", "DecoderS:");
+        error = _decoder.Open(_stream);
 
-        if (Utils.ExtensionsSubtitlesText.Contains(Utils.GetUrlExtention(url)) &&
-            File.Exists(url))
+        if (error != null)
         {
-            // If the files can be read with text subtitles, load them all into memory and convert them to UTF8.
-            // Because ffmpeg expects UTF8 text.
+            token.ThrowIfCancellationRequested(); // if canceled
 
-            // TODO: L: refactor - Share code with Demuxer
-            try
-            {
-                FileInfo file = new(url);
-                if (file.Length >= 10 * 1024 * 1024)
-                {
-                    throw new InvalidOperationException($"TEXT subtitle is too big (>=10MB) to load: {file.Length}");
-                }
-
-                // Detects character encoding, reads text and converts to UTF8
-                Encoding encoding = Encoding.Default;
-
-                var detected = TextEncodings.DetectEncoding(url);
-                if (detected != null)
-                {
-                    encoding = detected;
-                }
-
-                string content = File.ReadAllText(url, encoding);
-                byte[] contentBytes = Encoding.UTF8.GetBytes(content);
-
-                _inputDataSize = contentBytes.Length;
-                _inputData = (byte*)av_malloc((nuint)_inputDataSize);
-
-                Span<byte> src = new(contentBytes);
-                Span<byte> dst = new(_inputData, _inputDataSize);
-                src.CopyTo(dst);
-
-                _avioCtx = avio_alloc_context(_inputData, _inputDataSize, 0, null, null, null, null);
-                if (_avioCtx == null)
-                {
-                    throw new InvalidOperationException("avio_alloc_context");
-                }
-
-                // Pass to ffmpeg by on-memory
-                _fmtCtx->pb = _avioCtx;
-                _fmtCtx->flags |= FmtFlags2.CustomIo;
-            }
-            catch (Exception ex)
-            {
-                Log.Warn($"Cannot load text subtitle to memory: {ex.Message}");
-            }
+            throw new InvalidOperationException($"decoder open error: {error}");
         }
-
-        fixed (AVFormatContext** pFmtCtx = &_fmtCtx)
-            avformat_open_input(pFmtCtx, url, null, null)
-                .ThrowExceptionIfError("avformat_open_input");
-
-        avformat_find_stream_info(_fmtCtx, null)
-            .ThrowExceptionIfError("avformat_find_stream_info");
-
-        if (streamIndex == -1)
-        {
-            // Select a first subtitle stream
-            for (int i = 0; i < (int)_fmtCtx->nb_streams; i++)
-            {
-                var s = _fmtCtx->streams[i];
-                if (s->codecpar->codec_type == AVMediaType.Subtitle)
-                {
-                    _stream = s;
-                    break;
-                }
-            }
-
-            if (_stream is null)
-            {
-                throw new InvalidOperationException("Could not retrieve the subtitle stream");
-            }
-        }
-        else
-        {
-            // Select a subtitle stream for a given index
-            bool streamFound = _fmtCtx->nb_streams >= streamIndex + 1 &&
-                               _fmtCtx->streams[streamIndex]->codecpar->codec_type == AVMediaType.Subtitle;
-            if (!streamFound)
-            {
-                throw new InvalidOperationException($"No subtitle stream was found for the streamIndex:{streamIndex}");
-            }
-
-            _stream = _fmtCtx->streams[streamIndex];
-        }
-
-        _codec = avcodec_find_decoder(_stream->codecpar->codec_id);
-        if (_codec is null)
-        {
-            throw new InvalidOperationException("avcodec_find_decoder");
-        }
-
-        _codecCtx = avcodec_alloc_context3(_codec);
-        if (_codecCtx is null)
-        {
-            throw new InvalidOperationException("avcodec_alloc_context3");
-        }
-
-        avcodec_parameters_to_context(_codecCtx, _stream->codecpar)
-            .ThrowExceptionIfError("avcodec_parameters_to_context");
-
-        // Note that if you do not set this, you will not get the AVSubtitle timestamp information!
-        _codecCtx->pkt_timebase = _fmtCtx->streams[_stream->index]->time_base;
-        if (_avioCtx != null)
-        {
-            // Disable check since already converted to UTF-8
-            _codecCtx->sub_charenc_mode = SubCharencModeFlags.Ignore;
-        }
-
-        avcodec_open2(_codecCtx, _codec, null)
-            .ThrowExceptionIfError("avcodec_open2");
-
-        _codecDescriptor = avcodec_descriptor_get(_stream->codecpar->codec_id);
-        _isBitmap = _codecDescriptor != null && (_codecDescriptor->props & CodecPropFlags.BitmapSub) != 0;
     }
 
     /// <summary>
@@ -710,57 +622,53 @@ public unsafe class SubtitleReader : IDisposable
     /// <param name="addSub"></param>
     /// <param name="token"></param>
     /// <exception cref="OperationCanceledException">The token has had cancellation requested.</exception>
-    public void ReadAll(bool useBitmap, Action<SubtitleData> addSub, CancellationToken token = default)
+    public void ReadAll(bool useBitmap, Action<SubtitleData> addSub, CancellationToken token)
     {
-        int ret = 0;
+        if (_demuxer == null || _decoder == null || _stream == null)
+            throw new InvalidOperationException("Open() is not called");
 
         SubtitleData? prevSub = null;
 
         _packet = av_packet_alloc();
 
-        long startTime = 0;
-        if (_fmtCtx->start_time != AV_NOPTS_VALUE)
-        {
-            // 0.1us (tick)
-            startTime = _fmtCtx->start_time * 10;
-        }
-        // 0.1us (tick)
-        double timebase = av_q2d(_stream->time_base) * 10000.0 * 1000.0;
-
         int demuxErrors = 0;
         int decodeErrors = 0;
 
-        while (true)
+        while (!token.IsCancellationRequested)
         {
-            ret = av_read_frame(_fmtCtx, _packet);
-            if (ret == AVERROR_EOF)
-            {
-                break;
-            }
+            _demuxer.Interrupter.ReadRequest();
+            int ret = av_read_frame(_demuxer.fmtCtx, _packet);
 
             if (ret != 0)
             {
-                // demux error
                 av_packet_unref(_packet);
+
+                if (_demuxer.Interrupter.Timedout)
+                {
+                    if (token.IsCancellationRequested)
+                        break;
+
+                    ret.ThrowExceptionIfError("av_read_frame (timed out)");
+                }
+
+                if (ret == AVERROR_EOF || token.IsCancellationRequested)
+                {
+                    break;
+                }
+
+                // demux error
                 if (CanWarn) Log.Warn($"av_read_frame: {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
 
                 if (++demuxErrors == _config.Demuxer.MaxErrors)
                 {
                     ret.ThrowExceptionIfError("av_read_frame");
                 }
-            }
 
-            if (token.IsCancellationRequested)
-            {
-                av_packet_unref(_packet);
-
-                prevSub?.Dispose();
-
-                token.ThrowIfCancellationRequested();
+                continue;
             }
 
             // Discard all but the subtitle stream.
-            if (_packet->stream_index != _stream->index)
+            if (_packet->stream_index != _stream.StreamIndex)
             {
                 av_packet_unref(_packet);
                 continue;
@@ -770,7 +678,7 @@ public unsafe class SubtitleReader : IDisposable
             int gotSub = 0;
             AVSubtitle sub = default;
 
-            ret = avcodec_decode_subtitle2(_codecCtx, &sub, &gotSub, _packet);
+            ret = avcodec_decode_subtitle2(_decoder.CodecCtx, &sub, &gotSub, _packet);
             if (ret < 0)
             {
                 // decode error
@@ -797,7 +705,7 @@ public unsafe class SubtitleReader : IDisposable
             }
             else if (_packet->pts != AV_NOPTS_VALUE)
             {
-                pts = (long)(_packet->pts * timebase);
+                pts = (long)(_packet->pts * _stream.Timebase);
             }
 
             av_packet_unref(_packet);
@@ -808,7 +716,7 @@ public unsafe class SubtitleReader : IDisposable
             }
 
             // Bitmap PGS has a special format.
-            if (_isBitmap && prevSub != null
+            if (_stream.IsBitmap && prevSub != null
                 /*&& _stream->codecpar->codec_id == AVCodecID.AV_CODEC_ID_HDMV_PGS_SUBTITLE*/)
             {
                 if (sub.num_rects < 1)
@@ -822,7 +730,7 @@ public unsafe class SubtitleReader : IDisposable
                     // Note that not all bitmap subtitles have this behavior.
 
                     // Assign pts as the end time of the previous subtitle
-                    prevSub.EndTime = new TimeSpan(pts - startTime);
+                    prevSub.EndTime = new TimeSpan(pts - _demuxer.StartTime);
                     addSub(prevSub);
                     prevSub = null;
 
@@ -832,15 +740,15 @@ public unsafe class SubtitleReader : IDisposable
 
                 // There are cases where num_rects = 1 is consecutive.
                 // In this case, the previous subtitle end time is corrected by pts, and a new subtitle is started with the same pts.
-                if (prevSub.Duration.Ticks == uint.MaxValue * 10000L) // 4294967295
+                if (prevSub.Bitmap?.Sub.end_display_time == uint.MaxValue) // 4294967295
                 {
-                    prevSub.EndTime = new TimeSpan(pts - startTime);
+                    prevSub.EndTime = new TimeSpan(pts - _demuxer.StartTime);
                     addSub(prevSub);
                     prevSub = null;
                 }
             }
 
-            subData.StartTime = new TimeSpan(pts - startTime);
+            subData.StartTime = new TimeSpan(pts - _demuxer.StartTime);
             subData.EndTime = subData.StartTime.Add(TimeSpan.FromMilliseconds(sub.end_display_time));
 
             switch (sub.rects[0]->type)
@@ -894,6 +802,12 @@ public unsafe class SubtitleReader : IDisposable
             prevSub = subData;
         }
 
+        if (token.IsCancellationRequested)
+        {
+            prevSub?.Dispose();
+            token.ThrowIfCancellationRequested();
+        }
+
         // Process last
         if (prevSub != null)
         {
@@ -916,35 +830,11 @@ public unsafe class SubtitleReader : IDisposable
             }
         }
 
-        // avcodec_alloc_context3
-        if (_codecCtx != null)
+        _decoder?.Dispose();
+        if (_demuxer != null)
         {
-            fixed (AVCodecContext** ptr = &_codecCtx)
-            {
-                avcodec_free_context(ptr);
-            }
-        }
-
-        // avformat_open_input
-        if (_fmtCtx != null)
-        {
-            fixed (AVFormatContext** ptr = &_fmtCtx)
-            {
-                avformat_close_input(ptr);
-            }
-        }
-
-        // avio_alloc_context
-        if (_avioCtx != null)
-        {
-            av_free(_avioCtx->buffer);
-            fixed (AVIOContext** ptr = &_avioCtx)
-            {
-                avio_context_free(ptr);
-            }
-
-            _inputData = null;
-            _inputDataSize = 0;
+            _demuxer.Interrupter.ForceInterrupt = 0;
+            _demuxer.Dispose();
         }
 
         _isDisposed = true;

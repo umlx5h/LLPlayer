@@ -152,7 +152,7 @@ public unsafe class Demuxer : RunThreadBase
 
     #region Constructor / Declaration
     public AVPacket*        packet;
-    AVFormatContext*        fmtCtx;
+    public AVFormatContext* fmtCtx;
     internal HLSContext*    hlsCtx;
 
     long                    hlsPrevSeqNo            = AV_NOPTS_VALUE;   // Identifies the change of the m3u8 playlist (wraped)
