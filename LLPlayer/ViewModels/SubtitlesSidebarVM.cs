@@ -53,23 +53,6 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
         FL = fl;
 
         FL.Config.PropertyChanged += OnConfigOnPropertyChanged;
-
-        // Attach to SubManager.Subs changes to keep AllSubs up to date
-        bool allSubsBackedUp = false;
-        SubManager.Subs.CollectionChanged += (s, e) =>
-        {
-            // Only backup once, when Subs is first populated (avoid overwriting AllSubs with filtered results)
-            if (!allSubsBackedUp && SubManager.Subs.Count > 0)
-            {
-                SubManager.BackupAllSubs();
-                allSubsBackedUp = true;
-            }
-            // Reset flag if all subtitles are cleared (e.g. on new file load)
-            if (SubManager.Subs.Count == 0)
-            {
-                allSubsBackedUp = false;
-            }
-        };
     }
 
     private void OnConfigOnPropertyChanged(object? sender, PropertyChangedEventArgs args)

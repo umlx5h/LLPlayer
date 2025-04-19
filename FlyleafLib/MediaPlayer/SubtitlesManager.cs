@@ -224,6 +224,7 @@ public class SubManager : INotifyPropertyChanged
         {
             sub.Index = Subs.Count;
             Subs.Add(sub);
+            BackupAllSubs();
         }
     }
 
@@ -232,6 +233,7 @@ public class SubManager : INotifyPropertyChanged
         lock (_subsLocker)
         {
             Subs.AddRange(items);
+            BackupAllSubs();
         }
     }
 
@@ -543,6 +545,7 @@ public class SubManager : INotifyPropertyChanged
             State = PositionState.First;
             LanguageSource = null;
             IsLoading = false;
+            BackupAllSubs();
         }
     }
 
