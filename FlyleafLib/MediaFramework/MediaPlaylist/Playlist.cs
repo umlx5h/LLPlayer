@@ -102,6 +102,8 @@ public class Playlist : NotifyPropertyChanged
         _Url        = null;
         _Title      = null;
         _Selected   = null;
+        PrevItem    = null;
+        NextItem    = null;
         IOStream    = null;
         FolderBase  = null;
         Completed   = false;
@@ -130,6 +132,8 @@ public class Playlist : NotifyPropertyChanged
         {
             Items.Add(item);
             Items[^1].Index = Items.Count - 1;
+
+            UpdatePrevNextItem();
 
             if (tag != null)
                 item.AddTag(tag, pluginName);

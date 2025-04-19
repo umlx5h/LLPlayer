@@ -8,8 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Data;
 
-using static Flyleaf.FFmpeg.ffmpegEx;
-
 using FlyleafLib.MediaFramework.MediaProgram;
 using FlyleafLib.MediaFramework.MediaStream;
 using FlyleafLib.MediaPlayer;
@@ -88,7 +86,7 @@ public unsafe class Demuxer : RunThreadBase
     public DataStream               DataStream      { get; private set; }
 
     // Audio/Video Stream's HLSPlaylist
-    internal HLSPlaylist*           HLSPlaylist     { get; private set; }
+    internal playlist*              HLSPlaylist     { get; private set; }
 
     // Media Packets
     public PacketQueue              Packets         { get; private set; }
@@ -1036,7 +1034,7 @@ public unsafe class Demuxer : RunThreadBase
                     //if (VideoStream.FixTimestamps && Duration > 0)
                         //ret = av_seek_frame(fmtCtx, -1, (long)((ticks/(double)Duration) * avio_size(fmtCtx->pb)), AVSEEK_FLAG_BYTE);
                     //else
-                    ret = ticks == StartTime
+                    ret = ticks == StartTime // we should also call this if we seek anywhere within the first Gop
                         ? avformat_seek_file(fmtCtx, -1, 0, 0, 0, 0)
                         : av_seek_frame(fmtCtx, -1, ticks / 10, forward ? SeekFlags.Frame : SeekFlags.Backward);
 

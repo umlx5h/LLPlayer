@@ -5,7 +5,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Serialization;
 
 using FlyleafLib.MediaFramework.MediaDecoder;
 using FlyleafLib.MediaFramework.MediaFrame;
@@ -35,7 +34,7 @@ public class Config : NotifyPropertyChanged
 
             if (defaultOptions == null || defaultOptions.Count == 0) continue;
 
-            Plugins.Add(plugin.Name, new SerializableDictionary<string, string>());
+            Plugins.Add(plugin.Name, new ObservableDictionary<string, string>());
             foreach (var opt in defaultOptions)
                 Plugins[plugin.Name].Add(opt.Key, opt.Value);
         }
@@ -147,14 +146,12 @@ public class Config : NotifyPropertyChanged
     /// <summary>
     /// Whether configuration has been loaded from file
     /// </summary>
-    [XmlIgnore]
     [JsonIgnore]
     public bool             Loaded      { get; private set; }
 
     /// <summary>
     /// The path that this configuration has been loaded from
     /// </summary>
-    [XmlIgnore]
     [JsonIgnore]
     public string           LoadedPath  { get; private set; }
 
@@ -166,10 +163,10 @@ public class Config : NotifyPropertyChanged
     public SubtitlesConfig  Subtitles   { get; set; } = new SubtitlesConfig();
     public DataConfig       Data        { get; set; } = new DataConfig();
 
-    public SerializableDictionary<string, SerializableDictionary<string, string>>
+    public Dictionary<string, ObservableDictionary<string, string>>
                             Plugins     { get; set; } = new();
     private
-           SerializableDictionary<string, SerializableDictionary<string, string>>
+           Dictionary<string, ObservableDictionary<string, string>>
                             _PluginsDefault;
     public class PlayerConfig : NotifyPropertyChanged
     {
@@ -356,9 +353,9 @@ public class Config : NotifyPropertyChanged
         {
             DemuxerConfig demuxer = (DemuxerConfig) MemberwiseClone();
 
-            demuxer.FormatOpt       = new SerializableDictionary<string, string>();
-            demuxer.AudioFormatOpt  = new SerializableDictionary<string, string>();
-            demuxer.SubtitlesFormatOpt = new SerializableDictionary<string, string>();
+            demuxer.FormatOpt       = new Dictionary<string, string>();
+            demuxer.AudioFormatOpt  = new Dictionary<string, string>();
+            demuxer.SubtitlesFormatOpt = new Dictionary<string, string>();
 
             foreach (var kv in FormatOpt) demuxer.FormatOpt.Add(kv.Key, kv.Value);
             foreach (var kv in AudioFormatOpt) demuxer.AudioFormatOpt.Add(kv.Key, kv.Value);
@@ -499,26 +496,26 @@ public class Config : NotifyPropertyChanged
         /// <summary>
         /// HTTP Query String parameters to pass to underlying
         /// </summary>
-        public SerializableDictionary<string, string>
+        public Dictionary<string, string>
                                 ExtraHTTPQueryParamsToUnderlying
                                                 { get; set; } = new();
 
         /// <summary>
         /// FFmpeg's format options for demuxer
         /// </summary>
-        public SerializableDictionary<string, string>
+        public Dictionary<string, string>
                                 FormatOpt       { get; set; } = DefaultVideoFormatOpt();
-        public SerializableDictionary<string, string>
+        public Dictionary<string, string>
                                 AudioFormatOpt  { get; set; } = DefaultVideoFormatOpt();
 
-        public SerializableDictionary<string, string>
+        public Dictionary<string, string>
                                 SubtitlesFormatOpt  { get; set; } = DefaultVideoFormatOpt();
 
-        public static SerializableDictionary<string, string> DefaultVideoFormatOpt()
+        public static Dictionary<string, string> DefaultVideoFormatOpt()
         {
             // TODO: Those should be set based on the demuxer format/protocol (to avoid false warnings about invalid options and best fit for the input, eg. live stream)
 
-            SerializableDictionary<string, string> defaults = new()
+            Dictionary<string, string> defaults = new()
             {
                 // General
                 { "probesize",          (50 * (long)1024 * 1024).ToString() },      // (Bytes) Default 5MB | Higher for weird formats (such as .ts?) and 4K/Hevc
@@ -529,6 +526,8 @@ public class Config : NotifyPropertyChanged
                 { "reconnect_streamed", "1" },                                       // auto reconnect streamed / non seekable streams (this can cause issues with HLS ts segments - disable this or http_persistent)
                 { "reconnect_delay_max","7" },                                       // max reconnect delay in seconds after which to give up
                 { "user_agent",         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36" },
+
+                { "extension_picky",    "0" },                                       // Added in ffmpeg v7.1.1 and causes issues when enabled with allowed extentions #577
 
                 // HLS
                 { "http_persistent",    "0" },                                       // Disables keep alive for HLS - mainly when use reconnect_streamed and non-live HLS streams
@@ -544,7 +543,7 @@ public class Config : NotifyPropertyChanged
             return defaults;
         }
 
-        public SerializableDictionary<string, string> GetFormatOptPtr(MediaType type)
+        public Dictionary<string, string> GetFormatOptPtr(MediaType type)
             => type == MediaType.Video ? FormatOpt : type == MediaType.Audio ? AudioFormatOpt : SubtitlesFormatOpt;
     }
     public class DecoderConfig : NotifyPropertyChanged
@@ -616,14 +615,14 @@ public class Config : NotifyPropertyChanged
         public bool             LowDelay        { get => _LowDelay; set => SetUI(ref _LowDelay, value); }
         bool _LowDelay;
 
-        public SerializableDictionary<string, string>
+        public Dictionary<string, string>
                                 AudioCodecOpt       { get; set; } = new();
-        public SerializableDictionary<string, string>
+        public Dictionary<string, string>
                                 VideoCodecOpt       { get; set; } = new();
-        public SerializableDictionary<string, string>
+        public Dictionary<string, string>
                                 SubtitlesCodecOpt   { get; set; } = new();
 
-        public SerializableDictionary<string, string> GetCodecOptPtr(MediaType type)
+        public Dictionary<string, string> GetCodecOptPtr(MediaType type)
             => type == MediaType.Video ? VideoCodecOpt : type == MediaType.Audio ? AudioCodecOpt : SubtitlesCodecOpt;
     }
     public class VideoConfig : NotifyPropertyChanged
@@ -688,7 +687,6 @@ public class Config : NotifyPropertyChanged
         /// <summary>
         /// The max resolution that the current system can achieve and will be used from the input/stream suggester plugins
         /// </summary>
-        [XmlIgnore]
         [JsonIgnore]
         public int              MaxVerticalResolutionAuto   { get; internal set; }
 
@@ -701,7 +699,6 @@ public class Config : NotifyPropertyChanged
         /// <summary>
         /// The max resolution that is currently used (based on Auto/Custom)
         /// </summary>
-        [XmlIgnore]
         [JsonIgnore]
         public int              MaxVerticalResolution       => MaxVerticalResolutionCustom == 0 ? (MaxVerticalResolutionAuto != 0 ? MaxVerticalResolutionAuto : 1080) : MaxVerticalResolutionCustom;
 
@@ -784,11 +781,11 @@ public class Config : NotifyPropertyChanged
         /// </summary>
         public bool             SwapForceR8G8B8A8           { get; set; }
 
-        public SerializableDictionary<VideoFilters, VideoFilter> Filters {get ; set; } = DefaultFilters();
+        public Dictionary<VideoFilters, VideoFilter> Filters {get ; set; } = DefaultFilters();
 
-        public static SerializableDictionary<VideoFilters, VideoFilter> DefaultFilters()
+        public static Dictionary<VideoFilters, VideoFilter> DefaultFilters()
         {
-            SerializableDictionary<VideoFilters, VideoFilter> filters = new();
+            Dictionary<VideoFilters, VideoFilter> filters = new();
 
             var available = Enum.GetValues(typeof(VideoFilters));
 
@@ -1078,7 +1075,6 @@ public class Config : NotifyPropertyChanged
         /// <summary>
         /// Subtitles parser (can be used for custom parsing)
         /// </summary>
-        [XmlIgnore]
         [JsonIgnore]
         public Action<SubtitlesFrame>
                                 Parser              { get; set; } = ParseSubtitles.Parse;
@@ -1271,14 +1267,12 @@ public class EngineConfig
     /// <summary>
     /// Whether configuration has been loaded from file
     /// </summary>
-    [XmlIgnore]
     [JsonIgnore]
     public bool     Loaded                  { get; private set; }
 
     /// <summary>
     /// The path that this configuration has been loaded from
     /// </summary>
-    [XmlIgnore]
     [JsonIgnore]
     public string   LoadedPath              { get; private set; }
 

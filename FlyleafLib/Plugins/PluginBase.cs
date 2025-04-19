@@ -12,7 +12,7 @@ namespace FlyleafLib.Plugins;
 
 public abstract class PluginBase : PluginType, IPlugin
 {
-    public SerializableDictionary<string, string>
+    public ObservableDictionary<string, string>
                                     Options         => Config?.Plugins[Name];
     public Config                   Config          => Handler.Config;
 
@@ -66,8 +66,7 @@ public abstract class PluginBase : PluginType, IPlugin
     public object GetTag(PlaylistItem item)
         => item?.GetTag(Name);
 
-    public virtual SerializableDictionary<string, string> GetDefaultOptions()
-        => new SerializableDictionary<string, string>();
+    public virtual Dictionary<string, string> GetDefaultOptions() => new();
 }
 public class PluginType
 {

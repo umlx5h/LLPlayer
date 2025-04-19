@@ -7,9 +7,9 @@
     <UseWPF>true</UseWPF>
     <RepositoryUrl></RepositoryUrl>
     <Description>Media Player .NET Library for WinUI 3/WPF/WinForms (based on FFmpeg/DirectX)</Description>
-    <Version>3.8.2</Version>
+    <Version>3.8.3</Version>
     <Authors>SuRGeoNix</Authors>
-    <Copyright>SuRGeoNix © 2024</Copyright>
+    <Copyright>SuRGeoNix © 2025</Copyright>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/SuRGeoNix/Flyleaf</PackageProjectUrl>
     <PackageTags>flyleaf flyleaflib video audio media player engine framework download extract ffmpeg vortice directx</PackageTags>
@@ -34,24 +34,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Import Include="System" />
-    <Import Include="System.Drawing" />
-    <Import Include="System.Net.Http" />
-    <Import Include="System.Numerics" />
-    <Import Include="System.Windows" />
-    <Import Include="System.Windows.Forms" />
-    <Import Include="System.Xaml" />
-    <Import Include="System.Xml.Linq" />
-    <Import Include="Microsoft.CSharp" />
-    <Import Include="System.Xml" />
-    <Import Include="WindowsBase" />
-    <Import Include="WindowsFormsIntegration" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="CliWrap" Version="3.8.2" />
     <PackageReference Include="DeepL.net" Version="1.14.0" />
-    <PackageReference Include="Flyleaf.FFmpeg.Bindings" Version="7.1.0" />
+    <PackageReference Include="Flyleaf.FFmpeg.Bindings" Version="7.1.1" />
     <PackageReference Include="SearchPioneer.Lingua" Version="1.0.4" />
     <PackageReference Include="TesseractOCR" Version="5.5.0" />
     <PackageReference Include="UTF.Unknown" Version="2.5.1" />
