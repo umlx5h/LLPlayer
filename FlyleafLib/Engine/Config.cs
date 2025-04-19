@@ -115,6 +115,8 @@ public class Config : NotifyPropertyChanged
             }
         }
 
+        config.UpdateDefault();
+
         return config;
     }
     public void Save(string path = null, JsonSerializerOptions jsonOptions = null)
@@ -130,6 +132,19 @@ public class Config : NotifyPropertyChanged
         jsonOptions ??= new JsonSerializerOptions { WriteIndented = true };
 
         File.WriteAllText(path, JsonSerializer.Serialize(this, jsonOptions));
+    }
+
+    private void UpdateDefault()
+    {
+        bool parsed = System.Version.TryParse(Version, out var loadedVer);
+
+        if (!parsed || loadedVer <= System.Version.Parse("0.2.1"))
+        {
+            // for FlyleafLib v3.8.3, Ensure extension_picky is set
+            Demuxer.FormatOpt = DemuxerConfig.DefaultVideoFormatOpt();
+            Demuxer.AudioFormatOpt = DemuxerConfig.DefaultVideoFormatOpt();
+            Demuxer.SubtitlesFormatOpt = DemuxerConfig.DefaultVideoFormatOpt();
+        }
     }
 
     internal void SetPlayer(Player player)
