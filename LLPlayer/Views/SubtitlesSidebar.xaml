@@ -171,17 +171,29 @@
                     Content="{materialDesign:PackIcon Kind=SwapHorizontal}" />
 
             <!-- Subtitle Search -->
+            <!-- Search Button: Always visible in the toolbar -->
+            <Button Style="{StaticResource IconButton}"
+                    ToolTip="Search (Ctrl+F)"
+                    Margin="8,0,0,0"
+                    Command="{Binding CmdShowSearchInput}"
+                    Content="{materialDesign:PackIcon Kind=Magnify}" />
+
+        </StackPanel>
+
+        <!-- Search Input Row: Shown only when search is active -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="7,32,7,0" Visibility="{Binding IsSearchActive, Converter={StaticResource BooleanToVisibilityConv}}">
             <TextBox Width="140"
-                     Margin="8,0,0,0"
                      VerticalAlignment="Center"
                      Text="{Binding SubtitleSearchText, UpdateSourceTrigger=PropertyChanged}"
                      ToolTip="Search subtitles..."
-                     materialDesign:HintAssist.Hint="Search subtitles"/>
+                     materialDesign:HintAssist.Hint="Search subtitles"
+                     KeyDown="SearchTextBox_KeyDown"
+                     x:Name="SidebarSearchTextBox"/>
             <Button Style="{StaticResource IconButton}"
-                    Command="{Binding CmdSearchSubtitle}"
-                    ToolTip="Search"
                     Margin="2,0,0,0"
-                    Content="{materialDesign:PackIcon Kind=Magnify}" />
+                    ToolTip="Clear search (Esc)"
+                    Command="{Binding CmdClearSearch}"
+                    Content="{materialDesign:PackIcon Kind=Close}" />
         </StackPanel>
 
         <controls:NonTopmostPopup

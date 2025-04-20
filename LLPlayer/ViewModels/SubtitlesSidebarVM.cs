@@ -17,9 +17,44 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
         {
             if (Set(ref _subtitleSearchText, value))
             {
-                FilterSubtitles();
+                DebounceFilter();
             }
         }
+    }
+
+    private bool _isSearchActive;
+    public bool IsSearchActive
+    {
+        get => _isSearchActive;
+        set => Set(ref _isSearchActive, value);
+    }
+
+    public DelegateCommand CmdShowSearchInput => field ??= new(() =>
+    {
+        IsSearchActive = true;
+        // Focus will be handled in code-behind
+    });
+
+    public DelegateCommand CmdClearSearch => field ??= new(() =>
+    {
+        SubtitleSearchText = string.Empty;
+        IsSearchActive = false;
+    });
+
+    // Debounce logic
+    private System.Timers.Timer? _debounceTimer;
+    private void DebounceFilter()
+    {
+        _debounceTimer?.Stop();
+        _debounceTimer = _debounceTimer ?? new System.Timers.Timer(300);
+        _debounceTimer.Interval = 300;
+        _debounceTimer.AutoReset = false;
+        _debounceTimer.Elapsed += (s, e) =>
+        {
+            _debounceTimer?.Stop();
+            App.Current.Dispatcher.Invoke(FilterSubtitles);
+        };
+        _debounceTimer.Start();
     }
 
     public DelegateCommand CmdSearchSubtitle => field ??= new(() =>
@@ -32,24 +67,21 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
     private void FilterSubtitles()
     {
         if (FilteredSubs == null) return;
+        var search = SubtitleSearchText.Trim();
         FilteredSubs.Filter = obj =>
         {
             if (obj is not SubtitleData sub)
                 return false;
-            if (string.IsNullOrWhiteSpace(SubtitleSearchText))
+            if (string.IsNullOrWhiteSpace(search))
                 return true;
-            return sub.Text?.IndexOf(SubtitleSearchText.Trim(), StringComparison.OrdinalIgnoreCase) >= 0;
+            return sub.Text?.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0;
         };
         FilteredSubs.Refresh();
     }
 
     public FlyleafManager FL { get; }
 
-    // Call this after loading new subtitles to backup the full list
-    public void BackupAllSubs()
-    {
-        SubManager?.BackupAllSubs();
-    }
+
 
     public SubtitlesSidebarVM(FlyleafManager fl)
     {
