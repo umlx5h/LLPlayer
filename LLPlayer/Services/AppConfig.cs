@@ -218,8 +218,6 @@ public class AppConfigSubs : Bindable
         FL = fl;
         Loaded = true;
 
-        // Initialize the size of secondary subtitles to the same size as the primary at startup
-        SubsFontSize2 = SubsFontSize;
         // Save the initial value of the position for reset.
         _subsPositionInitial = SubsPosition;
 
@@ -298,7 +296,6 @@ public class AppConfigSubs : Bindable
     public double SubsFontSizeFix => GetFixFontSize(SubsFontSize);
 
     // Secondary Subtitle Size
-    [JsonIgnore]
     public double SubsFontSize2
     {
         get;
@@ -314,7 +311,7 @@ public class AppConfigSubs : Bindable
                 OnPropertyChanged(nameof(SubsFontSize2Fix));
             }
         }
-    }
+    } = 44;
 
     [JsonIgnore]
     public double SubsFontSize2Fix => GetFixFontSize(SubsFontSize2);
@@ -391,7 +388,7 @@ public class AppConfigSubs : Bindable
         }
     }
 
-    private bool _isSubsOverflowBottom = true;
+    private bool _isSubsOverflowBottom;
 
     [JsonIgnore]
     public Thickness SubsMargin
@@ -422,7 +419,7 @@ public class AppConfigSubs : Bindable
         get;
         set
         {
-            if (_isSubsOverflowBottom && field < value)
+            if (_isSubsOverflowBottom && SubsPanelSize.Height > 0 && field < value)
             {
                 // Prohibit going further down when it overflows below.
                 return;
