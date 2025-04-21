@@ -258,15 +258,14 @@ public static partial class Utils
 
     public static List<Language> GetSystemLanguages()
     {
-        List<Language> Languages = new();
+        List<Language> Languages = [ Language.English ];
+
         if (CultureInfo.CurrentCulture.ThreeLetterISOLanguageName != "eng")
             Languages.Add(Language.Get(CultureInfo.CurrentCulture));
 
         foreach (System.Windows.Forms.InputLanguage lang in System.Windows.Forms.InputLanguage.InstalledInputLanguages)
             if (lang.Culture.ThreeLetterISOLanguageName != CultureInfo.CurrentCulture.ThreeLetterISOLanguageName && lang.Culture.ThreeLetterISOLanguageName != "eng")
                 Languages.Add(Language.Get(lang.Culture));
-
-        Languages.Add(Language.English);
 
         return Languages;
     }

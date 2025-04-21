@@ -13,7 +13,6 @@ using FlyleafLib.MediaPlayer;
 using FlyleafLib.MediaPlayer.Translation;
 using FlyleafLib.MediaPlayer.Translation.Services;
 using FlyleafLib.Plugins;
-using Whisper.net.LibraryLoader;
 using static FlyleafLib.Utils;
 
 namespace FlyleafLib;
@@ -855,8 +854,16 @@ public class Config : NotifyPropertyChanged
         /// <summary>
         /// Audio languages preference by priority
         /// </summary>
-        public List<Language>   Languages { get { _Languages ??= GetSystemLanguages(); return _Languages; } set => _Languages = value; }
-        List<Language> _Languages;
+        public List<Language>   Languages
+        {
+            get
+            {
+                field ??= GetSystemLanguages();
+                return field;
+            }
+            set => Set(ref field, value);
+        }
+
     }
 
     public class SubConfig : NotifyPropertyChanged
@@ -1010,8 +1017,15 @@ public class Config : NotifyPropertyChanged
         /// <summary>
         /// Subtitle languages preference by priority
         /// </summary>
-        public List<Language>   Languages           { get { _Languages ??= GetSystemLanguages(); return _Languages; } set => _Languages = value; }
-        List<Language> _Languages;
+        public List<Language> Languages
+        {
+            get
+            {
+                field ??= GetSystemLanguages();
+                return field;
+            }
+            set => Set(ref field, value);
+        }
 
         /// <summary>
         /// Whether to use automatic language detection

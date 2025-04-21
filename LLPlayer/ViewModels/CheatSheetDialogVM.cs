@@ -88,13 +88,15 @@ public class CheatSheetDialogVM : Bindable, IDialogAware
                     return true;
                 }
 
-                bool match = key.Description.IndexOf(SearchText.Trim(), StringComparison.OrdinalIgnoreCase) != -1;
+                string query = SearchText.Trim();
+
+                bool match = key.Description.Contains(query, StringComparison.OrdinalIgnoreCase);
                 if (match)
                 {
                     return true;
                 }
 
-                return key.Shortcut.IndexOf(SearchText.Trim(), StringComparison.OrdinalIgnoreCase) != -1;
+                return key.Shortcut.Contains(query, StringComparison.OrdinalIgnoreCase);
             };
         }
     }

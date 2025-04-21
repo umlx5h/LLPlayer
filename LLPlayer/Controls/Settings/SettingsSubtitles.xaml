@@ -287,6 +287,28 @@
 
             </GroupBox>
 
+            <GroupBox Header="Subtitles Language Auto-Open (Priority to the above)">
+                <StackPanel>
+                    <ListBox
+                        ItemsSource="{Binding FL.PlayerConfig.Subtitles.Languages}"
+                        DisplayMemberPath="DisplayName"
+                        BorderThickness="1"
+                        BorderBrush="{DynamicResource MaterialDesign.Brush.Primary}" />
+                    <Button
+                        HorizontalAlignment="Left"
+                        Margin="0 15 0 0"
+                        MaxWidth="150"
+                        Content="Configure"
+                        Command="{Binding CmdConfigureLanguage}" />
+
+                    <TextBlock Margin="5 10 5 0">
+                        The subtitle stream is automatically opened in the order of the languages set here.
+                        <LineBreak />
+                        Subtitles via YoutubeDL are also affected.
+                    </TextBlock>
+                </StackPanel>
+            </GroupBox>
+
             <GroupBox Header="Subtitles Sidebar">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">

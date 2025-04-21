@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text.Json.Serialization;
 using System.Windows;
 
@@ -16,13 +17,17 @@ public class Language : IEquatable<Language>
     string _CultureName;
 
     [JsonIgnore]
-    public string       TopEnglishName    { get; private set; }
+    public string       TopEnglishName  { get; private set; }
+    [JsonIgnore]
+    public string       TopNativeName   { get; private set; }
 
     [JsonIgnore]
     public CultureInfo  Culture         { get; private set; }
 
     [JsonIgnore]
     public CultureInfo  TopCulture      { get; private set; }
+    [JsonIgnore]
+    public string       DisplayName => $"{TopEnglishName} ({TopNativeName})";
 
     [JsonIgnore]
     public string       ISO6391         { get; private set; }
@@ -91,6 +96,7 @@ public class Language : IEquatable<Language>
             lang.TopCulture = lang.TopCulture.Parent;
 
         lang.TopEnglishName = lang.TopCulture.EnglishName;
+        lang.TopNativeName = lang.TopCulture.NativeName;
         lang.IdSubLanguage = lang.Culture.ThreeLetterISOLanguageName;
         lang.ISO6391 = lang.Culture.TwoLetterISOLanguageName;
         lang.IsRTL = RTLCodes.Contains(lang.ISO6391);
@@ -215,4 +221,34 @@ public class Language : IEquatable<Language>
 
     public static Language English = Get("eng");
     public static Language Unknown = Get("und");
+
+    public static List<Language> AllLanguages
+    {
+        get
+        {
+            if (field != null)
+            {
+                return field;
+            }
+
+            var neutralCultures = CultureInfo
+                .GetCultures(CultureTypes.NeutralCultures)
+                .Where(c => !string.IsNullOrEmpty(c.Name));
+
+            var uniqueCultures = neutralCultures
+                .GroupBy(c => c.ThreeLetterISOLanguageName)
+                .Select(g => g.First());
+
+            List<Language> languages = new();
+            foreach (var culture in uniqueCultures)
+            {
+                languages.Add(Get(culture));
+            }
+            languages = languages.OrderBy(l => l.TopEnglishName, StringComparer.InvariantCulture).ToList();
+
+            field = languages;
+
+            return field;
+        }
+    }
 }

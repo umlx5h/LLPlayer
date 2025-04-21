@@ -1,0 +1,138 @@
+﻿<UserControl x:Class="LLPlayer.Views.SelectLanguageDialog"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:vm="clr-namespace:LLPlayer.ViewModels"
+             xmlns:local="clr-namespace:LLPlayer.Views"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:materialDesignInternal="clr-namespace:MaterialDesignThemes.Wpf.Internal;assembly=MaterialDesignThemes.Wpf"
+             Loaded="OnLoaded"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:SelectLanguageDialogVM}"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid Margin="20">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <DockPanel Grid.Column="0" Margin="5 0" VerticalAlignment="Top">
+            <TextBlock
+                DockPanel.Dock="Top"
+                Text="Available Languages" Margin="0 0 0 5" FontSize="14" FontWeight="Bold" />
+
+            <Grid DockPanel.Dock="Bottom">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <TextBox
+                    x:Name="SearchBox"
+                    Grid.Row="0"
+                    materialDesign:HintAssist.FloatingScale="0.50"
+                    materialDesign:HintAssist.Hint="Search"
+                    materialDesign:TextFieldAssist.HasClearButton="True"
+                    materialDesign:TextFieldAssist.TextBoxViewMargin="1 0 1 0"
+                    Margin="0 0 0 10"
+                    FontSize="16"
+                    Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                    Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}">
+                    <TextBox.InputBindings>
+                        <KeyBinding
+                            Key="Escape"
+                            Command="{x:Static materialDesignInternal:ClearText.ClearCommand}" />
+                    </TextBox.InputBindings>
+                </TextBox>
+
+                <ListBox
+                    Grid.Row="1"
+                    ItemsSource="{Binding AvailableLanguages}"
+                    SelectedItem="{Binding SelectedAvailable}"
+                    DisplayMemberPath="DisplayName"
+                    BorderThickness="1"
+                    BorderBrush="{DynamicResource MaterialDesign.Brush.Primary}" />
+            </Grid>
+
+        </DockPanel>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Column="1" Margin="0" VerticalAlignment="Center">
+            <Button
+                ToolTip="Move Right"
+                Style="{StaticResource MaterialDesignIconButton}"
+                HorizontalAlignment="Center"
+                Width="30"
+                Height="30"
+                Command="{Binding CmdMoveRight}"
+                CommandParameter="{Binding}">
+                <materialDesign:PackIcon Kind="ArrowRightBold" />
+            </Button>
+
+            <Button
+                ToolTip="Move Left"
+                Style="{StaticResource MaterialDesignIconButton}"
+                HorizontalAlignment="Center"
+                Width="30"
+                Height="30"
+                Command="{Binding CmdMoveLeft}"
+                CommandParameter="{Binding}">
+                <materialDesign:PackIcon Kind="ArrowLeftBold" />
+            </Button>
+
+            <Button
+                ToolTip="Move Up (right selected libraries)"
+                Style="{StaticResource MaterialDesignIconButton}"
+                HorizontalAlignment="Center"
+                Margin="0 15 0 0"
+                Width="30"
+                Height="30"
+                Command="{Binding CmdMoveUp}"
+                CommandParameter="{Binding}">
+                <materialDesign:PackIcon Kind="ArrowUpBoldOutline" />
+            </Button>
+
+            <Button
+                ToolTip="Move Down (right selected libraries)"
+                Style="{StaticResource MaterialDesignIconButton}"
+                HorizontalAlignment="Center"
+                Width="30"
+                Height="30"
+                Command="{Binding CmdMoveDown}"
+                CommandParameter="{Binding}">
+                <materialDesign:PackIcon Kind="ArrowDownBoldOutline" />
+            </Button>
+        </StackPanel>
+
+        <DockPanel Grid.Column="2" Margin="5 0" VerticalAlignment="Top">
+            <TextBlock
+                DockPanel.Dock="Top"
+                Text="Selected Languages (by priority)" Margin="0 0 0 5" FontSize="14" FontWeight="Bold" />
+
+            <Grid DockPanel.Dock="Bottom">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <TextBox
+                    Grid.Row="0"
+                    Margin="0 0 0 10"
+                    Width="300"
+                    FontSize="16"
+                    Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                    Visibility="Hidden"/>
+
+                <ListBox
+                    Grid.Row="1"
+                    ItemsSource="{Binding SelectedLanguages}"
+                    SelectedItem="{Binding SelectedSelected}"
+                    DisplayMemberPath="DisplayName"
+                    BorderThickness="1"
+                    BorderBrush="{DynamicResource MaterialDesign.Brush.Primary}" />
+            </Grid>
+        </DockPanel>
+    </Grid>
+</UserControl>

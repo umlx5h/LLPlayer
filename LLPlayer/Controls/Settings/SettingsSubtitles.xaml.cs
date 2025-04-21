@@ -4,6 +4,7 @@ using FlyleafLib;
 using FlyleafLib.MediaPlayer.Translation;
 using LLPlayer.Extensions;
 using LLPlayer.Services;
+using LLPlayer.Views;
 
 namespace LLPlayer.Controls.Settings;
 
@@ -20,9 +21,11 @@ public partial class SettingsSubtitles : UserControl
 public class SettingsSubtitlesVM : Bindable
 {
     public FlyleafManager FL { get; }
+    private readonly IDialogService _dialogService;
 
-    public SettingsSubtitlesVM(FlyleafManager fl)
+    public SettingsSubtitlesVM(FlyleafManager fl, IDialogService dialogService)
     {
+        _dialogService = dialogService;
         FL = fl;
         Languages = TranslateLanguage.Langs.Values.ToList();
 
@@ -83,4 +86,24 @@ public class SettingsSubtitlesVM : Bindable
             }
         }
     }
+
+    // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
+    public DelegateCommand CmdConfigureLanguage => field ??= new(() =>
+    {
+        DialogParameters p = new()
+        {
+            { "languages", FL.PlayerConfig.Subtitles.Languages }
+        };
+
+        _dialogService.ShowDialog(nameof(SelectLanguageDialog), p, result =>
+        {
+            List<Language> updated = result.Parameters.GetValue<List<Language>>("languages");
+
+            if (!FL.PlayerConfig.Subtitles.Languages.SequenceEqual(updated))
+            {
+                FL.PlayerConfig.Subtitles.Languages = updated;
+            }
+        });
+    });
+    // ReSharper restore NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 }

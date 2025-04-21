@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Input;
 using LLPlayer.ViewModels;
 
 namespace LLPlayer.Views;
@@ -13,6 +14,19 @@ public partial class CheatSheetDialog : UserControl
         InitializeComponent();
 
         DataContext = ((App)Application.Current).Container.Resolve<CheatSheetDialogVM>();
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        Window? window = Window.GetWindow(this);
+        window!.CommandBindings.Add(new CommandBinding(ApplicationCommands.Find, OnFindExecuted));
+    }
+
+    private void OnFindExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        SearchBox.Focus();
+        SearchBox.SelectAll();
+        e.Handled = true;
     }
 }
 

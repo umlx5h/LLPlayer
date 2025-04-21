@@ -7,7 +7,9 @@
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:local="clr-namespace:LLPlayer.Views"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:materialDesignInternal="clr-namespace:MaterialDesignThemes.Wpf.Internal;assembly=MaterialDesignThemes.Wpf"
              xmlns:helpers="clr-namespace:LLPlayer.Extensions"
+             Loaded="OnLoaded"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:CheatSheetDialogVM}"
              d:Foreground="White"
@@ -117,14 +119,21 @@
                     <!-- Search Bar -->
                     <StackPanel Orientation="Horizontal" Margin="50 10 0 10" Grid.Row="0">
                         <TextBox
+                            x:Name="SearchBox"
                             materialDesign:HintAssist.FloatingScale="0.50"
                             materialDesign:HintAssist.Hint="Search Action"
+                            materialDesign:TextFieldAssist.HasClearButton="True"
                             materialDesign:TextFieldAssist.TextBoxViewMargin="1 0 1 0"
                             Width="300"
                             FontSize="16"
                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                            Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                            />
+                            Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}">
+                            <TextBox.InputBindings>
+                                <KeyBinding
+                                    Key="Escape"
+                                    Command="{x:Static materialDesignInternal:ClearText.ClearCommand}" />
+                            </TextBox.InputBindings>
+                        </TextBox>
                         <TextBlock Text="{Binding Path=HitCount, StringFormat={}{0} hit}"
                             FontSize="16"
                             VerticalAlignment="Center"

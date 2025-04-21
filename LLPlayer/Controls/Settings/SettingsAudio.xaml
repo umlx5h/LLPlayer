@@ -6,8 +6,9 @@
              xmlns:local="clr-namespace:LLPlayer.Controls.Settings"
              xmlns:vm="clr-namespace:LLPlayer.ViewModels"
              xmlns:helpers="clr-namespace:LLPlayer.Extensions"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d"
-             d:DataContext="{d:DesignInstance vm:SettingsDialogVM}"
+             d:DataContext="{d:DesignInstance local:SettingsAudioVM}"
              d:Foreground="White"
              d:Background="Black"
              d:DesignHeight="450" d:DesignWidth="800">
@@ -66,6 +67,28 @@
                             Text="{Binding FL.PlayerConfig.Player.VolumeDefault}"
                             helpers:TextBoxHelper.OnlyNumeric="Uint"/>
                     </StackPanel>
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="Audio Language (Priority to the above)">
+                <StackPanel>
+                    <ListBox
+                        ItemsSource="{Binding FL.PlayerConfig.Audio.Languages}"
+                        DisplayMemberPath="DisplayName"
+                        BorderThickness="1"
+                        BorderBrush="{DynamicResource MaterialDesign.Brush.Primary}" />
+                    <Button
+                        HorizontalAlignment="Left"
+                        Margin="0 15 0 0"
+                        MaxWidth="150"
+                        Content="Configure"
+                        Command="{Binding CmdConfigureLanguage}" />
+
+                    <TextBlock Margin="5 10 5 0">
+                        The audio stream is automatically opened in the order of the languages set here.
+                        <LineBreak />
+                        Audios via YoutubeDL are also affected.
+                    </TextBlock>
                 </StackPanel>
             </GroupBox>
 

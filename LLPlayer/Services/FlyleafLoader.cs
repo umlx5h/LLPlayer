@@ -125,14 +125,6 @@ public static class FlyleafLoader
         config.Video.GPUAdapter = ""; // Set it empty so it will include it when we save it
         config.Subtitles.SearchLocal = true;
 
-        // TODO: L: Allow customization in settings
-        // Give top most priority to English
-        config.Audio.Languages =
-            config.Audio.Languages.Take(config.Audio.Languages.Count - 1)
-                .Prepend(config.Audio.Languages.Last()).ToList();
-        config.Subtitles.Languages =
-            config.Subtitles.Languages.Take(config.Subtitles.Languages.Count - 1)
-                .Prepend(config.Subtitles.Languages.Last()).ToList();
         return config;
     }
 }
