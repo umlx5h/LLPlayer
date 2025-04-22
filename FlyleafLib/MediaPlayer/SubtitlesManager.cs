@@ -172,6 +172,11 @@ public class SubManager : INotifyPropertyChanged
         });
     }
 
+    public void RaisePropertyChanged(string propertyName)
+    {
+        OnPropertyChanged(propertyName);
+    }
+
     /// <summary>
     /// This must be called when doing heavy operation
     /// </summary>

@@ -158,6 +158,9 @@ public class AppConfig : Bindable
 
     public bool SidebarTextMask { get; set => Set(ref field, value); }
 
+    [JsonIgnore]
+    public bool SidebarSearchActive { get; set => Set(ref field, value); }
+
     public string SidebarFontFamily { get; set => Set(ref field, value); } = "Segoe UI";
 
     public double SidebarFontSize { get; set => Set(ref field, value); } = 16;
