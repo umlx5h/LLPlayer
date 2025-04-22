@@ -1,6 +1,5 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Windows.Data;
-using FlyleafLib;
 using FlyleafLib.MediaPlayer;
 using LLPlayer.Extensions;
 using LLPlayer.Services;
@@ -9,79 +8,7 @@ namespace LLPlayer.ViewModels;
 
 public class SubtitlesSidebarVM : Bindable, IDisposable
 {
-    private string _subtitleSearchText = string.Empty;
-    public string SubtitleSearchText
-    {
-        get => _subtitleSearchText;
-        set
-        {
-            if (Set(ref _subtitleSearchText, value))
-            {
-                DebounceFilter();
-            }
-        }
-    }
-
-    private bool _isSearchActive;
-    public bool IsSearchActive
-    {
-        get => _isSearchActive;
-        set => Set(ref _isSearchActive, value);
-    }
-
-    public DelegateCommand CmdShowSearchInput => field ??= new(() =>
-    {
-        IsSearchActive = true;
-        // Focus will be handled in code-behind
-    });
-
-    public DelegateCommand CmdClearSearch => field ??= new(() =>
-    {
-        SubtitleSearchText = string.Empty;
-        IsSearchActive = false;
-    });
-
-    // Debounce logic
-    private System.Timers.Timer? _debounceTimer;
-    private void DebounceFilter()
-    {
-        _debounceTimer?.Stop();
-        _debounceTimer = _debounceTimer ?? new System.Timers.Timer(300);
-        _debounceTimer.Interval = 300;
-        _debounceTimer.AutoReset = false;
-        _debounceTimer.Elapsed += (s, e) =>
-        {
-            _debounceTimer?.Stop();
-            App.Current.Dispatcher.Invoke(FilterSubtitles);
-        };
-        _debounceTimer.Start();
-    }
-
-    public DelegateCommand CmdSearchSubtitle => field ??= new(() =>
-    {
-        FilterSubtitles();
-    });
-
-    public ICollectionView FilteredSubs { get; private set; }
-
-    private void FilterSubtitles()
-    {
-        if (FilteredSubs == null) return;
-        var search = SubtitleSearchText.Trim();
-        FilteredSubs.Filter = obj =>
-        {
-            if (obj is not SubtitleData sub)
-                return false;
-            if (string.IsNullOrWhiteSpace(search))
-                return true;
-            return sub.Text?.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0;
-        };
-        FilteredSubs.Refresh();
-    }
-
     public FlyleafManager FL { get; }
-
-
 
     public SubtitlesSidebarVM(FlyleafManager fl)
     {
@@ -90,8 +17,16 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
         FL.Config.PropertyChanged += OnConfigOnPropertyChanged;
 
         // Initialize filtered view for the sidebar
-        FilteredSubs = CollectionViewSource.GetDefaultView(SubManager.Subs);
-        FilterSubtitles();
+        for (int i = 0; i < _filteredSubs.Length; i++)
+        {
+            // TODO: L: Address issue of incorrect SelectedIndex during filtering
+            _filteredSubs[i] = CollectionViewSource.GetDefaultView(FL.Player.SubtitlesManager[i].Subs);
+        }
+    }
+
+    public void Dispose()
+    {
+        FL.Config.PropertyChanged -= OnConfigOnPropertyChanged;
     }
 
     private void OnConfigOnPropertyChanged(object? sender, PropertyChangedEventArgs args)
@@ -101,24 +36,46 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
             case nameof(FL.Config.SidebarShowSecondary):
                 OnPropertyChanged(nameof(SubIndex));
                 OnPropertyChanged(nameof(SubManager));
+
+                // prevent unnecessary filter update
+                if (_lastSearchText[SubIndex] != _trimSearchText)
+                {
+                    ApplyFilter(); // ensure filter applied
+                }
                 break;
             case nameof(FL.Config.SidebarShowOriginalText):
                 // Update ListBox
                 OnPropertyChanged(nameof(SubManager));
+
+                if (_trimSearchText.Length != 0)
+                {
+                    // because of switch between Text and DisplayText
+                    ApplyFilter();
+                }
                 break;
         }
     }
 
-    public void Dispose()
-    {
-        FL.Config.PropertyChanged -= OnConfigOnPropertyChanged;
-    }
-
     public int SubIndex => !FL.Config.SidebarShowSecondary ? 0 : 1;
 
-    // Expose filtered subtitles if available
     public SubManager SubManager => FL.Player.SubtitlesManager[SubIndex];
 
+    private readonly ICollectionView[] _filteredSubs = new ICollectionView[2];
+
+    private string _searchText = string.Empty;
+    public string SearchText
+    {
+        get => _searchText;
+        set
+        {
+            if (Set(ref _searchText, value))
+            {
+                DebounceFilter();
+            }
+        }
+    }
+
+    private string _trimSearchText = string.Empty; // for performance
 
     // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 
@@ -161,33 +118,6 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
             return;
         }
 
-        // If paused, start playing after seek
-        if (!FL.Player.IsPlaying)
-        {
-            FL.Player.SeekCompleted += PlayerOnSeekCompleted;
-
-            void PlayerOnSeekCompleted(object? sender, int args)
-            {
-                FL.Player.SeekCompleted -= PlayerOnSeekCompleted;
-
-                if (args != -1)
-                {
-                    Utils.UI(() =>
-                    {
-                        if (!FL.Player.IsPlaying)
-                        {
-                            FL.Player.Play();
-                        }
-                    });
-                }
-            }
-        }
-
-        if (index.Value < 0 || index.Value >= SubManager.Subs.Count)
-        {
-            ErrorDialogHelper.ShowKnownErrorPopup("Subtitle index out of range.", "Subtitle Play");
-            return;
-        }
         var sub = SubManager.Subs[index.Value];
         FL.Player.SeekAccurate(sub.StartTime, SubIndex);
     });
@@ -199,11 +129,6 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
             return;
         }
 
-        if (index.Value < 0 || index.Value >= SubManager.Subs.Count)
-        {
-            ErrorDialogHelper.ShowKnownErrorPopup("Subtitle index out of range.", "Subtitle Sync");
-            return;
-        }
         var sub = SubManager.Subs[index.Value];
         var newDelay = FL.Player.CurTime - sub.StartTime.Ticks;
 
@@ -213,6 +138,75 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
         FL.PlayerConfig.Subtitles[SubIndex].Delay = newDelay;
     });
 
-    // ReSharper restore NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
-}
+    public DelegateCommand CmdClearSearch => field ??= new(() =>
+    {
+        Set(ref _searchText, string.Empty, nameof(SearchText));
+        _trimSearchText = string.Empty;
 
+        _debounceCts?.Cancel();
+        _debounceCts?.Dispose();
+        _debounceCts = null;
+
+        for (int i = 0; i < _filteredSubs.Length; i++)
+        {
+            _lastSearchText[i] = string.Empty;
+            _filteredSubs[i].Filter = null; // remove filter completely
+            _filteredSubs[i].Refresh();
+        }
+
+        FL.Config.SidebarSearchActive = false;
+
+        // move focus to video and enable keybindings
+        FL.FlyleafHost!.Surface.Focus();
+        // for scrolling to current sub
+        // TODO: L: not working sometimes?
+        SubManager.RaisePropertyChanged(nameof(SubManager.CurrentIndex));
+    });
+
+    // ReSharper restore NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
+
+    // Debounce logic
+    private CancellationTokenSource? _debounceCts;
+    private async void DebounceFilter()
+    {
+        _debounceCts?.Cancel();
+        _debounceCts?.Dispose();
+        _debounceCts = new CancellationTokenSource();
+        var token = _debounceCts.Token;
+
+        try
+        {
+            await Task.Delay(300, token); // 300ms debounce
+
+            if (!token.IsCancellationRequested)
+            {
+                ApplyFilter();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // ignore
+        }
+    }
+
+    private readonly string[] _lastSearchText = [string.Empty, string.Empty];
+
+    private void ApplyFilter()
+    {
+        _trimSearchText = SearchText.Trim();
+        _lastSearchText[SubIndex] = _trimSearchText;
+
+        // initialize filter lazily
+        _filteredSubs[SubIndex].Filter ??= SubFilter;
+        _filteredSubs[SubIndex].Refresh();
+    }
+
+    private bool SubFilter(object obj)
+    {
+        if (_trimSearchText.Length == 0) return true;
+        if (obj is not SubtitleData sub) return false;
+
+        string? source = FL.Config.SidebarShowOriginalText ? sub.Text : sub.DisplayText;
+        return source?.IndexOf(_trimSearchText, StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+}

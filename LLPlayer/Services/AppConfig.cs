@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Text.Json;
@@ -157,6 +157,9 @@ public class AppConfig : Bindable
     public bool SidebarShowOriginalText { get; set => Set(ref field, value); }
 
     public bool SidebarTextMask { get; set => Set(ref field, value); }
+
+    [JsonIgnore]
+    public bool SidebarSearchActive { get; set => Set(ref field, value); }
 
     public string SidebarFontFamily { get; set => Set(ref field, value); } = "Segoe UI";
 

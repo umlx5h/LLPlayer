@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -92,41 +92,6 @@ public class SubManager : INotifyPropertyChanged
     /// </summary>
     public BulkObservableCollection<SubtitleData> Subs { get; } = new();
 
-    // Backup of all loaded subtitles for filtering
-    private List<SubtitleData> _allSubs = new();
-    public List<SubtitleData> AllSubs => _allSubs;
-
-    // Call this after loading or updating Subs
-    public void BackupAllSubs()
-    {
-        _allSubs = Subs.ToList();
-    }
-
-    // Replace Subs with a filtered list
-    public void SetFilteredSubs(IEnumerable<SubtitleData> filtered)
-    {
-        Subs.Clear();
-        int idx = 0;
-        foreach (var s in filtered)
-        {
-            s.Index = idx++;
-            Subs.Add(s);
-        }
-        // Clamp CurrentIndex to valid range after filtering
-        if (CurrentIndex >= Subs.Count)
-            CurrentIndex = Subs.Count - 1;
-        if (CurrentIndex < 0 && Subs.Count > 0)
-            CurrentIndex = 0;
-        if (Subs.Count == 0)
-            CurrentIndex = -1;
-    }
-
-    // Restore Subs to all items
-    public void RestoreAllSubs()
-    {
-        SetFilteredSubs(_allSubs);
-    }
-
     /// <summary>
     /// True when addition to Subs is running... (Reading all subtitles, OCR, ASR)
     /// </summary>
@@ -205,6 +170,11 @@ public class SubManager : INotifyPropertyChanged
         });
     }
 
+    public void RaisePropertyChanged(string propertyName)
+    {
+        OnPropertyChanged(propertyName);
+    }
+
     /// <summary>
     /// This must be called when doing heavy operation
     /// </summary>
@@ -235,7 +205,6 @@ public class SubManager : INotifyPropertyChanged
         {
             sub.Index = Subs.Count;
             Subs.Add(sub);
-            BackupAllSubs();
         }
     }
 
@@ -244,7 +213,6 @@ public class SubManager : INotifyPropertyChanged
         lock (_subsLocker)
         {
             Subs.AddRange(items);
-            BackupAllSubs();
         }
     }
 
@@ -252,11 +220,17 @@ public class SubManager : INotifyPropertyChanged
     {
         lock (_subsLocker)
         {
-            if (Subs.Count == 0 || CurrentIndex < 0 || CurrentIndex >= Subs.Count)
+            if (Subs.Count == 0 || CurrentIndex == -1)
+            {
                 return null;
+            }
+
+            Debug.Assert(CurrentIndex < Subs.Count);
 
             if (State == PositionState.Showing)
+            {
                 return Subs[CurrentIndex];
+            }
 
             return null;
         }
@@ -550,7 +524,6 @@ public class SubManager : INotifyPropertyChanged
             State = PositionState.First;
             LanguageSource = null;
             IsLoading = false;
-            BackupAllSubs();
         }
     }
 

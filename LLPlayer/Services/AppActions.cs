@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using FlyleafLib;
+using FlyleafLib.Controls.WPF;
 using FlyleafLib.MediaPlayer;
 using LLPlayer.Extensions;
 using LLPlayer.Views;
@@ -18,6 +19,7 @@ public class AppActions
 {
     private readonly Player _player;
     private readonly AppConfig _config;
+    private FlyleafHost? _flyleafHost => _player.Host as FlyleafHost;
     private readonly IDialogService _dialogService;
 
     public AppActions(Player player, AppConfig config, IDialogService dialogService)
@@ -73,6 +75,7 @@ public class AppActions
             [CustomKeyBindingAction.ToggleSubsAutoTextCopy] = CmdToggleSubsAutoTextCopy.Execute,
             [CustomKeyBindingAction.ToggleSidebarShowSecondary] = CmdToggleSidebarShowSecondary.Execute,
             [CustomKeyBindingAction.ToggleSidebarShowOriginalText] = CmdToggleSidebarShowOriginalText.Execute,
+            [CustomKeyBindingAction.ActivateSubsSearch] = CmdActivateSubsSearch.Execute,
 
             [CustomKeyBindingAction.ToggleSidebar] = CmdToggleSidebar.Execute,
             [CustomKeyBindingAction.ToggleDebugOverlay] = CmdToggleDebugOverlay.Execute,
@@ -103,6 +106,7 @@ public class AppActions
             new() { ActionName = nameof(CustomKeyBindingAction.SubsDistanceDecrease), Key = Key.Down, Ctrl = true, Shift = true },
             new() { ActionName = nameof(CustomKeyBindingAction.SubsPrimaryTextCopy), Key = Key.C, Ctrl = true, IsKeyUp = true },
             new() { ActionName = nameof(CustomKeyBindingAction.ToggleSubsAutoTextCopy), Key = Key.A, Alt = true, IsKeyUp = true },
+            new() { ActionName = nameof(CustomKeyBindingAction.ActivateSubsSearch), Key = Key.F, Ctrl = true, IsKeyUp = true },
             new() { ActionName = nameof(CustomKeyBindingAction.ToggleSidebar), Key = Key.B, Ctrl = true, IsKeyUp = true },
             new() { ActionName = nameof(CustomKeyBindingAction.ToggleDebugOverlay), Key = Key.D, Ctrl = true, Shift = true, IsKeyUp = true },
             new() { ActionName = nameof(CustomKeyBindingAction.OpenWindowSettings), Key = Key.OemComma, Ctrl = true, IsKeyUp = true },
@@ -340,6 +344,20 @@ public class AppActions
     public DelegateCommand CmdToggleSubsAutoTextCopy => field ?? new(() =>
     {
         _config.Subs.SubsAutoTextCopy = !_config.Subs.SubsAutoTextCopy;
+    });
+
+    public DelegateCommand CmdActivateSubsSearch => field ?? new(() =>
+    {
+        if (_flyleafHost is { IsFullScreen: true })
+        {
+            return;
+        }
+
+        _config.ShowSidebar = true;
+
+        // for getting focus to TextBox
+        _config.SidebarSearchActive = false;
+        _config.SidebarSearchActive = true;
     });
 
     public DelegateCommand CmdToggleSidebarShowSecondary => field ?? new(() =>
@@ -651,6 +669,8 @@ public enum CustomKeyBindingAction
     ToggleSidebarShowSecondary,
     [Description("Toggle to show original text in Subtitles Sidebar")]
     ToggleSidebarShowOriginalText,
+    [Description("Activate Subtitles Search in Sidebar")]
+    ActivateSubsSearch,
 
     [Description("Toggle Subitltes Sidebar")]
     ToggleSidebar,
@@ -728,6 +748,7 @@ public static class KeyBindingActionExtensions
             case CustomKeyBindingAction.ToggleSubsAutoTextCopy:
             case CustomKeyBindingAction.ToggleSidebarShowSecondary:
             case CustomKeyBindingAction.ToggleSidebarShowOriginalText:
+            case CustomKeyBindingAction.ActivateSubsSearch:
                 return KeyBindingActionGroup.Subtitles;
 
             case CustomKeyBindingAction.ToggleSidebar:

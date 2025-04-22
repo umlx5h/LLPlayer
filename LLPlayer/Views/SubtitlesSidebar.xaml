@@ -1,4 +1,4 @@
-<UserControl x:Class="LLPlayer.Views.SubtitlesSidebar"
+﻿<UserControl x:Class="LLPlayer.Views.SubtitlesSidebar"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -6,11 +6,22 @@
              xmlns:controls="clr-namespace:LLPlayer.Controls"
              xmlns:vm="clr-namespace:LLPlayer.ViewModels"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:helpers="clr-namespace:LLPlayer.Extensions"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:SubtitlesSidebarVM}"
              d:Foreground="White"
              d:Background="Black"
              d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.InputBindings>
+        <!-- Shortcut for when the sidebar has focus (not configurable) -->
+        <KeyBinding
+            Modifiers="Ctrl"
+            Key="F"
+            Command="{Binding FL.Action.CmdActivateSubsSearch}" />
+        <KeyBinding
+            Key="Esc"
+            Command="{Binding CmdClearSearch}" />
+    </UserControl.InputBindings>
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -78,7 +89,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" /> <!-- Toolbar -->
             <RowDefinition Height="Auto" /> <!-- Search Bar -->
-            <RowDefinition Height="*" />   <!-- Main Content (ListBox) -->
+            <RowDefinition Height="*" />    <!-- Main Content (ListBox) -->
             <RowDefinition Height="Auto" /> <!-- Spinner/ProgressBar -->
         </Grid.RowDefinitions>
 
@@ -172,35 +183,38 @@
                     Content="{materialDesign:PackIcon Kind=SwapHorizontal}" />
 
             <!-- Subtitle Search -->
-            <!-- Search Button: Always visible in the toolbar -->
             <Button Style="{StaticResource IconButton}"
                     ToolTip="Search (Ctrl+F)"
-                    Margin="8,0,0,0"
-                    Command="{Binding CmdShowSearchInput}"
+                    Command="{Binding FL.Action.CmdActivateSubsSearch}"
                     Content="{materialDesign:PackIcon Kind=Magnify}" />
 
         </StackPanel>
 
         <!-- Search Input Row: Shown only when search is active -->
-        <Grid Grid.Row="1" Margin="7,0,7,0" Visibility="{Binding IsSearchActive, Converter={StaticResource BooleanToVisibilityConv}}">
+        <Grid Grid.Row="1" Margin="7 0 7 0" Visibility="{Binding FL.Config.SidebarSearchActive, Converter={StaticResource BooleanToVisibilityConv}}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <TextBox Grid.Column="0"
-                     HorizontalAlignment="Stretch"
-                     VerticalAlignment="Center"
-                     Text="{Binding SubtitleSearchText, UpdateSourceTrigger=PropertyChanged}"
-                     ToolTip="Search subtitles..."
-                     materialDesign:HintAssist.Hint="Search subtitles"
-                     KeyDown="SearchTextBox_KeyDown"
-                     x:Name="SidebarSearchTextBox"/>
-            <Button Grid.Column="1"
-                    Style="{StaticResource IconButton}"
-                    Margin="2,0,0,0"
-                    ToolTip="Clear search (Esc)"
-                    Command="{Binding CmdClearSearch}"
-                    Content="{materialDesign:PackIcon Kind=Close}" />
+            <TextBox
+                Grid.Column="0"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Center"
+                Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                ToolTip="Search subtitles..."
+                materialDesign:HintAssist.Hint="Search subtitles"
+                helpers:FocusBehavior.IsFocused="{Binding FL.Config.SidebarSearchActive}" />
+            <Button
+                Grid.Column="1"
+                Style="{StaticResource IconButton}"
+                Margin="2 0 0 0"
+                ToolTip="Clear search (Esc)"
+                Command="{Binding CmdClearSearch}">
+                <materialDesign:PackIcon
+                    Kind="CloseCircle"
+                    Width="18"
+                    Height="18" />
+            </Button>
         </Grid>
 
         <controls:NonTopmostPopup
@@ -218,6 +232,7 @@
                 IsSidebar="True"
                 MaxWidth="400" />
         </controls:NonTopmostPopup>
+
         <ListBox
             x:Name="SubtitleListBox"
             Grid.Row="2"
@@ -229,7 +244,7 @@
             VirtualizingStackPanel.ScrollUnit="Pixel"
             VirtualizingStackPanel.VirtualizationMode="Recycling"
             VerticalContentAlignment="Top"
-            ItemsSource="{Binding FilteredSubs}"
+            ItemsSource="{Binding SubManager.Subs}"
             SelectedIndex="{Binding SubManager.CurrentIndex, Mode=OneWay}"
             SelectionChanged="SubtitleListBox_SelectionChanged"
             ScrollViewer.HorizontalScrollBarVisibility="Disabled">

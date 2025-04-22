@@ -144,6 +144,19 @@ public class Config : NotifyPropertyChanged
             Demuxer.FormatOpt = DemuxerConfig.DefaultVideoFormatOpt();
             Demuxer.AudioFormatOpt = DemuxerConfig.DefaultVideoFormatOpt();
             Demuxer.SubtitlesFormatOpt = DemuxerConfig.DefaultVideoFormatOpt();
+
+
+            // for subtitles search #91
+            int ctrlFBindingIdx = Player.KeyBindings.Keys
+                .FindIndex(k => k.Key == System.Windows.Input.Key.F &&
+                             k.Ctrl && !k.Alt && !k.Shift);
+            if (ctrlFBindingIdx != -1)
+            {
+                // remove existing binding
+                Player.KeyBindings.Keys.RemoveAt(ctrlFBindingIdx);
+            }
+            // set CTRL+F to subtitles search
+            Player.KeyBindings.Keys.Add(new KeyBinding { Ctrl = true, Key = System.Windows.Input.Key.F, IsKeyUp = true, Action = KeyBindingAction.Custom, ActionName = "ActivateSubsSearch" });
         }
     }
 
