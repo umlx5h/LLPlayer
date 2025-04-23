@@ -19,7 +19,7 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
         // Initialize filtered view for the sidebar
         for (int i = 0; i < _filteredSubs.Length; i++)
         {
-            _filteredSubs[i] = CollectionViewSource.GetDefaultView(FL.Player.SubtitlesManager[i].Subs);
+            _filteredSubs[i] = (ListCollectionView)CollectionViewSource.GetDefaultView(FL.Player.SubtitlesManager[i].Subs);
         }
     }
 
@@ -59,7 +59,7 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
 
     public SubManager SubManager => FL.Player.SubtitlesManager[SubIndex];
 
-    private readonly ICollectionView[] _filteredSubs = new ICollectionView[2];
+    private readonly ListCollectionView[] _filteredSubs = new ListCollectionView[2];
 
     private string _searchText = string.Empty;
     public string SearchText
@@ -75,6 +75,8 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
     }
 
     private string _trimSearchText = string.Empty; // for performance
+
+    public string HitCount { get; set => Set(ref field, value); } = string.Empty;
 
     public event EventHandler? RequestScrollToTop;
 
@@ -146,6 +148,7 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
 
         Set(ref _searchText, string.Empty, nameof(SearchText));
         _trimSearchText = string.Empty;
+        HitCount = string.Empty;
 
         _debounceCts?.Cancel();
         _debounceCts?.Dispose();
@@ -167,6 +170,44 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
         var prev = SubManager.SelectedSub;
         SubManager.SelectedSub = null;
         SubManager.SelectedSub = prev;
+    });
+
+    public DelegateCommand CmdNextMatch => field ??= new(() =>
+    {
+        if (_filteredSubs[SubIndex].IsEmpty)
+            return;
+
+        if (!_filteredSubs[SubIndex].MoveCurrentToNext())
+        {
+            // if last, move to first
+            _filteredSubs[SubIndex].MoveCurrentToFirst();
+        }
+
+        var nextItem = (SubtitleData)_filteredSubs[SubIndex].CurrentItem;
+        if (nextItem != null)
+        {
+            FL.Player.SeekAccurate(nextItem.StartTime, SubIndex);
+            FL.Player.Activity.RefreshFullActive();
+        }
+    });
+
+    public DelegateCommand CmdPrevMatch => field ??= new(() =>
+    {
+        if (_filteredSubs[SubIndex].IsEmpty)
+            return;
+
+        if (!_filteredSubs[SubIndex].MoveCurrentToPrevious())
+        {
+            // if first, move to last
+            _filteredSubs[SubIndex].MoveCurrentToLast();
+        }
+
+        var prevItem = (SubtitleData)_filteredSubs[SubIndex].CurrentItem;
+        if (prevItem != null)
+        {
+            FL.Player.SeekAccurate(prevItem.StartTime, SubIndex);
+            FL.Player.Activity.RefreshFullActive();
+        }
     });
 
     // ReSharper restore NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
@@ -205,6 +246,9 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
         // initialize filter lazily
         _filteredSubs[SubIndex].Filter ??= SubFilter;
         _filteredSubs[SubIndex].Refresh();
+
+        int count = _filteredSubs[SubIndex].Count;
+        HitCount = count > 0 ? $"{count} hits" : "No hits";
 
         if (SubManager.SelectedSub != null && _filteredSubs[SubIndex].MoveCurrentTo(SubManager.SelectedSub))
         {

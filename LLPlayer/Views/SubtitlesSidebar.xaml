@@ -197,19 +197,32 @@
         </StackPanel>
 
         <!-- Search Input Row: Shown only when search is active -->
-        <Grid Grid.Row="1" Margin="7 0 7 0" Visibility="{Binding FL.Config.SidebarSearchActive, Converter={StaticResource BooleanToVisibilityConv}}">
+        <Grid Grid.Row="1" Margin="7 0 7 16" Visibility="{Binding FL.Config.SidebarSearchActive, Converter={StaticResource BooleanToVisibilityConv}}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
+
             <TextBox
                 Grid.Column="0"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Center"
+                FontSize="14"
                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                 ToolTip="Search subtitles..."
                 materialDesign:HintAssist.Hint="Search subtitles"
-                helpers:FocusBehavior.IsFocused="{Binding FL.Config.SidebarSearchActive}" />
+                materialDesign:HintAssist.HelperText="{Binding HitCount}"
+                helpers:FocusBehavior.IsFocused="{Binding FL.Config.SidebarSearchActive}">
+                <TextBox.InputBindings>
+                    <KeyBinding
+                        Key="Enter"
+                        Command="{Binding CmdNextMatch}" />
+                    <KeyBinding
+                        Key="Enter"
+                        Modifiers="Shift"
+                        Command="{Binding CmdPrevMatch}" />
+                </TextBox.InputBindings>
+            </TextBox>
             <Button
                 Grid.Column="1"
                 Style="{StaticResource IconButton}"
