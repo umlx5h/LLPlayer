@@ -19,7 +19,6 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
         // Initialize filtered view for the sidebar
         for (int i = 0; i < _filteredSubs.Length; i++)
         {
-            // TODO: L: Address issue of incorrect SelectedIndex during filtering
             _filteredSubs[i] = CollectionViewSource.GetDefaultView(FL.Player.SubtitlesManager[i].Subs);
         }
     }
@@ -76,6 +75,8 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
     }
 
     private string _trimSearchText = string.Empty; // for performance
+
+    public event EventHandler? RequestScrollToTop;
 
     // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 
@@ -140,6 +141,9 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
 
     public DelegateCommand CmdClearSearch => field ??= new(() =>
     {
+        if (!FL.Config.SidebarSearchActive)
+            return;
+
         Set(ref _searchText, string.Empty, nameof(SearchText));
         _trimSearchText = string.Empty;
 
@@ -158,9 +162,11 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
 
         // move focus to video and enable keybindings
         FL.FlyleafHost!.Surface.Focus();
+
         // for scrolling to current sub
-        // TODO: L: not working sometimes?
-        SubManager.RaisePropertyChanged(nameof(SubManager.CurrentIndex));
+        var prev = SubManager.SelectedSub;
+        SubManager.SelectedSub = null;
+        SubManager.SelectedSub = prev;
     });
 
     // ReSharper restore NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
@@ -199,6 +205,22 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
         // initialize filter lazily
         _filteredSubs[SubIndex].Filter ??= SubFilter;
         _filteredSubs[SubIndex].Refresh();
+
+        if (SubManager.SelectedSub != null && _filteredSubs[SubIndex].MoveCurrentTo(SubManager.SelectedSub))
+        {
+            // scroll to current playing item
+            var prev = SubManager.SelectedSub;
+            SubManager.SelectedSub = null;
+            SubManager.SelectedSub = prev;
+        }
+        else
+        {
+            // scroll to top
+            if (!_filteredSubs[SubIndex].IsEmpty)
+            {
+                RequestScrollToTop?.Invoke(this, EventArgs.Empty);
+            }
+        }
     }
 
     private bool SubFilter(object obj)

@@ -67,19 +67,16 @@ public class SubManager : INotifyPropertyChanged
 {
     private readonly Lock _locker = new();
     private CancellationTokenSource? _cts;
-
-    public int CurrentIndex
-    {
-        get;
-        private set => Set(ref field, value);
-    } = -1;
+    public SubtitleData? SelectedSub { get; set => Set(ref field, value); } = null;
+    public int CurrentIndex { get; private set => Set(ref field, value); } = -1;
 
     public PositionState State
     {
         get;
         private set
         {
-            if (Set(ref field, value))
+            bool prevIsDisplaying = IsDisplaying;
+            if (Set(ref field, value) && prevIsDisplaying != IsDisplaying)
             {
                 OnPropertyChanged(nameof(IsDisplaying));
             }
@@ -172,11 +169,6 @@ public class SubManager : INotifyPropertyChanged
         });
     }
 
-    public void RaisePropertyChanged(string propertyName)
-    {
-        OnPropertyChanged(propertyName);
-    }
-
     /// <summary>
     /// This must be called when doing heavy operation
     /// </summary>
@@ -196,6 +188,7 @@ public class SubManager : INotifyPropertyChanged
         lock (_subsLocker)
         {
             CurrentIndex = -1;
+            SelectedSub = null;
             Subs.Clear();
             Subs.AddRange(items);
         }
@@ -294,6 +287,9 @@ public class SubManager : INotifyPropertyChanged
         return null;
     }
 
+    private readonly SubtitleTimeComparer _timeComparer = new();
+    private readonly SubtitleData _searchSub = new();
+
     public SubManager SetCurrentTime(TimeSpan currentTime)
     {
         // Adjust the display timing of subtitles by adjusting the timestamp of the video
@@ -312,14 +308,15 @@ public class SubManager : INotifyPropertyChanged
                 return this;
             }
 
-            int ret = Subs.BinarySearch(
-                new SubtitleData { StartTime = currentTime },
-                new SubtitleTimeComparer());
+            _searchSub.StartTime = currentTime;
+
+            int ret = Subs.BinarySearch(_searchSub, _timeComparer);
             int cur = -1;
 
             if (~ret == 0)
             {
                 CurrentIndex = -1;
+                SelectedSub = null;
                 State = PositionState.First;
                 return this;
             }
@@ -343,11 +340,13 @@ public class SubManager : INotifyPropertyChanged
                 if (Subs[cur].EndTime < currentTime)
                 {
                     CurrentIndex = cur;
+                    SelectedSub = Subs[cur];
                     State = PositionState.Last;
                 }
                 else
                 {
                     CurrentIndex = cur;
+                    SelectedSub = Subs[cur];
                     State = PositionState.Showing;
                 }
             }
@@ -357,12 +356,14 @@ public class SubManager : INotifyPropertyChanged
                 {
                     // Show subtitles
                     CurrentIndex = cur;
+                    SelectedSub = Subs[cur];
                     State = PositionState.Showing;
                 }
                 else if (Subs[cur].StartTime <= currentTime)
                 {
                     // Almost there to display in currentIndex.
                     CurrentIndex = cur;
+                    SelectedSub = Subs[cur];
                     State = PositionState.Around;
                 }
             }
@@ -389,7 +390,7 @@ public class SubManager : INotifyPropertyChanged
             if (Subs.Count == 0)
                 return;
 
-            int index = Subs.BinarySearch(new SubtitleData() { EndTime = time }, new SubtitleTimeEndComparer());
+            int index = Subs.BinarySearch(new SubtitleData { EndTime = time }, new SubtitleTimeEndComparer());
 
             if (index < 0)
             {
@@ -518,6 +519,7 @@ public class SubManager : INotifyPropertyChanged
         lock (_subsLocker)
         {
             CurrentIndex = -1;
+            SelectedSub = null;
             foreach (var sub in Subs)
             {
                 sub.Dispose();

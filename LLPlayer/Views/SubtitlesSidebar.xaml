@@ -66,18 +66,24 @@
                                 <Setter Property="ToolTipService.HorizontalOffset" Value="10" />
                             </DataTrigger>
 
+                            <!-- Activate if MouseOver -->
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Primary}" />
                             </Trigger>
-                            <MultiDataTrigger>
-                                <MultiDataTrigger.Conditions>
-                                    <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem, Mode=FindAncestor}}" Value="True" />
-                                    <Condition Binding="{Binding DataContext.SubManager.IsDisplaying, ElementName=SubtitleListBox}" Value="True" />
-                                </MultiDataTrigger.Conditions>
-                                <MultiDataTrigger.Setters>
-                                    <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Primary}" />
-                                </MultiDataTrigger.Setters>
-                            </MultiDataTrigger>
+
+                            <!-- Activate if playing -->
+                            <DataTrigger Value="True">
+                                <DataTrigger.Binding>
+                                    <MultiBinding Converter="{StaticResource SubIsPlayingConv}">
+                                        <Binding Path="Index" />
+                                        <Binding ElementName="SubtitleListBox"
+                                                 Path="DataContext.SubManager.CurrentIndex" />
+                                        <Binding ElementName="SubtitleListBox"
+                                                 Path="DataContext.SubManager.IsDisplaying" />
+                                    </MultiBinding>
+                                </DataTrigger.Binding>
+                                <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Primary}" />
+                            </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </ResourceDictionary>
@@ -245,7 +251,7 @@
             VirtualizingStackPanel.VirtualizationMode="Recycling"
             VerticalContentAlignment="Top"
             ItemsSource="{Binding SubManager.Subs}"
-            SelectedIndex="{Binding SubManager.CurrentIndex, Mode=OneWay}"
+            SelectedItem="{Binding SubManager.SelectedSub, Mode=OneWay}"
             SelectionChanged="SubtitleListBox_SelectionChanged"
             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
 
@@ -298,7 +304,7 @@
                                         <Binding Path="Index" />
                                         <Binding Path="DisplayText" />
                                         <Binding Path="Text" />
-                                        <Binding Path="SelectedIndex" ElementName="SubtitleListBox" />
+                                        <Binding Path="DataContext.SubManager.CurrentIndex" ElementName="SubtitleListBox" />
                                         <Binding Path="DataContext.FL.Config.SidebarTextMask" ElementName="SubtitleListBox" />
                                         <Binding Path="DataContext.FL.Config.SidebarShowOriginalText" ElementName="SubtitleListBox" />
                                     </MultiBinding>

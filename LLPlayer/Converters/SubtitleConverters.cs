@@ -102,6 +102,31 @@ public class SubTextFlowDirectionConverter : IMultiValueConverter
     }
 }
 
+public class SubIsPlayingConverter : IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (values.Length != 3)
+        {
+            return DependencyProperty.UnsetValue;
+        }
+
+        if (values[0] is int index &&
+            values[1] is int currentIndex &&
+            values[2] is bool isDisplaying)
+        {
+            return isDisplaying && index == currentIndex;
+        }
+
+        return DependencyProperty.UnsetValue;
+    }
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+    {
+        throw new NotSupportedException();
+    }
+}
+
 public class ListItemIndexVisibilityConverter : IMultiValueConverter
 {
     public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
