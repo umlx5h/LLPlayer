@@ -938,6 +938,7 @@ public class Config : NotifyPropertyChanged
                 }
                 if (Set(ref _delay, value))
                 {
+                    player.SubtitlesManager[SubIndex].SetCurrentTime(new TimeSpan(player.CurTime));
                     player.ReSync(player.decoder.SubtitlesStreams[SubIndex]);
                 }
             }
