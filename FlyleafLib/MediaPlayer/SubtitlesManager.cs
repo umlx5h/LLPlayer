@@ -774,13 +774,13 @@ public unsafe class SubtitleReader : IDisposable
                     string text = Utils.BytePtrToStringUTF8(sub.rects[0]->ass);
                     avsubtitle_free(&sub);
 
-                    if (string.IsNullOrEmpty(text))
+                    subData.Text = ParseSubtitles.SSAtoSubStyles(text, out var subStyles);
+                    subData.SubStyles = subStyles;
+
+                    if (string.IsNullOrEmpty(subData.Text))
                     {
                         continue;
                     }
-
-                    subData.Text = ParseSubtitles.SSAtoSubStyles(text, out var subStyles);
-                    subData.SubStyles = subStyles;
 
                     break;
 
