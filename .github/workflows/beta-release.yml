@@ -1,0 +1,49 @@
+name: Beta Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: 'Build Commit Hash or ref'
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  ARCHIVE_NAME: LLPlayer-beta-x64.7z
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.commit }}
+          fetch-depth: 0
+
+      - name: Build & Package
+        uses: ./.github/actions/build-package
+        with:
+          archive-name: ${{ env.ARCHIVE_NAME }}
+
+      - name: Get latest stable release tag
+        id: latest
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const latest = await github.rest.repos.getLatestRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            return latest.data.tag_name;
+
+      # Upload to latest stable release with overwrite
+      - name: Upload Beta Asset (overwrite)
+        run: |
+          gh release upload ${{ steps.latest.outputs.result }} ${{ env.ARCHIVE_NAME }} --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

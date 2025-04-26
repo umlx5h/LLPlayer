@@ -1,0 +1,37 @@
+name: Stable Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+env:
+  ARCHIVE_NAME: LLPlayer-${{ github.ref_name }}-x64.7z
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Build & Package
+        uses: ./.github/actions/build-package
+        with:
+          archive-name: ${{ env.ARCHIVE_NAME }}
+
+      - name: Create or update GitHub Draft Release & Upload Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "${{ github.ref_name }}"
+          draft: true # created as draft, later published manually
+          prerelease: false
+          files: ${{ env.ARCHIVE_NAME }}

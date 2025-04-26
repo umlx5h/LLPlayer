@@ -1,0 +1,95 @@
+name: "Build & Package"
+description: "Builds the solution, clean, archive with 7z"
+inputs:
+  archive-name:
+    description: 'archive name including extension'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Install .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.x
+
+    - name: Restore
+      shell: pwsh
+      run: dotnet restore
+
+    - name: Build App
+      shell: pwsh
+      run: |
+        dotnet publish .\LLPlayer\LLPlayer.csproj `
+          --configuration Release `
+          --runtime win-x64 `
+          --self-contained false `
+          -p:PublishSingleFile=true `
+          -p:PublishReadyToRun=true `
+          --output ${{ runner.temp }}\publish
+
+    - name: Clean build
+      shell: pwsh
+      run: |
+        $pub = "${{ runner.temp }}\publish"
+
+        # Clean-up whisper.net
+        $pathsToRemove = @(
+          "$pub\runtimes\noavx\linux-x64"
+          "$pub\runtimes\noavx\win-x86"
+          "$pub\runtimes\openvino\linux-x64"
+          "$pub\runtimes\vulkan\linux-x64"
+          "$pub\runtimes\win-arm64"
+          "$pub\runtimes\win-x86"
+        )
+        Remove-Item -Recurse $pathsToRemove
+
+        # Clean-up TesseractOCR
+        Remove-Item -Recurse "$pub\x86"
+
+        # Copy FFmpeg
+        Copy-Item .\FFmpeg -Destination $pub -Recurse
+
+    - name: Build Plugin YoutubeDL
+      shell: pwsh
+      run: |
+        dotnet publish .\Plugins\YoutubeDL\YoutubeDL.csproj `
+          --configuration Release `
+          --runtime win-x64 `
+          --framework net9.0-windows10.0.18362.0 `
+          --self-contained false `
+          -p:PublishSingleFile=false `
+          -p:PublishReadyToRun=true `
+          --output ${{ runner.temp }}\publish-YoutubeDL
+
+    - name: Copy Plugin DLLs
+      shell: pwsh
+      run: |
+        $pub = "${{ runner.temp }}\publish"
+        $pubY = "${{ runner.temp }}\publish-YoutubeDL"
+        New-Item -ItemType Directory -Path "$pub\Plugins\YoutubeDL"
+        Copy-Item "$pubY\YoutubeDL.dll","$pubY\YoutubeDL.pdb" -Destination "$pub\Plugins\YoutubeDL"
+
+    - name: Get latest yt-dlp release
+      id: fetch-yt
+      uses: pozetroninc/github-action-get-latest-release@master
+      with:
+        repository: yt-dlp/yt-dlp
+        excludes: prerelease,draft
+
+    - name: Download yt-dlp.exe
+      shell: pwsh
+      run: |
+        $pub = "${{ runner.temp }}\publish"
+        $ver = "${{ steps.fetch-yt.outputs.release }}"
+        $url = "https://github.com/yt-dlp/yt-dlp/releases/download/$ver/yt-dlp.exe"
+        $outDir = "$pub\Plugins\YoutubeDL"
+        New-Item -Path "$outDir\yt-dlp.exe_here" -ItemType File
+        Invoke-WebRequest -Uri "$url" -OutFile "$outDir\yt-dlp.exe"
+
+    - name: Archive with 7-Zip
+      id: archive
+      shell: pwsh
+      run: |
+        $pub = "${{ runner.temp }}\publish"
+        $out = "${{ inputs.archive-name }}"
+        & "C:\Program Files\7-Zip\7z.exe" a -t7z -mx=8 -mmt=4 "$out" "$pub\*"
