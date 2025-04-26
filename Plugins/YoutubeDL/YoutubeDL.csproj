@@ -14,7 +14,7 @@
 		</ProjectReference>
 	</ItemGroup>
 
-	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(BuildingInsideVisualStudio)' == 'true'">
 		<Exec Command="if &quot;$(OutDir)&quot; == &quot;bin\Debug\net9.0-windows10.0.18362.0\&quot; (&#xD;&#xA;  set plugindir=Plugins.NET9&#xD;&#xA;) else if &quot;$(OutDir)&quot; == &quot;bin\Release\net9.0-windows10.0.18362.0\&quot; (&#xD;&#xA;  set plugindir=Plugins.NET9&#xD;&#xA;)&#xD;&#xA;&#xD;&#xA;set pluginname=YoutubeDL&#xD;&#xA;&#xD;&#xA;if not exist &quot;$(SolutionDir)\Plugins\bin\%25plugindir%25\%25pluginname%25&quot; mkdir &quot;$(SolutionDir)\Plugins\bin\%25plugindir%25\%25pluginname%25&quot;&#xD;&#xA;&#xD;&#xA;move &quot;$(TargetDir)*.dll&quot; &quot;$(SolutionDir)\Plugins\bin\%25plugindir%25\%25pluginname%25\&quot;&#xD;&#xA;copy /Y &quot;$(ProjectDir)Libs\*&quot; &quot;$(SolutionDir)\Plugins\bin\%25plugindir%25\%25pluginname%25\&quot;&#xD;&#xA;del /Q &quot;$(SolutionDir)\Plugins\bin\%25plugindir%25\%25pluginname%25\yt-dlp.exe_here&quot;" />
 	</Target>
 
