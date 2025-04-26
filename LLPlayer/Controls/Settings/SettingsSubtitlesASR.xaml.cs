@@ -202,6 +202,7 @@ public class SettingsSubtitlesASRVM : Bindable
     public OrderedDictionary<string, string> ExtraArgumentsPresets { get; } = new()
     {
         ["Use CUDA device"] = "--device cuda",
+        ["Use CUDA second device"] = "--device cuda:1",
         ["Use CPU device"] = "--device cpu",
         ["Use Chinese (Simplified), with punctuation"] = "--initial_prompt \"以下是普通话的句子。\"",
         ["Use Chinese (Traditional), with punctuation"] = "--initial_prompt \"以下是普通話的句子。\""

@@ -103,6 +103,8 @@ public class WhisperCppConfig : NotifyPropertyChanged
     public List<RuntimeLibrary> RuntimeLibraries { get; set => Set(ref field, value); } = [RuntimeLibrary.Cpu, RuntimeLibrary.CpuNoAvx];
     public RuntimeLibrary? LoadedLibrary => RuntimeOptions.LoadedLibrary;
 
+    public int? GpuDevice { get; set => Set(ref field, value); }
+
     public int? Threads { get; set => Set(ref field, value); }
     public int? MaxSegmentLength { get; set => Set(ref field, value); }
     public int? MaxTokensPerSegment { get; set => Set(ref field, value); }
@@ -111,6 +113,16 @@ public class WhisperCppConfig : NotifyPropertyChanged
     public bool NoContext { get; set => Set(ref field, value); }
     public int? AudioContextSize { get; set => Set(ref field, value); }
     public string Prompt { get; set => Set(ref field, value); } = string.Empty;
+
+    public WhisperFactoryOptions GetFactoryOptions()
+    {
+        WhisperFactoryOptions opts = WhisperFactoryOptions.Default;
+
+        if (GpuDevice.HasValue)
+            opts.GpuDevice = GpuDevice.Value;
+
+        return opts;
+    }
 
     public WhisperProcessorBuilder ConfigureBuilder(WhisperConfig whisperConfig, WhisperProcessorBuilder builder)
     {

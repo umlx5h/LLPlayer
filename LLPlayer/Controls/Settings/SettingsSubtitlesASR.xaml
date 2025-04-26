@@ -202,8 +202,7 @@
                                         <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
                                             <ToolTipService.ToolTip>
                                                 <TextBlock
-                                                    Text="Specify the number of threads. This will increase the load, but will speed up subtitle generation.
-            Do not specify more than CPU threads."
+                                                    Text="Specify the number of threads. This will increase the load, but will speed up subtitle generation. Do not specify more than CPU threads."
                                                     TextWrapping="Wrap"
                                                     MaxWidth="400" />
                                             </ToolTipService.ToolTip>
@@ -327,6 +326,32 @@
                                             SelectedValue="{Binding SelectedPromptPreset, Mode=TwoWay}" />
                                     </StackPanel>
                                 </DockPanel>
+
+                                <Separator Margin="0 16 0 16" />
+
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock
+                                        Width="200">
+                                        GpuDevice
+                                        <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                            <ToolTipService.ToolTip>
+                                                <TextBlock
+                                                    Text="Specifies the GPU device number to be used, index starting from 0. The first device is used by default."
+                                                    TextWrapping="Wrap"
+                                                    MaxWidth="400" />
+                                            </ToolTipService.ToolTip>
+                                            <materialDesign:PackIcon
+                                                Kind="Information"
+                                                Width="16" Height="16"
+                                                Margin="4 0 0 0" />
+                                        </InlineUIContainer>
+                                    </TextBlock>
+                                    <TextBox
+                                        Width="100"
+                                        Text="{Binding FL.PlayerConfig.Subtitles.WhisperCppConfig.GpuDevice, Converter={StaticResource NullableIntConv}}"
+                                        helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                                </StackPanel>
+
                             </StackPanel>
                         </GroupBox>
 
