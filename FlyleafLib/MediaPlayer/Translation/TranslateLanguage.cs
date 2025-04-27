@@ -383,4 +383,43 @@ public static class TargetLanguageExtensions
 
         return enumValue;
     }
+
+    public static TargetLanguage? ToTargetLanguage(this Language lang)
+    {
+        // language with region first
+        switch (lang.ISO6391)
+        {
+            case "en" when lang.CultureName == "en-GB":
+                return TargetLanguage.EnglishBritish;
+            case "en":
+                return TargetLanguage.EnglishAmerican;
+
+            case "zh" when lang.CultureName.StartsWith("zh-Hant"): // zh-Hant, zh-Hant-XX
+                return TargetLanguage.ChineseTraditional;
+            case "zh": // zh-Hans, zh-Hans-XX, or others
+                return TargetLanguage.ChineseSimplified;
+
+            case "fr" when lang.CultureName == "fr-CA":
+                return TargetLanguage.FrenchCanadian;
+            case "fr":
+                return TargetLanguage.French;
+
+            case "pt" when lang.CultureName == "pt-BR":
+                return TargetLanguage.PortugueseBrazilian;
+            case "pt":
+                return TargetLanguage.Portuguese;
+        }
+
+        // other languages with no region
+        foreach (var tl in Enum.GetValues<TargetLanguage>())
+        {
+            if (tl.ToISO6391() == lang.ISO6391)
+            {
+                return tl;
+            }
+        }
+
+        // not match
+        return null;
+    }
 }

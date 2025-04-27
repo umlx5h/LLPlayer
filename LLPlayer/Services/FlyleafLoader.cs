@@ -2,6 +2,7 @@
 using System.Windows;
 using FlyleafLib;
 using FlyleafLib.MediaPlayer;
+using FlyleafLib.MediaPlayer.Translation;
 
 namespace LLPlayer.Services;
 
@@ -124,6 +125,7 @@ public static class FlyleafLoader
         config.Audio.FiltersEnabled = true; // To allow embedded atempo filter for speed
         config.Video.GPUAdapter = ""; // Set it empty so it will include it when we save it
         config.Subtitles.SearchLocal = true;
+        config.Subtitles.TranslateTargetLanguage = Language.Get(Utils.OriginalCulture).ToTargetLanguage() ?? TargetLanguage.EnglishAmerican; // try to set native language
 
         return config;
     }

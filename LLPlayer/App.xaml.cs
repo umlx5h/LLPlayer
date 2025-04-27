@@ -29,6 +29,15 @@ public partial class App : PrismApplication
         Log = new LogHandler("[App] [MainApp       ] ");
     }
 
+    static App()
+    {
+        // Set thread culture to English and error messages to English
+        Utils.SaveOriginalCulture();
+
+        CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-US");
+        CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("en-US");
+    }
+
     protected override void RegisterTypes(IContainerRegistry containerRegistry)
     {
         containerRegistry
@@ -39,6 +48,7 @@ public partial class App : PrismApplication
         containerRegistry.RegisterDialogWindow<MyDialogWindow>();
 
         containerRegistry.RegisterDialog<SettingsDialog>();
+        containerRegistry.RegisterDialog<SelectLanguageDialog>();
         containerRegistry.RegisterDialog<SubtitlesDownloaderDialog>();
         containerRegistry.RegisterDialog<SubtitlesExportDialog>();
         containerRegistry.RegisterDialog<CheatSheetDialog>();
@@ -59,10 +69,6 @@ public partial class App : PrismApplication
         {
             CmdUrl = e.Args[0];
         }
-
-        // Set thread culture to English and error messages to English
-        Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-US");
-        Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
 
         // TODO: L: customizable?
         // Ensures that we have enough worker threads to avoid the UI from freezing or not updating on time

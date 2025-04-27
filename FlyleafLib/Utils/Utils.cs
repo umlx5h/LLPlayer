@@ -260,14 +260,23 @@ public static partial class Utils
     {
         List<Language> Languages = [ Language.English ];
 
-        if (CultureInfo.CurrentCulture.ThreeLetterISOLanguageName != "eng")
-            Languages.Add(Language.Get(CultureInfo.CurrentCulture));
+        if (OriginalCulture.ThreeLetterISOLanguageName != "eng")
+            Languages.Add(Language.Get(OriginalCulture));
 
         foreach (System.Windows.Forms.InputLanguage lang in System.Windows.Forms.InputLanguage.InstalledInputLanguages)
-            if (lang.Culture.ThreeLetterISOLanguageName != CultureInfo.CurrentCulture.ThreeLetterISOLanguageName && lang.Culture.ThreeLetterISOLanguageName != "eng")
+            if (lang.Culture.ThreeLetterISOLanguageName != OriginalCulture.ThreeLetterISOLanguageName && lang.Culture.ThreeLetterISOLanguageName != "eng")
                 Languages.Add(Language.Get(lang.Culture));
 
         return Languages;
+    }
+
+    public static CultureInfo OriginalCulture { get; private set; }
+    public static CultureInfo OriginalUICulture { get; private set; }
+
+    public static void SaveOriginalCulture()
+    {
+        OriginalCulture = CultureInfo.CurrentCulture;
+        OriginalUICulture = CultureInfo.CurrentUICulture;
     }
 
     public class MediaParts

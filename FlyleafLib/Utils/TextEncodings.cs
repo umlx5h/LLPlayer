@@ -6,7 +6,7 @@ namespace FlyleafLib;
 
 #nullable enable
 
-public class TextEncodings
+public static class TextEncodings
 {
     private static Encoding? DetectEncodingInternal(byte[] data)
     {
