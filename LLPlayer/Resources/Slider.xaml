@@ -74,12 +74,12 @@
                         <Thumb Template="{StaticResource MaterialDesignSliderThumb}" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" Foreground="{TemplateBinding Foreground}" />
                     </Track.Thumb>
                 </Track>
-                <!-- Subtitle processing progress indicator (yellow highlight) - moved here to be on top -->
+                <!-- Subtitle processing progress indicator -->
                 <Border
                     x:Name="subtitleProcessingTrack"
                     Grid.Row="1"
                     Background="#FFEE22"
-                    Opacity="0.3"
+                    Opacity="0.2"
                     CornerRadius="2"
                     Height="4"
                     Width="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"
