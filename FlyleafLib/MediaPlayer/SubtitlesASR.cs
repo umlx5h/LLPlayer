@@ -34,7 +34,7 @@ namespace FlyleafLib.MediaPlayer;
 /// Note that multiple threads cannot seek to multiple locations for a single AVFormatContext,
 /// so it is necessary to open it with another avformat_open_input for the same video.
 /// </remarks>
-public class SubtitlesASR
+public class SubtitlesASR : NotifyPropertyChanged
 {
     private readonly SubtitlesManager _subtitlesManager;
     private readonly Config _config;
@@ -42,6 +42,32 @@ public class SubtitlesASR
     private readonly Lock _lockerSubs = new();
     private CancellationTokenSource? _cts = null;
     public HashSet<int> SubIndexSet { get; } = new();
+
+    // Track the latest processed subtitle time
+    private long _latestSubtitleTime = 0;
+    
+    // Property to expose the latest subtitle time processed
+    public long LatestSubtitleTime
+    {
+        get
+        {
+            lock (_lockerSubs)
+            {
+                return _latestSubtitleTime;
+            }
+        }
+        private set
+        {
+            lock (_lockerSubs)
+            {
+                if (_latestSubtitleTime != value)
+                {
+                    _latestSubtitleTime = value;
+                    Utils.UI(() => Raise(nameof(LatestSubtitleTime)));
+                }
+            }
+        }
+    }
 
     private readonly LogHandler Log;
 
@@ -210,6 +236,12 @@ public class SubtitlesASR
 
                 lock (_lockerSubs)
                 {
+                    // Update the latest subtitle time if this one is later
+                    if (data.EndTime.Ticks > _latestSubtitleTime)
+                    {
+                        LatestSubtitleTime = data.EndTime.Ticks;
+                    }
+                    
                     foreach (int i in SubIndexSet)
                     {
                         bool isInit = false;
@@ -278,6 +310,9 @@ public class SubtitlesASR
                     {
                         _subtitlesManager[i].Clear();
                     }
+                    
+                    // Reset the latest subtitle time when canceling
+                    LatestSubtitleTime = 0;
                 }
 
                 cts.Cancel();

@@ -74,6 +74,20 @@
                         <Thumb Template="{StaticResource MaterialDesignSliderThumb}" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" Foreground="{TemplateBinding Foreground}" />
                     </Track.Thumb>
                 </Track>
+                <!-- Subtitle processing progress indicator (yellow highlight) - moved here to be on top -->
+                <Border
+                    x:Name="subtitleProcessingTrack"
+                    Grid.Row="1"
+                    Background="#FFEE22"
+                    Opacity="0.3"
+                    CornerRadius="2"
+                    Height="4"
+                    Width="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    Visibility="Collapsed" 
+                    Margin="0,0,0,0"
+                    Panel.ZIndex="2" />
             </Grid>
         </Border>
         <ControlTemplate.Triggers>
@@ -90,6 +104,18 @@
             <Trigger Property="IsSelectionRangeEnabled" Value="true">
                 <Setter Property="Visibility" TargetName="PART_SelectionRange" Value="Visible"/>
             </Trigger>
+            <Trigger Property="Tag" Value="{x:Null}">
+                <Setter Property="Visibility" TargetName="subtitleProcessingTrack" Value="Collapsed"/>
+            </Trigger>
+            <Trigger Property="Tag" Value="0">
+                <Setter Property="Visibility" TargetName="subtitleProcessingTrack" Value="Collapsed"/>
+            </Trigger>
+            <DataTrigger Binding="{Binding RelativeSource={RelativeSource Self}, Path=Tag}" Value="{x:Null}">
+                <Setter Property="Visibility" TargetName="subtitleProcessingTrack" Value="Collapsed"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding RelativeSource={RelativeSource Self}, Path=Tag, Converter={StaticResource DoubleMoreThan0Conv}, FallbackValue=False}" Value="True">
+                <Setter Property="Visibility" TargetName="subtitleProcessingTrack" Value="Visible"/>
+            </DataTrigger>
             <Trigger Property="IsDirectionReversed" Value="True">
                 <Setter TargetName="activeTrack" Property="CornerRadius" Value="0,3,3,0" />
                 <Setter TargetName="activeTrack" Property="HorizontalAlignment" Value="Right" />
