@@ -13,49 +13,50 @@
     <UserControl.Resources>
         <local:GetDictionaryItemConverter x:Key="GetDictionaryItemConv" />
     </UserControl.Resources>
-    <ScrollViewer>
-        <StackPanel>
-            <TextBlock
-                Text="Plugins"
-                FontSize="24"
-                FontWeight="Bold"
-                Margin="0 0 0 16" />
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
 
-            <StackPanel>
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Plugin" VerticalAlignment="Center" Width="180"/>
-                    <ComboBox x:Name="cmbPlugins" ItemsSource="{Binding FL.PlayerConfig.Plugins.Keys}" SelectedIndex="0"/>
-                </StackPanel>
+        <TextBlock
+            Grid.Row="0"
+            Text="Plugins"
+            FontSize="24"
+            FontWeight="Bold"
+            Margin="0 0 0 16" />
 
-                <Separator/>
-
-                <ItemsControl x:Name="curPluginConfig" Margin="20 10 0 0" Height="230">
-                    <ItemsControl.ItemsSource>
-                        <MultiBinding Converter="{StaticResource GetDictionaryItemConv}" UpdateSourceTrigger="LostFocus">
-                            <Binding Path="FL.PlayerConfig.Plugins" />
-                            <Binding Path="Text" ElementName="cmbPlugins" />
-                        </MultiBinding>
-                    </ItemsControl.ItemsSource>
-                    <ItemsControl.Template>
-                        <ControlTemplate TargetType="ItemsControl">
-                            <ItemsPresenter/>
-                        </ControlTemplate>
-                    </ItemsControl.Template>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <DockPanel Margin="0 0 0 5">
-                                <TextBlock
-                                    Width="180"
-                                    Text="{Binding Key, Mode=OneWay}" />
-                                <TextBox
-                                    HorizontalContentAlignment="Left"
-                                    LostFocus="PluginValueChanged"
-                                    Text="{Binding Value, Mode=OneWay}" />
-                            </DockPanel>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+        <StackPanel Grid.Row="1">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Plugin" VerticalAlignment="Center" Width="180"/>
+                <ComboBox x:Name="cmbPlugins" ItemsSource="{Binding FL.PlayerConfig.Plugins.Keys}" SelectedIndex="0"/>
             </StackPanel>
+            <Separator/>
         </StackPanel>
-    </ScrollViewer>
+
+        <ScrollViewer Grid.Row="2">
+            <ItemsControl x:Name="curPluginConfig" Margin="20 10 0 0">
+                <ItemsControl.ItemsSource>
+                    <MultiBinding Converter="{StaticResource GetDictionaryItemConv}" UpdateSourceTrigger="LostFocus">
+                        <Binding Path="FL.PlayerConfig.Plugins" />
+                        <Binding Path="Text" ElementName="cmbPlugins" />
+                    </MultiBinding>
+                </ItemsControl.ItemsSource>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <DockPanel Margin="0 0 0 5">
+                            <TextBlock
+                                Width="180"
+                                Text="{Binding Key, Mode=OneWay}" />
+                            <TextBox
+                                HorizontalContentAlignment="Left"
+                                LostFocus="PluginValueChanged"
+                                Text="{Binding Value, Mode=OneWay}" />
+                        </DockPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
 </UserControl>

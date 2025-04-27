@@ -409,55 +409,6 @@ public unsafe class Demuxer : RunThreadBase
                 url = null;
             }
 
-            if (Type == MediaType.Subs &&
-                Utils.ExtensionsSubtitlesText.Contains(Utils.GetUrlExtention(url)) &&
-                File.Exists(url))
-            {
-                // If the files can be read with text subtitles, load them all into memory and convert them to UTF8.
-                // Because ffmpeg expects UTF8 text.
-                try
-                {
-                    FileInfo file = new(url);
-                    if (file.Length >= 10 * 1024 * 1024)
-                    {
-                        throw new InvalidOperationException($"TEXT subtitle is too big (>=10MB) to load: {file.Length}");
-                    }
-
-                    // Detects character encoding, reads text and converts to UTF8
-                    Encoding encoding = Encoding.Default;
-
-                    Encoding detected = TextEncodings.DetectEncoding(url);
-                    if (detected != null)
-                    {
-                        encoding = detected;
-                    }
-
-                    string content = File.ReadAllText(url, encoding);
-                    byte[] contentBytes = Encoding.UTF8.GetBytes(content);
-
-                    inputDataSize = contentBytes.Length;
-                    inputData = (byte*)av_malloc((nuint)inputDataSize);
-
-                    Span<byte> src = new(contentBytes);
-                    Span<byte> dst = new(inputData, inputDataSize);
-                    src.CopyTo(dst);
-
-                    avioCtx = avio_alloc_context(inputData, inputDataSize, 0, null, null, null, null);
-                    if (avioCtx == null)
-                    {
-                        throw new InvalidOperationException("avio_alloc_context");
-                    }
-
-                    // Pass to ffmpeg by on-memory
-                    fmtCtx->pb = avioCtx;
-                    fmtCtx->flags |= FmtFlags2.CustomIo;
-                }
-                catch (Exception ex)
-                {
-                    Log.Warn($"Could not load text subtitles to memory: {ex.Message}");
-                }
-            }
-
             /* Force Format with Url syntax to support format, url and options within the input url
                 *
                 * fmt://$format$[/]?$input$&$options$
@@ -546,6 +497,55 @@ public unsafe class Demuxer : RunThreadBase
                 }
                 else
                     queryParams = null;
+            }
+
+            if (Type == MediaType.Subs &&
+                Utils.ExtensionsSubtitlesText.Contains(Utils.GetUrlExtention(url)) &&
+                File.Exists(url))
+            {
+                // If the files can be read with text subtitles, load them all into memory and convert them to UTF8.
+                // Because ffmpeg expects UTF8 text.
+                try
+                {
+                    FileInfo file = new(url);
+                    if (file.Length >= 10 * 1024 * 1024)
+                    {
+                        throw new InvalidOperationException($"TEXT subtitle is too big (>=10MB) to load: {file.Length}");
+                    }
+
+                    // Detects character encoding, reads text and converts to UTF8
+                    Encoding encoding = Encoding.UTF8;
+
+                    Encoding detected = TextEncodings.DetectEncoding(url);
+                    if (detected != null)
+                    {
+                        encoding = detected;
+                    }
+
+                    string content = File.ReadAllText(url, encoding);
+                    byte[] contentBytes = Encoding.UTF8.GetBytes(content);
+
+                    inputDataSize = contentBytes.Length;
+                    inputData = (byte*)av_malloc((nuint)inputDataSize);
+
+                    Span<byte> src = new(contentBytes);
+                    Span<byte> dst = new(inputData, inputDataSize);
+                    src.CopyTo(dst);
+
+                    avioCtx = avio_alloc_context(inputData, inputDataSize, 0, null, null, null, null);
+                    if (avioCtx == null)
+                    {
+                        throw new InvalidOperationException("avio_alloc_context");
+                    }
+
+                    // Pass to ffmpeg by on-memory
+                    fmtCtx->pb = avioCtx;
+                    fmtCtx->flags |= FmtFlags2.CustomIo;
+                }
+                catch (Exception ex)
+                {
+                    Log.Warn($"Could not load text subtitles to memory: {ex.Message}");
+                }
             }
 
             // Some devices required to be opened from a UI or STA thread | after 20-40 sec. of demuxing -> [gdigrab @ 0000019affe3f2c0] Failed to capture image (error 6) or (error 8)
