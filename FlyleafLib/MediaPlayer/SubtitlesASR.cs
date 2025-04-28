@@ -281,7 +281,7 @@ public class SubtitlesASR : NotifyPropertyChanged
                 Utils.PlayCompletionSound();
                 
                 // When ASR completes successfully, set the latest subtitle time to the full duration
-                // This will fill the entire seekbar with the yellow highlight
+                // This will fill the entire seekbar with the highlight
                 LatestSubtitleTime = _config.Subtitles.player.Duration;
             }
 
