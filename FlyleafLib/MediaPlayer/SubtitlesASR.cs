@@ -60,11 +60,7 @@ public class SubtitlesASR : NotifyPropertyChanged
         {
             lock (_lockerSubs)
             {
-                if (_latestSubtitleTime != value)
-                {
-                    _latestSubtitleTime = value;
-                    Utils.UI(() => Raise(nameof(LatestSubtitleTime)));
-                }
+                SetUI(ref _latestSubtitleTime, value);
             }
         }
     }
@@ -227,6 +223,10 @@ public class SubtitlesASR : NotifyPropertyChanged
                 return true;
             }
 
+            // Initialize the latest subtitle time to the current position when starting ASR
+            // This prevents the highlight from showing before the current position
+            LatestSubtitleTime = curTime.Ticks;
+
             reader.ReadAll(curTime, data =>
             {
                 if (_cts.Token.IsCancellationRequested)
@@ -236,11 +236,8 @@ public class SubtitlesASR : NotifyPropertyChanged
 
                 lock (_lockerSubs)
                 {
-                    // Update the latest subtitle time if this one is later
-                    if (data.EndTime.Ticks > _latestSubtitleTime)
-                    {
-                        LatestSubtitleTime = data.EndTime.Ticks;
-                    }
+                    // Update the latest subtitle time
+                    LatestSubtitleTime = data.EndTime.Ticks;
                     
                     foreach (int i in SubIndexSet)
                     {
@@ -285,10 +282,7 @@ public class SubtitlesASR : NotifyPropertyChanged
                 
                 // When ASR completes successfully, set the latest subtitle time to the full duration
                 // This will fill the entire seekbar with the yellow highlight
-                if (_config?.Subtitles?.player?.Duration > 0)
-                {
-                    LatestSubtitleTime = _config.Subtitles.player.Duration;
-                }
+                LatestSubtitleTime = _config.Subtitles.player.Duration;
             }
 
             foreach (int i in SubIndexSet)

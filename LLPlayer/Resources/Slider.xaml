@@ -48,6 +48,23 @@
                 <!-- If IsSelectionRangeEnabled is true, strange ticks will appear around Thumb, so disable it. -->
                 <TickBar x:Name="TopTick" Fill="{TemplateBinding Foreground}" Height="3"  Margin="0,0,0,2" Placement="Top" IsSelectionRangeEnabled="False" Grid.Row="0" Visibility="Collapsed" />
                 <TickBar x:Name="BottomTick" Fill="{TemplateBinding Foreground}" Height="3" Margin="0,2,0,0" Placement="Bottom" IsSelectionRangeEnabled="False" Grid.Row="2" Visibility="Collapsed"/>
+                
+                <!-- Subtitle processing progress indicator -->
+                <!-- Placed at the top of elements to display at the bottom as requested -->
+                <Border
+                    x:Name="subtitleProcessingTrack"
+                    Grid.Row="1"
+                    Background="{DynamicResource MaterialDesign.Brush.Primary.Light}"
+                    Opacity="0.2"
+                    CornerRadius="2"
+                    Height="4"
+                    Width="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    Visibility="Collapsed" 
+                    Margin="0,0,0,0"
+                    Panel.ZIndex="1" />
+                
                 <Rectangle Grid.Row="1" Fill="{TemplateBinding Foreground}" Height="4" Opacity="0.38" VerticalAlignment="Center" RadiusX="2" RadiusY="2" />
                 <Border
                     x:Name="activeTrack"
@@ -74,20 +91,6 @@
                         <Thumb Template="{StaticResource MaterialDesignSliderThumb}" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" Foreground="{TemplateBinding Foreground}" />
                     </Track.Thumb>
                 </Track>
-                <!-- Subtitle processing progress indicator -->
-                <Border
-                    x:Name="subtitleProcessingTrack"
-                    Grid.Row="1"
-                    Background="#FFEE22"
-                    Opacity="0.2"
-                    CornerRadius="2"
-                    Height="4"
-                    Width="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Center"
-                    Visibility="Collapsed" 
-                    Margin="0,0,0,0"
-                    Panel.ZIndex="2" />
             </Grid>
         </Border>
         <ControlTemplate.Triggers>
