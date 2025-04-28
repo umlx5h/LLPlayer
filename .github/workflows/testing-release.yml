@@ -1,4 +1,4 @@
-name: Beta Release
+name: Testing Release
 
 on:
   workflow_dispatch:
@@ -9,9 +9,6 @@ on:
 
 permissions:
   contents: write
-
-env:
-  ARCHIVE_NAME: LLPlayer-beta-x64.7z
 
 jobs:
   build:
@@ -24,13 +21,14 @@ jobs:
           ref: ${{ github.event.inputs.commit }}
           fetch-depth: 0
 
-      - name: Build & Package
-        uses: ./.github/actions/build-package
-        with:
-          archive-name: ${{ env.ARCHIVE_NAME }}
+      - name: Get short commit hash
+        id: short-hash
+        run: |
+          $short = git rev-parse --short ${{ github.event.inputs.commit }}
+          "sha=$short" >> $env:GITHUB_OUTPUT
 
       - name: Get latest stable release tag
-        id: latest
+        id: latest-tag
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -41,9 +39,21 @@ jobs:
             });
             return latest.data.tag_name;
 
-      # Upload to latest stable release with overwrite
-      - name: Upload Beta Asset (overwrite)
+      - name: Set archive name
+        id: archive-name
         run: |
-          gh release upload ${{ steps.latest.outputs.result }} ${{ env.ARCHIVE_NAME }} --clobber
+          $tag = ${{ steps.latest-tag.outputs.result }}
+          $hash = "${{ steps.short-hash.outputs.sha }}"
+
+          "name=LLPlayer-testing-$tag-$hash.7z" >> $env:GITHUB_OUTPUT
+
+      - name: Build & Package
+        uses: ./.github/actions/build-package
+        with:
+          archive-name: ${{ steps.archive-name.outputs.name }}
+
+      - name: Upload Testing Asset (overwrite)
+        run: |
+          gh release upload v0.0.1 ${{ steps.archive-name.outputs.name }} --clobber
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
