@@ -220,6 +220,7 @@
                         Text="[Status]" />
                     <TextBox
                         HorizontalContentAlignment="Left"
+                        TextWrapping="Wrap"
                         IsReadOnly="True"
                         Text="{Binding Status, Mode=OneWay}" />
                 </DockPanel>

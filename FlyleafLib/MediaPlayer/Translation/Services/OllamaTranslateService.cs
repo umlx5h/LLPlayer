@@ -220,28 +220,43 @@ public class OllamaTranslateService : ITranslateService
     {
         using HttpClient client = settings.GetHttpClient(true);
 
+        string jsonResultString = "";
+        int statusCode = -1;
+
         // getting models
         try
         {
-            var response = await client.GetAsync("/api/tags");
-            response.EnsureSuccessStatusCode();
+            var result = await client.GetAsync("/api/tags");
 
-            string tags = await response.Content.ReadAsStringAsync();
+            jsonResultString = await result.Content.ReadAsStringAsync();
 
-            JsonNode? node = JsonNode.Parse(tags);
+            statusCode = (int)result.StatusCode;
+            result.EnsureSuccessStatusCode();
+
+            JsonNode? node = JsonNode.Parse(jsonResultString);
             List<string> models = node!["models"]!.AsArray().Select(model => model["name"].GetValue<string>()).ToList();
 
             return models;
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException($"get models error: {ex.Message}");
+            throw new InvalidOperationException($"get models error: {ex.Message}", ex)
+            {
+                Data =
+                {
+                    ["status_code"] = statusCode.ToString(),
+                    ["response"] = jsonResultString
+                }
+            };
         }
     }
 
     public static async Task<string> Hello(OllamaTranslateSettings settings)
     {
         using HttpClient client = settings.GetHttpClient();
+
+        string jsonResultString = "";
+        int statusCode = -1;
 
         try
         {
@@ -258,9 +273,11 @@ public class OllamaTranslateService : ITranslateService
             var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
             var result = await client.PostAsync("/api/generate", content);
-            result.EnsureSuccessStatusCode();
 
-            string jsonResultString = await result.Content.ReadAsStringAsync();
+            jsonResultString = await result.Content.ReadAsStringAsync();
+
+            statusCode = (int)result.StatusCode;
+            result.EnsureSuccessStatusCode();
 
             using JsonDocument doc = JsonDocument.Parse(jsonResultString);
             string reply = doc.RootElement.GetProperty("response").GetString()!;
@@ -269,7 +286,14 @@ public class OllamaTranslateService : ITranslateService
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException($"hello error: {ex.Message}");
+            throw new InvalidOperationException($"hello error: {ex.Message}", ex)
+            {
+                Data =
+                {
+                    ["status_code"] = statusCode.ToString(),
+                    ["response"] = jsonResultString
+                }
+            };
         }
     }
 }

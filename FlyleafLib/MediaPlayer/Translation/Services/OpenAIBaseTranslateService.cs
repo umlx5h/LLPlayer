@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -228,28 +229,43 @@ public class OpenAIBaseTranslateService : ITranslateService
     {
         using HttpClient client = settings.GetHttpClient(true);
 
+        string jsonResultString = "";
+        int statusCode = -1;
+
         // getting models
         try
         {
-            var response = await client.GetAsync("/v1/models");
-            response.EnsureSuccessStatusCode();
+            var result = await client.GetAsync("/v1/models");
 
-            string tags = await response.Content.ReadAsStringAsync();
+            jsonResultString = await result.Content.ReadAsStringAsync();
 
-            JsonNode? node = JsonNode.Parse(tags);
-            List<string> models = node!["data"]!.AsArray().Select(model => model!["id"]!.GetValue<string>()).ToList();
+            statusCode = (int)result.StatusCode;
+            result.EnsureSuccessStatusCode();
+
+            JsonNode? node = JsonNode.Parse(jsonResultString);
+            List<string> models = node!["data"]!.AsArray().Select(model => model!["id"]!.GetValue<string>()).Order().ToList();
 
             return models;
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException($"get models error: {ex.Message}");
+            throw new InvalidOperationException($"get models error: {ex.Message}", ex)
+            {
+                Data =
+                {
+                    ["status_code"] = statusCode.ToString(),
+                    ["response"] = jsonResultString
+                }
+            };
         }
     }
 
     public static async Task<string> Hello(OpenAIBaseTranslateSettings settings)
     {
         using HttpClient client = settings.GetHttpClient();
+
+        string jsonResultString = "";
+        int statusCode = -1;
 
         try
         {
@@ -273,9 +289,11 @@ public class OpenAIBaseTranslateService : ITranslateService
             var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
             var result = await client.PostAsync("/v1/chat/completions", content);
-            result.EnsureSuccessStatusCode();
 
-            string jsonResultString = await result.Content.ReadAsStringAsync();
+            jsonResultString = await result.Content.ReadAsStringAsync();
+
+            statusCode = (int)result.StatusCode;
+            result.EnsureSuccessStatusCode();
 
             OpenAIResponse? chatResponse = JsonSerializer.Deserialize<OpenAIResponse>(jsonResultString);
             string reply = chatResponse!.choices[0].message.content;
@@ -284,7 +302,14 @@ public class OpenAIBaseTranslateService : ITranslateService
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException($"hello error: {ex.Message}");
+            throw new InvalidOperationException($"hello error: {ex.Message}", ex)
+            {
+                Data =
+                {
+                    ["status_code"] = statusCode.ToString(),
+                    ["response"] = jsonResultString
+                }
+            };
         }
     }
 }

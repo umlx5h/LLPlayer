@@ -7,7 +7,7 @@ namespace FlyleafLib.MediaPlayer.Translation;
 
 public class TranslateLanguage
 {
-    public static Dictionary<string, TranslateLanguage> Langs = new()
+    public static Dictionary<string, TranslateLanguage> Langs { get; } = new()
     {
         // Google: https://cloud.google.com/translate/docs/languages
         // DeepL: https://developers.deepl.com/docs/resources/supported-languages

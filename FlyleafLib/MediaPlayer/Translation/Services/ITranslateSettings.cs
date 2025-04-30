@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using FlyleafLib.Controls.WPF;
@@ -195,7 +196,7 @@ public class OllamaTranslateSettings : NotifyPropertyChanged, ITranslateSettings
         }
         catch (Exception ex)
         {
-            Status = $"NG: {ex.Message}";
+            Status = OpenAIBaseTranslateSettings.GetErrorDetails($"NG: {ex.Message}", ex);
         }
     });
 
@@ -210,7 +211,7 @@ public class OllamaTranslateSettings : NotifyPropertyChanged, ITranslateSettings
         }
         catch (Exception ex)
         {
-            Status = $"NG: {ex.Message}";
+            Status = OpenAIBaseTranslateSettings.GetErrorDetails($"NG: {ex.Message}", ex);
         }
     });
 
@@ -229,7 +230,7 @@ public class OllamaTranslateSettings : NotifyPropertyChanged, ITranslateSettings
         }
         catch (Exception ex)
         {
-            Status = $"NG in {sw.Elapsed.TotalSeconds} secs: {ex.Message}";
+            Status = OpenAIBaseTranslateSettings.GetErrorDetails($"NG in {sw.Elapsed.TotalSeconds} secs: {ex.Message}", ex);
         }
     });
 
@@ -330,7 +331,7 @@ public abstract class OpenAIBaseTranslateSettings : NotifyPropertyChanged, ITran
         }
         catch (Exception ex)
         {
-            Status = $"NG: {ex.Message}";
+            Status = OpenAIBaseTranslateSettings.GetErrorDetails($"NG: {ex.Message}", ex);
         }
     });
 
@@ -345,7 +346,7 @@ public abstract class OpenAIBaseTranslateSettings : NotifyPropertyChanged, ITran
         }
         catch (Exception ex)
         {
-            Status = $"NG: {ex.Message}";
+            Status = OpenAIBaseTranslateSettings.GetErrorDetails($"NG: {ex.Message}", ex);
         }
     });
 
@@ -364,7 +365,7 @@ public abstract class OpenAIBaseTranslateSettings : NotifyPropertyChanged, ITran
         }
         catch (Exception ex)
         {
-            Status = $"NG in {sw.Elapsed.TotalSeconds} secs: {ex.Message}";
+            Status = OpenAIBaseTranslateSettings.GetErrorDetails($"NG in {sw.Elapsed.TotalSeconds} secs: {ex.Message}", ex);
         }
     });
 
@@ -383,6 +384,27 @@ public abstract class OpenAIBaseTranslateSettings : NotifyPropertyChanged, ITran
         {
             Model = AvailableModels.FirstOrDefault(m => m == prevModel);
         }
+    }
+
+    internal static string GetErrorDetails(string header, Exception ex)
+    {
+        StringBuilder sb = new();
+        sb.Append(header);
+
+        if (ex.Data.Contains("status_code") && (string)ex.Data["status_code"] != "-1")
+        {
+            sb.AppendLine();
+            sb.AppendLine();
+            sb.Append($"status_code: {ex.Data["status_code"]}");
+        }
+
+        if (ex.Data.Contains("response") && (string)ex.Data["response"] != "")
+        {
+            sb.AppendLine();
+            sb.Append($"response: {ex.Data["response"]}");
+        }
+
+        return sb.ToString();
     }
     #endregion
 }
