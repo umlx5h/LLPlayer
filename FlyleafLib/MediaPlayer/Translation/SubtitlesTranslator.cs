@@ -227,7 +227,7 @@ public class SubTranslator
                     break;
 
                 var sub = _subManager.Subs[i];
-                if (!sub.IsTranslated && !string.IsNullOrWhiteSpace(sub.Text))
+                if (!sub.IsTranslated && !string.IsNullOrEmpty(sub.Text))
                 {
                     translateSubs.Add(sub);
                 }
@@ -300,14 +300,17 @@ public class SubTranslator
 
     private async Task TranslateSubAsync(SubtitleData sub, CancellationToken token)
     {
+        string? text = sub.Text;
+        if (string.IsNullOrEmpty(text))
+            return;
+
         try
         {
             long start = Stopwatch.GetTimestamp();
-            // TODO: L: review this process
-            string text = sub.Text!.ReplaceLineEndings(" ");
-            if (CanDebug) Log.Debug($"Translation Start {sub.Index} - {text}");
+            string translateText = SubtitleTextUtil.FlattenText(text);
+            if (CanDebug) Log.Debug($"Translation Start {sub.Index} - {translateText}");
             EnsureTranslationService();
-            string translated = await _translateService!.TranslateAsync(text, token);
+            string translated = await _translateService!.TranslateAsync(translateText, token);
             sub.TranslatedText = translated;
 
             if (CanDebug)

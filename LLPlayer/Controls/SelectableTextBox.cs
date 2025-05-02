@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using FlyleafLib;
 
 namespace LLPlayer.Controls;
 
@@ -121,15 +122,13 @@ public class SelectableTextBox : TextBox
                 return;
             }
 
-            // Change line breaks to spaces to improve translation accuracy.
-            string fixText = Text.ReplaceLineEndings(" ");
-
             WordClickedEventArgs args = new(WordClickedEvent)
             {
                 Mouse = MouseClick.Middle,
-                Words = fixText,
+                // Change line breaks to spaces to improve translation accuracy.
+                Words = SubtitleTextUtil.FlattenText(Text),
                 IsWord = false,
-                Text = fixText,
+                Text = Text,
                 IsTranslated = IsTranslated,
                 SubIndex = SubIndex,
                 WordOffset = 0,
@@ -166,7 +165,7 @@ public class SelectableTextBox : TextBox
             Mouse = mouse,
             Words = word,
             IsWord = true,
-            Text = Text.ReplaceLineEndings(" "),
+            Text = Text,
             IsTranslated = IsTranslated,
             SubIndex = SubIndex,
             WordOffset = start,
@@ -193,9 +192,9 @@ public class SelectableTextBox : TextBox
         {
             Mouse = MouseClick.Left,
             // Change line breaks to spaces to improve translation accuracy.
-            Words = selectedText.ReplaceLineEndings(" "),
+            Words = SubtitleTextUtil.FlattenText(selectedText),
             IsWord = false,
-            Text = Text.ReplaceLineEndings(" "),
+            Text = Text,
             IsTranslated = IsTranslated,
             SubIndex = SubIndex,
             WordOffset = adjustedStart,

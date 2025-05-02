@@ -43,6 +43,9 @@ public class Config : NotifyPropertyChanged
         Player.config = this;
         Demuxer.config = this;
     }
+
+    public Config(bool test) { }
+
     public Config Clone()
     {
         Config config = new()

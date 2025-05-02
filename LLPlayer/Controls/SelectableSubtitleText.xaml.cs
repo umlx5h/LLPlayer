@@ -188,7 +188,7 @@ public partial class SelectableSubtitleText : UserControl
         }
     }
 
-    //  SelectableTextBox uses char.IsPunctuation(), so use a regular expression for it.
+    // SelectableTextBox uses char.IsPunctuation(), so use a regular expression for it.
     // TODO: L: Sharing the code with TextBox
     private static readonly Regex WordSplitReg = new(@"((?:[^\P{P}'-]+|\s))", RegexOptions.Compiled);
     private static readonly Regex WordSplitFullReg = new(@"^(?:[^\P{P}'-]+|\s)$", RegexOptions.Compiled);
@@ -202,16 +202,14 @@ public partial class SelectableSubtitleText : UserControl
             return;
         }
 
-        _textFix = text.ReplaceLineEndings(" ");
-
         if (IgnoreLineBreak)
         {
-            text = _textFix;
+            text = SubtitleTextUtil.FlattenText(text);
         }
 
-        bool containLineBreak = text.Contains('\n');
+        _textFix = text;
 
-        // TODO: L: If each line break has a leading "-", I want to respect it.
+        bool containLineBreak = text.AsSpan().ContainsAny('\r', '\n');
 
         // If it contains line feeds, expand them to the full screen width (respecting the formatting in the SRT subtitle)
         WidthPercentageFix = containLineBreak ? 100.0 : WidthPercentage;

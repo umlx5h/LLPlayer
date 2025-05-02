@@ -761,7 +761,7 @@ public unsafe class SubtitleReader : IDisposable
             switch (sub.rects[0]->type)
             {
                 case AVSubtitleType.Text:
-                    subData.Text = Utils.BytePtrToStringUTF8(sub.rects[0]->text);
+                    subData.Text = Utils.BytePtrToStringUTF8(sub.rects[0]->text).Trim();
                     avsubtitle_free(&sub);
 
                     if (string.IsNullOrEmpty(subData.Text))
@@ -771,7 +771,7 @@ public unsafe class SubtitleReader : IDisposable
 
                     break;
                 case AVSubtitleType.Ass:
-                    string text = Utils.BytePtrToStringUTF8(sub.rects[0]->ass);
+                    string text = Utils.BytePtrToStringUTF8(sub.rects[0]->ass).Trim();
                     avsubtitle_free(&sub);
 
                     subData.Text = ParseSubtitles.SSAtoSubStyles(text, out var subStyles);

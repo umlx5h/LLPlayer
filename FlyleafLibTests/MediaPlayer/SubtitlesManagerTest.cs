@@ -9,7 +9,7 @@ public class SubManagerTests
 
     public SubManagerTests()
     {
-        SubManager subManager = new(new Config.SubtitlesConfig(), default, false);
+        SubManager subManager = new(new Config(true), 0, false);
         List<SubtitleData> subsData =
         [
             new() { StartTime = TimeSpan.FromSeconds(1), EndTime = TimeSpan.FromSeconds(5), Text = "1. Hello World!" },

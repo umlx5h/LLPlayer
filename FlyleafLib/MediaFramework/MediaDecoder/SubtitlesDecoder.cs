@@ -199,7 +199,7 @@ public unsafe class SubtitlesDecoder : DecoderBase
 
                 if (subFrame.sub.rects[0]->type == AVSubtitleType.Ass)
                 {
-                    subFrame.text = Utils.BytePtrToStringUTF8(subFrame.sub.rects[0]->ass);
+                    subFrame.text = Utils.BytePtrToStringUTF8(subFrame.sub.rects[0]->ass).Trim();
                     Config.Subtitles.Parser(subFrame);
 
                     fixed(AVSubtitle* subPtr = &subFrame.sub)
@@ -210,7 +210,7 @@ public unsafe class SubtitlesDecoder : DecoderBase
                 }
                 else if (subFrame.sub.rects[0]->type == AVSubtitleType.Text)
                 {
-                    subFrame.text = Utils.BytePtrToStringUTF8(subFrame.sub.rects[0]->text);
+                    subFrame.text = Utils.BytePtrToStringUTF8(subFrame.sub.rects[0]->text).Trim();
 
                     fixed(AVSubtitle* subPtr = &subFrame.sub)
                         avsubtitle_free(subPtr);
