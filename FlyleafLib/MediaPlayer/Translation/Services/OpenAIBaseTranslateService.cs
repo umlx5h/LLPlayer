@@ -189,6 +189,10 @@ public class OpenAIBaseTranslateService : ITranslateService
 
             OpenAIResponse? chatResponse = JsonSerializer.Deserialize<OpenAIResponse>(jsonResultString);
             string reply = chatResponse!.choices[0].message.content;
+            if (settings.ReasonStripRequired)
+            {
+                reply = ChatReplyParser.StripReasoning(reply);
+            }
 
             return reply.Trim();
         }
@@ -275,4 +279,58 @@ public class OpenAIResponse
 public class OpenAIChoice
 {
     public OpenAIMessage message { get; set; }
+}
+
+public static class ChatReplyParser
+{
+    // Target tag names to remove (lowercase)
+    private static readonly string[] Tags = ["think", "reason", "reasoning", "thought"];
+
+    // open/close tag strings from tag names
+    private static readonly string[] OpenTags;
+    private static readonly string[] CloseTags;
+
+    static ChatReplyParser()
+    {
+        OpenTags = new string[Tags.Length];
+        CloseTags = new string[Tags.Length];
+        for (int i = 0; i < Tags.Length; i++)
+        {
+            OpenTags[i] = $"<{Tags[i]}>";       // e.g. "<think>"
+            CloseTags[i] = $"</{Tags[i]}>";    // e.g. "</think>"
+        }
+    }
+
+    /// <summary>
+    /// Removes a leading reasoning tag if present and returns only the generated message portion.
+    /// </summary>
+    public static string StripReasoning(string input)
+    {
+        // Return immediately if it doesn't start with a tag
+        if (string.IsNullOrEmpty(input) || input[0] != '<')
+            return input;
+
+        var span = input.AsSpan();
+
+        for (int i = 0; i < OpenTags.Length; i++)
+        {
+            if (span.StartsWith(OpenTags[i], StringComparison.OrdinalIgnoreCase))
+            {
+                int endIdx = span.IndexOf(CloseTags[i], StringComparison.OrdinalIgnoreCase);
+                if (endIdx >= 0)
+                {
+                    int next = endIdx + CloseTags[i].Length;
+                    // Skip over any consecutive line breaks and whitespace
+                    while (next < span.Length && char.IsWhiteSpace(span[next]))
+                    {
+                        next++;
+                    }
+                    return span.Slice(next).ToString();
+                }
+            }
+        }
+
+        // Return original string if no tag matched
+        return input;
+    }
 }
