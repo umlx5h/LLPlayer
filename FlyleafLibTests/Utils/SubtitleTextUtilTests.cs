@@ -35,6 +35,11 @@ public class SubtitleTextUtilTests
 
     [InlineData("- Hello\n- aa-bb-cc dd", "- Hello\n- aa-bb-cc dd")]
     [InlineData("- Hello\naa-bb-cc dd", "- Hello aa-bb-cc dd")]
+
+    [InlineData("- Hello\n- Goodbye", "- Hello\n- Goodbye")] // hyphen
+    [InlineData("– Hello\n– Goodbye", "– Hello\n– Goodbye")] // en dash
+    [InlineData("- Hello\n– Goodbye", "- Hello – Goodbye")] // hyphen + en dash
+
     public void FlattenUnlessAllDash_ShouldReturnExpected(string input, string expected)
     {
         string result = SubtitleTextUtil.FlattenText(input);

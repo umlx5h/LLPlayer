@@ -6,7 +6,7 @@ public static class SubtitleTextUtil
 {
     /// <summary>
     /// Flattens the text into a single line.
-    /// - If every line (excluding empty lines) starts with '-', returns the original string.
+    /// - If every line (excluding empty lines) starts with dash, returns the original string.
     /// - For all other text, replaces newlines with spaces and flattens into a single line.
     /// </summary>
     public static string FlattenText(string text)
@@ -23,12 +23,14 @@ public static class SubtitleTextUtil
 
         int length = span.Length;
 
-        // Determine if the first character is '-' to enter list mode
-        bool startDash = span.Length > 0 && span[0] == '-';
+        // Determine if the first character is dash to enter list mode
+        bool startDash = span.Length > 0 && IsDash(span[0]);
 
         if (startDash)
         {
-            // Check if all lines start with '-' (ignore empty lines)
+            char dashChar = span[0];
+
+            // Check if all lines start with dash (ignore empty lines)
             bool allDash = true;
             bool atLineStart = true;
             int i;
@@ -41,7 +43,7 @@ public static class SubtitleTextUtil
                     {
                         continue;
                     }
-                    if (span[i] != '-')
+                    if (span[i] != dashChar)
                     {
                         allDash = false;
                         // Done checking
@@ -63,7 +65,7 @@ public static class SubtitleTextUtil
                 }
             }
 
-            // If every line starts with '-', return original text
+            // If every line starts with dash, return original text
             if (allDash)
             {
                 return text;
@@ -78,8 +80,8 @@ public static class SubtitleTextUtil
             {
                 int start;
 
-                // Start of a '-' line
-                if (span[i] == '-')
+                // Start of a dash line
+                if (span[i] == dashChar)
                 {
                     if (!firstItem)
                     {
@@ -131,5 +133,23 @@ public static class SubtitleTextUtil
             }
         }
         return new string(buffer, 0, pos);
+    }
+
+    private static bool IsDash(char c)
+    {
+        switch (c)
+        {
+            case '-':
+            case '\u2043': // ⁃ Hyphen bullet
+            case '\u2010': // ‐ Hyphen
+            case '\u2012': // ‒ Figure dash
+            case '\u2013': // – En dash
+            case '\u2014': // — Em dash
+            case '\u2015': // ― Horizontal bar
+            case '\u2212': // − Minus Sign
+                return true;
+        }
+
+        return false;
     }
 }
