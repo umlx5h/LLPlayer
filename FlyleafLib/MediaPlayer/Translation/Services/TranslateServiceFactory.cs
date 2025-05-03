@@ -33,16 +33,25 @@ public class TranslateServiceFactory
                 return new DeepLXTranslateService((DeepLXTranslateSettings)_config.TranslateServiceSettings.GetValueOrDefault(serviceType, new DeepLXTranslateSettings()));
 
             case TranslateServiceType.Ollama:
-                return new OllamaTranslateService((OllamaTranslateSettings)_config.TranslateServiceSettings.GetValueOrDefault(serviceType, new OllamaTranslateSettings()), _config.TranslateChatConfig, wordMode);
+                return new OpenAIBaseTranslateService((OllamaTranslateSettings)_config.TranslateServiceSettings.GetValueOrDefault(serviceType, new OllamaTranslateSettings()), _config.TranslateChatConfig, wordMode);
 
             case TranslateServiceType.LMStudio:
                 return new OpenAIBaseTranslateService((LMStudioTranslateSettings)_config.TranslateServiceSettings.GetValueOrDefault(serviceType, new LMStudioTranslateSettings()), _config.TranslateChatConfig, wordMode);
 
+            case TranslateServiceType.KoboldCpp:
+                return new OpenAIBaseTranslateService((KoboldCppTranslateSettings)_config.TranslateServiceSettings.GetValueOrDefault(serviceType, new KoboldCppTranslateSettings()), _config.TranslateChatConfig, wordMode);
+
             case TranslateServiceType.OpenAI:
                 return new OpenAIBaseTranslateService((OpenAITranslateSettings)_config.TranslateServiceSettings.GetValueOrDefault(serviceType, new OpenAITranslateSettings()), _config.TranslateChatConfig, wordMode);
 
+            case TranslateServiceType.OpenAILike:
+                return new OpenAIBaseTranslateService((OpenAILikeTranslateSettings)_config.TranslateServiceSettings.GetValueOrDefault(serviceType, new OpenAILikeTranslateSettings()), _config.TranslateChatConfig, wordMode);
+
             case TranslateServiceType.Claude:
                 return new OpenAIBaseTranslateService((ClaudeTranslateSettings)_config.TranslateServiceSettings.GetValueOrDefault(serviceType, new ClaudeTranslateSettings()), _config.TranslateChatConfig, wordMode);
+
+            case TranslateServiceType.LiteLLM:
+                return new OpenAIBaseTranslateService((LiteLLMTranslateSettings)_config.TranslateServiceSettings.GetValueOrDefault(serviceType, new LiteLLMTranslateSettings()), _config.TranslateChatConfig, wordMode);
         }
 
         throw new InvalidOperationException($"Translate service {serviceType} does not exist.");

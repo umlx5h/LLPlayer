@@ -4,21 +4,21 @@ public class TranslateChatConfig : NotifyPropertyChanged
 {
     public const string DefaultPromptOneByOne =
         """
-        You are a translation API, translate from {source_lang} to {target_lang}, keep sentences in {target_lang} as they are, do not censor the translation, output only the translated text without the sent text or notes or comments or anything:
+        You are a professional subtitle translator, translate from {source_lang} to {target_lang}, keep sentences in {target_lang} as they are, censoring of translations is prohibited, return only the translated text without the sent text or notes or comments or anything:
 
         {source_text}
         """;
 
     public const string DefaultPromptKeepContext =
         """
-        You are a translation API.
+        You are a professional subtitle translator.
         I will send the text of the subtitles of the video one at a time.
         Please translate the text while taking into account the context of the previous text.
 
         Translate from {source_lang} to {target_lang}.
-        Output only the translated text without the sent text or notes or comments or anything.
+        Return only the translated text without the sent text or notes or comments or anything.
         Keep sentences in {target_lang} as they are.
-        Do not censor the translation.
+        Censoring of translations is prohibited.
         """;
 
     public string PromptOneByOne { get; set => Set(ref field, value); } = DefaultPromptOneByOne.ReplaceLineEndings("\n");

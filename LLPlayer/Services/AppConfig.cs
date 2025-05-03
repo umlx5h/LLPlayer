@@ -183,8 +183,11 @@ public class AppConfig : Bindable
             { nameof(DeepLXTranslateSettings), typeof(DeepLXTranslateSettings) },
             { nameof(OllamaTranslateSettings), typeof(OllamaTranslateSettings) },
             { nameof(LMStudioTranslateSettings), typeof(LMStudioTranslateSettings) },
+            { nameof(KoboldCppTranslateSettings), typeof(KoboldCppTranslateSettings) },
             { nameof(OpenAITranslateSettings), typeof(OpenAITranslateSettings) },
-            { nameof(ClaudeTranslateSettings), typeof(ClaudeTranslateSettings) }
+            { nameof(OpenAILikeTranslateSettings), typeof(OpenAILikeTranslateSettings) },
+            { nameof(ClaudeTranslateSettings), typeof(ClaudeTranslateSettings) },
+            { nameof(LiteLLMTranslateSettings), typeof(LiteLLMTranslateSettings) }
         };
 
         JsonSerializerOptions jsonOptions = new()

@@ -1,5 +1,6 @@
 ﻿using System.Net.Http;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
@@ -29,6 +30,11 @@ public class DeepLXTranslateService : ITranslateService
         _httpClient.BaseAddress = new Uri(settings.Endpoint);
         _httpClient.Timeout = TimeSpan.FromMilliseconds(settings.TimeoutMs);
     }
+
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
 
     public TranslateServiceType ServiceType => TranslateServiceType.DeepLX;
 
@@ -74,7 +80,7 @@ public class DeepLXTranslateService : ITranslateService
                 Text = text
             };
 
-            string jsonRequest = JsonSerializer.Serialize(requestBody);
+            string jsonRequest = JsonSerializer.Serialize(requestBody, JsonOptions);
             using StringContent content = new(jsonRequest, Encoding.UTF8, "application/json");
 
             using var result = await _httpClient.PostAsync("/translate", content, token).ConfigureAwait(false);

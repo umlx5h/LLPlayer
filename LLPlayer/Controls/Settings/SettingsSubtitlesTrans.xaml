@@ -52,20 +52,24 @@
                     <TextBlock
                         Width="180"
                         Text="Endpoint" />
-                    <TextBox
-                        HorizontalContentAlignment="Left"
-                        Text="{Binding Endpoint}" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox
+                            Grid.Column="0"
+                            HorizontalContentAlignment="Left"
+                            Text="{Binding Endpoint, UpdateSourceTrigger=PropertyChanged}">
+                        </TextBox>
+                        <Button
+                            Grid.Column="1"
+                            Margin="10 0 0 0"
+                            Content="Reset"
+                            Command="{Binding CmdSetDefaultEndpoint}"
+                            Style="{StaticResource MaterialDesignOutlinedButton}" />
+                    </Grid>
                 </DockPanel>
-
-                <!--TODO: L: Parent style margins not applied-->
-                <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
-                    <TextBlock
-                        Width="180"
-                        Text="" />
-                    <Button
-                        Content="Set Default Endpoint"
-                        Command="{Binding CmdSetDefaultEndpoint}" />
-                </StackPanel>
 
                 <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
                     <TextBlock
@@ -136,7 +140,7 @@
                         Text="Endpoint" />
                     <TextBox
                         HorizontalContentAlignment="Left"
-                        Text="{Binding Endpoint}" />
+                        Text="{Binding Endpoint, UpdateSourceTrigger=PropertyChanged}" />
                 </DockPanel>
 
                 <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
@@ -154,76 +158,21 @@
         <!-- Ollama -->
         <DataTemplate DataType="{x:Type flyleafServices:OllamaTranslateSettings}">
             <StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
-                    <TextBlock
-                        Width="180"
-                        Text="Endpoint" />
-                    <TextBox
-                        HorizontalContentAlignment="Left"
-                        Width="300"
-                        Text="{Binding Endpoint}" />
-                    <Button
-                        Command="{Binding CmdCheckEndpoint}"
-                        Content="Check"
-                        Margin="10 0 0 0" />
-                </StackPanel>
+                <transControl:OpenAIBaseTranslateControl />
+            </StackPanel>
+        </DataTemplate>
 
-                <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
-                    <TextBlock
-                        Width="180"
-                        Text="Timeout (ms)" />
-                    <TextBox
-                        Width="100"
-                        Text="{Binding TimeoutMs}"
-                        helpers:TextBoxHelper.OnlyNumeric="Uint" />
-                </StackPanel>
+        <!-- LMStudio -->
+        <DataTemplate DataType="{x:Type flyleafServices:LMStudioTranslateSettings}">
+            <StackPanel>
+                <transControl:OpenAIBaseTranslateControl />
+            </StackPanel>
+        </DataTemplate>
 
-                <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
-                    <TextBlock
-                        Width="180"
-                        Text="Timeout Health (ms)" />
-                    <TextBox
-                        Width="100"
-                        Text="{Binding TimeoutHealthMs}"
-                        helpers:TextBoxHelper.OnlyNumeric="Uint" />
-                </StackPanel>
-
-                <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
-                    <TextBlock
-                        Width="180"
-                        Text="Model" />
-                    <ComboBox
-                        Width="260"
-                        ItemsSource="{Binding AvailableModels}"
-                        IsEditable="True"
-                        Text="{Binding Model, Mode=TwoWay}">
-                    </ComboBox>
-                    <Button
-                        Command="{Binding CmdGetModels}"
-                        Content="Get Models"
-                        Margin="10 0 0 0" />
-                </StackPanel>
-
-                <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
-                    <TextBlock
-                        Width="180"
-                        Text="Debug" />
-                    <Button
-                        Command="{Binding CmdHelloModel}"
-                        Content="Hello API"
-                        Margin="10 0 0 0" />
-                </StackPanel>
-
-                <DockPanel Margin="0 0 0 8" Visibility="{Binding StatusAvailable, Converter={StaticResource BooleanToVisibilityConv}}">
-                    <TextBlock
-                        Width="180"
-                        Text="[Status]" />
-                    <TextBox
-                        HorizontalContentAlignment="Left"
-                        TextWrapping="Wrap"
-                        IsReadOnly="True"
-                        Text="{Binding Status, Mode=OneWay}" />
-                </DockPanel>
+        <!-- KoboldCpp -->
+        <DataTemplate DataType="{x:Type flyleafServices:KoboldCppTranslateSettings}">
+            <StackPanel>
+                <transControl:OpenAIBaseTranslateControl />
             </StackPanel>
         </DataTemplate>
 
@@ -243,6 +192,38 @@
             </StackPanel>
         </DataTemplate>
 
+        <!-- OpenAILike -->
+        <DataTemplate DataType="{x:Type flyleafServices:OpenAILikeTranslateSettings}">
+            <StackPanel>
+                <DockPanel Margin="0 0 0 8">
+                    <TextBlock
+                        Width="180"
+                        Text="API Key (optional)" />
+                    <TextBox
+                        HorizontalContentAlignment="Left"
+                        Text="{Binding ApiKey}" />
+                </DockPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
+                    <TextBlock
+                        Width="180"
+                        Text="Path" />
+                    <TextBox
+                        HorizontalContentAlignment="Left"
+                        Width="200"
+                        Text="{Binding ChatPath, UpdateSourceTrigger=PropertyChanged}" />
+                    <Button
+                        Margin="10 0 0 0"
+                        Content="Reset"
+                        Command="{Binding CmdSetDefaultChatPath}"
+                        Style="{StaticResource MaterialDesignOutlinedButton}" />
+                </StackPanel>
+
+                <transControl:OpenAIBaseTranslateControl />
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- Claude -->
         <DataTemplate DataType="{x:Type flyleafServices:ClaudeTranslateSettings}">
             <StackPanel>
                 <DockPanel Margin="0 0 0 8">
@@ -258,7 +239,8 @@
             </StackPanel>
         </DataTemplate>
 
-        <DataTemplate DataType="{x:Type flyleafServices:LMStudioTranslateSettings}">
+        <!-- LiteLLM -->
+        <DataTemplate DataType="{x:Type flyleafServices:LiteLLMTranslateSettings}">
             <StackPanel>
                 <transControl:OpenAIBaseTranslateControl />
             </StackPanel>

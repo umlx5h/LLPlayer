@@ -94,13 +94,16 @@ internal class TranslateServiceTypeEnumToStringConverter : IValueConverter
     {
         if (value is TranslateServiceType enumValue)
         {
+            string displayName = enumValue.GetDescription();
+
             if (enumValue.IsLLM())
             {
-                return $"{enumValue} (LLM)";
+                return $"{displayName} (LLM)";
             }
 
-            return $"{enumValue}";
+            return $"{displayName}";
         }
+
         return value?.ToString() ?? string.Empty;
     }
 
@@ -113,12 +116,14 @@ internal class TranslateServiceTypeEnumToStringConverter : IValueConverter
 [ValueConversion(typeof(TranslateServiceType), typeof(string))]
 internal class TranslateServiceTypeEnumToUrlConverter : IValueConverter
 {
-    private static string BaseUrl = "https://github.com/umlx5h/LLPlayer/wiki/Translation-Engine";
+    private const string BaseUrl = "https://github.com/umlx5h/LLPlayer/wiki/Translation-Engine";
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is TranslateServiceType enumValue)
         {
-            return $"{BaseUrl}#{enumValue.ToString().ToLower()}";
+            string displayName = enumValue.GetDescription();
+
+            return $"{BaseUrl}#{displayName.ToLower().Replace(' ', '-')}";
         }
         return BaseUrl;
     }

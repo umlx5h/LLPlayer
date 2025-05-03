@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -14,7 +15,8 @@ namespace FlyleafLib.MediaPlayer.Translation.Services;
 
 #nullable enable
 
-// OpenAI, LMStudio, Claude
+// All LLM translation use this class
+// Currently only supports OpenAI compatible API
 public class OpenAIBaseTranslateService : ITranslateService
 {
     private readonly HttpClient _httpClient;
@@ -34,6 +36,12 @@ public class OpenAIBaseTranslateService : ITranslateService
 
     private string? _basePrompt;
     private readonly ConcurrentQueue<OpenAIMessage> _messageQueue = new();
+
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
 
     public TranslateServiceType ServiceType => _settings.ServiceType;
 
@@ -74,9 +82,7 @@ public class OpenAIBaseTranslateService : ITranslateService
         if (_basePrompt == null)
             throw new InvalidOperationException("must be initialized");
 
-        string jsonResultString = "";
-        int statusCode = -1;
-
+        // Trim message history if required
         while (_messageQueue.Count / 2 > _chatConfig.SubtitleContextCount)
         {
             if (_chatConfig.ContextRetainPolicy == ChatContextRetainPolicy.KeepSize)
@@ -97,68 +103,24 @@ public class OpenAIBaseTranslateService : ITranslateService
 
         List<OpenAIMessage> messages = new(_messageQueue.Count + 2)
         {
-            new OpenAIMessage
-            {
-                role = "system",
-                content = _basePrompt
-            }
+            new OpenAIMessage { role = "system", content = _basePrompt },
         };
 
         // add history
-        messages!.AddRange(_messageQueue);
+        messages.AddRange(_messageQueue);
 
         // add new message
         OpenAIMessage newMessage = new() { role = "user", content = text };
         messages.Add(newMessage);
 
-        try
-        {
-            OpenAIRequest requestBody = new()
-            {
-                model = _settings.Model,
-                messages = messages.ToArray(),
-                stream = false
-            };
+        string reply = await SendChatRequest(
+            _httpClient, _settings, messages.ToArray(), token);
 
-            // Convert to JSON
-            string jsonContent = JsonSerializer.Serialize(requestBody);
-            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+        // add to message history if success
+        _messageQueue.Enqueue(newMessage);
+        _messageQueue.Enqueue(new OpenAIMessage { role = "assistant", content = reply });
 
-            var result = await _httpClient.PostAsync("/v1/chat/completions", content, token);
-
-            jsonResultString = await result.Content.ReadAsStringAsync(token);
-
-            statusCode = (int)result.StatusCode;
-            result.EnsureSuccessStatusCode();
-
-            OpenAIResponse? chatResponse = JsonSerializer.Deserialize<OpenAIResponse>(jsonResultString);
-            string reply = chatResponse!.choices[0].message.content;
-
-            // add to message history if success
-            _messageQueue.Enqueue(newMessage);
-            _messageQueue.Enqueue(new OpenAIMessage { role = "assistant", content = reply });
-
-            return reply.Trim();
-        }
-        // Distinguish between timeout and cancel errors
-        catch (OperationCanceledException ex)
-            when (!ex.Message.StartsWith("The request was canceled due to the configured HttpClient.Timeout"))
-        {
-            // cancel
-            throw;
-        }
-        catch (Exception ex)
-        {
-            // timeout and other error
-            throw new TranslationException($"Cannot request to {ServiceType}: {ex.Message}", ex)
-            {
-                Data =
-                {
-                    ["status_code"] = statusCode.ToString(),
-                    ["response"] = jsonResultString
-                }
-            };
-        }
+        return reply;
     }
 
     private async Task<string> DoOneByOne(string text, CancellationToken token)
@@ -166,33 +128,56 @@ public class OpenAIBaseTranslateService : ITranslateService
         if (_basePrompt == null)
             throw new InvalidOperationException("must be initialized");
 
-        string jsonResultString = "";
+        string prompt = _basePrompt.Replace("{source_text}", text);
+
+        OpenAIMessage[] messages =
+        [
+            new() { role = "user", content = prompt }
+        ];
+
+        return await SendChatRequest(_httpClient, _settings, messages, token);
+    }
+
+    public static async Task<string> Hello(OpenAIBaseTranslateSettings settings)
+    {
+        using HttpClient client = settings.GetHttpClient();
+
+        OpenAIMessage[] messages =
+        [
+            new() { role = "user", content = "Hello" }
+        ];
+
+        return await SendChatRequest(client, settings, messages, CancellationToken.None);
+    }
+
+    private static async Task<string> SendChatRequest(
+        HttpClient client,
+        OpenAIBaseTranslateSettings settings,
+        OpenAIMessage[] messages,
+        CancellationToken token)
+    {
+        string jsonResultString = string.Empty;
         int statusCode = -1;
+
+        // Create the request payload
+        OpenAIRequest request = new()
+        {
+            model = settings.Model,
+            stream = false,
+            messages = messages,
+        };
+
+        if (!settings.ModelRequired && string.IsNullOrWhiteSpace(settings.Model))
+        {
+            request.model = null;
+        }
 
         try
         {
-            string prompt = _basePrompt.Replace("{source_text}", text);
-
-            // Create the request payload
-            OpenAIRequest requestBody = new()
-            {
-                model = _settings.Model,
-                messages =
-                [
-                    new OpenAIMessage
-                    {
-                        role = "user",
-                        content = prompt
-                    }
-                ],
-                stream = false
-            };
-
             // Convert to JSON
-            string jsonContent = JsonSerializer.Serialize(requestBody);
-            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
-            var result = await _httpClient.PostAsync("/v1/chat/completions", content, token);
+            string jsonContent = JsonSerializer.Serialize(request, JsonOptions);
+            using var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+            using var result = await client.PostAsync(settings.ChatPath, content, token);
 
             jsonResultString = await result.Content.ReadAsStringAsync(token);
 
@@ -214,7 +199,7 @@ public class OpenAIBaseTranslateService : ITranslateService
         catch (Exception ex)
         {
             // timeout and other error
-            throw new TranslationException($"Cannot request to {ServiceType}: {ex.Message}", ex)
+            throw new TranslationException($"Cannot request to {settings.ServiceType}: {ex.Message}", ex)
             {
                 Data =
                 {
@@ -229,13 +214,13 @@ public class OpenAIBaseTranslateService : ITranslateService
     {
         using HttpClient client = settings.GetHttpClient(true);
 
-        string jsonResultString = "";
+        string jsonResultString = string.Empty;
         int statusCode = -1;
 
         // getting models
         try
         {
-            var result = await client.GetAsync("/v1/models");
+            using var result = await client.GetAsync("/v1/models");
 
             jsonResultString = await result.Content.ReadAsStringAsync();
 
@@ -243,66 +228,16 @@ public class OpenAIBaseTranslateService : ITranslateService
             result.EnsureSuccessStatusCode();
 
             JsonNode? node = JsonNode.Parse(jsonResultString);
-            List<string> models = node!["data"]!.AsArray().Select(model => model!["id"]!.GetValue<string>()).Order().ToList();
+            List<string> models = node!["data"]!.AsArray()
+                .Select(model => model!["id"]!.GetValue<string>())
+                .Order()
+                .ToList();
 
             return models;
         }
         catch (Exception ex)
         {
             throw new InvalidOperationException($"get models error: {ex.Message}", ex)
-            {
-                Data =
-                {
-                    ["status_code"] = statusCode.ToString(),
-                    ["response"] = jsonResultString
-                }
-            };
-        }
-    }
-
-    public static async Task<string> Hello(OpenAIBaseTranslateSettings settings)
-    {
-        using HttpClient client = settings.GetHttpClient();
-
-        string jsonResultString = "";
-        int statusCode = -1;
-
-        try
-        {
-            // Create the request payload
-            OpenAIRequest requestBody = new()
-            {
-                model = settings.Model,
-                messages =
-                [
-                    new OpenAIMessage
-                    {
-                        role = "user",
-                        content = "Hello"
-                    }
-                ],
-                stream = false
-            };
-
-            // Convert to JSON
-            string jsonContent = JsonSerializer.Serialize(requestBody);
-            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
-            var result = await client.PostAsync("/v1/chat/completions", content);
-
-            jsonResultString = await result.Content.ReadAsStringAsync();
-
-            statusCode = (int)result.StatusCode;
-            result.EnsureSuccessStatusCode();
-
-            OpenAIResponse? chatResponse = JsonSerializer.Deserialize<OpenAIResponse>(jsonResultString);
-            string reply = chatResponse!.choices[0].message.content;
-
-            return reply.Trim();
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException($"hello error: {ex.Message}", ex)
             {
                 Data =
                 {
@@ -322,7 +257,7 @@ public class OpenAIMessage
 
 public class OpenAIRequest
 {
-    public string model { get; set; }
+    public string? model { get; set; }
     public OpenAIMessage[] messages { get; set; }
     public bool stream { get; set; }
 }

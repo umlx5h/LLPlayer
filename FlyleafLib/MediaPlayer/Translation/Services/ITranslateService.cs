@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.ComponentModel;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace FlyleafLib.MediaPlayer.Translation.Services;
@@ -33,38 +34,63 @@ public enum TranslateServiceType
     /// <summary>
     /// Google V1.
     /// </summary>
+    [Description("Google V1")]
     GoogleV1 = 1 << 0,
 
     /// <summary>
     /// DeepL
     /// </summary>
+    [Description(nameof(DeepL))]
     DeepL = 1 << 1,
 
     /// <summary>
     /// DeepLX
     /// https://github.com/OwO-Network/DeepLX
     /// </summary>
+    [Description(nameof(DeepLX))]
     DeepLX = 1 << 2,
 
     /// <summary>
     /// Ollama
     /// </summary>
+    [Description(nameof(Ollama))]
     Ollama = 1 << 3,
 
     /// <summary>
     /// LM Studio
     /// </summary>
+    [Description("LM Studio")]
     LMStudio = 1 << 4,
+
+    /// <summary>
+    /// KoboldCpp
+    /// </summary>
+    [Description(nameof(KoboldCpp))]
+    KoboldCpp = 1 << 5,
 
     /// <summary>
     /// OpenAI (ChatGPT)
     /// </summary>
-    OpenAI = 1 << 5,
+    [Description(nameof(OpenAI))]
+    OpenAI = 1 << 6,
+
+    /// <summary>
+    /// OpenAI compatible
+    /// </summary>
+    [Description("OpenAI Like")]
+    OpenAILike = 1 << 7,
 
     /// <summary>
     /// Anthropic Claude
     /// </summary>
-    Claude = 1 << 6,
+    [Description(nameof(Claude))]
+    Claude = 1 << 8,
+
+    /// <summary>
+    /// LiteLLM
+    /// </summary>
+    [Description(nameof(LiteLLM))]
+    LiteLLM = 1 << 9,
 }
 
 public static class TranslateServiceTypeExtensions
@@ -72,8 +98,11 @@ public static class TranslateServiceTypeExtensions
     public static TranslateServiceType LLMServices =>
         TranslateServiceType.Ollama |
         TranslateServiceType.LMStudio |
+        TranslateServiceType.KoboldCpp |
         TranslateServiceType.OpenAI |
-        TranslateServiceType.Claude;
+        TranslateServiceType.OpenAILike |
+        TranslateServiceType.Claude |
+        TranslateServiceType.LiteLLM;
 
     public static bool IsLLM(this TranslateServiceType serviceType)
     {
@@ -94,10 +123,16 @@ public static class TranslateServiceTypeExtensions
                 return new OllamaTranslateSettings();
             case TranslateServiceType.LMStudio:
                 return new LMStudioTranslateSettings();
+            case TranslateServiceType.KoboldCpp:
+                return new KoboldCppTranslateSettings();
             case TranslateServiceType.OpenAI:
                 return new OpenAITranslateSettings();
+            case TranslateServiceType.OpenAILike:
+                return new OpenAILikeTranslateSettings();
             case TranslateServiceType.Claude:
                 return new ClaudeTranslateSettings();
+            case TranslateServiceType.LiteLLM:
+                return new LiteLLMTranslateSettings();
         }
 
         throw new InvalidOperationException();

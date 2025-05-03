@@ -6,6 +6,7 @@
              xmlns:local="clr-namespace:LLPlayer.Controls.Settings.TransControl"
              xmlns:helpers="clr-namespace:LLPlayer.Extensions"
              xmlns:services="clr-namespace:FlyleafLib.MediaPlayer.Translation.Services;assembly=FlyleafLib"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              d:DataContext="{d:DesignInstance services:OpenAIBaseTranslateSettings}"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
@@ -17,20 +18,16 @@
             <TextBox
                 HorizontalContentAlignment="Left"
                 Width="300"
-                Text="{Binding Endpoint}" />
+                Text="{Binding Endpoint, UpdateSourceTrigger=PropertyChanged}" />
+            <Button
+                Margin="10 0 0 0"
+                Content="Reset"
+                Command="{Binding CmdSetDefaultEndpoint}"
+                Style="{StaticResource MaterialDesignOutlinedButton}" />
             <Button
                 Command="{Binding CmdCheckEndpoint}"
                 Content="Check"
                 Margin="10 0 0 0" />
-        </StackPanel>
-
-        <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
-            <TextBlock
-                Width="180"
-                Text="" />
-            <Button
-                Content="Set Default Endpoint"
-                Command="{Binding CmdSetDefaultEndpoint}" />
         </StackPanel>
 
         <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
@@ -55,8 +52,19 @@
 
         <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
             <TextBlock
-                Width="180"
-                Text="Model" />
+                FontSize="14"
+                Width="180">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignTextBlock}">
+                        <Setter Property="Text" Value="Model" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ModelRequired}" Value="False">
+                                <Setter Property="Text" Value="Model (optional)" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
             <ComboBox
                 Width="260"
                 ItemsSource="{Binding AvailableModels}"
