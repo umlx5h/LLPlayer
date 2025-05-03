@@ -97,5 +97,55 @@
                 IsReadOnly="True"
                 Text="{Binding Status, Mode=OneWay}" />
         </DockPanel>
+
+        <Expander Header="LLM Parameters">
+            <StackPanel Margin="10">
+                <StackPanel Orientation="Horizontal" Margin="0 0 0 12"
+                            VerticalAlignment="Center">
+                    <TextBlock
+                        Width="180"
+                        Text="temperature" />
+                    <CheckBox
+                        Content="Manual"
+                        IsChecked="{Binding TemperatureManual}" />
+                    <Slider
+                        Minimum="0" Maximum="1" TickFrequency="0.01" IsSnapToTickEnabled="True"
+                        Margin="8 0 0 0"
+                        Value="{Binding Temperature, Mode=TwoWay}"
+                        Width="200"
+                        Style="{StaticResource MaterialDesignDiscreteSlider}"
+                        materialDesign:SliderAssist.OnlyShowFocusVisualWhileDragging="True"
+                        IsEnabled="{Binding TemperatureManual}" />
+                    <TextBox
+                        Width="40"
+                        Text="{Binding Temperature}"
+                        IsEnabled="{Binding TemperatureManual}"
+                        helpers:TextBoxHelper.OnlyNumeric="Double" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0 0 0 12"
+                            VerticalAlignment="Center">
+                    <TextBlock
+                        Width="180"
+                        Text="top_p" />
+                    <CheckBox
+                        Content="Manual"
+                        IsChecked="{Binding TopPManual}" />
+                    <Slider
+                        Minimum="0" Maximum="1" TickFrequency="0.01" IsSnapToTickEnabled="True"
+                        Margin="8 0 0 0"
+                        Value="{Binding TopP, Mode=TwoWay}"
+                        Width="200"
+                        Style="{StaticResource MaterialDesignDiscreteSlider}"
+                        materialDesign:SliderAssist.OnlyShowFocusVisualWhileDragging="True"
+                        IsEnabled="{Binding TopPManual}" />
+                    <TextBox
+                        Width="40"
+                        Text="{Binding TopP}"
+                        IsEnabled="{Binding TopPManual}"
+                        helpers:TextBoxHelper.OnlyNumeric="Double" />
+                </StackPanel>
+            </StackPanel>
+        </Expander>
     </StackPanel>
 </UserControl>

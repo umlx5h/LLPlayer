@@ -165,6 +165,9 @@ public class OpenAIBaseTranslateService : ITranslateService
             model = settings.Model,
             stream = false,
             messages = messages,
+
+            temperature = settings.TemperatureManual ? settings.Temperature : null,
+            top_p = settings.TopPManual ? settings.TopP : null
         };
 
         if (!settings.ModelRequired && string.IsNullOrWhiteSpace(settings.Model))
@@ -260,6 +263,8 @@ public class OpenAIRequest
     public string? model { get; set; }
     public OpenAIMessage[] messages { get; set; }
     public bool stream { get; set; }
+    public double? temperature { get; set; }
+    public double? top_p { get; set; }
 }
 
 public class OpenAIResponse

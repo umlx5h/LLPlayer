@@ -179,6 +179,36 @@ public abstract class OpenAIBaseTranslateSettings : NotifyPropertyChanged, ITran
     public int TimeoutMs { get; set => Set(ref field, value); } = 15000;
     public int TimeoutHealthMs { get; set => Set(ref field, value); } = 2000;
 
+    #region LLM Parameters
+    public double Temperature
+    {
+        get;
+        set
+        {
+            if (value is >= 0.0 and <= 2.0)
+            {
+                Set(ref field, Math.Round(value, 2));
+            }
+        }
+    } = 0.0;
+
+    public bool TemperatureManual { get; set => Set(ref field, value); } = true;
+
+    public double TopP
+    {
+        get;
+        set
+        {
+            if (value is >= 0.0 and <= 1.0)
+            {
+                Set(ref field, Math.Round(value, 2));
+            }
+        }
+    } = 1;
+
+    public bool TopPManual { get; set => Set(ref field, value); }
+    #endregion
+
     /// <summary>
     /// GetHttpClient
     /// </summary>
