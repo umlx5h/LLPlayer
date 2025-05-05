@@ -10,7 +10,7 @@ namespace LLPlayer.ViewModels;
 
 public class ErrorDialogVM : Bindable, IDialogAware
 {
-    private readonly FlyleafManager FL;
+    public FlyleafManager FL { get; }
 
     public ErrorDialogVM(FlyleafManager fl)
     {

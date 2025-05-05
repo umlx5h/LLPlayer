@@ -159,6 +159,15 @@ public class Config : NotifyPropertyChanged
             }
             // set CTRL+F to subtitles search
             Player.KeyBindings.Keys.Add(new KeyBinding { Ctrl = true, Key = System.Windows.Input.Key.F, IsKeyUp = true, Action = KeyBindingAction.Custom, ActionName = "ActivateSubsSearch" });
+
+            // Toggle always on top
+            int ctrlTBindingIdx = Player.KeyBindings.Keys
+                .FindIndex(k => k.Key == System.Windows.Input.Key.T &&
+                             k.Ctrl && !k.Alt && !k.Shift);
+            if (ctrlTBindingIdx == -1)
+            {
+                Player.KeyBindings.Keys.Add(new KeyBinding { Ctrl = true, Key = System.Windows.Input.Key.T, IsKeyUp = true, Action = KeyBindingAction.Custom, ActionName = "ToggleAlwaysOnTop" });
+            }
         }
     }
 

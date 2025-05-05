@@ -4,16 +4,19 @@ using System.IO;
 using System.Net.Http;
 using FlyleafLib;
 using LLPlayer.Extensions;
+using LLPlayer.Services;
 
 namespace LLPlayer.ViewModels;
 
 // TODO: L: consider commonization with WhisperModelDownloadDialogVM
 public class TesseractDownloadDialogVM : Bindable, IDialogAware
 {
-    private const string TempExtension = ".tmp";
+    public FlyleafManager FL { get; }
 
-    public TesseractDownloadDialogVM()
+    public TesseractDownloadDialogVM(FlyleafManager fl)
     {
+        FL = fl;
+
         List<TesseractModel> models = TesseractModelLoader.LoadAllModels();
         foreach (var model in models)
         {
@@ -33,6 +36,8 @@ public class TesseractDownloadDialogVM : Bindable, IDialogAware
             }
         };
     }
+
+    private const string TempExtension = ".tmp";
 
     public ObservableCollection<TesseractModel> Models { get; set => Set(ref field, value); } = new();
 

@@ -12,6 +12,7 @@
         d:Width="1280"
         d:Height="720"
         WindowStartupLocation="CenterScreen"
+        Topmost="{Binding FL.Config.AlwaysOnTop}"
         Style="{StaticResource MaterialDesignWindow}"
         d:DataContext="{d:DesignInstance vm:MainWindowVM}"
         d:Foreground="White"

@@ -79,6 +79,7 @@ public class AppActions
 
             [CustomKeyBindingAction.ToggleSidebar] = CmdToggleSidebar.Execute,
             [CustomKeyBindingAction.ToggleDebugOverlay] = CmdToggleDebugOverlay.Execute,
+            [CustomKeyBindingAction.ToggleAlwaysOnTop] = CmdToggleAlwaysOnTop.Execute,
 
             [CustomKeyBindingAction.OpenWindowSettings] = CmdOpenWindowSettings.Execute,
             [CustomKeyBindingAction.OpenWindowSubsDownloader] = CmdOpenWindowSubsDownloader.Execute,
@@ -109,6 +110,7 @@ public class AppActions
             new() { ActionName = nameof(CustomKeyBindingAction.ActivateSubsSearch), Key = Key.F, Ctrl = true, IsKeyUp = true },
             new() { ActionName = nameof(CustomKeyBindingAction.ToggleSidebar), Key = Key.B, Ctrl = true, IsKeyUp = true },
             new() { ActionName = nameof(CustomKeyBindingAction.ToggleDebugOverlay), Key = Key.D, Ctrl = true, Shift = true, IsKeyUp = true },
+            new() { ActionName = nameof(CustomKeyBindingAction.ToggleAlwaysOnTop), Key = Key.T, Ctrl = true, IsKeyUp = true },
             new() { ActionName = nameof(CustomKeyBindingAction.OpenWindowSettings), Key = Key.OemComma, Ctrl = true, IsKeyUp = true },
             new() { ActionName = nameof(CustomKeyBindingAction.OpenWindowCheatSheet), Key = Key.F1, IsKeyUp = true },
             new() { ActionName = nameof(CustomKeyBindingAction.AppNew), Key = Key.N, Ctrl = true, IsKeyUp = true },
@@ -380,6 +382,11 @@ public class AppActions
         _config.ShowDebug = !_config.ShowDebug;
     });
 
+    public DelegateCommand CmdToggleAlwaysOnTop => field ?? new(() =>
+    {
+        _config.AlwaysOnTop = !_config.AlwaysOnTop;
+    });
+
     public DelegateCommand CmdOpenWindowSettings => field ?? new(() =>
     {
         if (_player.IsPlaying)
@@ -515,6 +522,7 @@ public class AppActions
     {
         ColorFontDialog dialog = new();
 
+        dialog.Topmost = _config.AlwaysOnTop;
         dialog.Font = new FontInfo(new FontFamily(_config.Subs.SubsFontFamily), _config.Subs.SubsFontSize, (FontStyle)_fontStyleConv.ConvertFromString(_config.Subs.SubsFontStyle)!, (FontStretch)_fontStretchConv.ConvertFromString(_config.Subs.SubsFontStretch)!, (FontWeight)_fontWeightConv.ConvertFromString(_config.Subs.SubsFontWeight)!, new SolidColorBrush(_config.Subs.SubsFontColor));
 
         _player.Activity.ForceFullActive();
@@ -534,6 +542,7 @@ public class AppActions
     {
         ColorFontDialog dialog = new();
 
+        dialog.Topmost = _config.AlwaysOnTop;
         dialog.Font = new FontInfo(new FontFamily(_config.SidebarFontFamily), _config.SidebarFontSize, FontStyles.Normal, FontStretches.Normal, (FontWeight)_fontWeightConv.ConvertFromString(_config.SidebarFontWeight)!, new SolidColorBrush(Colors.Black));
 
         _player.Activity.ForceFullActive();
@@ -676,6 +685,8 @@ public enum CustomKeyBindingAction
     ToggleSidebar,
     [Description("Toggle Debug Overlay")]
     ToggleDebugOverlay,
+    [Description("Toggle Always On Top")]
+    ToggleAlwaysOnTop,
 
     [Description("Open Settings Window")]
     OpenWindowSettings,
@@ -753,6 +764,7 @@ public static class KeyBindingActionExtensions
 
             case CustomKeyBindingAction.ToggleSidebar:
             case CustomKeyBindingAction.ToggleDebugOverlay:
+            case CustomKeyBindingAction.ToggleAlwaysOnTop:
             case CustomKeyBindingAction.OpenWindowSettings:
             case CustomKeyBindingAction.OpenWindowSubsDownloader:
             case CustomKeyBindingAction.OpenWindowSubsExporter:

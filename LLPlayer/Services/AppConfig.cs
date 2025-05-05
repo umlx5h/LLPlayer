@@ -65,6 +65,8 @@ public class AppConfig : Bindable
 
     public AppConfigTheme Theme { get; set => Set(ref field, value); } = new();
 
+    public bool AlwaysOnTop { get; set => Set(ref field, value); }
+
     [JsonIgnore]
     public double ScreenWidth
     {

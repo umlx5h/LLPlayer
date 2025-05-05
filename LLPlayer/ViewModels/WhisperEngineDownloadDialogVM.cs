@@ -3,6 +3,7 @@ using System.IO;
 using System.Net.Http;
 using FlyleafLib;
 using LLPlayer.Extensions;
+using LLPlayer.Services;
 using SevenZip;
 using File = System.IO.File;
 
@@ -18,8 +19,12 @@ public class WhisperEngineDownloadDialogVM : Bindable, IDialogAware
     private static string EngineName = "Faster-Whisper-XXL";
     private static string EnginePath = Path.Combine(WhisperConfig.EnginesDirectory, EngineName);
 
-    public WhisperEngineDownloadDialogVM()
+    public FlyleafManager FL { get; }
+
+    public WhisperEngineDownloadDialogVM(FlyleafManager fl)
     {
+        FL = fl;
+
         CmdDownloadEngine.PropertyChanged += (sender, args) =>
         {
             if (args.PropertyName == nameof(CmdDownloadEngine.IsExecuting))

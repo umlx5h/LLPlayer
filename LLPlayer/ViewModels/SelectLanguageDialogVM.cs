@@ -3,13 +3,18 @@ using System.ComponentModel;
 using System.Windows.Data;
 using FlyleafLib;
 using LLPlayer.Extensions;
+using LLPlayer.Services;
 
 namespace LLPlayer.ViewModels;
 
 public class SelectLanguageDialogVM : Bindable, IDialogAware
 {
-    public SelectLanguageDialogVM()
+    public FlyleafManager FL { get; }
+
+    public SelectLanguageDialogVM(FlyleafManager fl)
     {
+        FL = fl;
+
         _filteredAvailableLanguages = CollectionViewSource.GetDefaultView(AvailableLanguages);
         _filteredAvailableLanguages.Filter = obj =>
         {

@@ -7,6 +7,7 @@
         Width="{Binding WindowWidth, Mode=TwoWay}"
         Height="{Binding WindowHeight, Mode=TwoWay}"
         Title="{Binding Title}"
+        Topmost="{Binding FL.Config.AlwaysOnTop}"
         SizeToContent="Manual"
         WindowStartupLocation="CenterOwner">
 </Window>

@@ -418,6 +418,15 @@ public class FlyleafOverlayVM : Bindable
         }
 
         // app config
+        FL.Config.PropertyChanged += (o, e) =>
+        {
+            switch (e.PropertyName)
+            {
+                case nameof(FL.Config.AlwaysOnTop):
+                    OSDMessage = $"Always on Top {(FL.Config.AlwaysOnTop ? "On" : "Off")}";
+                    break;
+            }
+        };
 
         FL.Config.Subs.PropertyChanged += (o, e) =>
         {

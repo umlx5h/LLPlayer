@@ -312,7 +312,7 @@ AncestorType={x:Type MenuItem}}}">
     <ContextMenu x:Key="PopUpMenu" Style="{StaticResource FlyleafContextMenu}" Opened="PopUpMenu_OnOpened" Closed="PopUpMenu_OnClosed">
         <MenuItem Header="Open File" Command="{Binding FL.Player.Commands.OpenFromFileDialog}" Icon="{materialDesign:PackIcon FolderOutline}" />
 
-        <MenuItem x:Name="MenuPasteUrl" Header="Paste Url" Command="{Binding FL.Player.Commands.OpenFromClipboard}" Icon="{materialDesign:PackIcon ContentPaste}" />
+        <MenuItem x:Name="MenuPasteUrl" Header="Paste URL" Command="{Binding FL.Player.Commands.OpenFromClipboard}" Icon="{materialDesign:PackIcon ContentPaste}" />
         <Separator />
 
         <MenuItem ItemsSource="{Binding FL.Player.Playlist.Items}" Icon="{materialDesign:PackIcon ViewList}">
@@ -581,6 +581,8 @@ AncestorType={x:Type MenuItem}}}">
             <MenuItem Header="Clone App" Command="{Binding FL.Action.CmdAppClone}" Icon="{materialDesign:PackIcon Kind=ContentCopy}"/>
             <MenuItem Header="Restart App" Command="{Binding FL.Action.CmdAppRestart}" Icon="{materialDesign:PackIcon Kind=Restart}"/>
             <MenuItem Header="Exit App" Command="{Binding FL.Action.CmdAppExit}" Icon="{materialDesign:PackIcon Kind=ExitToApp}"/>
+            <Separator />
+            <MenuItem Header="Always On Top" IsCheckable="True" IsChecked="{Binding FL.Config.AlwaysOnTop}"/>
         </MenuItem>
 
         <Separator />

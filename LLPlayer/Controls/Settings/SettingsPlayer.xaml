@@ -156,6 +156,15 @@
                             Text="{Binding FL.Config.SeekBarFadeOutTimeMs}"
                             helpers:TextBoxHelper.OnlyNumeric="Uint" />
                     </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Text="Always On Top"
+                            Width="180">
+                        </TextBlock>
+                        <ToggleButton
+                            IsChecked="{Binding FL.Config.AlwaysOnTop}" />
+                    </StackPanel>
                 </StackPanel>
             </GroupBox>
 

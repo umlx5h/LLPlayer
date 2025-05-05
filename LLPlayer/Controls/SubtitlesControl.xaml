@@ -17,6 +17,7 @@
             AllowsTransparency="True"
             HorizontalOffset="{Binding PopupHorizontalOffset, ElementName=WordPopupControl}"
             VerticalOffset="{Binding PopupVerticalOffset, ElementName=WordPopupControl}"
+            IsTopmost="{Binding FL.Config.AlwaysOnTop}"
             IsOpen="{Binding IsOpen, ElementName=WordPopupControl}"
             StaysOpen="True">
             <local:WordPopup

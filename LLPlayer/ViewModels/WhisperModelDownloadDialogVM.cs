@@ -11,10 +11,12 @@ namespace LLPlayer.ViewModels;
 
 public class WhisperModelDownloadDialogVM : Bindable, IDialogAware
 {
-    private const string TempExtension = ".tmp";
+    public FlyleafManager FL { get; }
 
-    public WhisperModelDownloadDialogVM()
+    public WhisperModelDownloadDialogVM(FlyleafManager fl)
     {
+        FL = fl;
+
         List<WhisperCppModel> models = WhisperCppModelLoader.LoadAllModels();
         foreach (var model in models)
         {
@@ -34,6 +36,8 @@ public class WhisperModelDownloadDialogVM : Bindable, IDialogAware
             }
         };
     }
+
+    private const string TempExtension = ".tmp";
 
     public ObservableCollection<WhisperCppModel> Models { get; set => Set(ref field, value); } = new();
 
