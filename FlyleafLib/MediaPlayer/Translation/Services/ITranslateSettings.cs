@@ -207,6 +207,18 @@ public abstract class OpenAIBaseTranslateSettings : NotifyPropertyChanged, ITran
     } = 1;
 
     public bool TopPManual { get; set => Set(ref field, value); }
+
+    public int? MaxTokens
+    {
+        get;
+        set => Set(ref field, value is <= 0 ? null : value);
+    }
+
+    public int? MaxCompletionTokens
+    {
+        get;
+        set => Set(ref field, value is <= 0 ? null : value);
+    }
     #endregion
 
     /// <summary>

@@ -100,16 +100,40 @@
 
         <Expander Header="LLM Parameters">
             <StackPanel Margin="10">
+                <TextBlock
+                    FontWeight="Medium"
+                    Margin="8 0 0 8"
+                    HorizontalAlignment="Left"
+                    Width="180">
+                    <Hyperlink Cursor="Help" NavigateUri="https://platform.openai.com/docs/api-reference/chat/create" helpers:HyperlinkHelper.OpenInBrowser="True">
+                        OpenAI Reference
+                    </Hyperlink>
+                </TextBlock>
+
                 <StackPanel Orientation="Horizontal" Margin="0 0 0 12"
                             VerticalAlignment="Center">
                     <TextBlock
-                        Width="180"
-                        Text="temperature" />
+                        Width="180">
+                        temperature
+                        <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                            <ToolTipService.ToolTip>
+                                <TextBlock
+                                    Text="(Defaults to 1) What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic. We generally recommend altering this or top_p but not both."
+                                    TextWrapping="Wrap"
+                                    MaxWidth="400" />
+                            </ToolTipService.ToolTip>
+                            <materialDesign:PackIcon
+                                Kind="Information"
+                                Width="16" Height="16"
+                                Margin="4 0 0 0" />
+                        </InlineUIContainer>
+                    </TextBlock>
+
                     <CheckBox
                         Content="Manual"
                         IsChecked="{Binding TemperatureManual}" />
                     <Slider
-                        Minimum="0" Maximum="1" TickFrequency="0.01" IsSnapToTickEnabled="True"
+                        Minimum="0" Maximum="2" TickFrequency="0.01" IsSnapToTickEnabled="True"
                         Margin="8 0 0 0"
                         Value="{Binding Temperature, Mode=TwoWay}"
                         Width="200"
@@ -126,8 +150,21 @@
                 <StackPanel Orientation="Horizontal" Margin="0 0 0 12"
                             VerticalAlignment="Center">
                     <TextBlock
-                        Width="180"
-                        Text="top_p" />
+                        Width="180">
+                        top_p
+                        <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                            <ToolTipService.ToolTip>
+                                <TextBlock
+                                    Text="(Defaults to 1) An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass. So 0.1 means only the tokens comprising the top 10% probability mass are considered. We generally recommend altering this or temperature but not both."
+                                    TextWrapping="Wrap"
+                                    MaxWidth="400" />
+                            </ToolTipService.ToolTip>
+                            <materialDesign:PackIcon
+                                Kind="Information"
+                                Width="16" Height="16"
+                                Margin="4 0 0 0" />
+                        </InlineUIContainer>
+                    </TextBlock>
                     <CheckBox
                         Content="Manual"
                         IsChecked="{Binding TopPManual}" />
@@ -144,6 +181,52 @@
                         Text="{Binding TopP}"
                         IsEnabled="{Binding TopPManual}"
                         helpers:TextBoxHelper.OnlyNumeric="Double" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
+                    <TextBlock
+                        Width="180">
+                        max_tokens
+                        <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                            <ToolTipService.ToolTip>
+                                <TextBlock
+                                    Text="(maybe deprecated) The maximum number of tokens that can be generated in the chat completion. This value can be used to control costs for text generated via API. This value is now deprecated in favor of max_completion_tokens, and is not compatible with o-series models."
+                                    TextWrapping="Wrap"
+                                    MaxWidth="400" />
+                            </ToolTipService.ToolTip>
+                            <materialDesign:PackIcon
+                                Kind="Information"
+                                Width="16" Height="16"
+                                Margin="4 0 0 0" />
+                        </InlineUIContainer>
+                    </TextBlock>
+                    <TextBox
+                        Width="100"
+                        Text="{Binding MaxTokens, Converter={StaticResource NullableIntConv}}"
+                        helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
+                    <TextBlock
+                        Width="180">
+                        max_completion_tokens
+                        <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                            <ToolTipService.ToolTip>
+                                <TextBlock
+                                    Text="An upper bound for the number of tokens that can be generated for a completion, including visible output tokens and reasoning tokens."
+                                    TextWrapping="Wrap"
+                                    MaxWidth="400" />
+                            </ToolTipService.ToolTip>
+                            <materialDesign:PackIcon
+                                Kind="Information"
+                                Width="16" Height="16"
+                                Margin="4 0 0 0" />
+                        </InlineUIContainer>
+                    </TextBlock>
+                    <TextBox
+                        Width="100"
+                        Text="{Binding MaxCompletionTokens, Converter={StaticResource NullableIntConv}}"
+                        helpers:TextBoxHelper.OnlyNumeric="Uint" />
                 </StackPanel>
             </StackPanel>
         </Expander>

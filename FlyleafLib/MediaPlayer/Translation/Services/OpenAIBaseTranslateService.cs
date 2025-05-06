@@ -167,7 +167,9 @@ public class OpenAIBaseTranslateService : ITranslateService
             messages = messages,
 
             temperature = settings.TemperatureManual ? settings.Temperature : null,
-            top_p = settings.TopPManual ? settings.TopP : null
+            top_p = settings.TopPManual ? settings.TopP : null,
+            max_completion_tokens = settings.MaxCompletionTokens,
+            max_tokens = settings.MaxTokens,
         };
 
         if (!settings.ModelRequired && string.IsNullOrWhiteSpace(settings.Model))
@@ -191,7 +193,8 @@ public class OpenAIBaseTranslateService : ITranslateService
             string reply = chatResponse!.choices[0].message.content;
             if (settings.ReasonStripRequired)
             {
-                reply = ChatReplyParser.StripReasoning(reply);
+                var stripped = ChatReplyParser.StripReasoning(reply);
+                return stripped.Trim().ToString();
             }
 
             return reply.Trim();
@@ -269,6 +272,8 @@ public class OpenAIRequest
     public bool stream { get; set; }
     public double? temperature { get; set; }
     public double? top_p { get; set; }
+    public int? max_completion_tokens { get; set; }
+    public int? max_tokens { get; set; }
 }
 
 public class OpenAIResponse
@@ -304,28 +309,28 @@ public static class ChatReplyParser
     /// <summary>
     /// Removes a leading reasoning tag if present and returns only the generated message portion.
     /// </summary>
-    public static string StripReasoning(string input)
+    public static ReadOnlySpan<char> StripReasoning(ReadOnlySpan<char> input)
     {
         // Return immediately if it doesn't start with a tag
-        if (string.IsNullOrEmpty(input) || input[0] != '<')
+        if (input.Length == 0 || input[0] != '<')
+        {
             return input;
-
-        var span = input.AsSpan();
+        }
 
         for (int i = 0; i < OpenTags.Length; i++)
         {
-            if (span.StartsWith(OpenTags[i], StringComparison.OrdinalIgnoreCase))
+            if (input.StartsWith(OpenTags[i], StringComparison.OrdinalIgnoreCase))
             {
-                int endIdx = span.IndexOf(CloseTags[i], StringComparison.OrdinalIgnoreCase);
+                int endIdx = input.IndexOf(CloseTags[i], StringComparison.OrdinalIgnoreCase);
                 if (endIdx >= 0)
                 {
                     int next = endIdx + CloseTags[i].Length;
                     // Skip over any consecutive line breaks and whitespace
-                    while (next < span.Length && char.IsWhiteSpace(span[next]))
+                    while (next < input.Length && char.IsWhiteSpace(input[next]))
                     {
                         next++;
                     }
-                    return span.Slice(next).ToString();
+                    return input.Slice(next);
                 }
             }
         }
