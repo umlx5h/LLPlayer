@@ -523,18 +523,50 @@ public class AppActions
         ColorFontDialog dialog = new();
 
         dialog.Topmost = _config.AlwaysOnTop;
-        dialog.Font = new FontInfo(new FontFamily(_config.Subs.SubsFontFamily), _config.Subs.SubsFontSize, (FontStyle)_fontStyleConv.ConvertFromString(_config.Subs.SubsFontStyle)!, (FontStretch)_fontStretchConv.ConvertFromString(_config.Subs.SubsFontStretch)!, (FontWeight)_fontWeightConv.ConvertFromString(_config.Subs.SubsFontWeight)!, new SolidColorBrush(_config.Subs.SubsFontColor));
+        dialog.Font = new FontInfo(new FontFamily(_config.Subs.SubsFontFamily), _config.Subs.SubsFontSize, (FontStyle)_fontStyleConv.ConvertFromString(_config.Subs.SubsFontStyle)!, (FontStretch)_fontStretchConv.ConvertFromString(_config.Subs.SubsFontStretch)!, (FontWeight)_fontWeightConv.ConvertFromString(_config.Subs.SubsFontWeight)!, new SolidColorBrush(Colors.Black));
+
+        _player.Activity.ForceFullActive();
+
+        double prevFontSize = dialog.Font.Size;
+
+        if (dialog.ShowDialog() == true && dialog.Font != null)
+        {
+            _config.Subs.SubsFontFamily = dialog.Font.Family.ToString();
+            _config.Subs.SubsFontWeight = dialog.Font.Weight.ToString();
+            _config.Subs.SubsFontStretch = dialog.Font.Stretch.ToString();
+            _config.Subs.SubsFontStyle = dialog.Font.Style.ToString();
+
+            if (Math.Abs(prevFontSize - dialog.Font.Size) > 0.1)
+            {
+                _config.Subs.SubsFontSize = dialog.Font.Size;
+                _config.Subs.SubsFontSize2 = dialog.Font.Size; // change secondary as well
+            }
+
+            // update display of secondary subtitles
+            _config.Subs.UpdateSecondaryFonts();
+        }
+    });
+
+    public DelegateCommand CmdSetSubtitlesFont2 => field ??= new(() =>
+    {
+        ColorFontDialog dialog = new();
+
+        dialog.Topmost = _config.AlwaysOnTop;
+        dialog.Font = new FontInfo(new FontFamily(_config.Subs.SubsFontFamily2), _config.Subs.SubsFontSize2, (FontStyle)_fontStyleConv.ConvertFromString(_config.Subs.SubsFontStyle2)!, (FontStretch)_fontStretchConv.ConvertFromString(_config.Subs.SubsFontStretch2)!, (FontWeight)_fontWeightConv.ConvertFromString(_config.Subs.SubsFontWeight2)!, new SolidColorBrush(Colors.Black));
 
         _player.Activity.ForceFullActive();
 
         if (dialog.ShowDialog() == true && dialog.Font != null)
         {
-            _config.Subs.SubsFontFamily = dialog.Font.Family.ToString();
-            _config.Subs.SubsFontSize = dialog.Font.Size;
-            _config.Subs.SubsFontWeight = dialog.Font.Weight.ToString();
-            _config.Subs.SubsFontStretch = dialog.Font.Stretch.ToString();
-            _config.Subs.SubsFontStyle = dialog.Font.Style.ToString();
-            _config.Subs.SubsFontColor = dialog.Font.BrushColor.Color;
+            _config.Subs.SubsFontFamily2 = dialog.Font.Family.ToString();
+            _config.Subs.SubsFontWeight2 = dialog.Font.Weight.ToString();
+            _config.Subs.SubsFontStretch2 = dialog.Font.Stretch.ToString();
+            _config.Subs.SubsFontStyle2 = dialog.Font.Style.ToString();
+
+            _config.Subs.SubsFontSize2 = dialog.Font.Size;
+
+            // update display of secondary subtitles
+            _config.Subs.UpdateSecondaryFonts();
         }
     });
 

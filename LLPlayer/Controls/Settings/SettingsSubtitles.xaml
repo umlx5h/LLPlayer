@@ -89,21 +89,45 @@
                             helpers:TextBoxHelper.OnlyNumeric="Int"/>
                     </StackPanel>
 
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="Subtitles Fonts">
+                <StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
                             Width="180"
-                            Text="FontStrokeThickness" />
+                            Text="Font Size (1st)" />
                         <TextBox
                             Width="100"
-                            Text="{Binding FL.Config.Subs.SubsStrokeThickness}"
-                            helpers:TextBoxHelper.OnlyNumeric="Double"/>
+                            Text="{Binding FL.Config.Subs.SubsFontSize}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Font Size (2nd)" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.Config.Subs.SubsFontSize2}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint"/>
+                        <Button
+                            Margin="10 0 0 0"
+                            ToolTip="Reset from 1st"
+                            Style="{StaticResource MaterialDesignIconButton}"
+                            HorizontalAlignment="Center"
+                            Width="24"
+                            Height="24"
+                            Command="{Binding FL.Config.Subs.CmdResetSubsFontSize2}">
+                            <materialDesign:PackIcon Kind="BackupRestore" />
+                        </Button>
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
                             Width="180"
                             Text="Fonts" />
-
                         <Button
                             Height="auto"
                             MaxHeight="100"
@@ -148,6 +172,16 @@
                                 </Binding>
                             </TextBox.Text>
                         </TextBox>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Stroke Thickness" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.Config.Subs.SubsStrokeThickness}"
+                            helpers:TextBoxHelper.OnlyNumeric="Double"/>
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Margin="0 0 0 16">
@@ -217,13 +251,149 @@
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
                             Width="180"
-                            Text="Background Opacity (0 - 1.0)" />
+                            Text="Background Opacity" />
+                        <Slider
+                            Maximum="100"
+                            Minimum="0"
+                            Value="{Binding FL.Config.Subs.SubsBackgroundOpacity,
+                                Converter={StaticResource DoubleToPercentageConv}}"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource MaterialDesignDiscreteSlider}"
+                            materialDesign:SliderAssist.OnlyShowFocusVisualWhileDragging="True"
+                            TickFrequency="1"
+                            Width="200" />
                         <TextBox
-                            Width="100"
-                            Text="{Binding FL.Config.Subs.SubsBackgroundOpacity}"
-                            helpers:TextBoxHelper.OnlyNumeric="Double" />
+                            Width="30"
+                            Margin="4 0 0 0"
+                            Text="{Binding FL.Config.Subs.SubsBackgroundOpacity,
+                                 Converter={StaticResource DoubleToPercentageConv}, UpdateSourceTrigger=PropertyChanged}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                        <TextBlock Text="%" Margin="2 0 0 0" />
                     </StackPanel>
 
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="Use Separate 2nd Fonts" />
+                        <ToggleButton
+                            IsChecked="{Binding FL.Config.Subs.SubsUseSeparateFonts}" />
+                    </StackPanel>
+
+                    <Border
+                        Padding="10"
+                        Visibility="{Binding FL.Config.Subs.SubsUseSeparateFonts, Converter={StaticResource BooleanToVisibilityConv}}"
+                        BorderThickness="1"
+                        BorderBrush="{DynamicResource MaterialDesign.Brush.Primary}">
+
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock
+                                    Width="180"
+                                    Text="Fonts (2nd)" />
+                                <Button
+                                    Height="auto"
+                                    MaxHeight="100"
+                                    Command="{Binding FL.Action.CmdSetSubtitlesFont2}">
+                                    <TextBlock TextWrapping="Wrap" MaxWidth="200" VerticalAlignment="Center">
+                                        <Run Text="{Binding FL.Config.Subs.SubsFontFamily2}"/>
+                                        <Run Text="("/>
+                                        <Run Text="{Binding FL.Config.Subs.SubsFontWeight2}"/>
+                                        <Run Text="), "/>
+                                        <Run Text="{Binding FL.Config.Subs.SubsFontSize2}"/>
+                                    </TextBlock>
+                                </Button>
+
+                                <Button
+                                    Margin="6 0 0 0"
+                                    ToolTip="Reset from 1st"
+                                    Style="{StaticResource MaterialDesignIconButton}"
+                                    HorizontalAlignment="Center"
+                                    Width="24"
+                                    Height="24"
+                                    Command="{Binding FL.Config.Subs.CmdResetSubsFont2}">
+                                    <materialDesign:PackIcon Kind="BackupRestore" />
+                                </Button>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Margin="0 0 0 16">
+                                <TextBlock
+                                    Width="180"
+                                    Text="Font Color (2nd)" />
+                                <Button
+                                    Background="{x:Null}"
+                                    Padding="0"
+                                    BorderThickness="0"
+                                    Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}">
+                                    <Button.CommandParameter>
+                                        <controls:ColorPicker PickerColor="{Binding FL.Config.Subs.SubsFontColor2, Mode=TwoWay}" />
+                                    </Button.CommandParameter>
+                                    <Rectangle
+                                        Fill="{Binding FL.Config.Subs.SubsFontColor2, Converter={StaticResource ColorToBrushConv}}"
+                                        Width="30"
+                                        Height="30" />
+                                </Button>
+                                <TextBlock Margin="10 0 0 0" Text="#" />
+                                <TextBox Width="55" MaxLength="6" helpers:TextBoxMiscHelper.IsHexValidationEnabled="True">
+                                    <TextBox.Text>
+                                        <Binding
+                                        Path="FL.Config.Subs.SubsFontColor2"
+                                        Converter="{StaticResource ColorToHexConv}"
+                                        UpdateSourceTrigger="PropertyChanged">
+                                            <Binding.ValidationRules>
+                                                <StaticResource ResourceKey="ColorHexRule" />
+                                            </Binding.ValidationRules>
+                                        </Binding>
+                                    </TextBox.Text>
+                                </TextBox>
+
+                                <Button
+                                    Margin="6 0 0 0"
+                                    ToolTip="Reset from 1st"
+                                    Style="{StaticResource MaterialDesignIconButton}"
+                                    HorizontalAlignment="Center"
+                                    Width="24"
+                                    Height="24"
+                                    Command="{Binding FL.Config.Subs.CmdResetSubsFontColor2}">
+                                    <materialDesign:PackIcon Kind="BackupRestore" />
+                                </Button>
+
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock
+                                    Width="180"
+                                    Text="Background Opacity (2nd)" />
+                                <Slider
+                                    Maximum="100"
+                                    Minimum="0"
+                                    Value="{Binding FL.Config.Subs.SubsBackgroundOpacity2,
+                                Converter={StaticResource DoubleToPercentageConv}}"
+                                    VerticalAlignment="Center"
+                                    Style="{StaticResource MaterialDesignDiscreteSlider}"
+                                    materialDesign:SliderAssist.OnlyShowFocusVisualWhileDragging="True"
+                                    TickFrequency="1"
+                                    Width="200" />
+                                <TextBox
+                                    Width="30"
+                                    Margin="4 0 0 0"
+                                    Text="{Binding  FL.Config.Subs.SubsBackgroundOpacity2,
+                                 Converter={StaticResource DoubleToPercentageConv}, UpdateSourceTrigger=PropertyChanged}"
+                                    helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                                <TextBlock Text="%" Margin="2 0 0 0" />
+
+                                <Button
+                                    Margin="6 0 0 0"
+                                    ToolTip="Reset from 1st"
+                                    Style="{StaticResource MaterialDesignIconButton}"
+                                    HorizontalAlignment="Center"
+                                    Width="24"
+                                    Height="24"
+                                    Command="{Binding FL.Config.Subs.CmdResetSubsBackgroundOpacity2}">
+                                    <materialDesign:PackIcon Kind="BackupRestore" />
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </GroupBox>
 

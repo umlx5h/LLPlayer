@@ -280,7 +280,32 @@ public class AppConfigSubs : Bindable
         }
     }
 
-    public string SubsFontFamily { get; set => Set(ref field, value); } = "Segoe UI";
+    public bool SubsUseSeparateFonts
+    {
+        get;
+        set
+        {
+            if (Set(ref field, value))
+            {
+                // update subtitles
+                UpdateSecondaryFonts();
+
+                OnPropertyChanged(nameof(SubsFontColor2Fix));
+                OnPropertyChanged(nameof(SubsBackgroundBrush2));
+            }
+        }
+    }
+
+    internal void UpdateSecondaryFonts()
+    {
+        // update subtitles display
+        OnPropertyChanged(nameof(SubsFontFamily2Fix));
+        OnPropertyChanged(nameof(SubsFontStretch2Fix));
+        OnPropertyChanged(nameof(SubsFontWeight2Fix));
+        OnPropertyChanged(nameof(SubsFontStyle2Fix));
+
+        CmdResetSubsFont2.RaiseCanExecuteChanged();
+    }
 
     // Primary Subtitle Size
     public double SubsFontSize
@@ -296,6 +321,7 @@ public class AppConfigSubs : Bindable
             if (Set(ref field, value))
             {
                 OnPropertyChanged(nameof(SubsFontSizeFix));
+                CmdResetSubsFontSize2.RaiseCanExecuteChanged();
             }
         }
     } = 44;
@@ -317,6 +343,7 @@ public class AppConfigSubs : Bindable
             if (Set(ref field, value))
             {
                 OnPropertyChanged(nameof(SubsFontSize2Fix));
+                CmdResetSubsFontSize2.RaiseCanExecuteChanged();
             }
         }
     } = 44;
@@ -336,13 +363,57 @@ public class AppConfigSubs : Bindable
         return fontSize;
     }
 
-    public Color SubsFontColor { get; set => Set(ref field, value); } = Colors.White;
-
+    private const string DefaultFont = "Segoe UI";
+    public string SubsFontFamily { get; set => Set(ref field, value); } = DefaultFont;
     public string SubsFontStretch { get; set => Set(ref field, value); } = FontStretches.Normal.ToString();
-
     public string SubsFontWeight { get; set => Set(ref field, value); } = FontWeights.Bold.ToString();
-
     public string SubsFontStyle { get; set => Set(ref field, value); } = FontStyles.Normal.ToString();
+    public Color SubsFontColor
+    {
+        get;
+        set
+        {
+            if (Set(ref field, value))
+            {
+                OnPropertyChanged(nameof(SubsFontColor2Fix));
+                CmdResetSubsFontColor2.RaiseCanExecuteChanged();
+            }
+        }
+    } = Colors.White;
+
+    [JsonIgnore]
+    public string SubsFontFamily2Fix => SubsUseSeparateFonts ? SubsFontFamily2 : SubsFontFamily;
+    public string SubsFontFamily2 { get; set => Set(ref field, value); } = DefaultFont;
+
+    [JsonIgnore]
+    public string SubsFontStretch2Fix => SubsUseSeparateFonts ? SubsFontStretch2 : SubsFontStretch;
+    public string SubsFontStretch2 { get; set => Set(ref field, value); } = FontStretches.Normal.ToString();
+
+    [JsonIgnore]
+    public string SubsFontWeight2Fix => SubsUseSeparateFonts ? SubsFontWeight2 : SubsFontWeight;
+    public string SubsFontWeight2 { get; set => Set(ref field, value); } = FontWeights.SemiBold.ToString(); // change from bold
+
+    [JsonIgnore]
+    public string SubsFontStyle2Fix => SubsUseSeparateFonts ? SubsFontStyle2 : SubsFontStyle;
+    public string SubsFontStyle2 { get; set => Set(ref field, value); } = FontStyles.Normal.ToString();
+
+    [JsonIgnore]
+    public Color SubsFontColor2Fix => SubsUseSeparateFonts ? SubsFontColor2 : SubsFontColor;
+    public Color SubsFontColor2
+    {
+        get;
+        set
+        {
+            if (Set(ref field, value))
+            {
+                OnPropertyChanged(nameof(SubsFontColor2Fix));
+                CmdResetSubsFontColor2.RaiseCanExecuteChanged();
+            }
+        }
+    } = Color.FromRgb(231, 231, 231); // #E7E7E7
+
+    public Color SubsStrokeColor { get; set => Set(ref field, value); } = Colors.Black;
+    public double SubsStrokeThickness { get; set => Set(ref field, value); } = 3.2;
 
     public Color SubsBackgroundColor
     {
@@ -352,6 +423,7 @@ public class AppConfigSubs : Bindable
             if (Set(ref field, value))
             {
                 OnPropertyChanged(nameof(SubsBackgroundBrush));
+                OnPropertyChanged(nameof(SubsBackgroundBrush2));
             }
         }
     } = Colors.Black;
@@ -369,6 +441,8 @@ public class AppConfigSubs : Bindable
             if (Set(ref field, value))
             {
                 OnPropertyChanged(nameof(SubsBackgroundBrush));
+                OnPropertyChanged(nameof(SubsBackgroundBrush2));
+                CmdResetSubsBackgroundOpacity2.RaiseCanExecuteChanged();
             }
         }
     } = 0; // default no background
@@ -382,6 +456,72 @@ public class AppConfigSubs : Bindable
             return new SolidColorBrush(Color.FromArgb(alpha, SubsBackgroundColor.R, SubsBackgroundColor.G, SubsBackgroundColor.B));
         }
     }
+
+    [JsonIgnore]
+    private double SubsBackgroundOpacity2Fix => SubsUseSeparateFonts ? SubsBackgroundOpacity2 : SubsBackgroundOpacity;
+    public double SubsBackgroundOpacity2
+    {
+        get;
+        set
+        {
+            if (value < 0.0 || value > 1.0)
+            {
+                return;
+            }
+
+            if (Set(ref field, value))
+            {
+                OnPropertyChanged(nameof(SubsBackgroundBrush2));
+                CmdResetSubsBackgroundOpacity2.RaiseCanExecuteChanged();
+            }
+        }
+    } = 0;
+
+    [JsonIgnore]
+    public SolidColorBrush SubsBackgroundBrush2
+    {
+        get
+        {
+            byte alpha = (byte)(SubsBackgroundOpacity2Fix * 255);
+            return new SolidColorBrush(Color.FromArgb(alpha, SubsBackgroundColor.R, SubsBackgroundColor.G, SubsBackgroundColor.B));
+        }
+    }
+
+    // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
+    [JsonIgnore]
+    public DelegateCommand CmdResetSubsFontSize2 => field ??= new(() =>
+    {
+        SubsFontSize2 = SubsFontSize;
+    }, () => Math.Abs(SubsFontSize2 - SubsFontSize) > 0.1);
+
+    [JsonIgnore]
+    public DelegateCommand CmdResetSubsFont2 => field ??= new(() =>
+    {
+        SubsFontFamily2 = SubsFontFamily;
+        SubsFontStretch2 = SubsFontStretch;
+        SubsFontWeight2 = SubsFontWeight;
+        SubsFontStyle2 = SubsFontStyle;
+
+        UpdateSecondaryFonts();
+    }, () =>
+        SubsFontFamily2 != SubsFontFamily ||
+        SubsFontStretch2 != SubsFontStretch ||
+        SubsFontWeight2 != SubsFontWeight ||
+        SubsFontStyle2 != SubsFontStyle
+    );
+
+    [JsonIgnore]
+    public DelegateCommand CmdResetSubsFontColor2 => field ??= new(() =>
+    {
+        SubsFontColor2 = SubsFontColor;
+    }, () => SubsFontColor2 != SubsFontColor);
+
+    [JsonIgnore]
+    public DelegateCommand CmdResetSubsBackgroundOpacity2 => field ??= new(() =>
+    {
+        SubsBackgroundOpacity2 = SubsBackgroundOpacity;
+    }, () => Math.Abs(SubsBackgroundOpacity2 - SubsBackgroundOpacity) > 0.001);
+    // ReSharper restore NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 
     [JsonIgnore]
     public Size SubsPanelSize
@@ -548,10 +688,6 @@ public class AppConfigSubs : Bindable
     } = 0;
 
     public bool SubsIgnoreLineBreak { get; set => Set(ref field, value); }
-
-    public Color SubsStrokeColor { get; set => Set(ref field, value); } = Colors.Black;
-
-    public double SubsStrokeThickness { get; set => Set(ref field, value); } = 3.2;
 
     internal void UpdateSubsConfig()
     {

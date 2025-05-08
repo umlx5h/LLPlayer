@@ -47,6 +47,45 @@ public class BooleanToVisibilityMiscConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
 }
 
+[ValueConversion(typeof(double), typeof(double))]
+public class DoubleToPercentageConverter : IValueConverter
+{
+    // Model → View (0.0–1.0 → 0–100)
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is double d)
+            return Math.Round(d * 100.0, 0);
+        return 0.0;
+    }
+
+    // View → Model (0–100 → 0.0–1.0)
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is double d)
+            return ToDouble(d);
+
+        if (value is string sd)
+        {
+            if (double.TryParse(sd, out d))
+            {
+                if (d < 0)
+                    d = 0;
+                else if (d > 100)
+                    d = 100;
+            }
+
+            return ToDouble(d);
+        }
+
+        return 0.0;
+
+        static double ToDouble(double value)
+        {
+            return Math.Max(0.0, Math.Min(1.0, Math.Round(value / 100.0, 2)));
+        }
+    }
+}
+
 [ValueConversion(typeof(Enum), typeof(string))]
 public class EnumToStringConverter : IValueConverter
 {

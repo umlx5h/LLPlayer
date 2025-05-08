@@ -26,6 +26,7 @@
     <conv:BooleanToVisibilityMiscConverter x:Key="BooleanToVisibilityConv"/>
     <conv:BooleanToVisibilityMiscConverter Invert="True" x:Key="BooleanToVisibilityInvertConv"/>
     <conv:BooleanToVisibilityMiscConverter FalseVisibility="Hidden" x:Key="BooleanToVisibilityHiddenConv"/>
+    <conv:DoubleToPercentageConverter x:Key="DoubleToPercentageConv"/>
     <conv:InvertBooleanConverter x:Key="InvertBooleanConv"/>
     <conv:ColorToBrushConverter x:Key="ColorToBrushConv"/>
     <conv:EnumToStringConverter x:Key="EnumToStringConv"/>

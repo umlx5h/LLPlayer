@@ -35,26 +35,6 @@
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
                             Width="180"
-                            Text="Font Size (Primary)" />
-                        <TextBox
-                            Width="100"
-                            Text="{Binding FL.Config.Subs.SubsFontSize}"
-                            helpers:TextBoxHelper.OnlyNumeric="Uint"/>
-                    </StackPanel>
-
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Width="180"
-                            Text="Font Size (Secondary)" />
-                        <TextBox
-                            Width="100"
-                            Text="{Binding FL.Config.Subs.SubsFontSize2}"
-                            helpers:TextBoxHelper.OnlyNumeric="Uint"/>
-                    </StackPanel>
-
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Width="180"
                             Text="Width (1-100%)" />
                         <TextBox
                             Width="100"
@@ -126,7 +106,7 @@
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
                             Width="180">
-                            Separator Opacity (0 - 1.0)
+                            Separator Opacity
                             <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
                                 <ToolTipService.ToolTip>
                                     <TextBlock
@@ -140,10 +120,23 @@
                                     Margin="4 0 0 0" />
                             </InlineUIContainer>
                         </TextBlock>
+                        <Slider
+                            Maximum="100"
+                            Minimum="0"
+                            Value="{Binding FL.Config.Subs.SubsSeparatorOpacity,
+                                Converter={StaticResource DoubleToPercentageConv}}"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource MaterialDesignDiscreteSlider}"
+                            materialDesign:SliderAssist.OnlyShowFocusVisualWhileDragging="True"
+                            TickFrequency="1"
+                            Width="160" />
                         <TextBox
-                            Width="100"
-                            Text="{Binding FL.Config.Subs.SubsSeparatorOpacity}"
-                            helpers:TextBoxHelper.OnlyNumeric="Double" />
+                            Width="30"
+                            Margin="4 0 0 0"
+                            Text="{Binding FL.Config.Subs.SubsSeparatorOpacity,
+                                 Converter={StaticResource DoubleToPercentageConv}, UpdateSourceTrigger=PropertyChanged}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                        <TextBlock Text="%" Margin="2 0 0 0" />
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal">
@@ -199,7 +192,7 @@
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
                             Width="180"
-                            Text="Bitmap Position (Primary) (0-150)" />
+                            Text="Bitmap Position (Primary) (0-150%)" />
                         <TextBox
                             Width="100"
                             Text="{Binding FL.Player.Subtitles[0].Data.BitmapPosition.ConfPos}"
