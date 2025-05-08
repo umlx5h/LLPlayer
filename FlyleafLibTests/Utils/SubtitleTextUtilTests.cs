@@ -1,6 +1,6 @@
 ﻿using FluentAssertions;
 
-namespace FlyleafLib.Utils;
+namespace FlyleafLib;
 
 public class SubtitleTextUtilTests
 {
