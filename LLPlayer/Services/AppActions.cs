@@ -22,6 +22,7 @@ public class AppActions
     private FlyleafHost? _flyleafHost => _player.Host as FlyleafHost;
     private readonly IDialogService _dialogService;
 
+    #pragma warning disable CS9264
     public AppActions(Player player, AppConfig config, IDialogService dialogService)
     {
         _player = player;
@@ -32,6 +33,7 @@ public class AppActions
 
         RegisterCustomKeyBindingsAction();
     }
+    #pragma warning restore CS9264
 
     private void RegisterCustomKeyBindingsAction()
     {
@@ -121,12 +123,12 @@ public class AppActions
 
     #region Command used in key
 
-    public DelegateCommand CmdOpenNextFile => field ?? new(() =>
+    public DelegateCommand CmdOpenNextFile => field ??= new(() =>
     {
         OpenNextPrevInternal(isNext: true);
     });
 
-    public DelegateCommand CmdOpenPrevFile => field ?? new(() =>
+    public DelegateCommand CmdOpenPrevFile => field ??= new(() =>
     {
         OpenNextPrevInternal(isNext: false);
     });
@@ -157,7 +159,7 @@ public class AppActions
         }
     }
 
-    public DelegateCommand CmdOpenCurrentPath => field ?? new(() =>
+    public DelegateCommand CmdOpenCurrentPath => field ??= new(() =>
     {
         var playlist = _player.Playlist;
         if (playlist.Selected == null)
@@ -191,42 +193,42 @@ public class AppActions
         });
     });
 
-    public DelegateCommand CmdSubsPositionUp => field ?? new(() =>
+    public DelegateCommand CmdSubsPositionUp => field ??= new(() =>
     {
         SubsPositionUpActionInternal(true);
     });
 
-    public DelegateCommand CmdSubsPositionDown => field ?? new(() =>
+    public DelegateCommand CmdSubsPositionDown => field ??= new(() =>
     {
         SubsPositionUpActionInternal(false);
     });
 
-    public DelegateCommand CmdSubsSizeIncrease => field ?? new(() =>
+    public DelegateCommand CmdSubsSizeIncrease => field ??= new(() =>
     {
         SubsSizeActionInternal(SubsSizeActionType.All, increase: true);
     });
 
-    public DelegateCommand CmdSubsSizeDecrease => field ?? new(() =>
+    public DelegateCommand CmdSubsSizeDecrease => field ??= new(() =>
     {
         SubsSizeActionInternal(SubsSizeActionType.All, increase: false);
     });
 
-    public DelegateCommand CmdSubsPrimarySizeIncrease => field ?? new(() =>
+    public DelegateCommand CmdSubsPrimarySizeIncrease => field ??= new(() =>
     {
         SubsSizeActionInternal(SubsSizeActionType.Primary, increase: true);
     });
 
-    public DelegateCommand CmdSubsPrimarySizeDecrease => field ?? new(() =>
+    public DelegateCommand CmdSubsPrimarySizeDecrease => field ??= new(() =>
     {
         SubsSizeActionInternal(SubsSizeActionType.Primary, increase: false);
     });
 
-    public DelegateCommand CmdSubsSecondarySizeIncrease => field ?? new(() =>
+    public DelegateCommand CmdSubsSecondarySizeIncrease => field ??= new(() =>
     {
         SubsSizeActionInternal(SubsSizeActionType.Secondary, increase: true);
     });
 
-    public DelegateCommand CmdSubsSecondarySizeDecrease => field ?? new(() =>
+    public DelegateCommand CmdSubsSecondarySizeDecrease => field ??= new(() =>
     {
         SubsSizeActionInternal(SubsSizeActionType.Secondary, increase: false);
     });
@@ -262,12 +264,12 @@ public class AppActions
         }
     }
 
-    public DelegateCommand CmdSubsDistanceIncrease => field ?? new(() =>
+    public DelegateCommand CmdSubsDistanceIncrease => field ??= new(() =>
     {
         SubsDistanceActionInternal(true);
     });
 
-    public DelegateCommand CmdSubsDistanceDecrease => field ?? new(() =>
+    public DelegateCommand CmdSubsDistanceDecrease => field ??= new(() =>
     {
         SubsDistanceActionInternal(false);
     });
@@ -277,7 +279,7 @@ public class AppActions
         _config.Subs.SubsDistance += _config.Subs.SubsDistanceOffset * (increase ? 1 : -1);
     }
 
-    public DelegateCommand<bool?> CmdSubsTextCopy => field ?? new((suppressOsd) =>
+    public DelegateCommand<bool?> CmdSubsTextCopy => field ??= new((suppressOsd) =>
     {
         if (!_player.Subtitles[0].Enabled && !_player.Subtitles[1].Enabled)
         {
@@ -307,12 +309,12 @@ public class AppActions
         }
     });
 
-    public DelegateCommand<bool?> CmdSubsPrimaryTextCopy => field ?? new((suppressOsd) =>
+    public DelegateCommand<bool?> CmdSubsPrimaryTextCopy => field ??= new((suppressOsd) =>
     {
         SubsTextCopyInternal(0, suppressOsd);
     });
 
-    public DelegateCommand<bool?> CmdSubsSecondaryTextCopy => field ?? new((suppressOsd) =>
+    public DelegateCommand<bool?> CmdSubsSecondaryTextCopy => field ??= new((suppressOsd) =>
     {
         SubsTextCopyInternal(1, suppressOsd);
     });
@@ -343,12 +345,12 @@ public class AppActions
         }
     }
 
-    public DelegateCommand CmdToggleSubsAutoTextCopy => field ?? new(() =>
+    public DelegateCommand CmdToggleSubsAutoTextCopy => field ??= new(() =>
     {
         _config.Subs.SubsAutoTextCopy = !_config.Subs.SubsAutoTextCopy;
     });
 
-    public DelegateCommand CmdActivateSubsSearch => field ?? new(() =>
+    public DelegateCommand CmdActivateSubsSearch => field ??= new(() =>
     {
         if (_flyleafHost is { IsFullScreen: true })
         {
@@ -362,32 +364,32 @@ public class AppActions
         _config.SidebarSearchActive = true;
     });
 
-    public DelegateCommand CmdToggleSidebarShowSecondary => field ?? new(() =>
+    public DelegateCommand CmdToggleSidebarShowSecondary => field ??= new(() =>
     {
         _config.SidebarShowSecondary = !_config.SidebarShowSecondary;
     });
 
-    public DelegateCommand CmdToggleSidebarShowOriginalText => field ?? new(() =>
+    public DelegateCommand CmdToggleSidebarShowOriginalText => field ??= new(() =>
     {
         _config.SidebarShowOriginalText = !_config.SidebarShowOriginalText;
     });
 
-    public DelegateCommand CmdToggleSidebar => field ?? new(() =>
+    public DelegateCommand CmdToggleSidebar => field ??= new(() =>
     {
         _config.ShowSidebar = !_config.ShowSidebar;
     });
 
-    public DelegateCommand CmdToggleDebugOverlay => field ?? new(() =>
+    public DelegateCommand CmdToggleDebugOverlay => field ??= new(() =>
     {
         _config.ShowDebug = !_config.ShowDebug;
     });
 
-    public DelegateCommand CmdToggleAlwaysOnTop => field ?? new(() =>
+    public DelegateCommand CmdToggleAlwaysOnTop => field ??= new(() =>
     {
         _config.AlwaysOnTop = !_config.AlwaysOnTop;
     });
 
-    public DelegateCommand CmdOpenWindowSettings => field ?? new(() =>
+    public DelegateCommand CmdOpenWindowSettings => field ??= new(() =>
     {
         if (_player.IsPlaying)
         {
@@ -447,13 +449,13 @@ public class AppActions
         }, false);
     });
 
-    public DelegateCommand CmdOpenWindowSubsDownloader => field ?? new(() =>
+    public DelegateCommand CmdOpenWindowSubsDownloader => field ??= new(() =>
     {
         _player.Activity.ForceFullActive();
         _dialogService.ShowSingleton(nameof(SubtitlesDownloaderDialog), true);
     });
 
-    public DelegateCommand CmdOpenWindowSubsExporter => field ?? new(() =>
+    public DelegateCommand CmdOpenWindowSubsExporter => field ??= new(() =>
     {
         _player.Activity.ForceFullActive();
         _dialogService.ShowSingleton(nameof(SubtitlesExportDialog), _ =>
@@ -466,19 +468,19 @@ public class AppActions
         }, false);
     });
 
-    public DelegateCommand CmdOpenWindowCheatSheet => field ?? new(() =>
+    public DelegateCommand CmdOpenWindowCheatSheet => field ??= new(() =>
     {
         _player.Activity.ForceFullActive();
         _dialogService.ShowSingleton(nameof(CheatSheetDialog), true);
     });
 
-    public DelegateCommand CmdAppNew => field ?? new(() =>
+    public DelegateCommand CmdAppNew => field ??= new(() =>
     {
         string exePath = Process.GetCurrentProcess().MainModule!.FileName;
         Process.Start(exePath);
     });
 
-    public DelegateCommand CmdAppClone => field ?? new(() =>
+    public DelegateCommand CmdAppClone => field ??= new(() =>
     {
         string exePath = Process.GetCurrentProcess().MainModule!.FileName;
 
@@ -498,7 +500,7 @@ public class AppActions
         Process.Start(startInfo);
     });
 
-    public DelegateCommand CmdAppRestart => field ?? new(() =>
+    public DelegateCommand CmdAppRestart => field ??= new(() =>
     {
         // Clone
         CmdAppClone.Execute();
@@ -507,7 +509,7 @@ public class AppActions
         CmdAppExit.Execute();
     });
 
-    public DelegateCommand CmdAppExit => field ?? new(() =>
+    public DelegateCommand CmdAppExit => field ??= new(() =>
     {
         Application.Current.Shutdown();
     });

@@ -27,16 +27,16 @@ public partial class SettingsPlugins : UserControl
 
 public class GetDictionaryItemConverter : IMultiValueConverter
 {
-    public object Convert(object[] value, Type targetType, object parameter, CultureInfo culture)
+    public object? Convert(object[]? value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value == null)
             return null;
-        if (value[0] == null || value[0] == DependencyProperty.UnsetValue)
+        if (value[0] is not IDictionary dictionary)
             return null;
-        if (value[1] == null || value[1] == DependencyProperty.UnsetValue)
+        if (value[1] is not string key)
             return null;
 
-        return ((IDictionary)value[0])[value[1]];
+        return dictionary[key];
     }
     public object[] ConvertBack(object value, Type[] targetType, object parameter, CultureInfo culture) { throw new NotImplementedException(); }
 }

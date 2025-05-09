@@ -15,9 +15,9 @@ public partial class Validators : ResourceDictionary
 
 public class ColorHexRule : ValidationRule
 {
-    public override ValidationResult Validate(object value, CultureInfo cultureInfo)
+    public override ValidationResult Validate(object? value, CultureInfo cultureInfo)
     {
-        if (value != null && Regex.IsMatch(value.ToString(), "^[0-9a-f]{6}$", RegexOptions.IgnoreCase))
+        if (value != null && Regex.IsMatch(value.ToString() ?? string.Empty, "^[0-9a-f]{6}$", RegexOptions.IgnoreCase))
         {
             return new ValidationResult(true, null);
         }

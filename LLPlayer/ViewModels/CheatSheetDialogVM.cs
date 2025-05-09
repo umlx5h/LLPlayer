@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -37,7 +38,7 @@ public class CheatSheetDialogVM : Bindable, IDialogAware
                     Description = k.Action.GetDescription(),
                     Group = k.Action.ToGroup(),
                     Key = k.Key,
-                    KeyName = (string)keyConverter.Convert(k.Key, typeof(string), null, null),
+                    KeyName = (string)keyConverter.Convert(k.Key, typeof(string), null, CultureInfo.CurrentCulture),
                     ActionInternal = k.ActionInternal,
                 };
 
@@ -65,7 +66,7 @@ public class CheatSheetDialogVM : Bindable, IDialogAware
             .Select(g => new KeyBindingCSGroup()
             {
                 Group = g.Key,
-                KeyBindings = new List<KeyBindingCS>(g)
+                KeyBindings = g.ToList()!
             }).ToList();
 
         KeyBindingGroups = new List<KeyBindingCSGroup>(groups);
@@ -120,8 +121,7 @@ public class CheatSheetDialogVM : Bindable, IDialogAware
     private readonly List<ListCollectionView> _collectionViews;
     public List<KeyBindingCSGroup> KeyBindingGroups { get; set; }
 
-    [field: AllowNull, MaybeNull]
-    public DelegateCommand<KeyBindingCS> CmdAction => field ?? new((key) =>
+    public DelegateCommand<KeyBindingCS>? CmdAction => field ??= new((key) =>
     {
         FL.Player.Activity.ForceFullActive();
         key.ActionInternal.Invoke();
@@ -141,12 +141,13 @@ public class CheatSheetDialogVM : Bindable, IDialogAware
 
 public class KeyBindingCS
 {
-    public bool Ctrl { get; set; }
-    public bool Shift { get; set; }
-    public bool Alt { get; set; }
-    public Key Key { get; set; }
-    public string KeyName { get; set; }
+    public required bool Ctrl { get; init; }
+    public required bool Shift { get; init; }
+    public required bool Alt { get; init; }
+    public required Key Key { get; init; }
+    public required string KeyName { get; init; }
 
+    [field: AllowNull, MaybeNull]
     public string Shortcut
     {
         get
@@ -167,21 +168,22 @@ public class KeyBindingCS
         }
     }
 
-    public KeyBindingAction Action { get; set; }
-    public CustomKeyBindingAction CustomAction { get; set; }
-    public string ActionName { get; set; }
-    public string Description { get; set; }
-    public KeyBindingActionGroup Group { get; set; }
+    public required KeyBindingAction Action { get; init; }
+    public CustomKeyBindingAction? CustomAction { get; set; }
+    public required string ActionName { get; set; }
+    public required string Description { get; set; }
+    public required KeyBindingActionGroup Group { get; set; }
 
-    public Action ActionInternal { get; set; }
+    public required Action ActionInternal { get; init; }
 }
 
 public class KeyBindingCSGroup
 {
-    public KeyBindingActionGroup Group { get; set; }
+    public required KeyBindingActionGroup Group { get; init; }
 
+    [field: AllowNull, MaybeNull]
     public string GroupName => field ??= Group.ToString();
-    public List<KeyBindingCS> KeyBindings { get; set; }
+    public required List<KeyBindingCS> KeyBindings { get; init; }
 
     public Color GroupColor =>
         Group switch

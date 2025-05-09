@@ -284,7 +284,7 @@ public class SubTranslator
 
             // Unable to translate, so turn off the translation and notify
             _config[_subIndex].EnabledTranslated = false;
-            Reset().ContinueWith((_) =>
+            _ = Reset().ContinueWith((_) =>
             {
                 if (isConfigError)
                 {

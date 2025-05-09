@@ -149,15 +149,14 @@ public class SettingsSubtitlesASRVM : Bindable
         }
     }
 
-    // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
-    public DelegateCommand CmdDownloadModel => field ??= new(() =>
+    public DelegateCommand? CmdDownloadModel => field ??= new(() =>
     {
         _dialogService.ShowDialog(nameof(WhisperModelDownloadDialog));
 
         LoadDownloadedModels();
     });
 
-    public DelegateCommand CmdMoveRight => field ??= new DelegateCommand(() =>
+    public DelegateCommand? CmdMoveRight => field ??= new DelegateCommand(() =>
     {
         if (SelectedAvailable.HasValue && !SelectedLibraries.Contains(SelectedAvailable.Value))
         {
@@ -166,7 +165,7 @@ public class SettingsSubtitlesASRVM : Bindable
         }
     }).ObservesCanExecute(() => CanMoveRight);
 
-    public DelegateCommand CmdMoveLeft => field ??= new DelegateCommand(() =>
+    public DelegateCommand? CmdMoveLeft => field ??= new DelegateCommand(() =>
     {
         if (SelectedSelected.HasValue)
         {
@@ -175,7 +174,7 @@ public class SettingsSubtitlesASRVM : Bindable
         }
     }).ObservesCanExecute(() => CanMoveLeft);
 
-    public DelegateCommand CmdMoveUp => field ??= new DelegateCommand(() =>
+    public DelegateCommand? CmdMoveUp => field ??= new DelegateCommand(() =>
     {
         int index = SelectedLibraries.IndexOf(SelectedSelected!.Value);
         if (index > 0)
@@ -186,7 +185,7 @@ public class SettingsSubtitlesASRVM : Bindable
         }
     }).ObservesCanExecute(() => CanMoveUp);
 
-    public DelegateCommand CmdMoveDown => field ??= new DelegateCommand(() =>
+    public DelegateCommand? CmdMoveDown => field ??= new DelegateCommand(() =>
     {
         int index = SelectedLibraries.IndexOf(SelectedSelected!.Value);
         if (index < SelectedLibraries.Count - 1)
@@ -223,7 +222,7 @@ public class SettingsSubtitlesASRVM : Bindable
         }
     }
 
-    public DelegateCommand CmdDownloadEngine => field ??= new(() =>
+    public DelegateCommand? CmdDownloadEngine => field ??= new(() =>
     {
         _dialogService.ShowDialog(nameof(WhisperEngineDownloadDialog));
 
@@ -233,7 +232,7 @@ public class SettingsSubtitlesASRVM : Bindable
         FL.PlayerConfig.Subtitles.ASREngine = prev;
     });
 
-    public DelegateCommand CmdOpenModelFolder => field ??= new(() =>
+    public DelegateCommand? CmdOpenModelFolder => field ??= new(() =>
     {
         if (!Directory.Exists(WhisperConfig.ModelsDirectory))
             return;
@@ -246,7 +245,7 @@ public class SettingsSubtitlesASRVM : Bindable
         });
     });
 
-    public DelegateCommand CmdCopyDebugCommand => field ??= new(() =>
+    public DelegateCommand? CmdCopyDebugCommand => field ??= new(() =>
     {
         var cmdBase = FasterWhisperASRService.BuildCommand(FL.PlayerConfig.Subtitles.FasterWhisperConfig,
             FL.PlayerConfig.Subtitles.WhisperConfig);
@@ -261,7 +260,7 @@ public class SettingsSubtitlesASRVM : Bindable
         Clipboard.SetText(cmd.CommandToText());
     });
 
-    public DelegateCommand CmdCopyHelpCommand => field ??= new(() =>
+    public DelegateCommand? CmdCopyHelpCommand => field ??= new(() =>
     {
         var cmdBase = FasterWhisperASRService.BuildCommand(FL.PlayerConfig.Subtitles.FasterWhisperConfig,
             FL.PlayerConfig.Subtitles.WhisperConfig);
@@ -270,7 +269,6 @@ public class SettingsSubtitlesASRVM : Bindable
         Clipboard.SetText(cmd.CommandToText());
     });
 #endregion
-    // ReSharper restore NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 }
 
 [ValueConversion(typeof(Enum), typeof(bool))]

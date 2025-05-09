@@ -37,7 +37,7 @@
                 HorizontalAlignment="Left"
                 VerticalAlignment="Top"
                 RenderOptions.BitmapScalingMode="HighQuality"
-                Source="{Binding FL.Player.Subtitles[0].Data.Bitmap.Source}"
+                Source="{Binding FL.Player.Subtitles[0].Data.Bitmap.Source, FallbackValue={x:Null}}"
                 Stretch="None">
                 <Image.LayoutTransform>
                     <ScaleTransform
@@ -53,7 +53,7 @@
                 HorizontalAlignment="Left"
                 VerticalAlignment="Top"
                 RenderOptions.BitmapScalingMode="HighQuality"
-                Source="{Binding FL.Player.Subtitles[1].Data.Bitmap.Source}"
+                Source="{Binding FL.Player.Subtitles[1].Data.Bitmap.Source, FallbackValue={x:Null}}"
                 Stretch="None">
                 <Image.LayoutTransform>
                     <ScaleTransform
@@ -92,7 +92,7 @@
                     IgnoreLineBreak="{Binding FL.Config.Subs.SubsIgnoreLineBreak}"
                     Text="{Binding FL.Player.Subtitles[0].Data.Text}"
                     IsTranslated="{Binding FL.Player.Subtitles[0].Data.IsTranslated}"
-                    Language="{Binding FL.Player.Subtitles[0].Data.Language}"
+                    TextLanguage="{Binding FL.Player.Subtitles[0].Data.Language}"
                     SubIndex="0"
                     WordClickedDown="SelectableSubtitleText_OnWordClickedDown"
                     WordClicked="SelectableSubtitleText_OnWordClicked" />
@@ -103,7 +103,7 @@
                     HorizontalAlignment="Center">
                     <Image
                         RenderOptions.BitmapScalingMode="HighQuality"
-                        Source="{Binding FL.Player.Subtitles[0].Data.Bitmap.Source}"
+                        Source="{Binding FL.Player.Subtitles[0].Data.Bitmap.Source, FallbackValue={x:Null}}"
                         Stretch="None">
                         <Image.LayoutTransform>
                             <ScaleTransform
@@ -142,7 +142,7 @@
                     IgnoreLineBreak="{Binding FL.Config.Subs.SubsIgnoreLineBreak}"
                     Text="{Binding FL.Player.Subtitles[1].Data.Text}"
                     IsTranslated="{Binding FL.Player.Subtitles[1].Data.IsTranslated}"
-                    Language="{Binding FL.Player.Subtitles[1].Data.Language}"
+                    TextLanguage="{Binding FL.Player.Subtitles[1].Data.Language}"
                     SubIndex="1"
                     WordClickedDown="SelectableSubtitleText_OnWordClickedDown"
                     WordClicked="SelectableSubtitleText_OnWordClicked" />
@@ -153,7 +153,7 @@
                     HorizontalAlignment="Center">
                     <Image
                         RenderOptions.BitmapScalingMode="HighQuality"
-                        Source="{Binding FL.Player.Subtitles[1].Data.Bitmap.Source}"
+                        Source="{Binding FL.Player.Subtitles[1].Data.Bitmap.Source, FallbackValue={x:Null}}"
                         Stretch="None">
                         <Image.LayoutTransform>
                             <ScaleTransform

@@ -70,7 +70,7 @@ public static class ExtendedDialogServiceExtensions
         dialogService.Show(name, parameters, callback);
     }
 
-    private static IDialogParameters EnsureShowNonModalParameter(IDialogParameters parameters)
+    private static IDialogParameters EnsureShowNonModalParameter(IDialogParameters? parameters)
     {
         parameters ??= new DialogParameters();
 

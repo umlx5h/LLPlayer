@@ -25,7 +25,7 @@ public class WhisperEngineDownloadDialogVM : Bindable, IDialogAware
     {
         FL = fl;
 
-        CmdDownloadEngine.PropertyChanged += (sender, args) =>
+        CmdDownloadEngine!.PropertyChanged += (sender, args) =>
         {
             if (args.PropertyName == nameof(CmdDownloadEngine.IsExecuting))
             {
@@ -35,20 +35,19 @@ public class WhisperEngineDownloadDialogVM : Bindable, IDialogAware
         };
     }
 
-    public string StatusText { get; set => Set(ref field, value); }
+    public string StatusText { get; set => Set(ref field, value); } = "";
 
     public long DownloadedSize { get; set => Set(ref field, value); }
 
     public bool Downloaded => Directory.Exists(EnginePath);
 
-    public bool CanDownload => !Downloaded && !CmdDownloadEngine.IsExecuting;
+    public bool CanDownload => !Downloaded && !CmdDownloadEngine!.IsExecuting;
 
-    public bool CanDelete => Downloaded && !CmdDownloadEngine.IsExecuting;
+    public bool CanDelete => Downloaded && !CmdDownloadEngine!.IsExecuting;
 
     private CancellationTokenSource? _cts;
 
-    // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
-    public AsyncDelegateCommand CmdDownloadEngine => field ??= new AsyncDelegateCommand(async () =>
+    public AsyncDelegateCommand? CmdDownloadEngine => field ??= new AsyncDelegateCommand(async () =>
     {
         _cts = new CancellationTokenSource();
         CancellationToken token = _cts.Token;
@@ -93,7 +92,7 @@ public class WhisperEngineDownloadDialogVM : Bindable, IDialogAware
                 {
                     File.Delete(tempDownloadFile);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     // ignore
 
@@ -105,12 +104,12 @@ public class WhisperEngineDownloadDialogVM : Bindable, IDialogAware
         }
     }).ObservesCanExecute(() => CanDownload);
 
-    public DelegateCommand CmdCancelDownloadEngine => field ??= new(() =>
+    public DelegateCommand? CmdCancelDownloadEngine => field ??= new(() =>
     {
         _cts?.Cancel();
     });
 
-    public AsyncDelegateCommand CmdDeleteEngine => field ??= new AsyncDelegateCommand(async () =>
+    public AsyncDelegateCommand? CmdDeleteEngine => field ??= new AsyncDelegateCommand(async () =>
     {
         try
         {
@@ -135,7 +134,7 @@ public class WhisperEngineDownloadDialogVM : Bindable, IDialogAware
         }
     }).ObservesCanExecute(() => CanDelete);
 
-    public DelegateCommand CmdOpenFolder => field ??= new(() =>
+    public DelegateCommand? CmdOpenFolder => field ??= new(() =>
     {
         if (!Directory.Exists(WhisperConfig.EnginesDirectory))
             return;
@@ -147,7 +146,6 @@ public class WhisperEngineDownloadDialogVM : Bindable, IDialogAware
             CreateNoWindow = true
         });
     });
-    // ReSharper restore NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 
     private void OnDownloadStatusChanged()
     {
@@ -218,7 +216,7 @@ public class WhisperEngineDownloadDialogVM : Bindable, IDialogAware
     public double WindowWidth { get; set => Set(ref field, value); } = 400;
     public double WindowHeight { get; set => Set(ref field, value); } = 210;
 
-    public bool CanCloseDialog() => !CmdDownloadEngine.IsExecuting;
+    public bool CanCloseDialog() => !CmdDownloadEngine!.IsExecuting;
     public void OnDialogClosed() { }
     public void OnDialogOpened(IDialogParameters parameters) { }
     public DialogCloseListener RequestClose { get; }

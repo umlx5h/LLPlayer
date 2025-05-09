@@ -62,7 +62,7 @@ public partial class SelectableSubtitleText : UserControl
         set => SetValue(TextProperty, value);
     }
 
-    private string _textFix;
+    private string _textFix = string.Empty;
 
     public static readonly DependencyProperty IsTranslatedProperty =
         DependencyProperty.Register(nameof(IsTranslated), typeof(bool), typeof(SelectableSubtitleText), new FrameworkPropertyMetadata(false));
@@ -73,13 +73,13 @@ public partial class SelectableSubtitleText : UserControl
         set => SetValue(IsTranslatedProperty, value);
     }
 
-    public static readonly DependencyProperty LanguageProperty =
-        DependencyProperty.Register(nameof(Language), typeof(Language), typeof(SelectableSubtitleText), new FrameworkPropertyMetadata(null, OnLanguageChanged));
+    public static readonly DependencyProperty TextLanguageProperty =
+        DependencyProperty.Register(nameof(TextLanguage), typeof(Language), typeof(SelectableSubtitleText), new FrameworkPropertyMetadata(null, OnTextLanguageChanged));
 
-    public Language Language
+    public Language? TextLanguage
     {
-        get => (Language)GetValue(LanguageProperty);
-        set => SetValue(LanguageProperty, value);
+        get => (Language)GetValue(TextLanguageProperty);
+        set => SetValue(TextLanguageProperty, value);
     }
 
     public static readonly DependencyProperty SubIndexProperty =
@@ -175,10 +175,10 @@ public partial class SelectableSubtitleText : UserControl
         ctl.SetText((string)e.NewValue);
     }
 
-    private static void OnLanguageChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    private static void OnTextLanguageChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var ctl = (SelectableSubtitleText)d;
-        if (ctl.Language != null && ctl.Language.IsRTL)
+        if (ctl.TextLanguage != null && ctl.TextLanguage.IsRTL)
         {
             ctl.wrapPanel.FlowDirection = FlowDirection.RightToLeft;
         }
@@ -226,7 +226,7 @@ public partial class SelectableSubtitleText : UserControl
         {
             List<string> words;
 
-            if (Language != null && Language.ISO6391 == "ja")
+            if (TextLanguage != null && TextLanguage.ISO6391 == "ja")
             {
                 // word segmentation for Japanese
                 // TODO: L: Also do word segmentation in sidebar

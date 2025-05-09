@@ -87,8 +87,7 @@ public class SettingsSubtitlesVM : Bindable
         }
     }
 
-    // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
-    public DelegateCommand CmdConfigureLanguage => field ??= new(() =>
+    public DelegateCommand? CmdConfigureLanguage => field ??= new(() =>
     {
         DialogParameters p = new()
         {
@@ -105,5 +104,4 @@ public class SettingsSubtitlesVM : Bindable
             }
         });
     });
-    // ReSharper restore NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 }

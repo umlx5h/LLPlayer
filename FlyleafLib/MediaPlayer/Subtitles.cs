@@ -87,11 +87,21 @@ public class SubsBitmapPosition : NotifyPropertyChanged
 
     #endregion
 
+    public void Reset()
+    {
+        ConfScale = 1.0;
+        ConfPos = 100.0;
+
+        Margin = null;
+        ScaleX = 1.0;
+        ScaleY = 1.0;
+        IsHorizontal = false;
+    }
+
     public void Calculate()
     {
         if (_player.Subtitles == null ||
             _player.Subtitles[_subIndex].Data.Bitmap == null ||
-            _player.Subtitles[_subIndex].Data.BitmapPosition == null ||
             _player.SubtitlesDecoders[_subIndex].SubtitlesStream == null ||
             _player.SubtitlesDecoders[_subIndex].Width == 0 ||
             _player.SubtitlesDecoders[_subIndex].Height == 0)
@@ -197,7 +207,7 @@ public class SubsData : NotifyPropertyChanged
     /// <summary>
     /// Subtitles Position (Position & Scale)
     /// </summary>
-    public SubsBitmapPosition? BitmapPosition { get; set => Set(ref field, value); }
+    public SubsBitmapPosition BitmapPosition { get; }
 
     /// <summary>
     /// Subtitles Bitmap
@@ -212,7 +222,7 @@ public class SubsData : NotifyPropertyChanged
                 return;
             }
 
-            BitmapPosition?.Calculate();
+            BitmapPosition.Calculate();
 
             if (Bitmap != null)
             {
@@ -224,7 +234,7 @@ public class SubsData : NotifyPropertyChanged
                 // Absolute display of Secondary sub
                 // 1. When a vertical subtitle is detected
                 bool isAbsolute = Subs[0].Enabled && !Subs[1].Enabled;
-                if (BitmapPosition != null && !BitmapPosition.IsHorizontal)
+                if (!BitmapPosition.IsHorizontal)
                 {
                     isAbsolute = true;
                 }
@@ -295,7 +305,7 @@ public class SubsData : NotifyPropertyChanged
         UI(() =>
         {
             // Clear does not reset because there is a config in SubsBitmapPosition
-            BitmapPosition = new SubsBitmapPosition(_player, _subIndex);
+            BitmapPosition.Reset();
         });
     }
 
@@ -450,6 +460,7 @@ public class Subtitle : NotifyPropertyChanged
         Data = new SubsData(_player, _subIndex);
     }
 
+    #pragma warning disable CS9266
     public bool EnabledASR { get => _enabledASR; private set => Set(ref field, value); }
     private bool _enabledASR;
 
@@ -464,6 +475,7 @@ public class Subtitle : NotifyPropertyChanged
 
     public bool IsBitmap { get => _isBitmap; private set => Set(ref field, value); }
     private bool _isBitmap;
+    #pragma warning restore CS9266
 
     public bool Enabled => IsOpened || EnabledASR;
 
@@ -627,7 +639,7 @@ public class Subtitle : NotifyPropertyChanged
 
     private void RendererOnViewportChanged(object sender, EventArgs e)
     {
-        Data.BitmapPosition?.Calculate();
+        Data.BitmapPosition.Calculate();
     }
 
     public void EnableASR()

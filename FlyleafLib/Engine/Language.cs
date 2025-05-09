@@ -52,7 +52,7 @@ public class Language : IEquatable<Language>
         if (lang is null)
             return false;
 
-        if (object.ReferenceEquals(this, lang))
+        if (ReferenceEquals(this, lang))
             return true;
 
         if (lang.Culture == null && Culture == null)

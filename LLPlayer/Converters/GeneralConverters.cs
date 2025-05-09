@@ -216,7 +216,7 @@ public class KeyToStringConverter : IValueConverter
         { Key.OemPeriod, "." }
     };
 
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is Key key)
         {
@@ -272,15 +272,14 @@ public class FileSizeHumanConverter : IValueConverter
 [ValueConversion(typeof(int?), typeof(string))]
 public class NullableIntConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        int? nullableInt = value as int?;
-        return nullableInt.HasValue ? nullableInt.Value.ToString() : string.Empty;
+        return value is int intValue ? intValue.ToString() : string.Empty;
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        string str = value as string;
+        string? str = value as string;
         if (string.IsNullOrWhiteSpace(str))
             return null;
 

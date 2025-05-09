@@ -135,7 +135,7 @@ public class SubtitlesASR
                     _subtitlesManager[subIndex]
                         .Load(_subtitlesManager[otherIndex].Subs.Select(s =>
                         {
-                            var clone = (SubtitleData)s.Clone();
+                            SubtitleData clone = s.Clone();
 
                             if (!enableTranslated)
                             {
@@ -442,7 +442,7 @@ public class AudioReader : IDisposable
         {
             Task.WhenAll(consumerTask, producerTask).Wait();
         }
-        catch (AggregateException ex)
+        catch (AggregateException)
         {
             if (cancellationToken.IsCancellationRequested)
             {
@@ -765,7 +765,7 @@ public class AudioReader : IDisposable
         stream.Position = 0;
     }
 
-    private byte[] _sampledBuf;
+    private byte[] _sampledBuf = [];
     private int _sampledBufSize;
 
     private unsafe void ResampleTo(Stream toStream, AVFrame* frame, int targetSampleRate, int targetChannel)
@@ -1213,19 +1213,19 @@ public class FasterWhisperASRService : IASRService
 
 public class SubtitleASRData
 {
-    public string Text { get; set; }
-    public TimeSpan StartTime { get; set; }
-    public TimeSpan EndTime { get; set; }
+    public required string Text { get; init; }
+    public required TimeSpan StartTime { get; init; }
+    public required TimeSpan EndTime { get; init; }
 
 #if DEBUG
-    public int ChunkNo { get; set; }
-    public TimeSpan StartTimeChunk { get; set; }
-    public TimeSpan EndTimeChunk { get; set; }
+    public required int ChunkNo { get; init; }
+    public required TimeSpan StartTimeChunk { get; init; }
+    public required TimeSpan EndTimeChunk { get; init; }
 #endif
 
     public TimeSpan Duration => EndTime - StartTime;
 
     // ISO6391
     // ref: https://github.com/openai/whisper/blob/main/whisper/tokenizer.py#L10
-    public string Language { get; set; }
+    public required string Language { get; init; }
 }

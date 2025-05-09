@@ -11,9 +11,7 @@ public class SettingsDialogVM : Bindable, IDialogAware
         FL = fl;
     }
 
-    // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
-
-    public DelegateCommand<string> CmdCloseDialog => field ??= new((parameter) =>
+    public DelegateCommand<string>? CmdCloseDialog => field ??= new((parameter) =>
     {
         ButtonResult result = ButtonResult.None;
 
@@ -24,8 +22,6 @@ public class SettingsDialogVM : Bindable, IDialogAware
 
         RequestClose.Invoke(result);
     });
-
-    // ReSharper restore NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 
     #region IDialogAware
     public string Title { get; set => Set(ref field, value); } = $"Settings - {App.Name}";

@@ -59,8 +59,8 @@ public partial class WordPopup : UserControl, INotifyPropertyChanged
 
     public double PopupVerticalOffset { get; set => Set(ref field, value); }
 
-    public ContextMenu PopupContextMenu { get; set => Set(ref field, value); }
-    public ContextMenu WordContextMenu { get; set => Set(ref field, value); }
+    public ContextMenu? PopupContextMenu { get; set => Set(ref field, value); }
+    public ContextMenu? WordContextMenu { get; set => Set(ref field, value); }
 
     public bool IsSidebar { get; set; }
 
@@ -268,7 +268,7 @@ public partial class WordPopup : UserControl, INotifyPropertyChanged
         }
         else if (e.Mouse == MouseClick.Right)
         {
-            WordContextMenu.IsOpen = true;
+            WordContextMenu!.IsOpen = true;
         }
     }
 

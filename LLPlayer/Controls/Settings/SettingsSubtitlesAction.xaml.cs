@@ -1,5 +1,4 @@
 ﻿using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -67,9 +66,7 @@ public class SettingsSubtitlesActionVM : Bindable
 
     public ObservableCollection<IMenuAction> MenuActions { get; } = new();
 
-    // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
-
-    public DelegateCommand CmdApplyContextMenu => field ??= new(() =>
+    public DelegateCommand? CmdApplyContextMenu => field ??= new(() =>
     {
         ObservableCollection<IMenuAction> newActions = new(MenuActions.Select(a => (IMenuAction)a.Clone()));
 
@@ -77,7 +74,7 @@ public class SettingsSubtitlesActionVM : Bindable
         FL.Config.Subs.WordMenuActions = newActions;
     });
 
-    public DelegateCommand CmdAddSearchAction => field ??= new(() =>
+    public DelegateCommand? CmdAddSearchAction => field ??= new(() =>
     {
         MenuActions.Add(new SearchMenuAction
         {
@@ -86,17 +83,17 @@ public class SettingsSubtitlesActionVM : Bindable
         });
     });
 
-    public DelegateCommand CmdAddClipboardAction => field ??= new(() =>
+    public DelegateCommand? CmdAddClipboardAction => field ??= new(() =>
     {
         MenuActions.Add(new ClipboardMenuAction());
     });
 
-    public DelegateCommand CmdAddClipboardAllAction => field ??= new(() =>
+    public DelegateCommand? CmdAddClipboardAllAction => field ??= new(() =>
     {
         MenuActions.Add(new ClipboardAllMenuAction());
     });
 
-    public DelegateCommand<IMenuAction> CmdRemoveAction => field ??= new((action) =>
+    public DelegateCommand<IMenuAction>? CmdRemoveAction => field ??= new((action) =>
     {
         if (action != null)
         {
@@ -105,26 +102,24 @@ public class SettingsSubtitlesActionVM : Bindable
     });
 
     // TODO: L: SaveCommand?
-
-    // ReSharper restore NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 }
 
 class DataGridRowOrderBehaviorMenuAction : DataGridRowOrderBehavior<IMenuAction>;
 
 class MenuActionTemplateSelector : DataTemplateSelector
 {
-    public DataTemplate SearchTemplate { get; set; }
-    public DataTemplate ClipboardTemplate { get; set; }
-    public DataTemplate ClipboardAllTemplate { get; set; }
+    public required DataTemplate SearchTemplate { get; set; }
+    public required DataTemplate ClipboardTemplate { get; set; }
+    public required DataTemplate ClipboardAllTemplate { get; set; }
 
-    public override DataTemplate SelectTemplate(object item, DependencyObject container)
+    public override DataTemplate? SelectTemplate(object? item, DependencyObject container)
     {
         return item switch
         {
             SearchMenuAction => SearchTemplate,
             ClipboardMenuAction => ClipboardTemplate,
             ClipboardAllMenuAction => ClipboardAllTemplate,
-            _ => base.SelectTemplate(item, container)
+            _ => null
         };
     }
 }

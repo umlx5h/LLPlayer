@@ -54,8 +54,7 @@ public class MainWindowVM : Bindable
         new Uri("pack://application:,,,/Resources/Images/pause.png"));
     #endregion
 
-    // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
-    public DelegateCommand CmdOnLoaded => field ??= new(() =>
+    public DelegateCommand? CmdOnLoaded => field ??= new(() =>
     {
         // error handling
         FL.Player.KnownErrorOccurred += (sender, args) =>
@@ -161,10 +160,8 @@ public class MainWindowVM : Bindable
         }
     });
 
-    public DelegateCommand CmdOnClosing => field ??= new(() =>
+    public DelegateCommand? CmdOnClosing => field ??= new(() =>
     {
         FL.Player.Dispose();
     });
-
-    // ReSharper restore NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 }

@@ -109,7 +109,6 @@
                     </StackPanel>
                 </TabItem.Header>
                 <!--TODO: L: Aggregate display of multiple keys assigned to the same action? -->
-                <!--TODO: L: clear with escape key -->
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />

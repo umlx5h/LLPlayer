@@ -37,7 +37,7 @@ public partial class SettingsKeys : UserControl
     // Scroll to the added record when a new record is added.
     private void KeyBindingsDataGrid_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (VM.CmdLoad.IsExecuting)
+        if (VM.CmdLoad!.IsExecuting)
         {
             return;
         }
@@ -58,7 +58,7 @@ public class SettingsKeysVM : Bindable
     {
         FL = fl;
 
-        CmdLoad.PropertyChanged += (sender, args) =>
+        CmdLoad!.PropertyChanged += (sender, args) =>
         {
             if (args.PropertyName == nameof(CmdLoad.IsExecuting))
             {
@@ -111,7 +111,7 @@ public class SettingsKeysVM : Bindable
 
     public ObservableCollection<KeyBindingWrapper> KeyBindings { get; } = new();
 
-    public KeyBindingWrapper SelectedKeyBinding { get; set => Set(ref field, value); }
+    public KeyBindingWrapper? SelectedKeyBinding { get; set => Set(ref field, value); }
 
     public int DuplicationCount
     {
@@ -126,20 +126,18 @@ public class SettingsKeysVM : Bindable
     }
 
     // Disable Apply button if there are duplicates or during loading
-    public bool CanApply => DuplicationCount == 0 && !CmdLoad.IsExecuting;
+    public bool CanApply => DuplicationCount == 0 && !CmdLoad!.IsExecuting;
 
-    // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
-
-    public DelegateCommand CmdAdd => field ??= new(() =>
+    public DelegateCommand? CmdAdd => field ??= new(() =>
     {
-        KeyBindingWrapper added = new(new KeyBinding {Action = KeyBindingAction.AudioDelayAdd}, this);
+        KeyBindingWrapper added = new(new KeyBinding { Action = KeyBindingAction.AudioDelayAdd }, this);
         KeyBindings.Add(added);
         SelectedKeyBinding = added;
 
         added.ValidateShortcut();
     });
 
-    public AsyncDelegateCommand CmdLoad => field ??= new(async () =>
+    public AsyncDelegateCommand? CmdLoad => field ??= new(async () =>
     {
         KeyBindings.Clear();
         DuplicationCount = 0;
@@ -176,7 +174,7 @@ public class SettingsKeysVM : Bindable
     /// <summary>
     /// Reflect customized key settings to Config.
     /// </summary>
-    public DelegateCommand CmdApply => field ??= new DelegateCommand(() =>
+    public DelegateCommand? CmdApply => field ??= new DelegateCommand(() =>
     {
         foreach (var b in KeyBindings)
         {
@@ -205,29 +203,15 @@ public class SettingsKeysVM : Bindable
         FL.PlayerConfig.Player.KeyBindings.Keys = newKeys;
 
     }).ObservesCanExecute(() => CanApply);
-
-    // ReSharper restore NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 }
 
-public class ActionData : IComparable<ActionData>
+public class ActionData : IComparable<ActionData>, IEquatable<ActionData>
 {
-    public string Description { get; set; }
-    public string DisplayName { get; set; }
+    public string Description { get; set; } = null!;
+    public string DisplayName { get; set; } = null!;
     public KeyBindingActionGroup Group { get; set; }
     public KeyBindingAction Action { get; set; }
     public CustomKeyBindingAction? CustomAction { get; set; }
-
-    public override bool Equals(object? obj)
-    {
-        if (obj is null || obj is not ActionData data)
-        {
-            return false;
-        }
-
-        return Action == data.Action && CustomAction == data.CustomAction;
-    }
-
-    public override int GetHashCode() => HashCode.Combine(Action, CustomAction);
 
     public int CompareTo(ActionData? other)
     {
@@ -237,9 +221,23 @@ public class ActionData : IComparable<ActionData>
             return 1;
         return string.Compare(DisplayName, other.DisplayName, StringComparison.Ordinal);
     }
+
+    public bool Equals(ActionData? other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return Action == other.Action && CustomAction == other.CustomAction;
+    }
+
+    public override bool Equals(object? obj) => obj is ActionData o && Equals(o);
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine((int)Action, CustomAction);
+    }
 }
 
-public class KeyBindingWrapper : Bindable, ICloneable
+public class KeyBindingWrapper : Bindable
 {
     private readonly SettingsKeysVM _parent;
 
@@ -396,7 +394,7 @@ public class KeyBindingWrapper : Bindable, ICloneable
         }
     }
 
-    public object Clone()
+    public KeyBindingWrapper Clone()
     {
         KeyBindingWrapper clone = (KeyBindingWrapper)MemberwiseClone();
 
@@ -409,7 +407,7 @@ public class KeyBindingWrapper : Bindable, ICloneable
     /// <returns></returns>
     public KeyBinding ToKeyBinding()
     {
-        KeyBinding binding = new ()
+        KeyBinding binding = new()
         {
             Key = Key,
             Action = Action.Action,
@@ -493,7 +491,7 @@ public class KeyBindingWrapper : Bindable, ICloneable
         int index = _parent.KeyBindings.IndexOf(keyBinding);
         if (index != -1)
         {
-            KeyBindingWrapper clone = (KeyBindingWrapper)Clone();
+            KeyBindingWrapper clone = Clone();
 
             _parent.KeyBindings.Insert(index + 1, clone);
 

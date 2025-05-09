@@ -4,7 +4,9 @@ using Whisper.net.Ggml;
 
 namespace FlyleafLib;
 
-public class WhisperCppModel : NotifyPropertyChanged
+#nullable enable
+
+public class WhisperCppModel : NotifyPropertyChanged, IEquatable<WhisperCppModel>
 {
     public GgmlType Model { get; set; }
 
@@ -39,13 +41,17 @@ public class WhisperCppModel : NotifyPropertyChanged
 
     public override string ToString() => Model.ToString();
 
-    public override bool Equals(object? obj)
+    public bool Equals(WhisperCppModel? other)
     {
-        if (obj is not WhisperCppModel model)
-            return false;
-
-        return model.Model == Model;
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return Model == other.Model;
     }
 
-    public override int GetHashCode() => (int)Model;
+    public override bool Equals(object? obj) => obj is WhisperCppModel o && Equals(o);
+
+    public override int GetHashCode()
+    {
+        return (int)Model;
+    }
 }

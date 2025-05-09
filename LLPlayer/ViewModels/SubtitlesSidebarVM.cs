@@ -80,10 +80,8 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
 
     public event EventHandler? RequestScrollToTop;
 
-    // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
-
     // TODO: L: Fix implicit changes to reflect
-    public DelegateCommand<string> CmdSubFontSizeChange => field ??= new(increase =>
+    public DelegateCommand<string>? CmdSubFontSizeChange => field ??= new(increase =>
     {
         if (int.TryParse(increase, out var value))
         {
@@ -91,7 +89,7 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
         }
     });
 
-    public DelegateCommand CmdSubTextMaskToggle => field ??= new(() =>
+    public DelegateCommand? CmdSubTextMaskToggle => field ??= new(() =>
     {
         FL.Config.SidebarTextMask = !FL.Config.SidebarTextMask;
 
@@ -99,22 +97,22 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
         OnPropertyChanged(nameof(SubManager));
     });
 
-    public DelegateCommand CmdShowDownloadSubsDialog => field ??= new(() =>
+    public DelegateCommand? CmdShowDownloadSubsDialog => field ??= new(() =>
     {
         FL.Action.CmdOpenWindowSubsDownloader.Execute();
     });
 
-    public DelegateCommand CmdShowExportSubsDialog => field ??= new(() =>
+    public DelegateCommand? CmdShowExportSubsDialog => field ??= new(() =>
     {
         FL.Action.CmdOpenWindowSubsExporter.Execute();
     });
 
-    public DelegateCommand CmdSwapSidebarPosition => field ??= new(() =>
+    public DelegateCommand? CmdSwapSidebarPosition => field ??= new(() =>
     {
         FL.Config.SidebarLeft = !FL.Config.SidebarLeft;
     });
 
-    public DelegateCommand<int?> CmdSubPlay => field ??= new((index) =>
+    public DelegateCommand<int?>? CmdSubPlay => field ??= new((index) =>
     {
         if (!index.HasValue)
         {
@@ -125,7 +123,7 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
         FL.Player.SeekAccurate(sub.StartTime, SubIndex);
     });
 
-    public DelegateCommand<int?> CmdSubSync => field ??= new((index) =>
+    public DelegateCommand<int?>? CmdSubSync => field ??= new((index) =>
     {
         if (!index.HasValue)
         {
@@ -141,7 +139,7 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
         FL.PlayerConfig.Subtitles[SubIndex].Delay = newDelay;
     });
 
-    public DelegateCommand CmdClearSearch => field ??= new(() =>
+    public DelegateCommand? CmdClearSearch => field ??= new(() =>
     {
         if (!FL.Config.SidebarSearchActive)
             return;
@@ -172,7 +170,7 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
         SubManager.SelectedSub = prev;
     });
 
-    public DelegateCommand CmdNextMatch => field ??= new(() =>
+    public DelegateCommand? CmdNextMatch => field ??= new(() =>
     {
         if (_filteredSubs[SubIndex].IsEmpty)
             return;
@@ -191,7 +189,7 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
         }
     });
 
-    public DelegateCommand CmdPrevMatch => field ??= new(() =>
+    public DelegateCommand? CmdPrevMatch => field ??= new(() =>
     {
         if (_filteredSubs[SubIndex].IsEmpty)
             return;
@@ -209,8 +207,6 @@ public class SubtitlesSidebarVM : Bindable, IDisposable
             FL.Player.Activity.RefreshFullActive();
         }
     });
-
-    // ReSharper restore NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 
     // Debounce logic
     private CancellationTokenSource? _debounceCts;

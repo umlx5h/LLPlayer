@@ -4,18 +4,10 @@ using System.Text;
 
 namespace FlyleafLib;
 
-public class WhisperLanguage
+public class WhisperLanguage : IEquatable<WhisperLanguage>
 {
     public string Code { get; set; }
     public string EnglishName { get; set; }
-
-    public override bool Equals(object? obj)
-    {
-        if (obj is not WhisperLanguage lang)
-            return false;
-
-        return lang.Code == Code;
-    }
 
     // https://github.com/ggerganov/whisper.cpp/blob/d682e150908e10caa4c15883c633d7902d385237/src/whisper.cpp#L248-L348
     private static readonly Dictionary<string, string> CodeToLanguage = new()
@@ -162,5 +154,19 @@ public class WhisperLanguage
         }
 
         return result.ToString();
+    }
+
+    public bool Equals(WhisperLanguage other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return Code == other.Code;
+    }
+
+    public override bool Equals(object obj) => obj is WhisperLanguage o && Equals(o);
+
+    public override int GetHashCode()
+    {
+        return (Code != null ? Code.GetHashCode() : 0);
     }
 }

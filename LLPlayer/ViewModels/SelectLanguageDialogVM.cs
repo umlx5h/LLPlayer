@@ -81,9 +81,7 @@ public class SelectLanguageDialogVM : Bindable, IDialogAware
     public bool CanMoveUp => SelectedSelected != null && SelectedLanguages.IndexOf(SelectedSelected) > 0;
     public bool CanMoveDown => SelectedSelected != null && SelectedLanguages.IndexOf(SelectedSelected) < SelectedLanguages.Count - 1;
 
-    // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
-
-    public DelegateCommand CmdMoveRight => field ??= new DelegateCommand(() =>
+    public DelegateCommand? CmdMoveRight => field ??= new DelegateCommand(() =>
     {
         if (SelectedAvailable != null && !SelectedLanguages.Contains(SelectedAvailable))
         {
@@ -92,7 +90,7 @@ public class SelectLanguageDialogVM : Bindable, IDialogAware
         }
     }).ObservesCanExecute(() => CanMoveRight);
 
-    public DelegateCommand CmdMoveLeft => field ??= new DelegateCommand(() =>
+    public DelegateCommand? CmdMoveLeft => field ??= new DelegateCommand(() =>
     {
         if (SelectedSelected != null)
         {
@@ -110,7 +108,7 @@ public class SelectLanguageDialogVM : Bindable, IDialogAware
         }
     }).ObservesCanExecute(() => CanMoveLeft);
 
-    public DelegateCommand CmdMoveUp => field ??= new DelegateCommand(() =>
+    public DelegateCommand? CmdMoveUp => field ??= new DelegateCommand(() =>
     {
         int index = SelectedLanguages.IndexOf(SelectedSelected!);
         if (index > 0)
@@ -121,7 +119,7 @@ public class SelectLanguageDialogVM : Bindable, IDialogAware
         }
     }).ObservesCanExecute(() => CanMoveUp);
 
-    public DelegateCommand CmdMoveDown => field ??= new DelegateCommand(() =>
+    public DelegateCommand? CmdMoveDown => field ??= new DelegateCommand(() =>
     {
         int index = SelectedLanguages.IndexOf(SelectedSelected!);
         if (index < SelectedLanguages.Count - 1)
@@ -131,7 +129,6 @@ public class SelectLanguageDialogVM : Bindable, IDialogAware
             OnPropertyChanged(nameof(CanMoveDown));
         }
     }).ObservesCanExecute(() => CanMoveDown);
-    // ReSharper restore NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 
     #region IDialogAware
     public string Title { get; set => Set(ref field, value); }

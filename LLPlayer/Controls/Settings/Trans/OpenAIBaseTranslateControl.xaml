@@ -135,8 +135,9 @@
                     <Slider
                         Minimum="0" Maximum="2" TickFrequency="0.01" IsSnapToTickEnabled="True"
                         Margin="8 0 0 0"
-                        Value="{Binding Temperature, Mode=TwoWay}"
+                        Value="{Binding Temperature}"
                         Width="200"
+                        VerticalAlignment="Center"
                         Style="{StaticResource MaterialDesignDiscreteSlider}"
                         materialDesign:SliderAssist.OnlyShowFocusVisualWhileDragging="True"
                         IsEnabled="{Binding TemperatureManual}" />
@@ -171,8 +172,9 @@
                     <Slider
                         Minimum="0" Maximum="1" TickFrequency="0.01" IsSnapToTickEnabled="True"
                         Margin="8 0 0 0"
-                        Value="{Binding TopP, Mode=TwoWay}"
+                        Value="{Binding TopP}"
                         Width="200"
+                        VerticalAlignment="Center"
                         Style="{StaticResource MaterialDesignDiscreteSlider}"
                         materialDesign:SliderAssist.OnlyShowFocusVisualWhileDragging="True"
                         IsEnabled="{Binding TopPManual}" />

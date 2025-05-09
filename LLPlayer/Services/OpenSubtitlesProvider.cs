@@ -420,52 +420,51 @@ $"""
 
 public class LoginResponse
 {
-    public string Token { get; set; }
-    public string Status { get; set; }
-    public string StatusCode => Status.Split(' ')[0];
+    public string? Token { get; set; }
+    public string? Status { get; set; }
+    public string? StatusCode => Status?.Split(' ')[0];
 }
 
 public class SearchResponse
 {
-    public string IDSubtitleFile { get; set; }
-    public string SubFileName { get; set; }
+    public string IDSubtitleFile { get; set; } = "";
+    public string SubFileName { get; set; } = "";
     public int SubSize { get; set; } // from string
-    public string SubLastTS { get; set; }
-    public string IDSubtitle { get; set; }
-    public string SubLanguageID { get; set; }
-    public string SubFormat { get; set; }
-    public string SubAddDate { get; set; }
+    public string SubLastTS { get; set; } = "";
+    public string IDSubtitle { get; set; } = "";
+    public string SubLanguageID { get; set; } = "";
+    public string SubFormat { get; set; } = "";
+    public string SubAddDate { get; set; } = "";
     public double SubRating { get; set; } // from string
-    public string SubSumVotes { get; set; }
+    public string SubSumVotes { get; set; } = "";
     public int SubDownloadsCnt { get; set; } // from string
-    public string MovieName { get; set; }
-    public string MovieYear { get; set; }
-    public string MovieKind { get; set; }
-    public string ISO639 { get; set; }
-    public string LanguageName { get; set; }
-    public string SeriesSeason { get; set; }
-    public string SeriesEpisode { get; set; }
-    public string SubEncoding { get; set; }
-    public string SubDownloadLink { get; set; }
-    public string SubtitlesLink { get; set; }
+    public string MovieName { get; set; } = "";
+    public string MovieYear { get; set; } = "";
+    public string MovieKind { get; set; } = "";
+    public string ISO639 { get; set; } = "";
+    public string LanguageName { get; set; } = "";
+    public string SeriesSeason { get; set; } = "";
+    public string SeriesEpisode { get; set; } = "";
+    public string SubEncoding { get; set; } = "";
+    public string SubDownloadLink { get; set; } = "";
+    public string SubtitlesLink { get; set; } = "";
     public double Score { get; set; }
 }
 
 public class DownloadResponse
 {
-    public string Data { get; set; }
-    public string Idsubtitlefile { get; set; }
+    public string? Data { get; set; }
+    public string? Idsubtitlefile { get; set; }
 }
-
 
 [XmlRoot("value")]
 public class Value
 {
     [XmlElement("string")]
-    public string String { get; set; }
+    public string? String { get; set; }
 
     [XmlElement("struct")]
-    public Struct Struct { get; set; }
+    public Struct Struct { get; set; } = null!;
 
     [XmlElement("int")]
     public int Int { get; set; }
@@ -474,63 +473,57 @@ public class Value
     public double Double { get; set; }
 
     [XmlElement("array")]
-    public Array Array { get; set; }
+    public Array Array { get; set; } = null!;
 }
 
 [XmlRoot("member")]
 public class Member
 {
-
     [XmlElement("name")]
-    public string Name { get; set; }
+    public string Name { get; set; } = null!;
 
     [XmlElement("value")]
-    public Value Value { get; set; }
+    public Value Value { get; set; } = null!;
 }
 
 [XmlRoot("struct")]
 public class Struct
 {
-
     [XmlElement("member")]
-    public List<Member> Member { get; set; }
+    public List<Member> Member { get; set; } = null!;
 }
 
 [XmlRoot("data")]
 public class Data
 {
-
     [XmlElement("value")]
-    public List<Value> Value { get; set; }
+    public List<Value> Value { get; set; } = null!;
 }
 
 [XmlRoot("array")]
 public class Array
 {
-
     [XmlElement("data")]
-    public Data Data { get; set; }
+    public Data Data { get; set; } = null!;
 }
 
 [XmlRoot("param")]
 public class Param
 {
     [XmlElement("value")]
-    public Value Value { get; set; }
+    public Value Value { get; set; } = null!;
 }
 
 [XmlRoot("params")]
 public class Params
 {
-
     [XmlElement("param")]
-    public Param Param { get; set; }
+    public Param Param { get; set; } = null!;
 }
 
 [XmlRoot("methodResponse")]
 public class MethodResponse
 {
-
     [XmlElement("params")]
-    public Params Params { get; set; }
+    public Params Params { get; set; } = null!;
 }

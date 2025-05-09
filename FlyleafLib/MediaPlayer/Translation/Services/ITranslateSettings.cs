@@ -30,7 +30,7 @@ public class GoogleV1TranslateSettings : NotifyPropertyChanged, ITranslateSettin
     } = DefaultEndpoint;
 
     [JsonIgnore]
-    public RelayCommand CmdSetDefaultEndpoint => new((_) =>
+    public RelayCommand CmdSetDefaultEndpoint => field ??= new(_ =>
     {
         Endpoint = DefaultEndpoint;
     }, _ => Endpoint != DefaultEndpoint);
@@ -286,7 +286,7 @@ public abstract class OpenAIBaseTranslateSettings : NotifyPropertyChanged, ITran
     public bool StatusAvailable => !string.IsNullOrEmpty(Status);
 
     [JsonIgnore]
-    public RelayCommand CmdSetDefaultEndpoint => new((_) =>
+    public RelayCommand CmdSetDefaultEndpoint => field ??= new(_ =>
     {
         Endpoint = DefaultEndpoint;
     }, _ => Endpoint != DefaultEndpoint);
@@ -481,7 +481,7 @@ public class OpenAILikeTranslateSettings : OpenAIBaseTranslateSettings
     } = DefaultChatPath;
 
     [JsonIgnore]
-    public RelayCommand CmdSetDefaultChatPath => new((_) =>
+    public RelayCommand CmdSetDefaultChatPath => field ??= new(_ =>
     {
         ChatPath = DefaultChatPath;
     }, _ => ChatPath != DefaultChatPath);
@@ -545,20 +545,24 @@ public class LiteLLMTranslateSettings : OpenAIBaseTranslateSettings
     public override string DefaultEndpoint => "http://127.0.0.1:4000";
 }
 
-public class LanguageRegionMember : NotifyPropertyChanged
+public class LanguageRegionMember : NotifyPropertyChanged, IEquatable<LanguageRegionMember>
 {
     public string Name { get; set; }
     public string Code { get; set; }
 
-    public override bool Equals(object obj)
+    public bool Equals(LanguageRegionMember other)
     {
-        if (obj is not LanguageRegionMember region)
-            return false;
-
-        return region.Code == Code;
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return Code == other.Code;
     }
 
-    public override int GetHashCode() => Code.GetHashCode();
+    public override bool Equals(object obj) => obj is LanguageRegionMember o && Equals(o);
+
+    public override int GetHashCode()
+    {
+        return (Code != null ? Code.GetHashCode() : 0);
+    }
 }
 
 public class LanguageRegions : NotifyPropertyChanged

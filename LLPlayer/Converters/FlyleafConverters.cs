@@ -99,7 +99,7 @@ public class PlaylistItemsConverter : IMultiValueConverter
 [ValueConversion(typeof(Color), typeof(string))]
 public class ColorToHexConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is null)
             return null;

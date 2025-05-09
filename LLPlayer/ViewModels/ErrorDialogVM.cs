@@ -17,7 +17,7 @@ public class ErrorDialogVM : Bindable, IDialogAware
         FL = fl;
     }
 
-    public string Message { get; set => Set(ref field, value); }
+    public string Message { get; set => Set(ref field, value); } = "";
 
     public Exception? Exception
     {
@@ -33,7 +33,7 @@ public class ErrorDialogVM : Bindable, IDialogAware
     }
     public bool HasException => Exception != null;
 
-    public string ExceptionDetail { get; set => Set(ref field, value); }
+    public string ExceptionDetail { get; set => Set(ref field, value); } = "";
 
     public bool IsUnknown
     {
@@ -57,7 +57,7 @@ public class ErrorDialogVM : Bindable, IDialogAware
                 OnPropertyChanged(nameof(ErrorTitle));
             }
         }
-    }
+    } = "";
 
     public string ErrorTitle => IsUnknown ? $"{ErrorType} Unknown Error" : $"{ErrorType} Error";
 

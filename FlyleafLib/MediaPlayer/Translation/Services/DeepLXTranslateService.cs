@@ -75,9 +75,9 @@ public class DeepLXTranslateService : ITranslateService
         {
             DeepLXTranslateRequest requestBody = new()
             {
-                SourceLang = _srcLang,
-                TargetLang = _targetLang,
-                Text = text
+                source_lang = _srcLang,
+                target_lang = _targetLang,
+                text = text
             };
 
             string jsonRequest = JsonSerializer.Serialize(requestBody, JsonOptions);
@@ -90,7 +90,7 @@ public class DeepLXTranslateService : ITranslateService
             result.EnsureSuccessStatusCode();
 
             DeepLXTranslateResult? responseData = JsonSerializer.Deserialize<DeepLXTranslateResult>(jsonResultString);
-            return responseData!.Data;
+            return responseData!.data;
         }
         catch (OperationCanceledException ex)
             when (!ex.Message.StartsWith("The request was canceled due to the configured HttpClient.Timeout"))
@@ -112,28 +112,16 @@ public class DeepLXTranslateService : ITranslateService
 
     private class DeepLXTranslateRequest
     {
-        [JsonPropertyName("text")]
-        public required string Text { get; set; }
-
-        [JsonPropertyName("source_lang")]
-        public string? SourceLang { get; set; }
-
-        [JsonPropertyName("target_lang")]
-        public required string TargetLang { get; set; }
+        public required string text { get; init; }
+        public string? source_lang { get; init; }
+        public required string target_lang { get; init; }
     }
 
     private class DeepLXTranslateResult
     {
-        [JsonPropertyName("alternatives")]
-        public string[] Alternatives { get; set; }
-
-        [JsonPropertyName("data")]
-        public string Data { get; set; }
-
-        [JsonPropertyName("source_lang")]
-        public string SourceLang { get; set; }
-
-        [JsonPropertyName("target_lang")]
-        public string TargetLang { get; set; }
+        public required string[] alternatives { get; init; }
+        public required string data { get; init; }
+        public required string source_lang { get; init; }
+        public required string target_lang { get; init; }
     }
 }

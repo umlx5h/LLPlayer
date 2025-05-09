@@ -20,8 +20,7 @@ public class FlyleafOverlayVM : Bindable
         FL = fl;
     }
 
-    // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
-    public DelegateCommand CmdOnLoaded => field ??= new(() =>
+    public DelegateCommand? CmdOnLoaded => field ??= new(() =>
     {
         SetupOSDStatus();
         SetupFlyleafContextMenu();
@@ -29,7 +28,6 @@ public class FlyleafOverlayVM : Bindable
 
         FL.Config.FlyleafHostLoaded();
     });
-    // ReSharper restore NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 
     private void SetupFlyleafContextMenu()
     {
@@ -467,7 +465,7 @@ public class FlyleafOverlayVM : Bindable
             }
         }
     }
-    private string _osdMessage;
+    private string _osdMessage = "";
 
     public PackIconKind? OSDIcon
     {

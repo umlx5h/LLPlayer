@@ -20,7 +20,7 @@ namespace LLPlayer.Services;
 
 public class AppConfig : Bindable
 {
-    private FlyleafManager FL;
+    private FlyleafManager FL = null!;
 
     public void Initialize(FlyleafManager fl)
     {
@@ -30,7 +30,7 @@ public class AppConfig : Bindable
         Subs.Initialize(this, fl);
     }
 
-    public string Version { get; set; }
+    public string Version { get; set; } = "";
 
     /// <summary>
     /// State to skip the setter run when reading JSON
@@ -212,10 +212,8 @@ public class AppConfig : Bindable
 
 public class AppConfigSubs : Bindable
 {
-    [JsonIgnore]
-    private FlyleafManager FL;
-
-    private AppConfig _rootConfig;
+    private AppConfig _rootConfig = null!;
+    private FlyleafManager FL = null!;
 
     [JsonIgnore]
     public bool Loaded { get; private set; }
@@ -304,7 +302,7 @@ public class AppConfigSubs : Bindable
         OnPropertyChanged(nameof(SubsFontWeight2Fix));
         OnPropertyChanged(nameof(SubsFontStyle2Fix));
 
-        CmdResetSubsFont2.RaiseCanExecuteChanged();
+        CmdResetSubsFont2!.RaiseCanExecuteChanged();
     }
 
     // Primary Subtitle Size
@@ -321,7 +319,7 @@ public class AppConfigSubs : Bindable
             if (Set(ref field, value))
             {
                 OnPropertyChanged(nameof(SubsFontSizeFix));
-                CmdResetSubsFontSize2.RaiseCanExecuteChanged();
+                CmdResetSubsFontSize2!.RaiseCanExecuteChanged();
             }
         }
     } = 44;
@@ -343,7 +341,7 @@ public class AppConfigSubs : Bindable
             if (Set(ref field, value))
             {
                 OnPropertyChanged(nameof(SubsFontSize2Fix));
-                CmdResetSubsFontSize2.RaiseCanExecuteChanged();
+                CmdResetSubsFontSize2!.RaiseCanExecuteChanged();
             }
         }
     } = 44;
@@ -376,7 +374,7 @@ public class AppConfigSubs : Bindable
             if (Set(ref field, value))
             {
                 OnPropertyChanged(nameof(SubsFontColor2Fix));
-                CmdResetSubsFontColor2.RaiseCanExecuteChanged();
+                CmdResetSubsFontColor2!.RaiseCanExecuteChanged();
             }
         }
     } = Colors.White;
@@ -407,7 +405,7 @@ public class AppConfigSubs : Bindable
             if (Set(ref field, value))
             {
                 OnPropertyChanged(nameof(SubsFontColor2Fix));
-                CmdResetSubsFontColor2.RaiseCanExecuteChanged();
+                CmdResetSubsFontColor2!.RaiseCanExecuteChanged();
             }
         }
     } = Color.FromRgb(231, 231, 231); // #E7E7E7
@@ -442,7 +440,7 @@ public class AppConfigSubs : Bindable
             {
                 OnPropertyChanged(nameof(SubsBackgroundBrush));
                 OnPropertyChanged(nameof(SubsBackgroundBrush2));
-                CmdResetSubsBackgroundOpacity2.RaiseCanExecuteChanged();
+                CmdResetSubsBackgroundOpacity2!.RaiseCanExecuteChanged();
             }
         }
     } = 0; // default no background
@@ -472,7 +470,7 @@ public class AppConfigSubs : Bindable
             if (Set(ref field, value))
             {
                 OnPropertyChanged(nameof(SubsBackgroundBrush2));
-                CmdResetSubsBackgroundOpacity2.RaiseCanExecuteChanged();
+                CmdResetSubsBackgroundOpacity2!.RaiseCanExecuteChanged();
             }
         }
     } = 0;
@@ -487,15 +485,14 @@ public class AppConfigSubs : Bindable
         }
     }
 
-    // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
     [JsonIgnore]
-    public DelegateCommand CmdResetSubsFontSize2 => field ??= new(() =>
+    public DelegateCommand? CmdResetSubsFontSize2 => field ??= new(() =>
     {
         SubsFontSize2 = SubsFontSize;
     }, () => Math.Abs(SubsFontSize2 - SubsFontSize) > 0.1);
 
     [JsonIgnore]
-    public DelegateCommand CmdResetSubsFont2 => field ??= new(() =>
+    public DelegateCommand? CmdResetSubsFont2 => field ??= new(() =>
     {
         SubsFontFamily2 = SubsFontFamily;
         SubsFontStretch2 = SubsFontStretch;
@@ -511,17 +508,16 @@ public class AppConfigSubs : Bindable
     );
 
     [JsonIgnore]
-    public DelegateCommand CmdResetSubsFontColor2 => field ??= new(() =>
+    public DelegateCommand? CmdResetSubsFontColor2 => field ??= new(() =>
     {
         SubsFontColor2 = SubsFontColor;
     }, () => SubsFontColor2 != SubsFontColor);
 
     [JsonIgnore]
-    public DelegateCommand CmdResetSubsBackgroundOpacity2 => field ??= new(() =>
+    public DelegateCommand? CmdResetSubsBackgroundOpacity2 => field ??= new(() =>
     {
         SubsBackgroundOpacity2 = SubsBackgroundOpacity;
     }, () => Math.Abs(SubsBackgroundOpacity2 - SubsBackgroundOpacity) > 0.001);
-    // ReSharper restore NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 
     [JsonIgnore]
     public Size SubsPanelSize

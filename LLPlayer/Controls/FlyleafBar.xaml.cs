@@ -183,15 +183,15 @@ public partial class FlyleafBar : UserControl
 public class SliderToolTipBehavior : Behavior<Slider>
 {
     private const int PaddingSize = 5;
-    private Popup _valuePopup;
-    private TextBlock _tooltipText;
-    private Border _tooltipBorder;
+    private Popup? _valuePopup;
+    private TextBlock? _tooltipText;
+    private Border? _tooltipBorder;
     private Track? _track;
 
     public static readonly DependencyProperty ChaptersProperty =
         DependencyProperty.Register(nameof(Chapters), typeof(IList<Demuxer.Chapter>), typeof(SliderToolTipBehavior), new PropertyMetadata(null));
 
-    public IList<Demuxer.Chapter> Chapters
+    public IList<Demuxer.Chapter>? Chapters
     {
         get => (IList<Demuxer.Chapter>)GetValue(ChaptersProperty);
         set => SetValue(ChaptersProperty, value);
@@ -249,7 +249,7 @@ public class SliderToolTipBehavior : Behavior<Slider>
         // TODO: L: Allow customizable chapter display functionality
         string? chapterTitle = GetChapterTitleAtTime(hoverTime);
 
-        _tooltipText.Inlines.Clear();
+        _tooltipText!.Inlines.Clear();
         if (chapterTitle != null)
         {
             _tooltipText.Inlines.Add(chapterTitle);
@@ -258,8 +258,8 @@ public class SliderToolTipBehavior : Behavior<Slider>
 
         _tooltipText.Inlines.Add(timestamp);
 
-        Window window = Window.GetWindow(AssociatedObject);
-        Point cursorPoint = window!.PointToScreen(e.GetPosition(window));
+        Window window = Window.GetWindow(AssociatedObject)!;
+        Point cursorPoint = window.PointToScreen(e.GetPosition(window));
         Point sliderPoint = AssociatedObject.PointToScreen(default);
 
         // Fix for high dpi because PointToScreen returns physical coords
@@ -270,8 +270,8 @@ public class SliderToolTipBehavior : Behavior<Slider>
         sliderPoint.Y /= Utils.NativeMethods.DpiY;
 
         // Display on top of slider near mouse
-        _valuePopup.HorizontalOffset = cursorPoint.X - (_tooltipText.ActualWidth + PaddingSize * 2) / 2;
-        _valuePopup.VerticalOffset = sliderPoint.Y - _tooltipBorder.ActualHeight - 5;
+        _valuePopup!.HorizontalOffset = cursorPoint.X - (_tooltipText.ActualWidth + PaddingSize * 2) / 2;
+        _valuePopup!.VerticalOffset = sliderPoint.Y - _tooltipBorder!.ActualHeight - 5;
 
         // display popup
         _valuePopup.IsOpen = true;
@@ -279,7 +279,7 @@ public class SliderToolTipBehavior : Behavior<Slider>
 
     private void Slider_MouseLeave(object sender, MouseEventArgs e)
     {
-        _valuePopup.IsOpen = false;
+        _valuePopup!.IsOpen = false;
     }
 
     private string? GetChapterTitleAtTime(TimeSpan time)

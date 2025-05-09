@@ -16,14 +16,16 @@ using PixelFormat = System.Drawing.Imaging.PixelFormat;
 
 namespace FlyleafLib.MediaPlayer;
 
+#nullable enable
+
 public unsafe class SubtitlesOCR
 {
     private readonly Config.SubtitlesConfig _config;
     private int _subNum;
 
-    private CancellationTokenSource[] _ctss;
-    private object[] _lockers;
-    private IOCRService _ocrService = null;
+    private readonly CancellationTokenSource?[] _ctss;
+    private readonly object[] _lockers;
+    private IOCRService? _ocrService ;
 
     public SubtitlesOCR(Config.SubtitlesConfig config, int subNum)
     {
@@ -79,7 +81,7 @@ public unsafe class SubtitlesOCR
         if (_ocrService == null)
             throw new InvalidOperationException("ocrService is not initialized. you must call TryInitialize() first");
 
-        if (subs == null || subs.Count == 0 || !subs.First().IsBitmap)
+        if (subs.Count == 0 || !subs[0].IsBitmap)
             return;
 
         // Cancel preceding OCR
@@ -92,11 +94,11 @@ public unsafe class SubtitlesOCR
 
             _ctss[subIndex] = new CancellationTokenSource();
 
-            var startIndex = 0;
+            int startIndex = 0;
             // Start OCR from the current playback point
             if (startTime.HasValue)
             {
-                var match = subs.FindIndex(s => s.StartTime >= startTime);
+                int match = subs.FindIndex(s => s.StartTime >= startTime);
                 if (match != -1)
                 {
                     // Do from 5 previous subtitles
@@ -106,7 +108,7 @@ public unsafe class SubtitlesOCR
 
             for (int i = 0; i < subs.Count; i++)
             {
-                if (_ctss[subIndex].Token.IsCancellationRequested)
+                if (_ctss[subIndex]!.Token.IsCancellationRequested)
                 {
                     foreach (var sub in subs)
                     {
@@ -118,8 +120,12 @@ public unsafe class SubtitlesOCR
 
                 int index = (startIndex + i) % subs.Count;
 
+                SubtitleBitmapData? bitmap = subs[index].Bitmap;
+                if (bitmap == null)
+                    continue;
+
                 // TODO: L: If it's disposed, do I need to cancel it later?
-                subs[index].Text = Process(ocrService, subIndex, subs[index].Bitmap);
+                subs[index].Text = Process(ocrService, subIndex, bitmap);
                 if (!string.IsNullOrEmpty(subs[index].Text))
                 {
                     // If OCR succeeds, dispose of it (if it fails, leave it so that it can be displayed in the sidebar).
@@ -127,7 +133,7 @@ public unsafe class SubtitlesOCR
                 }
             }
 
-            if (!_ctss[subIndex].Token.IsCancellationRequested)
+            if (!_ctss[subIndex]!.Token.IsCancellationRequested)
             {
                 // TODO: L: Notify, express completion in some way
                 Utils.PlayCompletionSound();
@@ -151,12 +157,12 @@ public unsafe class SubtitlesOCR
         if (_ctss[subIndex] != null)
         {
             // Cancel if preceding OCR is running
-            _ctss[subIndex].Cancel();
+            _ctss[subIndex]!.Cancel();
 
             // Wait until it is canceled by taking a lock
             lock (_lockers[subIndex])
             {
-                _ctss[subIndex].Dispose();
+                _ctss[subIndex]?.Dispose();
                 _ctss[subIndex] = null;
             }
         }
@@ -248,9 +254,9 @@ public interface IOCRService : IDisposable
 public class TesseractOCRService : IOCRService
 {
     private readonly Config.SubtitlesConfig _config;
-    private TesseractOCR.Engine _ocrEngine = null;
+    private TesseractOCR.Engine? _ocrEngine;
     private bool _disposed;
-    private Language _lang = null;
+    private Language? _lang;
 
     public TesseractOCRService(Config.SubtitlesConfig config)
     {
@@ -271,7 +277,7 @@ public class TesseractOCRService : IOCRService
 
         Dictionary<string, List<TesseractModel>> tesseractModels = TesseractModelLoader.GetAvailableModels();
 
-        if (!tesseractModels.TryGetValue(iso6391, out List<TesseractModel> models))
+        if (!tesseractModels.TryGetValue(iso6391, out List<TesseractModel>? models))
         {
             err = $"Language:{lang.TopEnglishName} ({iso6391}) is not available in Tesseract OCR, Please download a model in settings if available language.";
 
@@ -282,9 +288,9 @@ public class TesseractOCRService : IOCRService
         if (_config.TesseractOcrRegions != null && models.Count >= 2)
         {
             // choose zh-CN or zh-TW (for Chinese)
-            if (_config.TesseractOcrRegions.TryGetValue(iso6391, out string langCode))
+            if (_config.TesseractOcrRegions.TryGetValue(iso6391, out string? langCode))
             {
-                TesseractModel m = models.FirstOrDefault(m => m.LangCode == langCode);
+                TesseractModel? m = models.FirstOrDefault(m => m.LangCode == langCode);
                 if (m != null)
                 {
                     model = m;
@@ -360,7 +366,7 @@ public class TesseractOCRService : IOCRService
         if (_disposed)
             return;
 
-        _ocrEngine.Dispose();
+        _ocrEngine?.Dispose();
         _disposed = true;
     }
 }
@@ -381,9 +387,9 @@ public class MicrosoftOCRService : IOCRService
     {
         string iso6391 = lang.ISO6391;
 
-        string langTag = null;
+        string? langTag = null;
 
-        if (_config.MsOcrRegions.TryGetValue(iso6391, out string tag))
+        if (_config.MsOcrRegions.TryGetValue(iso6391, out string? tag))
         {
             // If there is a preferred language region in the settings, it is given priority.
             langTag = tag;

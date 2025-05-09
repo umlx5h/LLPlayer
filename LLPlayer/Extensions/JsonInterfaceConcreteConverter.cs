@@ -26,19 +26,19 @@ public class JsonInterfaceConcreteConverter<T> : JsonConverter<T>
             throw new JsonException("Type discriminator not found.");
         }
 
-        string typeDiscriminator = typeProperty.GetString();
-        if (!_typeMapping.TryGetValue(typeDiscriminator, out Type targetType))
+        string? typeDiscriminator = typeProperty.GetString();
+        if (typeDiscriminator == null || !_typeMapping.TryGetValue(typeDiscriminator, out Type? targetType))
         {
             throw new JsonException($"Unknown type discriminator: {typeDiscriminator}");
         }
 
         // If a specific type is specified as the second argument, it is deserialized with that type
-        return (T)JsonSerializer.Deserialize(jsonDoc.RootElement, targetType, options);
+        return (T)JsonSerializer.Deserialize(jsonDoc.RootElement, targetType, options)!;
     }
 
     public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
     {
-        Type type = value.GetType();
+        Type type = value!.GetType();
         string typeDiscriminator = type.Name; // Use type name as discriminator
 
         // Serialize with concrete types, not interfaces

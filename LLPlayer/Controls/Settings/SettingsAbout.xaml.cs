@@ -122,7 +122,7 @@ public class SettingsAboutVM : Bindable
 
 public class LibraryInfo
 {
-    public string Name { get; set; }
-    public string Description { get; set; }
-    public string Url { get; set; }
+    public required string Name { get; init; }
+    public required string Description { get; init; }
+    public required string Url { get; init; }
 }

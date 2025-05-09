@@ -54,19 +54,17 @@ public class SettingsSubtitlesTransVM : Bindable
         }
     }
 
-    public ITranslateSettings SelectedServiceSettings { get; set => Set(ref field, value); }
+    public ITranslateSettings? SelectedServiceSettings { get; set => Set(ref field, value); }
 
-    // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
-    public DelegateCommand CmdSetDefaultPromptKeepContext => field ??= new(() =>
+    public DelegateCommand? CmdSetDefaultPromptKeepContext => field ??= new(() =>
     {
         FL.PlayerConfig.Subtitles.TranslateChatConfig.PromptKeepContext = TranslateChatConfig.DefaultPromptKeepContext.ReplaceLineEndings("\n");
     });
 
-    public DelegateCommand CmdSetDefaultPromptOneByOne => field ??= new(() =>
+    public DelegateCommand? CmdSetDefaultPromptOneByOne => field ??= new(() =>
     {
         FL.PlayerConfig.Subtitles.TranslateChatConfig.PromptOneByOne = TranslateChatConfig.DefaultPromptOneByOne.ReplaceLineEndings("\n");
     });
-    // ReSharper restore NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 }
 
 [ValueConversion(typeof(TargetLanguage), typeof(string))]

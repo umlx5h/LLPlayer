@@ -18,7 +18,7 @@ namespace WpfColorFontDialog
             {
                 return double.Parse(value.ToString());
             }
-            catch(FormatException ex)
+            catch(FormatException)
             {
                 return 0;
             }

@@ -413,17 +413,17 @@ public class SubManager : INotifyPropertyChanged
 
     private class SubtitleTimeComparer : IComparer<SubtitleData>
     {
-        public int Compare(SubtitleData x, SubtitleData y)
+        public int Compare(SubtitleData? x, SubtitleData? y)
         {
-            return x.StartTime.CompareTo(y.StartTime);
+            return x!.StartTime.CompareTo(y!.StartTime);
         }
     }
 
     private class SubtitleTimeEndComparer : IComparer<SubtitleData>
     {
-        public int Compare(SubtitleData x, SubtitleData y)
+        public int Compare(SubtitleData? x, SubtitleData? y)
         {
-            return x.EndTime.CompareTo(y.EndTime);
+            return x!.EndTime.CompareTo(y!.EndTime);
         }
     }
 
@@ -936,7 +936,7 @@ public class SubtitleBitmapData : IDisposable
 #endif
 }
 
-public class SubtitleData : IDisposable, INotifyPropertyChanged, ICloneable
+public class SubtitleData : IDisposable, INotifyPropertyChanged
 {
     public int Index { get; set; }
 
@@ -981,7 +981,7 @@ public class SubtitleData : IDisposable, INotifyPropertyChanged, ICloneable
 
     public string? DisplayText => UseTranslated ? TranslatedText : Text;
 
-    public List<SubStyle> SubStyles;
+    public List<SubStyle>? SubStyles;
     public TimeSpan StartTime { get; set; }
     public TimeSpan EndTime { get; set; }
 #if DEBUG
@@ -1011,7 +1011,7 @@ public class SubtitleData : IDisposable, INotifyPropertyChanged, ICloneable
         _isDisposed = true;
     }
 
-    public object Clone()
+    public SubtitleData Clone()
     {
         return new SubtitleData()
         {
@@ -1094,12 +1094,12 @@ public static class ObservableCollectionExtensions
         return -1;
     }
 
-    public static int BinarySearch<T>(this ObservableCollection<T> collection, T item, IComparer<T> comparer = null)
+    public static int BinarySearch<T>(this ObservableCollection<T> collection, T item, IComparer<T> comparer)
     {
         if (collection == null)
             throw new ArgumentNullException(nameof(collection));
 
-        comparer ??= Comparer<T>.Default;
+        //comparer ??= Comparer<T>.Default;
         int low = 0;
         int high = collection.Count - 1;
 

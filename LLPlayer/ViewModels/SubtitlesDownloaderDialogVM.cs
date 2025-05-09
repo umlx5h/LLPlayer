@@ -53,9 +53,7 @@ public class SubtitlesDownloaderDialogVM : Bindable, IDialogAware
     public bool CanSearch => !string.IsNullOrWhiteSpace(Query);
     public bool CanAction => SelectedSub != null;
 
-    // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
-
-    public AsyncDelegateCommand CmdSearch => field ??= new AsyncDelegateCommand(async () =>
+    public AsyncDelegateCommand? CmdSearch => field ??= new AsyncDelegateCommand(async () =>
     {
         Subs.Clear();
 
@@ -88,7 +86,7 @@ public class SubtitlesDownloaderDialogVM : Bindable, IDialogAware
         }
     }).ObservesCanExecute(() => CanSearch);
 
-    public AsyncDelegateCommand CmdLoad => field ??= new AsyncDelegateCommand(async () =>
+    public AsyncDelegateCommand? CmdLoad => field ??= new AsyncDelegateCommand(async () =>
     {
         var sub = SelectedSub;
         if (sub == null)
@@ -161,7 +159,7 @@ public class SubtitlesDownloaderDialogVM : Bindable, IDialogAware
 
     }).ObservesCanExecute(() => CanAction);
 
-    public AsyncDelegateCommand CmdDownload => field ??= new AsyncDelegateCommand(async () =>
+    public AsyncDelegateCommand? CmdDownload => field ??= new AsyncDelegateCommand(async () =>
     {
         var sub = SelectedSub;
         if (sub == null)
@@ -207,8 +205,6 @@ public class SubtitlesDownloaderDialogVM : Bindable, IDialogAware
             await File.WriteAllBytesAsync(dialog.FileName, subData);
         }
     }).ObservesCanExecute(() => CanAction);
-
-    // ReSharper restore NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 
     private void Playlist_OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {

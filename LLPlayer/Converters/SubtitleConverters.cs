@@ -185,7 +185,7 @@ public class TimeSpanToStringConverter : IValueConverter
 [ValueConversion(typeof(SubtitleData), typeof(WriteableBitmap))]
 public class SubBitmapImageSourceConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is not SubtitleData item)
         {
@@ -202,7 +202,7 @@ public class SubBitmapImageSourceConverter : IValueConverter
         return wb;
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         => throw new NotImplementedException();
 }
 

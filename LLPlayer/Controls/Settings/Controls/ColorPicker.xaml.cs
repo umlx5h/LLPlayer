@@ -42,7 +42,7 @@ public partial class ColorPicker : UserControl
             .Where(prop =>
                 typeof(Color).IsAssignableFrom(prop.PropertyType))
             .Select(prop =>
-                new KeyValuePair<string, Color>(prop.Name, (Color)prop.GetValue(null)))
+                new KeyValuePair<string, Color>(prop.Name, (Color)prop.GetValue(null)!))
             .ToList();
     }
 

@@ -25,9 +25,7 @@ public class TesseractDownloadDialogVM : Bindable, IDialogAware
 
         SelectedModel = Models.First();
 
-        StatusText = "Select a model to download.";
-
-        CmdDownloadModel.PropertyChanged += (sender, args) =>
+        CmdDownloadModel!.PropertyChanged += (sender, args) =>
         {
             if (args.PropertyName == nameof(CmdDownloadModel.IsExecuting))
             {
@@ -54,20 +52,19 @@ public class TesseractDownloadDialogVM : Bindable, IDialogAware
         }
     }
 
-    public string StatusText { get; set => Set(ref field, value); }
+    public string StatusText { get; set => Set(ref field, value); } = "Select a model to download.";
 
     public long DownloadedSize { get; set => Set(ref field, value); }
 
     public bool CanDownload =>
-        SelectedModel is { Downloaded: false } && !CmdDownloadModel.IsExecuting;
+        SelectedModel is { Downloaded: false } && !CmdDownloadModel!.IsExecuting;
 
     public bool CanDelete =>
-        SelectedModel is { Downloaded: true } && !CmdDownloadModel.IsExecuting;
+        SelectedModel is { Downloaded: true } && !CmdDownloadModel!.IsExecuting;
 
     private CancellationTokenSource? _cts;
 
-    // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
-    public AsyncDelegateCommand CmdDownloadModel => field ??= new AsyncDelegateCommand(async () =>
+    public AsyncDelegateCommand? CmdDownloadModel => field ??= new AsyncDelegateCommand(async () =>
     {
         _cts = new CancellationTokenSource();
         CancellationToken token = _cts.Token;
@@ -129,7 +126,7 @@ public class TesseractDownloadDialogVM : Bindable, IDialogAware
                 {
                     File.Delete(tempModelPath);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     // ignore
 
@@ -141,12 +138,12 @@ public class TesseractDownloadDialogVM : Bindable, IDialogAware
         }
     }).ObservesCanExecute(() => CanDownload);
 
-    public DelegateCommand CmdCancelDownloadModel => field ??= new(() =>
+    public DelegateCommand? CmdCancelDownloadModel => field ??= new(() =>
     {
         _cts?.Cancel();
     });
 
-    public DelegateCommand CmdDeleteModel => field ??= new DelegateCommand(() =>
+    public DelegateCommand? CmdDeleteModel => field ??= new DelegateCommand(() =>
     {
         try
         {
@@ -172,7 +169,7 @@ public class TesseractDownloadDialogVM : Bindable, IDialogAware
         }
     }).ObservesCanExecute(() => CanDelete);
 
-    public DelegateCommand CmdOpenFolder => field ??= new(() =>
+    public DelegateCommand? CmdOpenFolder => field ??= new(() =>
     {
         if (!Directory.Exists(TesseractModel.ModelsDirectory))
             return;
@@ -184,7 +181,6 @@ public class TesseractDownloadDialogVM : Bindable, IDialogAware
             CreateNoWindow = true
         });
     });
-    // ReSharper restore NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 
     private void OnDownloadStatusChanged()
     {
@@ -235,7 +231,7 @@ public class TesseractDownloadDialogVM : Bindable, IDialogAware
     public double WindowWidth { get; set => Set(ref field, value); } = 400;
     public double WindowHeight { get; set => Set(ref field, value); } = 200;
 
-    public bool CanCloseDialog() => !CmdDownloadModel.IsExecuting;
+    public bool CanCloseDialog() => !CmdDownloadModel!.IsExecuting;
     public void OnDialogClosed() { }
     public void OnDialogOpened(IDialogParameters parameters) { }
     public DialogCloseListener RequestClose { get; }

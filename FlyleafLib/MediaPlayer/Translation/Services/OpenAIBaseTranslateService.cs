@@ -261,15 +261,15 @@ public class OpenAIBaseTranslateService : ITranslateService
 
 public class OpenAIMessage
 {
-    public string role { get; set; }
-    public string content { get; set; }
+    public required string role { get; init; }
+    public required string content { get; init; }
 }
 
 public class OpenAIRequest
 {
     public string? model { get; set; }
-    public OpenAIMessage[] messages { get; set; }
-    public bool stream { get; set; }
+    public required OpenAIMessage[] messages { get; init; }
+    public required bool stream { get; init; }
     public double? temperature { get; set; }
     public double? top_p { get; set; }
     public int? max_completion_tokens { get; set; }
@@ -278,12 +278,12 @@ public class OpenAIRequest
 
 public class OpenAIResponse
 {
-    public OpenAIChoice[] choices { get; set; }
+    public required OpenAIChoice[] choices { get; init; }
 }
 
 public class OpenAIChoice
 {
-    public OpenAIMessage message { get; set; }
+    public required OpenAIMessage message { get; init; }
 }
 
 public static class ChatReplyParser

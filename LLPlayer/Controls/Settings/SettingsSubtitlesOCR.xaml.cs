@@ -81,7 +81,7 @@ public class SettingsSubtitlesOCRVM : Bindable
         foreach (TessOcrLanguageGroup group in langGroups)
         {
             // Load preferred region settings from config
-            if (regionConfig != null && regionConfig.TryGetValue(group.ISO6391, out string code))
+            if (regionConfig != null && regionConfig.TryGetValue(group.ISO6391, out string? code))
             {
                 group.SelectedMember = group.Members.FirstOrDefault(m => m.LangCode == code);
             }
@@ -119,7 +119,7 @@ public class SettingsSubtitlesOCRVM : Bindable
         foreach (MsOcrLanguageGroup group in langGroups)
         {
             // Load preferred region settings from config
-            if (regionConfig != null && regionConfig.TryGetValue(group.ISO6391, out string tag))
+            if (regionConfig != null && regionConfig.TryGetValue(group.ISO6391, out string? tag))
             {
                 group.SelectedMember = group.Members.FirstOrDefault(m => m.LanguageTag == tag);
             }
@@ -169,13 +169,13 @@ public class SettingsSubtitlesOCRVM : Bindable
 #region Tesseract
 public class TessOcrLanguageGroupMember : Bindable
 {
-    public string LangCode { get; set; }
-    public string DisplayName { get; set; }
+    public required string LangCode { get; init; }
+    public required string DisplayName { get; init; }
 }
 
 public class TessOcrLanguageGroup : Bindable
 {
-    public string ISO6391 { get; set; }
+    public required string ISO6391 { get; init; }
 
     public string DisplayName
     {
@@ -186,7 +186,7 @@ public class TessOcrLanguageGroup : Bindable
         }
     }
 
-    public ObservableCollection<TessOcrLanguageGroupMember> Members { get; set; }
+    public required ObservableCollection<TessOcrLanguageGroupMember> Members { get; init; }
     public TessOcrLanguageGroupMember? SelectedMember { get; set => Set(ref field, value); }
 }
 #endregion
@@ -194,14 +194,14 @@ public class TessOcrLanguageGroup : Bindable
 #region Microsoft OCR
 public class MsOcrLanguageGroupMember : Bindable
 {
-    public string LanguageTag { get; set; }
-    public string DisplayName { get; set; }
-    public string NativeName { get; set; }
+    public required string LanguageTag { get; init; }
+    public required string DisplayName { get; init; }
+    public required string NativeName { get; init; }
 }
 
 public class MsOcrLanguageGroup : Bindable
 {
-    public string ISO6391 { get; set; }
+    public required string ISO6391 { get; init; }
 
     public string DisplayName
     {
@@ -212,7 +212,7 @@ public class MsOcrLanguageGroup : Bindable
         }
     }
 
-    public ObservableCollection<MsOcrLanguageGroupMember> Members { get; set; }
+    public required ObservableCollection<MsOcrLanguageGroupMember> Members { get; init; }
     public MsOcrLanguageGroupMember? SelectedMember { get; set => Set(ref field, value); }
 }
 #endregion

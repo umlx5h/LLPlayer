@@ -4,9 +4,11 @@ using System.Linq;
 
 namespace FlyleafLib;
 
-public class TesseractModel : NotifyPropertyChanged
+#nullable enable
+
+public class TesseractModel : NotifyPropertyChanged, IEquatable<TesseractModel>
 {
-    public static Dictionary<TesseractOCR.Enums.Language, string> TesseractLangToISO6391 = new()
+    public static Dictionary<TesseractOCR.Enums.Language, string> TesseractLangToISO6391 { get; } = new()
     {
         {TesseractOCR.Enums.Language.Afrikaans, "af"},
         {TesseractOCR.Enums.Language.Amharic, "am"},
@@ -166,15 +168,19 @@ public class TesseractModel : NotifyPropertyChanged
 
     public override string ToString() => LangCode;
 
-    public override bool Equals(object? obj)
+    public bool Equals(TesseractModel? other)
     {
-        if (obj is not TesseractModel model)
-            return false;
-
-        return model.Lang == Lang;
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return Lang == other.Lang;
     }
 
-    public override int GetHashCode() => (int)Lang;
+    public override bool Equals(object? obj) => obj is TesseractModel o && Equals(o);
+
+    public override int GetHashCode()
+    {
+        return (int)Lang;
+    }
 }
 
 public class TesseractModelLoader
@@ -192,7 +198,7 @@ public class TesseractModelLoader
 
         foreach (TesseractModel model in models)
         {
-            if (TesseractModel.TesseractLangToISO6391.TryGetValue(model.Lang, out string iso6391))
+            if (TesseractModel.TesseractLangToISO6391.TryGetValue(model.Lang, out string? iso6391))
             {
                 if (dict.ContainsKey(iso6391))
                 {
