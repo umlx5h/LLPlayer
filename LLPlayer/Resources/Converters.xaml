@@ -21,6 +21,8 @@
     <conv:ChaptersToTicksConverter x:Key="ChaptersToTicksConv"/>
     <conv:ChaptersToTickPlacementConverter TickPlacement="TopLeft" x:Key="ChaptersToTickPlacementConv"/>
     <conv:AspectRatioIsCheckedConverter x:Key="AspectRatioIsCheckedConv"/>
+    <conv:MultiplyWidthByProgressConverter x:Key="MultiplyWidthByProgressConv"/>
+    <conv:DoubleMoreThan0Converter x:Key="DoubleMoreThan0Conv"/>
 
     <!--General Converters-->
     <conv:BooleanToVisibilityMiscConverter x:Key="BooleanToVisibilityConv"/>

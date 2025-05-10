@@ -34,7 +34,7 @@ namespace FlyleafLib.MediaPlayer;
 /// Note that multiple threads cannot seek to multiple locations for a single AVFormatContext,
 /// so it is necessary to open it with another avformat_open_input for the same video.
 /// </remarks>
-public class SubtitlesASR
+public class SubtitlesASR : NotifyPropertyChanged
 {
     private readonly SubtitlesManager _subtitlesManager;
     private readonly Config _config;
@@ -42,6 +42,28 @@ public class SubtitlesASR
     private readonly Lock _lockerSubs = new();
     private CancellationTokenSource? _cts = null;
     public HashSet<int> SubIndexSet { get; } = new();
+
+    // Track the latest processed subtitle time
+    private long _latestSubtitleTime = 0;
+    
+    // Property to expose the latest subtitle time processed
+    public long LatestSubtitleTime
+    {
+        get
+        {
+            lock (_lockerSubs)
+            {
+                return _latestSubtitleTime;
+            }
+        }
+        private set
+        {
+            lock (_lockerSubs)
+            {
+                SetUI(ref _latestSubtitleTime, value);
+            }
+        }
+    }
 
     private readonly LogHandler Log;
 
@@ -201,6 +223,10 @@ public class SubtitlesASR
                 return true;
             }
 
+            // Initialize the latest subtitle time to the current position when starting ASR
+            // This prevents the highlight from showing before the current position
+            LatestSubtitleTime = curTime.Ticks;
+
             reader.ReadAll(curTime, data =>
             {
                 if (_cts.Token.IsCancellationRequested)
@@ -210,6 +236,9 @@ public class SubtitlesASR
 
                 lock (_lockerSubs)
                 {
+                    // Update the latest subtitle time
+                    LatestSubtitleTime = data.EndTime.Ticks;
+                    
                     foreach (int i in SubIndexSet)
                     {
                         bool isInit = false;
@@ -250,6 +279,10 @@ public class SubtitlesASR
             {
                 // TODO: L: Notify, express completion in some way
                 Utils.PlayCompletionSound();
+                
+                // When ASR completes successfully, set the latest subtitle time to the full duration
+                // This will fill the entire seekbar with the highlight
+                LatestSubtitleTime = _config.Subtitles.player.Duration;
             }
 
             foreach (int i in SubIndexSet)
@@ -278,6 +311,9 @@ public class SubtitlesASR
                     {
                         _subtitlesManager[i].Clear();
                     }
+                    
+                    // Reset the latest subtitle time when canceling
+                    LatestSubtitleTime = 0;
                 }
 
                 cts.Cancel();

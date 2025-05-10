@@ -232,3 +232,44 @@ public class AspectRatioIsCheckedConverter : IMultiValueConverter
         throw new NotImplementedException();
     }
 }
+
+public class MultiplyWidthByProgressConverter : IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+    {
+        // Ensure we have all needed values
+        if (values.Length < 3 || 
+            values[0] == DependencyProperty.UnsetValue || 
+            values[1] == DependencyProperty.UnsetValue ||
+            values[2] == DependencyProperty.UnsetValue)
+        {
+            return 0;
+        }
+
+        // values[0] = Slider ActualWidth
+        // values[1] = Latest subtitle time (ticks)
+        // values[2] = Total duration (ticks)
+        
+        if (values[0] is double sliderWidth && 
+            values[1] is long latestSubtitleTime && 
+            values[2] is long totalDuration)
+        {
+            // If no subtitle time or no duration, return 0
+            if (latestSubtitleTime <= 0 || totalDuration <= 0)
+            {
+                return 0;
+            }
+
+            // Calculate progress percentage and multiply by slider width
+            double progressPercent = (double)latestSubtitleTime / totalDuration;
+            return sliderWidth * progressPercent;
+        }
+
+        return 0;
+    }
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
