@@ -106,11 +106,11 @@
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
                             Width="180"
-                            Text="Position Offset (%) " />
+                            Text="Position Offset (%)" />
                         <TextBox
                             Width="100"
                             Text="{Binding FL.Config.Subs.SubsPositionOffset}"
-                            helpers:TextBoxHelper.OnlyNumeric="Double" />
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal">
@@ -130,7 +130,7 @@
                         <TextBox
                             Width="100"
                             Text="{Binding FL.Config.Subs.SubsBitmapScaleOffset}"
-                            helpers:TextBoxHelper.OnlyNumeric="Double" />
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal">
@@ -140,7 +140,7 @@
                         <TextBox
                             Width="100"
                             Text="{Binding FL.Config.Subs.SubsDistanceOffset}"
-                            helpers:TextBoxHelper.OnlyNumeric="Double" />
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
                     </StackPanel>
                 </StackPanel>
             </GroupBox>

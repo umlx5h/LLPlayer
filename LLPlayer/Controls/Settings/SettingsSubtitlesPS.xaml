@@ -175,7 +175,7 @@
                             Text="Bitmap Scale (Primary)" />
                         <TextBox
                             Width="100"
-                            Text="{Binding FL.Player.Subtitles[0].Data.BitmapPosition.ConfScale}"
+                            Text="{Binding FL.Player.Subtitles[0].Data.BitmapPosition.ConfScale, StringFormat={}{0:F2}}"
                             helpers:TextBoxHelper.OnlyNumeric="Double"/>
                     </StackPanel>
 
@@ -185,7 +185,7 @@
                             Text="Bitmap Scale (Secondary)" />
                         <TextBox
                             Width="100"
-                            Text="{Binding FL.Player.Subtitles[1].Data.BitmapPosition.ConfScale}"
+                            Text="{Binding FL.Player.Subtitles[1].Data.BitmapPosition.ConfScale, StringFormat={}{0:F2}}"
                             helpers:TextBoxHelper.OnlyNumeric="Double"/>
                     </StackPanel>
 
@@ -196,7 +196,7 @@
                         <TextBox
                             Width="100"
                             Text="{Binding FL.Player.Subtitles[0].Data.BitmapPosition.ConfPos}"
-                            helpers:TextBoxHelper.OnlyNumeric="Double"/>
+                            helpers:TextBoxHelper.OnlyNumeric="Uint"/>
                     </StackPanel>
                 </StackPanel>
             </GroupBox>

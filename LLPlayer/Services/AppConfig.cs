@@ -549,7 +549,7 @@ public class AppConfigSubs : Bindable
 
     #region Offsets
 
-    public double SubsPositionOffset { get; set => Set(ref field, value); } = 2.0;
+    public double SubsPositionOffset { get; set => Set(ref field, value); } = 2;
     public int SubsFontSizeOffset { get; set => Set(ref field, value); } = 2;
     public double SubsBitmapScaleOffset { get; set => Set(ref field, value); } = 4;
     public double SubsDistanceOffset { get; set => Set(ref field, value); } = 5;
@@ -569,17 +569,17 @@ public class AppConfigSubs : Bindable
                 return;
             }
 
-            if (value < -25.0 || value > 150.0)
+            if (value < -25 || value > 150)
             {
                 return;
             }
 
-            if (Set(ref field, value))
+            if (Set(ref field, Math.Round(value)))
             {
                 UpdateSubsMargin();
             }
         }
-    } = 85.0;
+    } = 85;
 
     public SubPositionAlignment SubsPositionAlignment
     {
@@ -628,12 +628,12 @@ public class AppConfigSubs : Bindable
         get;
         set
         {
-            if (value < 1.0)
+            if (value < 1)
             {
                 return;
             }
 
-            if (Set(ref field, value))
+            if (Set(ref field, Math.Round(value)))
             {
                 UpdateSubsDistance();
             }

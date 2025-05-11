@@ -45,7 +45,7 @@ public class SubsBitmapPosition : NotifyPropertyChanged
                 return;
             }
 
-            if (Set(ref field, value))
+            if (Set(ref field, Math.Round(value, 2)))
             {
                 Calculate();
             }
@@ -57,17 +57,17 @@ public class SubsBitmapPosition : NotifyPropertyChanged
         get;
         set
         {
-            if (value < 0 || value > 150.0)
+            if (value < 0 || value > 150)
             {
                 return;
             }
 
-            if (Set(ref field, value))
+            if (Set(ref field, Math.Round(value)))
             {
                 Calculate();
             }
         }
-    } = 100.0; // 0 - 150.0
+    } = 100; // 0 - 150
 
     #endregion
 
@@ -90,7 +90,7 @@ public class SubsBitmapPosition : NotifyPropertyChanged
     public void Reset()
     {
         ConfScale = 1.0;
-        ConfPos = 100.0;
+        ConfPos = 100;
 
         Margin = null;
         ScaleX = 1.0;
