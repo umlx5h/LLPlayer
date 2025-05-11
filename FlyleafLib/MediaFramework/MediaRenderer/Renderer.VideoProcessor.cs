@@ -7,6 +7,7 @@ using Vortice.Direct3D11;
 
 using ID3D11VideoContext = Vortice.Direct3D11.ID3D11VideoContext;
 
+using FlyleafLib.Controls.WPF;
 using FlyleafLib.MediaPlayer;
 
 using static FlyleafLib.Logger;
@@ -600,13 +601,41 @@ public class VideoFilter : NotifyPropertyChanged
     public float        Step        { get => _Step;         set => SetUI(ref _Step, value); }
     float _Step = 1;
 
-    public int          DefaultValue{ get => _DefaultValue; set => SetUI(ref _DefaultValue, value); }
-    int _DefaultValue = 50;
+    public int          DefaultValue
+    {
+        get;
+        set
+        {
+            if (SetUI(ref field, value))
+            {
+                SetDefaultValue.OnCanExecuteChanged();
+            }
+        }
+    } = 50;
 
-    public int          Value       { get => _Value;        set { if (Set(ref _Value, value)) renderer?.UpdateFilterValue(this); } }
-    int _Value = 50;
+    public int          Value
+    {
+        get;
+        set
+        {
+            int v = value;
+            v = Math.Min(v, Maximum);
+            v = Math.Max(v, Minimum);
 
-    internal void SetValue(int value) => SetUI(ref _Value, value, true, nameof(Value));
+            if (Set(ref field, v))
+            {
+                renderer?.UpdateFilterValue(this);
+                SetDefaultValue.OnCanExecuteChanged();
+            }
+        }
+    } = 50;
+
+    public RelayCommand SetDefaultValue => field ??= new(_ =>
+    {
+        Value = DefaultValue;
+    }, _ => Value != DefaultValue);
+
+    //internal void SetValue(int value) => SetUI(ref _Value, value, true, nameof(Value));
 
     public VideoFilter() { }
     public VideoFilter(VideoFilters filter, Player player = null)

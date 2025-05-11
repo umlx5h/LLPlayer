@@ -25,7 +25,7 @@ public unsafe class SubtitlesOCR
 
     private readonly CancellationTokenSource?[] _ctss;
     private readonly object[] _lockers;
-    private IOCRService? _ocrService ;
+    private IOCRService? _ocrService;
 
     public SubtitlesOCR(Config.SubtitlesConfig config, int subNum)
     {

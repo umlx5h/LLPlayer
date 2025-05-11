@@ -8,6 +8,7 @@
              xmlns:flyleaf="clr-namespace:FlyleafLib;assembly=FlyleafLib"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
              xmlns:helpers="clr-namespace:LLPlayer.Extensions"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:SettingsDialogVM}"
              d:Foreground="White"
@@ -193,11 +194,28 @@
                                         Text="{Binding Filter}" />
                                     <Slider
                                         Width="200"
-                                        Style="{StaticResource MaterialDesignDiscreteSlider}"
-                                        Value="{Binding Value, Mode=TwoWay}"
+                                        Value="{Binding Value}"
                                         Minimum="{Binding Minimum}"
                                         Maximum="{Binding Maximum}"
+                                        Style="{StaticResource MaterialDesignDiscreteSlider}"
+                                        materialDesign:SliderAssist.OnlyShowFocusVisualWhileDragging="True"
+                                        VerticalAlignment="Center"
                                         IsSnapToTickEnabled="True" />
+                                    <TextBox
+                                        Width="30"
+                                        Margin="4 0 0 0"
+                                        Text="{Binding Value}"
+                                        helpers:TextBoxHelper.OnlyNumeric="Int" />
+                                    <Button
+                                        Margin="6 0 0 0"
+                                        ToolTip="Reset to default"
+                                        Style="{StaticResource MaterialDesignIconButton}"
+                                        HorizontalAlignment="Center"
+                                        Width="24"
+                                        Height="24"
+                                        Command="{Binding SetDefaultValue}">
+                                        <materialDesign:PackIcon Kind="BackupRestore" />
+                                    </Button>
                                 </StackPanel>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
