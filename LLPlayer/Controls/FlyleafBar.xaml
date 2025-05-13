@@ -288,7 +288,18 @@ Right Click: Open Context Menu</ToolTip>
                 <Button Grid.Column="9" Style="{StaticResource IconButton}" Content="{materialDesign:PackIcon Kind=SettingsOutline}" Command="{Binding FL.Action.CmdOpenWindowSettings}" ToolTip="Open Settings"/>
 
                 <!-- Toggle Sub Sidebar -->
-                <Button Grid.Column="10" Style="{StaticResource IconButton}" Content="{materialDesign:PackIcon Kind=DockRight}" Command="{Binding FL.Action.CmdToggleSidebar}" ToolTip="Toggle Sub Sidebar"/>
+                <Button Grid.Column="10" Command="{Binding FL.Action.CmdToggleSidebar}" ToolTip="Toggle Sub Sidebar">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource IconButton}">
+                            <Setter Property="Content" Value="{materialDesign:PackIcon Kind=DockRight}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding FL.Config.SidebarLeft}" Value="True">
+                                    <Setter Property="Content" Value="{materialDesign:PackIcon Kind=DockLeft}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
 
                 <!-- Toggle Fullscreen Button -->
                 <ToggleButton Grid.Column="11" Style="{StaticResource MaterialDesignActionToggleButton}" Foreground="{DynamicResource MaterialDesign.Brush.Primary}" Background="Transparent" Focusable="False" IsChecked="{Binding FL.Player.Host.IsFullScreen}" Content="{materialDesign:PackIcon Kind=Fullscreen, Size=28}" materialDesign:ToggleButtonAssist.OnContent="{materialDesign:PackIcon Kind=FullscreenExit, Size=28}" ToolTip="Toggle Fullscreen"/>
