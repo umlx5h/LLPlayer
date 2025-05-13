@@ -336,7 +336,7 @@ AncestorType={x:Type MenuItem}}}">
 
         <Separator />
 
-        <MenuItem Header="Audio" Icon="{materialDesign:PackIcon Kind=VolumeMedium}">
+        <MenuItem Header="Audio" Icon="{materialDesign:PackIcon Kind=MusicBoxOutline}">
             <MenuItem Header="Enabled" IsCheckable="True" IsChecked="{Binding FL.PlayerConfig.Audio.Enabled}"/>
             <MenuItem Header="{Binding FL.PlayerConfig.Audio.Delay, Converter={StaticResource TicksToMilliSecondsConv}}" HeaderStringFormat="Delay ({0})">
                 <MenuItem Header="Reset..." CommandParameter="0" Command="{Binding FL.Player.Commands.AudioDelaySet}"/>

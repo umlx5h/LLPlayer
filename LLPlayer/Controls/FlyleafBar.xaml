@@ -159,7 +159,7 @@
                     </Button.Style>
                 </Button>
 
-                <Button Click="ButtonBase_OnClick" Grid.Column="3" Foreground="{DynamicResource MaterialDesignBody}" Content="{materialDesign:PackIcon Kind=VolumeMedium}" ToolTip="Audio Streams">
+                <Button Click="ButtonBase_OnClick" Grid.Column="3" Foreground="{DynamicResource MaterialDesignBody}" Content="{materialDesign:PackIcon Kind=MusicBoxOutline}" ToolTip="Audio Streams">
                     <Button.Style>
                         <Style TargetType="Button" BasedOn="{StaticResource IconButton}">
                             <Setter Property="ContextMenu">
