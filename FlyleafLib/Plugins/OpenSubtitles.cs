@@ -26,16 +26,32 @@ public class OpenSubtitles : PluginBase, IOpenSubtitles, ISearchLocalSubtitles
     {
         foreach (var extStream in Selected.ExternalSubtitlesStreamsAll)
             if (extStream.Url == url)
-                return new OpenSubtitlesResults(extStream);
+                return new(extStream);
 
         string title;
 
-        try
+        if (File.Exists(url))
         {
+            Selected.FillMediaParts();
+
             FileInfo fi = new(url);
-            title = string.IsNullOrEmpty(fi.Extension) ? fi.Name : fi.Name[..^fi.Extension.Length];
+            title       = fi.Name;
         }
-        catch { title = url; }
+        else
+        {
+            try
+            {
+                Uri uri = new(url);
+                title = Path.GetFileName(uri.LocalPath);
+
+                if (title == null || title.Trim().Length == 0)
+                    title = url;
+
+            } catch
+            {
+                title = url;
+            }
+        }
 
         ExternalSubtitlesStream newExtStream = new()
         {
@@ -53,7 +69,7 @@ public class OpenSubtitles : PluginBase, IOpenSubtitles, ISearchLocalSubtitles
 
         AddExternalStream(newExtStream);
 
-        return new OpenSubtitlesResults(newExtStream);
+        return new(newExtStream);
     }
 
     public OpenSubtitlesResults Open(Stream iostream) => null;
@@ -89,12 +105,27 @@ public class OpenSubtitles : PluginBase, IOpenSubtitles, ISearchLocalSubtitles
                 }
             }
 
+            if (result.Count == 0)
+            {
+                return;
+            }
+
+            Selected.FillMediaParts();
+
             foreach (var (path, lang) in result)
             {
+                if (Selected.ExternalSubtitlesStreamsAll.Any(s => s.Url == path))
+                {
+                    continue;
+                }
+
+                FileInfo fi = new(path);
+                string title = fi.Name;
+
                 ExternalSubtitlesStream sub = new()
                 {
                     Url = path,
-                    Title = Path.GetFileNameWithoutExtension(path),
+                    Title = title,
                     Downloaded = true,
                     IsBitmap = IsSubtitleBitmap(path),
                     Language = lang

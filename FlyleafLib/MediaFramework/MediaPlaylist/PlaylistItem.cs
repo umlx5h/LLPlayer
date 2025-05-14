@@ -15,37 +15,31 @@ public class PlaylistItem : DemuxerInput
     /// </summary>
     public string   DirectUrl               { get; set; }
 
-    //public IOpen    OpenPlugin      { get; set; }
-
     /// <summary>
     /// Relative folder to playlist's folder base (can be empty, not null)
     /// Use Path.Combine(Playlist.FolderBase, Folder) to get absolute path for saving related files with the current selection item (such as subtitles)
     /// </summary>
     public string   Folder                  { get; set; } = "";
 
-
-    //public long     StoppedAt               { get; set; }
-    //public long     SubtitlesDelay          { get; set; }
-    //public long     AudioDelay              { get; set; }
-
-    /// <summary>
-    /// Item's file size
-    /// </summary>
     public long     FileSize                { get; set; }
 
     /// <summary>
-    /// Item's title
-    /// (can be updated from scrapers)
+    /// Usually just the filename part of the provided Url
     /// </summary>
-    public string   Title                   { get => _Title; set { if (_Title == "") OriginalTitle = value; SetUI(ref _Title, value ?? "", false);} }
-    string _Title = "";
+    public string   OriginalTitle           { get => _OriginalTitle;set => SetUI(ref _OriginalTitle, value ?? "", false); }
+    string _OriginalTitle = "";
 
     /// <summary>
-    /// Item's original title
-    /// (setted by opened plugin)
+    /// Movie/TVShow Title
     /// </summary>
-    public string   OriginalTitle           { get => _OriginalTitle; set => SetUI(ref _OriginalTitle, value ?? "", false); }
-    string _OriginalTitle = "";
+    public string   MediaTitle              { get => _MediaTitle;   set => SetUI(ref _MediaTitle, value ?? "", false); }
+    string _MediaTitle = "";
+
+    /// <summary>
+    /// Movie/TVShow Title including Movie's Year or TVShow's Season/Episode
+    /// </summary>
+    public string   Title                   { get => _Title;        set { if (_Title == "") OriginalTitle = value; SetUI(ref _Title, value ?? "", false);} }
+    string _Title = "";
 
     public List<Demuxer.Chapter>
                     Chapters                { get; set; } = new();
@@ -55,17 +49,15 @@ public class PlaylistItem : DemuxerInput
     public int      Year                    { get; set; }
 
     public Dictionary<string, object>
-                    Tag                     { get; set; } = new Dictionary<string, object>();
+                    Tag                     { get; set; } = [];
     public void AddTag(object tag, string pluginName)
     {
-        if (Tag.ContainsKey(pluginName))
+        if (!Tag.TryAdd(pluginName, tag))
             Tag[pluginName] = tag;
-        else
-            Tag.Add(pluginName, tag);
     }
 
     public object GetTag(string pluginName)
-        => Tag.ContainsKey(pluginName) ? Tag[pluginName] : null;
+        => Tag.TryGetValue(pluginName, out object value) ? value : null;
 
     public bool     SearchedLocal           { get; set; }
     public bool     SearchedOnline          { get; set; }
@@ -86,33 +78,60 @@ public class PlaylistItem : DemuxerInput
                                             { get; set; } = new ExternalSubtitlesStream[2];
 
     public ObservableCollection<ExternalVideoStream>
-                    ExternalVideoStreams    { get; set; } = new ObservableCollection<ExternalVideoStream>();
+                    ExternalVideoStreams    { get; set; } = [];
     public ObservableCollection<ExternalAudioStream>
-                    ExternalAudioStreams    { get; set; } = new ObservableCollection<ExternalAudioStream>();
+                    ExternalAudioStreams    { get; set; } = [];
     public ObservableCollection<ExternalSubtitlesStream>
-                    ExternalSubtitlesStreamsAll{ get; set; } = new ObservableCollection<ExternalSubtitlesStream>();
+                    ExternalSubtitlesStreamsAll
+                                            { get; set; } = [];
     internal object lockExternalStreams = new();
 
-    public void AddExternalStream(ExternalStream extStream, PlaylistItem item, string pluginName, object tag = null)
+    bool filled;
+    public void FillMediaParts() // Called during OpenScrape (if file) & Open/Search Subtitles (to be able to search online and compare tvshow/movie properly)
+    {
+        if (filled)
+            return;
+
+        filled      = true;
+        var mp      = Utils.GetMediaParts(OriginalTitle);
+        Year        = mp.Year;
+        Season      = mp.Season;
+        Episode     = mp.Episode;
+        MediaTitle  = mp.Title; // safe title to check with online subs
+
+        if (mp.Season > 0 && mp.Episode > 0) // tvshow
+        {
+            var title = "S";
+            title += Season > 9 ? Season : $"0{Season}";
+            title += "E";
+            title += Episode > 9 ? Episode : $"0{Episode}";
+
+            Title = mp.Title == "" ? title : mp.Title + " (" + title + ")";
+        }
+        else if (mp.Year > 0) // movie
+            Title = mp.Title + " (" + mp.Year + ")";
+    }
+
+    public static void AddExternalStream(ExternalStream extStream, PlaylistItem item, string pluginName, object tag = null)
     {
         lock (item.lockExternalStreams)
         {
             extStream.PlaylistItem = item;
             extStream.PluginName = pluginName;
 
-            if (extStream is ExternalAudioStream)
+            if (extStream is ExternalAudioStream astream)
             {
-                item.ExternalAudioStreams.Add((ExternalAudioStream)extStream);
+                item.ExternalAudioStreams.Add(astream);
                 extStream.Index = item.ExternalAudioStreams.Count - 1;
             }
-            else if (extStream is ExternalVideoStream)
+            else if (extStream is ExternalVideoStream vstream)
             {
-                item.ExternalVideoStreams.Add((ExternalVideoStream)extStream);
+                item.ExternalVideoStreams.Add(vstream);
                 extStream.Index = item.ExternalVideoStreams.Count - 1;
             }
-            else if (extStream is ExternalSubtitlesStream)
+            else if (extStream is ExternalSubtitlesStream sstream)
             {
-                item.ExternalSubtitlesStreamsAll.Add((ExternalSubtitlesStream)extStream);
+                item.ExternalSubtitlesStreamsAll.Add(sstream);
                 extStream.Index = item.ExternalSubtitlesStreamsAll.Count - 1;
             }
 

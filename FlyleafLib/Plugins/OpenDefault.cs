@@ -25,7 +25,7 @@ public class OpenDefault : PluginBase, IOpen, IScrapeItem
         {
             if (Playlist.IOStream != null)
             {
-                AddPlaylistItem(new PlaylistItem()
+                AddPlaylistItem(new()
                 {
                     IOStream= Playlist.IOStream,
                     Title   = "Custom IO Stream",
@@ -34,7 +34,7 @@ public class OpenDefault : PluginBase, IOpen, IScrapeItem
 
                 Handler.OnPlaylistCompleted();
 
-                return new OpenResults();
+                return new();
             }
 
             // Proper Url Format
@@ -64,7 +64,7 @@ public class OpenDefault : PluginBase, IOpen, IScrapeItem
 
                 foreach(var mitem in items)
                 {
-                    AddPlaylistItem(new PlaylistItem()
+                    AddPlaylistItem(new()
                     {
                         Title       = mitem.Title,
                         Url         = mitem.Url,
@@ -76,7 +76,7 @@ public class OpenDefault : PluginBase, IOpen, IScrapeItem
 
                 Handler.OnPlaylistCompleted();
 
-                return new OpenResults();
+                return new();
             }
             else if (ext == "pls")
             {
@@ -98,17 +98,17 @@ public class OpenDefault : PluginBase, IOpen, IScrapeItem
 
                 Handler.OnPlaylistCompleted();
 
-                return new OpenResults();
+                return new();
             }
 
+            FileInfo fi = null;
             // Single Playlist Item
-
             if (uriType == "file")
             {
                 Playlist.InputType = InputType.File;
                 if (File.Exists(Playlist.Url))
                 {
-                    FileInfo fi = new(Playlist.Url);
+                    fi = new(Playlist.Url);
                     Playlist.FolderBase = fi.DirectoryName;
                 }
             }
@@ -134,26 +134,32 @@ public class OpenDefault : PluginBase, IOpen, IScrapeItem
                 DirectUrl   = Playlist.Url
             };
 
-            if (File.Exists(Playlist.Url))
+            if (fi == null && File.Exists(Playlist.Url))
             {
-                FileInfo fi = new(Playlist.Url);
-                item.Title = fi.Extension == null ? fi.Name : fi.Name[..^fi.Extension.Length];
-                item.FileSize = fi.Length;
+                fi              = new(Playlist.Url);
+                item.Title      = fi.Name;
+                item.FileSize   = fi.Length;
             }
             else
-                item.Title = localPath != null ? Path.GetFileName(localPath) : Playlist.Url;
+            {
+                if (localPath != null)
+                    item.Title = Path.GetFileName(localPath);
+
+                if (item.Title == null || item.Title.Trim().Length == 0)
+                    item.Title = Playlist.Url;
+            }
 
             AddPlaylistItem(item);
             Handler.OnPlaylistCompleted();
 
-            return new OpenResults();
+            return new();
         } catch (Exception e)
         {
-            return new OpenResults(e.Message);
+            return new(e.Message);
         }
     }
 
-    public OpenResults OpenItem() => new OpenResults();
+    public OpenResults OpenItem() => new();
 
     public void ScrapeItem(PlaylistItem item)
     {
@@ -161,19 +167,6 @@ public class OpenDefault : PluginBase, IOpen, IScrapeItem
         if (Playlist.InputType != InputType.File && Playlist.InputType != InputType.UNC && Playlist.InputType != InputType.Torrent)
             return;
 
-        var mp = Utils.GetMediaParts(item.OriginalTitle);
-        item.Title = mp.Title;
-        item.Year  = mp.Year;
-
-        if (mp.Season > 0)
-        {
-            item.Season  = mp.Season;
-            item.Episode = mp.Episode;
-
-            item.Title  += " S";
-            item.Title  += item.Season  > 9 ? item.Season   : $"0{item.Season}";
-            item.Title  += "E";
-            item.Title  += item.Episode > 9 ? item.Episode  : $"0{item.Episode}";
-        }
+        item.FillMediaParts();
     }
 }

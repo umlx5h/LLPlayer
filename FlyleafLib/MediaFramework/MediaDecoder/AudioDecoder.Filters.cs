@@ -207,7 +207,7 @@ public unsafe partial class AudioDecoder
             if (Disposed)
                 return ret;
 
-            if (Config.Audio.FiltersEnabled && Engine.FFmpeg.FiltersLoaded)
+            if (Config.Audio.FiltersEnabled)
             {
                 ret = SetupFilters();
 
@@ -236,9 +236,12 @@ public unsafe partial class AudioDecoder
     }
     public int ReloadFilters()
     {
+        if (!Config.Audio.FiltersEnabled)
+            return -1;
+
         lock (lockActions)
             lock (lockCodecCtx)
-                return !Engine.FFmpeg.FiltersLoaded || Config.Audio.FiltersEnabled ? -1 : SetupFilters();
+                return SetupFilters();
     }
 
     private void ProcessFilters()
