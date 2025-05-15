@@ -894,7 +894,13 @@ public static class KeyBindingActionExtensions
             case KeyBindingAction.SubsNextSeek:
             case KeyBindingAction.SubsPrevSeekFallback:
             case KeyBindingAction.SubsNextSeekFallback:
+            case KeyBindingAction.SubsPrevSeek2:
+            case KeyBindingAction.SubsCurSeek2:
+            case KeyBindingAction.SubsNextSeek2:
+            case KeyBindingAction.SubsPrevSeekFallback2:
+            case KeyBindingAction.SubsNextSeekFallback2:
                 return KeyBindingActionGroup.Subtitles;
+
             case KeyBindingAction.ShowNextFrame:
             case KeyBindingAction.ShowPrevFrame:
             case KeyBindingAction.SpeedAdd:

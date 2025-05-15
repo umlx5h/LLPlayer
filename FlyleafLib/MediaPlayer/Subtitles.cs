@@ -779,60 +779,77 @@ public class Subtitles
         Config.Subtitles[1].Visible = !Config.Subtitles[1].Visible;
     }
 
-    private bool _prevSeek()
+    private bool _prevSeek(int subIndex)
     {
-        var prev = _player.SubtitlesManager[0].GetPrev();
+        var prev = _player.SubtitlesManager[subIndex].GetPrev();
         if (prev is not null)
         {
-            _player.SeekAccurate(prev.StartTime, 0);
+            _player.SeekAccurate(prev.StartTime, subIndex);
             return true;
         }
 
         return false;
     }
 
-    public void PrevSeek() => _prevSeek();
+    public void PrevSeek() => _prevSeek(0);
+    public void PrevSeek2() => _prevSeek(1);
 
     public void PrevSeekFallback()
     {
-        bool seeked = _prevSeek();
-        if (!seeked)
+        if (!_prevSeek(0))
+        {
+            _player.SeekBackward2();
+        }
+    }
+    public void PrevSeekFallback2()
+    {
+        if (!_prevSeek(1))
         {
             _player.SeekBackward2();
         }
     }
 
-    public void CurSeek()
+    private void _curSeek(int subIndex)
     {
-        var cur = _player.SubtitlesManager[0].GetCurrent();
+        var cur = _player.SubtitlesManager[subIndex].GetCurrent();
         if (cur is not null)
         {
-            _player.SeekAccurate(cur.StartTime, 0);
+            _player.SeekAccurate(cur.StartTime, subIndex);
         }
         else
         {
             // fallback to prevSeek (same as mpv)
-            PrevSeek();
+            _prevSeek(subIndex);
         }
     }
 
-    private bool _nextSeek()
+    public void CurSeek() => _curSeek(0);
+    public void CurSeek2() => _curSeek(1);
+
+    private bool _nextSeek(int subIndex)
     {
-        var next = _player.SubtitlesManager[0].GetNext();
+        var next = _player.SubtitlesManager[subIndex].GetNext();
         if (next is not null)
         {
-            _player.SeekAccurate(next.StartTime, 0);
+            _player.SeekAccurate(next.StartTime, subIndex);
             return true;
         }
         return false;
     }
 
-    public void NextSeek() => _nextSeek();
+    public void NextSeek() => _nextSeek(0);
+    public void NextSeek2() => _nextSeek(1);
 
     public void NextSeekFallback()
     {
-        bool seeked = _nextSeek();
-        if (!seeked)
+        if (!_nextSeek(0))
+        {
+            _player.SeekForward2();
+        }
+    }
+    public void NextSeekFallback2()
+    {
+        if (!_nextSeek(1))
         {
             _player.SeekForward2();
         }

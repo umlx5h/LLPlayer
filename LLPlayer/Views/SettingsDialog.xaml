@@ -52,7 +52,7 @@
                     <TreeViewItem Tag="SettingsAudio">
                         <TreeViewItem.Header>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <materialDesign:PackIcon Kind="Headphones" Width="24" Height="24" Margin="0 0 8 0" />
+                                <materialDesign:PackIcon Kind="MusicBox" Width="24" Height="24" Margin="0 0 8 0" />
                                 <TextBlock Text="Audio" VerticalAlignment="Center" />
                             </StackPanel>
                         </TreeViewItem.Header>

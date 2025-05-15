@@ -488,6 +488,17 @@ public class KeysConfig
             case KeyBindingAction.SubsPrevSeekFallback:
                 return player.Subtitles.PrevSeekFallback;
 
+            case KeyBindingAction.SubsCurSeek2:
+                return player.Subtitles.CurSeek2;
+            case KeyBindingAction.SubsPrevSeek2:
+                return player.Subtitles.PrevSeek2;
+            case KeyBindingAction.SubsNextSeek2:
+                return player.Subtitles.NextSeek2;
+            case KeyBindingAction.SubsNextSeekFallback2:
+                return player.Subtitles.NextSeekFallback2;
+            case KeyBindingAction.SubsPrevSeekFallback2:
+                return player.Subtitles.PrevSeekFallback2;
+
             case KeyBindingAction.SpeedAdd:
                 return player.SpeedUp;
 
@@ -720,6 +731,7 @@ public enum KeyBindingAction
     SeekForward4,
     [Description("Seek backwards (4)")]
     SeekBackward4,
+
     [Description("Seek to the previous subtitle")]
     SubsPrevSeek,
     [Description("Seek to the current subtitle")]
@@ -730,6 +742,17 @@ public enum KeyBindingAction
     SubsPrevSeekFallback,
     [Description("Seek to the next subtitle or seek forwards")]
     SubsNextSeekFallback,
+
+    [Description("Seek to the previous secondary subtitle")]
+    SubsPrevSeek2,
+    [Description("Seek to the current secondary subtitle")]
+    SubsCurSeek2,
+    [Description("Seek to the next secondary subtitle")]
+    SubsNextSeek2,
+    [Description("Seek to the previous secondary subtitle or seek backwards")]
+    SubsPrevSeekFallback2,
+    [Description("Seek to the next secondary subtitle or seek forwards")]
+    SubsNextSeekFallback2,
 
     [Description("Speed Up (1)")]
     SpeedAdd,
