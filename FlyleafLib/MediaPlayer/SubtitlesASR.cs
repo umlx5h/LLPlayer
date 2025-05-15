@@ -920,7 +920,15 @@ public class WhisperCppASRService : IASRService
         WhisperProcessorBuilder whisperBuilder = _factory.CreateBuilder();
         _processor = _config.Subtitles.WhisperCppConfig.ConfigureBuilder(_config.Subtitles.WhisperConfig, whisperBuilder).Build();
 
-        _isLanguageDetect = _config.Subtitles.WhisperConfig.LanguageDetection;
+        if (_config.Subtitles.WhisperCppConfig.IsEnglishModel)
+        {
+            _isLanguageDetect = false;
+            _detectedLanguage = "en";
+        }
+        else
+        {
+            _isLanguageDetect = _config.Subtitles.WhisperConfig.LanguageDetection;
+        }
     }
 
     public async ValueTask DisposeAsync()
@@ -967,9 +975,19 @@ public class FasterWhisperASRService : IASRService
     {
         _config = config;
 
-        _isLanguageDetect = _config.Subtitles.WhisperConfig.LanguageDetection;
-        _manualLanguage = _config.Subtitles.WhisperConfig.Language;
         _cmdBase = BuildCommand(_config.Subtitles.FasterWhisperConfig, _config.Subtitles.WhisperConfig);
+
+        if (_config.Subtitles.FasterWhisperConfig.IsEnglishModel)
+        {
+            // force English and disable auto-detection
+            _isLanguageDetect = false;
+            _manualLanguage = "en";
+        }
+        else
+        {
+            _isLanguageDetect = _config.Subtitles.WhisperConfig.LanguageDetection;
+            _manualLanguage = _config.Subtitles.WhisperConfig.Language;
+        }
 
         if (!_config.Subtitles.FasterWhisperConfig.UseManualModel)
         {
@@ -1008,11 +1026,18 @@ public class FasterWhisperASRService : IASRService
         args.Add("--model_dir")
             .Add(config.UseManualModel ? config.ManualModelDir! : WhisperConfig.ModelsDirectory);
 
-        if (commonConfig.Translate)
-            args.Add("--task").Add("translate");
+        if (config.IsEnglishModel)
+        {
+            args.Add("--language").Add("en");
+        }
+        else
+        {
+            if (commonConfig.Translate)
+                args.Add("--task").Add("translate");
 
-        if (!commonConfig.LanguageDetection)
-            args.Add("--language").Add(commonConfig.Language);
+            if (!commonConfig.LanguageDetection)
+                args.Add("--language").Add(commonConfig.Language);
+        }
 
         string arguments = args.Build();
 

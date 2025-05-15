@@ -195,6 +195,26 @@
                                         Command="{Binding CmdDownloadModel}" />
                                 </StackPanel>
 
+                                <StackPanel Orientation="Horizontal" Visibility="{Binding FL.PlayerConfig.Subtitles.WhisperCppConfig.IsEnglishModel, Converter={StaticResource BooleanToVisibilityConv}}">
+                                    <TextBlock
+                                        Width="200">
+                                        <Run Text="    [Is English Model]" />
+                                        <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                            <ToolTipService.ToolTip>
+                                                <TextBlock
+                                                    Text="True for English-only models, in which case the Audio Language setting above is ignored."
+                                                    TextWrapping="Wrap"
+                                                    MaxWidth="400" />
+                                            </ToolTipService.ToolTip>
+                                            <materialDesign:PackIcon
+                                                Kind="Information"
+                                                Width="16" Height="16"
+                                                Margin="4 0 0 0" />
+                                        </InlineUIContainer>
+                                    </TextBlock>
+                                    <TextBlock Text="Yes" />
+                                </StackPanel>
+
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock
                                         Width="200">
@@ -487,6 +507,26 @@
                                         Command="{Binding CmdOpenModelFolder}">
                                         <materialDesign:PackIcon Kind="Folder" />
                                     </Button>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Visibility="{Binding FL.PlayerConfig.Subtitles.FasterWhisperConfig.IsEnglishModel, Converter={StaticResource BooleanToVisibilityConv}}">
+                                    <TextBlock
+                                        Width="180">
+                                        <Run Text="    [Is English Model]" />
+                                        <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                            <ToolTipService.ToolTip>
+                                                <TextBlock
+                                                    Text="True for English-only models, in which case the Audio Language setting above is ignored."
+                                                    TextWrapping="Wrap"
+                                                    MaxWidth="400" />
+                                            </ToolTipService.ToolTip>
+                                            <materialDesign:PackIcon
+                                                Kind="Information"
+                                                Width="16" Height="16"
+                                                Margin="4 0 0 0" />
+                                        </InlineUIContainer>
+                                    </TextBlock>
+                                    <TextBlock Text="Yes" />
                                 </StackPanel>
 
                                 <StackPanel Orientation="Horizontal">

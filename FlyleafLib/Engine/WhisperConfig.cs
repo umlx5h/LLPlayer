@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text.Json.Serialization;
 using Whisper.net;
 using Whisper.net.LibraryLoader;
 
@@ -96,9 +97,17 @@ public class WhisperCppConfig : NotifyPropertyChanged
     public WhisperCppModel? Model
     {
         get;
-        // When binding in the configuration GUI, the check is set to false to update the current size.
-        set => Set(ref field, value, false);
+        set
+        {
+            if (Set(ref field, value))
+            {
+                Raise(nameof(IsEnglishModel));
+            }
+        }
     }
+
+    [JsonIgnore]
+    public bool IsEnglishModel => Model != null && Model.Model.ToString().EndsWith("En");
 
     public List<RuntimeLibrary> RuntimeLibraries { get; set => Set(ref field, value); } = [RuntimeLibrary.Cpu, RuntimeLibrary.CpuNoAvx];
     public RuntimeLibrary? LoadedLibrary => RuntimeOptions.LoadedLibrary;
@@ -126,15 +135,23 @@ public class WhisperCppConfig : NotifyPropertyChanged
 
     public WhisperProcessorBuilder ConfigureBuilder(WhisperConfig whisperConfig, WhisperProcessorBuilder builder)
     {
-        if (!string.IsNullOrEmpty(whisperConfig.Language))
-            builder.WithLanguage(whisperConfig.Language);
+        if (IsEnglishModel)
+        {
+            // set English forcefully if English-only models
+            builder.WithLanguage("en");
+        }
+        else
+        {
+            if (!string.IsNullOrEmpty(whisperConfig.Language))
+                builder.WithLanguage(whisperConfig.Language);
 
-        // prefer auto
-        if (whisperConfig.LanguageDetection)
-            builder.WithLanguageDetection();
+            // prefer auto
+            if (whisperConfig.LanguageDetection)
+                builder.WithLanguageDetection();
 
-        if (whisperConfig.Translate)
-            builder.WithTranslate();
+            if (whisperConfig.Translate)
+                builder.WithTranslate();
+        }
 
         if (Threads is > 0)
             builder.WithThreads(Threads.Value);
@@ -199,7 +216,22 @@ public class FasterWhisperConfig : NotifyPropertyChanged
     public string? ManualEnginePath { get; set => Set(ref field, value); }
     public bool UseManualModel { get; set => Set(ref field, value); }
     public string? ManualModelDir { get; set => Set(ref field, value); }
-    public string Model { get; set => Set(ref field, value); } = "tiny";
+    public string Model
+    {
+        get;
+        set
+        {
+            if (Set(ref field, value))
+            {
+                Raise(nameof(IsEnglishModel));
+            }
+        }
+    } = "tiny";
+    [JsonIgnore]
+    public bool IsEnglishModel => Model.EndsWith(".en") ||
+                                  Model is "distil-large-v2"
+                                        or "distil-large-v3"
+                                        or "distil-large-v3.5";
     public string ExtraArguments { get; set => Set(ref field, value); } = string.Empty;
 
     public ProcessPriorityClass ProcessPriority { get; set => Set(ref field, value); } = ProcessPriorityClass.Normal;

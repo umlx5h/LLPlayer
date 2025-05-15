@@ -287,7 +287,6 @@ public class SubManager : INotifyPropertyChanged
         return null;
     }
 
-    private readonly SubtitleTimeComparer _timeComparer = new();
     private readonly SubtitleData _searchSub = new();
 
     public SubManager SetCurrentTime(TimeSpan currentTime)
@@ -310,7 +309,7 @@ public class SubManager : INotifyPropertyChanged
 
             _searchSub.StartTime = currentTime;
 
-            int ret = Subs.BinarySearch(_searchSub, _timeComparer);
+            int ret = Subs.BinarySearch(_searchSub, SubtitleTimeStartComparer.Instance);
             int cur = -1;
 
             if (~ret == 0)
@@ -379,7 +378,7 @@ public class SubManager : INotifyPropertyChanged
             if (Subs.Count == 0)
                 return;
 
-            Subs.Sort((s1, s2) => s1.StartTime.CompareTo(s2.StartTime));
+            Subs.Sort(SubtitleTimeStartComparer.Instance);
         }
     }
 
@@ -408,22 +407,6 @@ public class SubManager : INotifyPropertyChanged
                     sub.Dispose();
                 }
             }
-        }
-    }
-
-    private class SubtitleTimeComparer : IComparer<SubtitleData>
-    {
-        public int Compare(SubtitleData? x, SubtitleData? y)
-        {
-            return x!.StartTime.CompareTo(y!.StartTime);
-        }
-    }
-
-    private class SubtitleTimeEndComparer : IComparer<SubtitleData>
-    {
-        public int Compare(SubtitleData? x, SubtitleData? y)
-        {
-            return x!.EndTime.CompareTo(y!.EndTime);
         }
     }
 
@@ -1049,6 +1032,34 @@ public class SubtitleData : IDisposable, INotifyPropertyChanged
     #endregion
 }
 
+public class SubtitleTimeStartComparer : Comparer<SubtitleData>
+{
+    public static SubtitleTimeStartComparer Instance { get; } = new();
+    private SubtitleTimeStartComparer() { }
+    static SubtitleTimeStartComparer() { }
+
+    public override int Compare(SubtitleData? x, SubtitleData? y)
+    {
+        if (object.Equals(x, y)) return 0;
+        if (x == null) return -1;
+        if (y == null) return 1;
+
+        return x.StartTime.CompareTo(y.StartTime);
+    }
+}
+
+public class SubtitleTimeEndComparer : Comparer<SubtitleData>
+{
+    public override int Compare(SubtitleData? x, SubtitleData? y)
+    {
+        if (object.Equals(x, y)) return 0;
+        if (x == null) return -1;
+        if (y == null) return 1;
+
+        return x.EndTime.CompareTo(y.EndTime);
+    }
+}
+
 internal static class WrapperHelper
 {
     public static int ThrowExceptionIfError(this int error, string message)
@@ -1081,10 +1092,8 @@ public static class ObservableCollectionExtensions
 {
     public static int FindIndex<T>(this ObservableCollection<T> collection, Predicate<T> match)
     {
-        if (collection == null)
-            throw new ArgumentNullException(nameof(collection));
-        if (match == null)
-            throw new ArgumentNullException(nameof(match));
+        ArgumentNullException.ThrowIfNull(collection);
+        ArgumentNullException.ThrowIfNull(match);
 
         for (int i = 0; i < collection.Count; i++)
         {
@@ -1096,8 +1105,7 @@ public static class ObservableCollectionExtensions
 
     public static int BinarySearch<T>(this ObservableCollection<T> collection, T item, IComparer<T> comparer)
     {
-        if (collection == null)
-            throw new ArgumentNullException(nameof(collection));
+        ArgumentNullException.ThrowIfNull(collection);
 
         //comparer ??= Comparer<T>.Default;
         int low = 0;
@@ -1121,23 +1129,20 @@ public static class ObservableCollectionExtensions
 
     public static IEnumerable<T> GetRange<T>(this ObservableCollection<T> collection, int index, int count)
     {
-        if (collection == null)
-            throw new ArgumentNullException(nameof(collection));
+        ArgumentNullException.ThrowIfNull(collection);
         if (index < 0 || count < 0 || (index + count) > collection.Count)
             throw new ArgumentOutOfRangeException();
 
         return collection.Skip(index).Take(count);
     }
 
-    public static void Sort<T>(this ObservableCollection<T> collection, Comparison<T> comparison)
+    public static void Sort<T>(this ObservableCollection<T> collection, IComparer<T> comparer)
     {
-        if (collection == null)
-            throw new ArgumentNullException(nameof(collection));
-        if (comparison == null)
-            throw new ArgumentNullException(nameof(comparison));
+        ArgumentNullException.ThrowIfNull(collection);
+        ArgumentNullException.ThrowIfNull(comparer);
 
         List<T> sortedList = collection.ToList();
-        sortedList.Sort(comparison);
+        sortedList.Sort(comparer);
 
         collection.Clear();
         foreach (var item in sortedList)
