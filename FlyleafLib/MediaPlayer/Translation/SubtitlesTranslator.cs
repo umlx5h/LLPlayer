@@ -22,6 +22,8 @@ public class SubTranslator
     private readonly TranslateServiceFactory _translateServiceFactory;
     private Task? _translateTask;
     private bool _isReset;
+    private Language? _srcLang;
+
     private bool IsEnabled => _config[_subIndex].EnabledTranslated;
 
     private readonly LogHandler Log;
@@ -54,6 +56,12 @@ public class SubTranslator
             case nameof(SubManager.CurrentIndex):
                 if (!IsEnabled || _subManager.Subs.Count == 0 || _subManager.Language == null)
                     return;
+
+                if (_translateService == null)
+                {
+                    // capture for later initialization
+                    _srcLang = _subManager.Language;
+                }
 
                 if (_translationStartCancellation != null)
                 {
@@ -116,6 +124,7 @@ public class SubTranslator
 
             _translateService?.Dispose();
             _translateService = null;
+            _srcLang = null;
         }
         finally
         {
@@ -199,7 +208,7 @@ public class SubTranslator
             if (_translateService == null)
             {
                 var service = _translateServiceFactory.GetService(_config.TranslateServiceType, false);
-                service.Initialize(_subManager.Language, _config.TranslateTargetLanguage);
+                service.Initialize(_srcLang!, _config.TranslateTargetLanguage);
 
                 Volatile.Write(ref _translateService, service);
             }

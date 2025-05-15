@@ -195,8 +195,8 @@ public partial class WordPopup : UserControl, INotifyPropertyChanged
         var srcLang = FL.Player.SubtitlesManager[e.SubIndex].Language;
         var targetLang = FL.PlayerConfig.Subtitles.TranslateTargetLanguage;
 
-        // Same language
-        if (srcLang?.ISO6391 == targetLang.ToISO6391())
+        // Not set language or same language
+        if (srcLang == null || srcLang.ISO6391 == targetLang.ToISO6391())
         {
             return text;
         }
