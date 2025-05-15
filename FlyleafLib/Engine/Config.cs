@@ -1040,6 +1040,8 @@ public class Config : NotifyPropertyChanged
         /// </summary>
         public bool EnabledCached { get; set => Set(ref field, value); } = true;
 
+        public bool OpenAutomaticSubs { get; set => Set(ref field, value); }
+
         /// <summary>
         /// Subtitle languages preference by priority
         /// </summary>

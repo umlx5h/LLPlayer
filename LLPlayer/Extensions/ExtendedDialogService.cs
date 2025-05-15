@@ -8,6 +8,8 @@ namespace LLPlayer.Extensions;
 /// </summary>
 public class ExtendedDialogService(IContainerExtension containerExtension) : DialogService(containerExtension)
 {
+    private bool _isOrphan;
+
     protected override void ConfigureDialogWindowContent(string dialogName, IDialogWindow window, IDialogParameters parameters)
     {
         base.ConfigureDialogWindowContent(dialogName, window, parameters);
@@ -15,7 +17,19 @@ public class ExtendedDialogService(IContainerExtension containerExtension) : Dia
         if (parameters != null &&
             parameters.ContainsKey(MyKnownDialogParameters.OrphanWindow))
         {
-            window.Owner = null;
+            _isOrphan = true;
+        }
+    }
+
+    protected override void ShowDialogWindow(IDialogWindow dialogWindow, bool isModal)
+    {
+        base.ShowDialogWindow(dialogWindow, isModal);
+
+        if (_isOrphan)
+        {
+            // Show and then clear Owner to place the window based on the parent window and then make it an orphan window.
+            _isOrphan = false;
+            dialogWindow.Owner = null;
         }
     }
 }
