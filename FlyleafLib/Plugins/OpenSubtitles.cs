@@ -1,6 +1,7 @@
 ﻿using FlyleafLib.MediaFramework.MediaStream;
 using Lingua;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace FlyleafLib.Plugins;
@@ -20,7 +21,7 @@ public class OpenSubtitles : PluginBase, IOpenSubtitles, ISearchLocalSubtitles
 
     public OpenSubtitlesResults Open(string url)
     {
-        foreach(var extStream in Selected.ExternalSubtitlesStreamsAll)
+        foreach (var extStream in Selected.ExternalSubtitlesStreamsAll)
             if (extStream.Url == url)
                 return new OpenSubtitlesResults(extStream);
 
@@ -35,10 +36,10 @@ public class OpenSubtitles : PluginBase, IOpenSubtitles, ISearchLocalSubtitles
 
         ExternalSubtitlesStream newExtStream = new()
         {
-            Url         = url,
-            Title       = title,
-            Downloaded  = true,
-            IsBitmap    = IsSubtitleBitmap(url),
+            Url = url,
+            Title = title,
+            Downloaded = true,
+            IsBitmap = IsSubtitleBitmap(url),
         };
 
         if (Config.Subtitles.LanguageAutoDetect && !newExtStream.IsBitmap)
@@ -58,32 +59,51 @@ public class OpenSubtitles : PluginBase, IOpenSubtitles, ISearchLocalSubtitles
     {
         try
         {
-            // Checks for text subtitles with the same file name and reads them
-            // TODO: L: Search for subtitles with filenames like video file.XXX.srt
+            // Checks for subtitle files located in the same directory as the video,
+            // where the subtitle file name starts with the video file name exact and reads them.
+            // Also tries to detect the subtitle language from the additional part of the file name.
             // TODO: L: Allow reading from specific folders as well.
-            foreach (string ext in Utils.ExtensionsSubtitles)
+            string currentFilename = Path.GetFileNameWithoutExtension(Playlist.Url);
+            string currentDirectory = Path.GetDirectoryName(Playlist.Url);
+
+            var subtitles = Directory.EnumerateFiles(currentDirectory, "*.*", SearchOption.TopDirectoryOnly)
+                .Where(file => Utils.ExtensionsSubtitles.Any(
+                    ext => string.Equals(Path.GetExtension(file).TrimStart('.'), ext, StringComparison.OrdinalIgnoreCase)
+                    )
+                && Path.GetFileNameWithoutExtension(file).StartsWith(currentFilename)
+                );
+
+            foreach (string subPath in subtitles)
             {
-                string subPath = Path.ChangeExtension(Playlist.Url, ext);
-                if (File.Exists(subPath))
+                ExternalSubtitlesStream sub = new()
                 {
-                    ExternalSubtitlesStream sub = new()
-                    {
-                        Url = subPath,
-                        Title = Path.GetFileNameWithoutExtension(subPath),
-                        Downloaded = true,
-                        IsBitmap = IsSubtitleBitmap(subPath),
-                    };
+                    Url = subPath,
+                    Title = Path.GetFileNameWithoutExtension(subPath),
+                    Downloaded = true,
+                    IsBitmap = IsSubtitleBitmap(subPath),
+                };
 
-                    if (Config.Subtitles.LanguageAutoDetect && !sub.IsBitmap)
+                string extraPart = Path.GetFileNameWithoutExtension(subPath).Substring(currentFilename.Length);
+
+                foreach (string el in extraPart.Split(".", StringSplitOptions.RemoveEmptyEntries))
+                {
+                    Language subLanguage = Language.Get(el);
+                    if (!subLanguage.IdSubLanguage.Equals("und"))
                     {
-                        sub.Language = DetectLanguage(subPath);
-                        sub.LanguageDetected = true;
+                        sub.Language = subLanguage;
+                        break;
                     }
-
-                    Log.Debug($"Adding [{sub.Language.TopEnglishName}] {subPath}");
-
-                    AddExternalStream(sub);
                 }
+
+                if (sub.Language == Language.Unknown && Config.Subtitles.LanguageAutoDetect && !sub.IsBitmap)
+                {
+                    sub.Language = DetectLanguage(subPath);
+                    sub.LanguageDetected = true;
+                }
+
+                Log.Debug($"Adding [{sub.Language.TopEnglishName}] {subPath}");
+
+                AddExternalStream(sub);
             }
         }
         catch (Exception e)
