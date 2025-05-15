@@ -108,7 +108,7 @@ public class AppActions
             new() { ActionName = nameof(CustomKeyBindingAction.SubsDistanceIncrease), Key = Key.Up, Ctrl = true, Shift = true },
             new() { ActionName = nameof(CustomKeyBindingAction.SubsDistanceDecrease), Key = Key.Down, Ctrl = true, Shift = true },
             new() { ActionName = nameof(CustomKeyBindingAction.SubsPrimaryTextCopy), Key = Key.C, Ctrl = true, IsKeyUp = true },
-            new() { ActionName = nameof(CustomKeyBindingAction.ToggleSubsAutoTextCopy), Key = Key.A, Alt = true, IsKeyUp = true },
+            new() { ActionName = nameof(CustomKeyBindingAction.ToggleSubsAutoTextCopy), Key = Key.A, Ctrl = true, IsKeyUp = true },
             new() { ActionName = nameof(CustomKeyBindingAction.ActivateSubsSearch), Key = Key.F, Ctrl = true, IsKeyUp = true },
             new() { ActionName = nameof(CustomKeyBindingAction.ToggleSidebar), Key = Key.B, Ctrl = true, IsKeyUp = true },
             new() { ActionName = nameof(CustomKeyBindingAction.ToggleDebugOverlay), Key = Key.D, Ctrl = true, Shift = true, IsKeyUp = true },

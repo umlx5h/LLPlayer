@@ -168,6 +168,15 @@ public class Config : NotifyPropertyChanged
             {
                 Player.KeyBindings.Keys.Add(new KeyBinding { Ctrl = true, Key = System.Windows.Input.Key.T, IsKeyUp = true, Action = KeyBindingAction.Custom, ActionName = "ToggleAlwaysOnTop" });
             }
+
+            // Set Ctrl+A for ToggleSubsAutoTextCopy (previous Alt+A)
+            int ctrlABindingIdx = Player.KeyBindings.Keys
+                .FindIndex(k => k.Key == System.Windows.Input.Key.A &&
+                             k.Ctrl && !k.Alt && !k.Shift);
+            if (ctrlABindingIdx == -1)
+            {
+                Player.KeyBindings.Keys.Add(new KeyBinding { Ctrl = true, Key = System.Windows.Input.Key.A, IsKeyUp = true, Action = KeyBindingAction.Custom, ActionName = "ToggleSubsAutoTextCopy" });
+            }
         }
     }
 
