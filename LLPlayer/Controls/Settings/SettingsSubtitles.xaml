@@ -63,6 +63,27 @@
 
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
+                            Width="180">
+                            Open Automatic Subs
+                            <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                <ToolTipService.ToolTip>
+                                    <TextBlock
+                                        Text="If enabled, automatic subtitles such as those on YouTube are automatically opened. If disabled, they will be added but not auto-open."
+                                        TextWrapping="Wrap"
+                                        MaxWidth="400" />
+                                </ToolTipService.ToolTip>
+                                <materialDesign:PackIcon
+                                    Kind="Information"
+                                    Width="16" Height="16"
+                                    Margin="4 0 0 0" />
+                            </InlineUIContainer>
+                        </TextBlock>
+                        <ToggleButton
+                            IsChecked="{Binding FL.PlayerConfig.Subtitles.OpenAutomaticSubs}" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
                             Width="180"
                             Text="Export UTF8 with BOM" />
                         <ToggleButton

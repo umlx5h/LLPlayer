@@ -7,12 +7,12 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Install .NET
+    - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.x
 
-    - name: Restore
+    - name: Restore dependencies
       shell: pwsh
       run: dotnet restore
 
@@ -49,7 +49,7 @@ runs:
         # Copy FFmpeg
         Copy-Item .\FFmpeg -Destination $pub -Recurse
 
-    - name: Build Plugin YoutubeDL
+    - name: Build Plugin (YoutubeDL)
       shell: pwsh
       run: |
         dotnet publish .\Plugins\YoutubeDL\YoutubeDL.csproj `
