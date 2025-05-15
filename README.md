@@ -209,6 +209,8 @@ For more information for developers, please check the following page.
 
 https://github.com/umlx5h/LLPlayer/wiki/For-Developers
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/umlx5h/LLPlayer)
+
 ## 🙏 Special Thanks
 
 LLPlayer would not exist without the following!
