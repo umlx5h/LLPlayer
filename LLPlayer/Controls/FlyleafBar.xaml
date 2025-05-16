@@ -53,6 +53,13 @@
                             <Binding Path="FL.Player.BufferedDuration" Converter="{StaticResource TicksToSecondsConv}" Mode="OneWay"/>
                         </MultiBinding>
                     </Slider.SelectionEnd>
+                    <Slider.Tag>
+                        <MultiBinding Converter="{StaticResource MultiplyWidthByProgressConv}">
+                            <Binding Path="ActualWidth" RelativeSource="{RelativeSource Self}" Mode="OneWay"/>
+                            <Binding Path="FL.Player.SubtitlesASR.LatestSubtitleTime" Mode="OneWay"/>
+                            <Binding Path="FL.Player.Duration" Mode="OneWay"/>
+                        </MultiBinding>
+                    </Slider.Tag>
                 </Slider>
                 <!-- Remaining time -->
                 <!-- TODO: L: config -->
