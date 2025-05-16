@@ -34,11 +34,71 @@
 
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
-                            Width="180"
-                            Text="Search Local" />
+                            Width="180">
+                            Search Local
+                            <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                <ToolTipService.ToolTip>
+                                    <TextBlock
+                                        TextWrapping="Wrap"
+                                        MaxWidth="400">
+                                        <Run Text="If enabled, subtitle files in the same path as the media file are automatically opened. The following subtitle files will be opened."/>
+                                        <LineBreak />
+                                        <LineBreak /><Run Text="- video.srt" />
+                                        <LineBreak /><Run Text="- video.en.srt (language is set from the lang code)" />
+                                        <LineBreak /><Run Text="- video.eng.srt (same as above)" />
+                                        <LineBreak /><Run Text="- video.foo.srt (language is auto-detected)" />
+                                        <LineBreak /><Run Text="- path\video.srt" />
+                                    </TextBlock>
+                                </ToolTipService.ToolTip>
+                                <materialDesign:PackIcon
+                                    Kind="Information"
+                                    Width="16" Height="16"
+                                    Margin="4 0 0 0" />
+                                </InlineUIContainer>
+                        </TextBlock>
                         <ToggleButton
                             IsChecked="{Binding FL.PlayerConfig.Subtitles.SearchLocal}" />
                     </StackPanel>
+
+                    <DockPanel Visibility="{Binding FL.PlayerConfig.Subtitles.SearchLocal, Converter={StaticResource BooleanToVisibilityConv}}">
+                        <TextBlock
+                            Width="180">
+                          <Run Text="  Search Local Paths" />
+                           <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                               <ToolTipService.ToolTip>
+                                   <TextBlock
+                                       Text="Specify additional folder paths to open subtitles, separated by semicolons. If left blank, subtitles will be opened only from the current directory. Folder case is ignored. Both relative and absolute paths can be specified."
+                                       TextWrapping="Wrap"
+                                       MaxWidth="400" />
+                               </ToolTipService.ToolTip>
+                               <materialDesign:PackIcon
+                                   Kind="Information"
+                                   Width="16" Height="16"
+                                   Margin="4 0 0 0" />
+                           </InlineUIContainer>
+                        </TextBlock>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox
+                                Grid.Column="0"
+                                HorizontalContentAlignment="Left"
+                                Text="{Binding FL.PlayerConfig.Subtitles.SearchLocalPaths}" />
+                            <Button
+                                Grid.Column="1"
+                                Margin="10 0 0 0"
+                                ToolTip="Reset to default"
+                                Style="{StaticResource MaterialDesignIconButton}"
+                                HorizontalAlignment="Center"
+                                Width="24"
+                                Height="24"
+                                Command="{Binding FL.PlayerConfig.Subtitles.CmdResetSearchLocalPaths}">
+                                <materialDesign:PackIcon Kind="BackupRestore" />
+                            </Button>
+                        </Grid>
+                    </DockPanel>
 
                     <StackPanel Orientation="Horizontal">
                         <TextBlock

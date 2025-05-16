@@ -1,7 +1,9 @@
-﻿using FlyleafLib.MediaFramework.MediaStream;
-using Lingua;
+﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
+using FlyleafLib.MediaFramework.MediaStream;
+using Lingua;
 
 namespace FlyleafLib.Plugins;
 
@@ -9,7 +11,7 @@ public class OpenSubtitles : PluginBase, IOpenSubtitles, ISearchLocalSubtitles
 {
     public new int Priority { get; set; } = 3000;
 
-    private readonly Lazy<LanguageDetector> _languageDetector = new(() =>
+    private static readonly Lazy<LanguageDetector> LanguageDetector = new(() =>
     {
         LanguageDetector detector = LanguageDetectorBuilder
             .FromAllLanguages()
@@ -18,9 +20,11 @@ public class OpenSubtitles : PluginBase, IOpenSubtitles, ISearchLocalSubtitles
         return detector;
     }, true);
 
+    private static readonly HashSet<string> ExtSet = new(Utils.ExtensionsSubtitles, StringComparer.OrdinalIgnoreCase);
+
     public OpenSubtitlesResults Open(string url)
     {
-        foreach(var extStream in Selected.ExternalSubtitlesStreamsAll)
+        foreach (var extStream in Selected.ExternalSubtitlesStreamsAll)
             if (extStream.Url == url)
                 return new OpenSubtitlesResults(extStream);
 
@@ -58,32 +62,53 @@ public class OpenSubtitles : PluginBase, IOpenSubtitles, ISearchLocalSubtitles
     {
         try
         {
-            // Checks for text subtitles with the same file name and reads them
-            // TODO: L: Search for subtitles with filenames like video file.XXX.srt
-            // TODO: L: Allow reading from specific folders as well.
-            foreach (string ext in Utils.ExtensionsSubtitles)
+            string mediaDir = Path.GetDirectoryName(Playlist.Url);
+            string mediaName = Path.GetFileNameWithoutExtension(Playlist.Url);
+
+            OrderedDictionary<string, Language> result = new(StringComparer.OrdinalIgnoreCase);
+
+            CollectFromDirectory(mediaDir, mediaName, result);
+
+            // also search in subdirectories
+            string paths = Config.Subtitles.SearchLocalPaths;
+            if (!string.IsNullOrWhiteSpace(paths))
             {
-                string subPath = Path.ChangeExtension(Playlist.Url, ext);
-                if (File.Exists(subPath))
+                foreach (Range seg in paths.AsSpan().Split(';'))
                 {
-                    ExternalSubtitlesStream sub = new()
-                    {
-                        Url = subPath,
-                        Title = Path.GetFileNameWithoutExtension(subPath),
-                        Downloaded = true,
-                        IsBitmap = IsSubtitleBitmap(subPath),
-                    };
+                    var path = paths.AsSpan(seg).Trim();
+                    if (path.IsEmpty) continue;
 
-                    if (Config.Subtitles.LanguageAutoDetect && !sub.IsBitmap)
+                    string searchDir = !Path.IsPathRooted(path)
+                        ? Path.Join(mediaDir, path)
+                        : path.ToString();
+
+                    if (Directory.Exists(searchDir))
                     {
-                        sub.Language = DetectLanguage(subPath);
-                        sub.LanguageDetected = true;
+                        CollectFromDirectory(searchDir, mediaName, result);
                     }
-
-                    Log.Debug($"Adding [{sub.Language.TopEnglishName}] {subPath}");
-
-                    AddExternalStream(sub);
                 }
+            }
+
+            foreach (var (path, lang) in result)
+            {
+                ExternalSubtitlesStream sub = new()
+                {
+                    Url = path,
+                    Title = Path.GetFileNameWithoutExtension(path),
+                    Downloaded = true,
+                    IsBitmap = IsSubtitleBitmap(path),
+                    Language = lang
+                };
+
+                if (Config.Subtitles.LanguageAutoDetect && !sub.IsBitmap && lang == Language.Unknown)
+                {
+                    sub.Language = DetectLanguage(path);
+                    sub.LanguageDetected = true;
+                }
+
+                Log.Debug($"Adding [{sub.Language.TopEnglishName}] {path}");
+
+                AddExternalStream(sub);
             }
         }
         catch (Exception e)
@@ -92,8 +117,96 @@ public class OpenSubtitles : PluginBase, IOpenSubtitles, ISearchLocalSubtitles
         }
     }
 
+    private static void CollectFromDirectory(string searchDir, string filename, IDictionary<string, Language> result)
+    {
+        HashSet<int> added = null;
+
+        // Get files starting with the same filename
+        List<string> fileList;
+        try
+        {
+            fileList = Directory.GetFiles(searchDir, $"{filename}.*", new EnumerationOptions { MatchCasing = MatchCasing.CaseInsensitive })
+                .ToList();
+        }
+        catch
+        {
+            return;
+        }
+
+        if (fileList.Count == 0)
+        {
+            return;
+        }
+
+        var files = fileList.Select(f => new
+        {
+            FullPath = f,
+            FileName = Path.GetFileName(f)
+        }).ToList();
+
+        // full match with top priority (video.srt, video.ass)
+        foreach (string ext in ExtSet)
+        {
+            string expect = $"{filename}.{ext}";
+            int match = files.FindIndex(x => string.Equals(x.FileName, expect, StringComparison.OrdinalIgnoreCase));
+            if (match != -1)
+            {
+                result.TryAdd(files[match].FullPath, Language.Unknown);
+                added ??= new HashSet<int>();
+                added.Add(match);
+            }
+        }
+
+        // head match (video.*.srt, video.*.ass)
+        var extSetLookup = ExtSet.GetAlternateLookup<ReadOnlySpan<char>>();
+        foreach (var (i, x) in files.Index())
+        {
+            // skip full match
+            if (added != null && added.Contains(i))
+            {
+                continue;
+            }
+
+            var span = x.FileName.AsSpan();
+            var fileExt = Path.GetExtension(span).TrimStart('.');
+
+            // Check if the file is a subtitle file by its extension
+            if (extSetLookup.Contains(fileExt))
+            {
+                var name = Path.GetFileNameWithoutExtension(span);
+
+                if (!name.StartsWith(filename + '.', StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                Language lang = Language.Unknown;
+
+                var extraPart = name.Slice(filename.Length + 1); // Skip file name and dot
+                if (extraPart.Length > 0)
+                {
+                    foreach (var codeSeg in extraPart.Split('.'))
+                    {
+                        var code = extraPart[codeSeg];
+                        if (code.Length > 0)
+                        {
+                            Language parsed = Language.Get(code.ToString());
+                            if (!string.IsNullOrEmpty(parsed.IdSubLanguage) && parsed.IdSubLanguage != "und")
+                            {
+                                lang = parsed;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                result.TryAdd(x.FullPath, lang);
+            }
+        }
+    }
+
     // TODO: L: To check the contents of a file by determining the bitmap.
-    private bool IsSubtitleBitmap(string path)
+    private static bool IsSubtitleBitmap(string path)
     {
         try
         {
@@ -108,7 +221,7 @@ public class OpenSubtitles : PluginBase, IOpenSubtitles, ISearchLocalSubtitles
     }
 
     // TODO: L: Would it be better to check with SubtitlesManager for network subtitles?
-    private Language DetectLanguage(string path)
+    private static Language DetectLanguage(string path)
     {
         if (!File.Exists(path))
         {
@@ -139,7 +252,7 @@ public class OpenSubtitles : PluginBase, IOpenSubtitles, ISearchLocalSubtitles
 
         string content = encoding.GetString(data);
 
-        var detectedLanguage = _languageDetector.Value.DetectLanguageOf(content);
+        var detectedLanguage = LanguageDetector.Value.DetectLanguageOf(content);
 
         if (detectedLanguage == Lingua.Language.Unknown)
         {

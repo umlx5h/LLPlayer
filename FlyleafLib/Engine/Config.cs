@@ -5,7 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-
+using FlyleafLib.Controls.WPF;
 using FlyleafLib.MediaFramework.MediaDecoder;
 using FlyleafLib.MediaFramework.MediaFrame;
 using FlyleafLib.MediaFramework.MediaRenderer;
@@ -1121,6 +1121,26 @@ public class Config : NotifyPropertyChanged
         /// </summary>
         public bool             SearchLocal         { get => _SearchLocal; set => Set(ref _SearchLocal, value); }
         bool _SearchLocal = false;
+
+        public const string DefaultSearchLocalPaths = "subs; subtitles";
+
+        public string           SearchLocalPaths
+        {
+            get;
+            set
+            {
+                if (Set(ref field, value))
+                {
+                    CmdResetSearchLocalPaths.OnCanExecuteChanged();
+                }
+            }
+        } = DefaultSearchLocalPaths;
+
+        [JsonIgnore]
+        public RelayCommand CmdResetSearchLocalPaths => field ??= new((_) =>
+        {
+            SearchLocalPaths = DefaultSearchLocalPaths;
+        }, (_) => SearchLocalPaths != DefaultSearchLocalPaths);
 
         /// <summary>
         /// Allowed input types to be searched locally for subtitles (empty list allows all types)
