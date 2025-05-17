@@ -47,7 +47,8 @@ public abstract class PluginBase : PluginType, IPlugin
     {
         item ??= Playlist.Selected;
 
-        item?.AddExternalStream(extStream, item, Name, tag);
+        if (item != null)
+            PlaylistItem.AddExternalStream(extStream, item, Name, tag);
     }
 
     public void AddPlaylistItem(PlaylistItem item, object tag = null)

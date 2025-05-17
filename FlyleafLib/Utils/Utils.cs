@@ -254,7 +254,13 @@ public static partial class Utils
         return dump;
     }
     public static string GetUrlExtention(string url)
-        => url.LastIndexOf(".") > 0 ? url[(url.LastIndexOf(".") + 1)..].ToLower() : "";
+    {
+        int index;
+        if ((index = url.LastIndexOf('.')) > 0)
+            return url[(index + 1)..].ToLower();
+
+        return "";
+    }
 
     public static List<Language> GetSystemLanguages()
     {
@@ -281,27 +287,25 @@ public static partial class Utils
 
     public class MediaParts
     {
-        public int Season { get; set; }
-        public int Episode { get; set; }
-        public string Title { get; set; }
-        public int Year { get; set; }
+        public string   Title       { get; set; } = "";
+        public string   Extension   { get; set; } = "";
+        public int      Season      { get; set; }
+        public int      Episode     { get; set; }
+        public int      Year        { get; set; }
     }
-    public static MediaParts GetMediaParts(string title, bool movieOnly = false)
+    public static MediaParts GetMediaParts(string title, bool checkSeasonEpisodeOnly = false)
     {
         Match res;
         MediaParts mp = new();
-        List<int> indices = new();
+        int index = int.MaxValue; // title end pos
 
-        // s|season 01 ... e|episode|part 01
-        res = Regex.Match(title, @"(^|[^a-z0-9])(s|season)[^a-z0-9]*(?<season>[0-9]{1,2})[^a-z0-9]*(e|episode|part)[^a-z0-9]*(?<episode>[0-9]{1,2})($|[^a-z0-9])", RegexOptions.IgnoreCase);
+        res = RxSeasonEpisode1().Match(title);
         if (!res.Success)
         {
-            // 01x01
-            res = Regex.Match(title, @"(^|[^a-z0-9])(?<season>[0-9]{1,2})x(?<episode>[0-9]{1,2})($|[^a-z0-9])", RegexOptions.IgnoreCase);
+            res = RxSeasonEpisode2().Match(title);
 
-            // TODO: in case of single season should check only for e|episode|part 01
             if (!res.Success)
-                res = Regex.Match(title, @"(^|[^a-z0-9])(episode|part)[^a-z0-9]*(?<episode>[0-9]{1,2})($|[^a-z0-9])", RegexOptions.IgnoreCase);
+                res = RxEpisodePart().Match(title);
         }
 
         if (res.Groups.Count > 1)
@@ -312,37 +316,44 @@ public static partial class Utils
             if (res.Groups["episode"].Value != "")
                 mp.Episode = int.Parse(res.Groups["episode"].Value);
 
-            if (movieOnly)
+            if (checkSeasonEpisodeOnly || res.Index == 0) // 0: No title just season/episode
                 return mp;
 
-            indices.Add(res.Index);
+            index = res.Index;
         }
+
+        mp.Extension = GetUrlExtention(title);
+        if (mp.Extension.Length > 0 && mp.Extension.Length < 5)
+            title = title[..(title.Length - mp.Extension.Length - 1)];
 
         // non-movie words, 1080p, 2015
-        indices.Add(Regex.Match(title, "[^a-z0-9]extended", RegexOptions.IgnoreCase).Index);
-        indices.Add(Regex.Match(title, "[^a-z0-9]directors.cut", RegexOptions.IgnoreCase).Index);
-        indices.Add(Regex.Match(title, "[^a-z0-9]brrip", RegexOptions.IgnoreCase).Index);
-        indices.Add(Regex.Match(title, "[^a-z0-9][0-9]{3,4}p", RegexOptions.IgnoreCase).Index);
+        if ((res = RxExtended().Match(title)).Index > 0 && res.Index < index)
+            index = res.Index;
 
-        res = Regex.Match(title, @"[^a-z0-9](?<year>(19|20)[0-9][0-9])($|[^a-z0-9])", RegexOptions.IgnoreCase);
-        if (res.Success)
+        if ((res = RxDirectorsCut().Match(title)).Index > 0 && res.Index < index)
+            index = res.Index;
+
+        if ((res = RxBrrip().Match(title)).Index > 0 && res.Index < index)
+            index = res.Index;
+
+        if ((res = RxResolution().Match(title)).Index > 0 && res.Index < index)
+            index = res.Index;
+
+        res = RxYear().Match(title);
+        Group gc;
+        if (res.Success && (gc = res.Groups["year"]).Index > 2)
         {
-            indices.Add(res.Index);
-            mp.Year = int.Parse(res.Groups["year"].Value);
+            mp.Year = int.Parse(gc.Value);
+            if (res.Index < index)
+                index = res.Index;
         }
 
-        var sorted = indices.OrderBy(x => x);
-
-        foreach (int index in sorted)
-            if (index > 0)
-            {
-                title = title[..index];
-                break;
-            }
+        if (index != int.MaxValue)
+            title = title[..index];
 
         title = title.Replace(".", " ").Replace("_", " ");
-        title = Regex.Replace(title, @"\s{2,}", " ");
-        title = Regex.Replace(title, @"[^a-z0-9]$", "", RegexOptions.IgnoreCase);
+        title = RxSpaces().Replace(title, " ");
+        title = RxNonAlphaNumeric().Replace(title, "");
 
         mp.Title = title.Trim();
 
@@ -651,6 +662,32 @@ public static partial class Utils
     public static int GCD(int a, int b) => b == 0 ? a : GCD(b, a % b);
     public static string TicksToTime(long ticks) => new TimeSpan(ticks).ToString();
     public static void Log(string msg) { try { Debug.WriteLine($"[{DateTime.Now:hh.mm.ss.fff}] {msg}"); } catch (Exception) { Debug.WriteLine($"[............] [MediaFramework] {msg}"); } }
+
+    [GeneratedRegex("[^a-z0-9]extended", RegexOptions.IgnoreCase)]
+    private static partial Regex RxExtended();
+    [GeneratedRegex("[^a-z0-9]directors.cut", RegexOptions.IgnoreCase)]
+    private static partial Regex RxDirectorsCut();
+    [GeneratedRegex(@"(^|[^a-z0-9])(s|season)[^a-z0-9]*(?<season>[0-9]{1,2})[^a-z0-9]*(e|episode|part)[^a-z0-9]*(?<episode>[0-9]{1,2})($|[^a-z0-9])", RegexOptions.IgnoreCase)]
+
+    // s|season 01 ... e|episode|part 01
+    private static partial Regex RxSeasonEpisode1();
+    [GeneratedRegex(@"(^|[^a-z0-9])(?<season>[0-9]{1,2})x(?<episode>[0-9]{1,2})($|[^a-z0-9])", RegexOptions.IgnoreCase)]
+    // 01x01
+    private static partial Regex RxSeasonEpisode2();
+    // TODO: in case of single season should check only for e|episode|part 01
+    [GeneratedRegex(@"(^|[^a-z0-9])(episode|part)[^a-z0-9]*(?<episode>[0-9]{1,2})($|[^a-z0-9])", RegexOptions.IgnoreCase)]
+    private static partial Regex RxEpisodePart();
+    [GeneratedRegex("[^a-z0-9]brrip", RegexOptions.IgnoreCase)]
+    private static partial Regex RxBrrip();
+
+    [GeneratedRegex("[^a-z0-9][0-9]{3,4}p", RegexOptions.IgnoreCase)]
+    private static partial Regex RxResolution();
+    [GeneratedRegex(@"[^a-z0-9](?<year>(19|20)[0-9][0-9])($|[^a-z0-9])", RegexOptions.IgnoreCase)]
+    private static partial Regex RxYear();
+    [GeneratedRegex(@"\s{2,}")]
+    private static partial Regex RxSpaces();
+    [GeneratedRegex(@"[^a-z0-9]$", RegexOptions.IgnoreCase)]
+    private static partial Regex RxNonAlphaNumeric();
 
     public static string TruncateString(string str, int maxLength, string suffix = "...")
     {

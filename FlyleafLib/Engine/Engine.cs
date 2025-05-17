@@ -144,7 +144,7 @@ public static class Engine
         Log = new LogHandler("[FlyleafEngine] ");
 
         Audio = new AudioEngine();
-        if (Config.FFmpegDevices)
+        if (Config.FFmpegLoadProfile == LoadProfile.All)
             AudioDevice.RefreshDevices();
     }
 
@@ -155,7 +155,7 @@ public static class Engine
 
         FFmpeg  = new FFmpegEngine();
         Video   = new VideoEngine();
-        if (Config.FFmpegDevices)
+        if (Config.FFmpegLoadProfile == LoadProfile.All)
             VideoDevice.RefreshDevices();
         Plugins = new PluginsEngine();
         Players = new List<Player>();
