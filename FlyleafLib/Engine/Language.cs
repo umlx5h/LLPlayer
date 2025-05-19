@@ -126,7 +126,7 @@ public class Language : IEquatable<Language>
 
     public static CultureInfo StringToCulture(string lang)
     {
-        if (string.IsNullOrWhiteSpace(lang) || lang.Length < 2)
+        if (string.IsNullOrWhiteSpace(lang) || lang.Length < 2 || lang == "und")
             return null;
 
         string langLower = lang.ToLower();
@@ -137,10 +137,12 @@ public class Language : IEquatable<Language>
             ret = lang.Length == 3 ? ThreeLetterToCulture(langLower) : CultureInfo.GetCultureInfo(langLower);
         } catch { }
 
+        StringComparer cmp = StringComparer.OrdinalIgnoreCase;
+
         // TBR: Check also -Country/region two letters?
         if (ret == null || ret.ThreeLetterISOLanguageName == "")
             foreach (var cult in CultureInfo.GetCultures(CultureTypes.AllCultures))
-                if (cult.Name.ToLower() == langLower || cult.NativeName.ToLower() == langLower || cult.EnglishName.ToLower() == langLower)
+                if (cmp.Equals(cult.Name, langLower) || cmp.Equals(cult.NativeName, langLower) || cmp.Equals(cult.EnglishName, langLower))
                     return cult;
 
         return ret;

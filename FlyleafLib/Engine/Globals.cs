@@ -133,7 +133,7 @@ public enum VideoFilters
     StereoAdjustment    = 0x80
 }
 
-public struct AspectRatio
+public struct AspectRatio : IEquatable<AspectRatio>
 {
     public static readonly AspectRatio Keep     = new(-1, 1);
     public static readonly AspectRatio Fill     = new(-2, 1);
@@ -173,11 +173,11 @@ public struct AspectRatio
     public AspectRatio(float num, float den) { Num = num; Den = den; }
     public AspectRatio(string value) { Num = Invalid.Num; Den = Invalid.Den; FromString(value); }
 
-    public override bool Equals(object obj) => (obj == null) || !GetType().Equals(obj.GetType()) ? false : Num == ((AspectRatio)obj).Num && Den == ((AspectRatio)obj).Den;
+    public bool Equals(AspectRatio other) => Num == other.Num && Den == other.Den;
+    public override bool Equals(object obj) => obj is AspectRatio o && Equals(o);
+    public override int GetHashCode() => HashCode.Combine(Num, Den);
     public static bool operator ==(AspectRatio a, AspectRatio b) => a.Equals(b);
     public static bool operator !=(AspectRatio a, AspectRatio b) => !(a == b);
-
-    public override int GetHashCode() => (int)(Value * 1000);
 
     public void FromString(string value)
     {
@@ -230,7 +230,7 @@ public class NotifyPropertyChanged : INotifyPropertyChanged
     {
         //Utils.Log($"[===| {propertyName} |===] | Set | {IsUI()}");
 
-        if (!check || (field == null && value != null) || (field != null && !field.Equals(value)))
+        if (!check || !EqualityComparer<T>.Default.Equals(field, value))
         {
             field = value;
 
@@ -247,7 +247,7 @@ public class NotifyPropertyChanged : INotifyPropertyChanged
     {
         //Utils.Log($"[===| {propertyName} |===] | SetUI | {IsUI()}");
 
-        if (!check || (field == null && value != null) || (field != null && !field.Equals(value)))
+        if (!check || !EqualityComparer<T>.Default.Equals(field, value))
         {
             field = value;
 
