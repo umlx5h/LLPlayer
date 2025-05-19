@@ -27,6 +27,12 @@
                 <x:Type TypeName="ffmpeg:LogLevel"/>
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
+
+        <ObjectDataProvider x:Key="FFmpegLoadProfileEnum" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="ffmpeg:LoadProfile"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
     </UserControl.Resources>
     <ScrollViewer>
         <StackPanel>
@@ -212,18 +218,6 @@
                 </StackPanel>
             </GroupBox>
 
-            <GroupBox Header="FFmpeg">
-                <StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Width="180"
-                            Text="Enable FFmpeg devices" />
-                        <ToggleButton
-                            IsChecked="{Binding FL.ConfigEngine.FFmpegDevices}" />
-                    </StackPanel>
-                </StackPanel>
-            </GroupBox>
-
             <GroupBox Header="Seek">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
@@ -295,6 +289,20 @@
                             Width="100"
                             Text="{Binding FL.ConfigEngine.LogCachedLines}"
                             helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="FFmpeg">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="FFmpeg Load Profile" />
+                        <ComboBox
+                            Width="100"
+                            ItemsSource="{Binding Source={StaticResource FFmpegLoadProfileEnum}}"
+                            SelectedItem="{Binding FL.ConfigEngine.FFmpegLoadProfile}" />
                     </StackPanel>
                 </StackPanel>
             </GroupBox>

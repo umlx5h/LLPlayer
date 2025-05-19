@@ -1345,7 +1345,7 @@ public class EngineConfig
     /// Main<br/>
     /// </summary>
     public LoadProfile
-                    FFmpegLoadProfile       { get; set; } = LoadProfile.All;
+                    FFmpegLoadProfile       { get; set; } = LoadProfile.Filters; // change default to disable devices
 
     /// <summary>
     /// Whether to allow HLS live seeking (this can cause segmentation faults in case of incompatible ffmpeg version with library's custom structures)
