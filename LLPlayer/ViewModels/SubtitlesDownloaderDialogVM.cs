@@ -197,7 +197,6 @@ public class SubtitlesDownloaderDialogVM : Bindable, IDialogAware
             }
             catch (Exception ex)
             {
-
                 ErrorDialogHelper.ShowUnknownErrorPopup($"Cannot download the subtitle from opensubtitles.org: {ex.Message}", UnknownErrorType.Network, ex);
                 return;
             }
@@ -242,7 +241,18 @@ public class SubtitlesDownloaderDialogVM : Bindable, IDialogAware
         var selected = FL.Player.Playlist.Selected;
         if (selected != null)
         {
-            Query = selected.Title;
+            string title = selected.Title;
+            if (title == selected.OriginalTitle && File.Exists(selected.Url))
+            {
+                FileInfo fi = new(selected.Url);
+                if (!string.IsNullOrEmpty(fi.Extension) && title.EndsWith(fi.Extension))
+                {
+                    // remove extension part
+                    title = title[..^fi.Extension.Length];
+                }
+            }
+
+            Query = title;
         }
 
         // Register update playlist event

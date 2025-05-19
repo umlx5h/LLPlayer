@@ -1,5 +1,4 @@
-﻿using System.IO;
-using System.Linq;
+﻿using System.Linq;
 
 namespace FlyleafLib.MediaFramework.MediaStream;
 
@@ -30,8 +29,7 @@ public class ExternalSubtitlesStream : ExternalStream, ISubtitlesStream
     public bool     LanguageDetected{ get; set; }
     // TODO: Add confidence rating (maybe result is for other movie/episode) | Add Weight calculated based on rating/downloaded/confidence (and lang?) which can be used from suggesters
     public string   Title           { get; set; }
-    public string   FileName => Path.GetFileName(Url);
 
     public string   DisplayMember =>
-        $"({Language}){(ManualDownloaded ? " (DL)" : "")}{(Automatic ? " (Auto)" : "")} {Utils.TruncateString(FileName, 50)} ({(IsBitmap ? "BMP" : "TXT")})";
+        $"({Language}){(ManualDownloaded ? " (DL)" : "")}{(Automatic ? " (Auto)" : "")} {Utils.TruncateString(Title, 50)} ({(IsBitmap ? "BMP" : "TXT")})";
 }
