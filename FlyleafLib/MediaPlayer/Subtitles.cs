@@ -103,8 +103,8 @@ public class SubsBitmapPosition : NotifyPropertyChanged
         if (_player.Subtitles == null ||
             _player.Subtitles[_subIndex].Data.Bitmap == null ||
             _player.SubtitlesDecoders[_subIndex].SubtitlesStream == null ||
-            _player.SubtitlesDecoders[_subIndex].Width == 0 ||
-            _player.SubtitlesDecoders[_subIndex].Height == 0)
+            (_player.SubtitlesDecoders[_subIndex].Width == 0 && _player.SubtitlesManager[_subIndex].Width == 0) ||
+            (_player.SubtitlesDecoders[_subIndex].Height == 0 && _player.SubtitlesManager[_subIndex].Height == 0))
         {
             return;
         }
@@ -113,13 +113,20 @@ public class SubsBitmapPosition : NotifyPropertyChanged
 
         // Calculate the ratio of the current width of the window to the width of the video
         double renderWidth = _player.VideoDecoder.Renderer.GetViewport.Width;
-        // double windowWidth = ActualWidth;
         double videoWidth = _player.SubtitlesDecoders[_subIndex].Width;
+        if (videoWidth == 0)
+        {
+            // Restore from cache because Width/Height may not be taken if the subtitle is not decoded enough.
+            videoWidth = _player.SubtitlesManager[_subIndex].Width;
+        }
 
         // double videoHeight_ = (int)(videoWidth / Player.VideoDemuxer.VideoStream.AspectRatio.Value);
         double renderHeight = _player.VideoDecoder.Renderer.GetViewport.Height;
-        // double windowHeight = ActualHeight;
         double videoHeight = _player.SubtitlesDecoders[_subIndex].Height;
+        if (videoHeight == 0)
+        {
+            videoHeight = _player.SubtitlesManager[_subIndex].Height;
+        }
 
         // In aspect ratio like a movie, a black background may be added to the top and bottom.
         // In this case, the subtitles should be placed based on the video display area, so the offset from the image rendering area excluding the black background should be taken into consideration.

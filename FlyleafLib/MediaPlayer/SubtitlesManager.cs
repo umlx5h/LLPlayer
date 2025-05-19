@@ -123,6 +123,10 @@ public class SubManager : INotifyPropertyChanged
         }
     }
 
+    // For displaying bitmap subtitles, manage video width and height
+    public int Width { get; internal set; }
+    public int Height { get; internal set; }
+
     private readonly object _subsLocker = new();
     private readonly Config _config;
     private readonly int _subIndex;
@@ -426,7 +430,7 @@ public class SubManager : INotifyPropertyChanged
             try
             {
                 _cts = new CancellationTokenSource();
-                using SubtitleReader reader = new(_config, _subIndex);
+                using SubtitleReader reader = new(this, _config, _subIndex);
                 reader.Open(url, streamIndex, type, _cts.Token);
 
                 _cts.Token.ThrowIfCancellationRequested();
@@ -511,6 +515,8 @@ public class SubManager : INotifyPropertyChanged
             State = PositionState.First;
             LanguageSource = null;
             IsLoading = false;
+            Width = 0;
+            Height = 0;
         }
     }
 
@@ -541,6 +547,7 @@ public class SubManager : INotifyPropertyChanged
 
 public unsafe class SubtitleReader : IDisposable
 {
+    private readonly SubManager _manager;
     private readonly Config _config;
     private readonly LogHandler Log;
     private readonly int _subIndex;
@@ -551,8 +558,9 @@ public unsafe class SubtitleReader : IDisposable
 
     private AVPacket* _packet = null;
 
-    public SubtitleReader(Config config, int subIndex)
+    public SubtitleReader(SubManager manager, Config config, int subIndex)
     {
+        _manager = manager;
         _config = config;
         Log = new LogHandler(("[#1]").PadRight(8, ' ') + $" [SubReader{subIndex + 1}    ] ");
 
@@ -703,6 +711,17 @@ public unsafe class SubtitleReader : IDisposable
             if (pts == AV_NOPTS_VALUE)
             {
                 continue;
+            }
+
+            if (_stream.IsBitmap)
+            {
+                // Cache the width and height of the video for use in displaying bitmap subtitles
+                // width and height may be 0 unless after decoding the subtitles
+                // In this case, bitmap subtitles cannot be displayed correctly, so the size should be cached here
+                if (_manager.Width != _decoder.CodecCtx->width)
+                    _manager.Width = _decoder.CodecCtx->width;
+                if (_manager.Height != _decoder.CodecCtx->height)
+                    _manager.Height = _decoder.CodecCtx->height;
             }
 
             // Bitmap PGS has a special format.
