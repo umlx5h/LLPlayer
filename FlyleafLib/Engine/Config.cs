@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+
 using FlyleafLib.Controls.WPF;
 using FlyleafLib.MediaFramework.MediaDecoder;
 using FlyleafLib.MediaFramework.MediaFrame;
@@ -22,6 +23,8 @@ namespace FlyleafLib;
 /// </summary>
 public class Config : NotifyPropertyChanged
 {
+    static JsonSerializerOptions jsonOpts = new() { WriteIndented = true };
+
     public Config()
     {
         // Parse default plugin options to Config.Plugins (Creates instances until fix with statics in interfaces)
@@ -68,6 +71,9 @@ public class Config : NotifyPropertyChanged
         Config config       = JsonSerializer.Deserialize<Config>(File.ReadAllText(path), jsonOptions);
         config.Loaded       = true;
         config.LoadedPath   = path;
+
+        if (config.Audio.FiltersEnabled && Engine.Config.FFmpegLoadProfile == LoadProfile.Main)
+            config.Audio.FiltersEnabled = false;
 
         // TODO: L: refactor
         config.Player.config = config;
@@ -131,7 +137,7 @@ public class Config : NotifyPropertyChanged
             path = LoadedPath;
         }
 
-        jsonOptions ??= new JsonSerializerOptions { WriteIndented = true };
+        jsonOptions ??= jsonOpts;
 
         File.WriteAllText(path, JsonSerializer.Serialize(this, jsonOptions));
     }
@@ -876,7 +882,7 @@ public class Config : NotifyPropertyChanged
         /// 1. Requires FFmpeg avfilter lib<br/>
         /// 2. Currently SWR performs better if you dont need filters<br/>
         /// </summary>
-        public bool             FiltersEnabled      { get => _FiltersEnabled; set { if (Set(ref _FiltersEnabled, value && Engine.FFmpeg.FiltersLoaded)) player?.AudioDecoder.SetupFiltersOrSwr(); } }
+        public bool             FiltersEnabled      { get => _FiltersEnabled; set { if (Set(ref _FiltersEnabled, value && Engine.Config.FFmpegLoadProfile != LoadProfile.Main)) player?.AudioDecoder.SetupFiltersOrSwr(); } }
         bool _FiltersEnabled = false;
 
         /// <summary>
@@ -1333,14 +1339,13 @@ public class EngineConfig
     public string   FFmpegPath              { get; set; } = "FFmpeg";
 
     /// <summary>
-    /// <para>Whether to register av devices or not (gdigrab/dshow/etc.)</para>
-    /// <para>When enabled you can pass urls in this format device://[device_name]?[FFmpeg_Url]</para>
-    /// <para>device://gdigrab?desktop</para>
-    /// <para>device://gdigrab?title=Command Prompt</para>
-    /// <para>device://dshow?video=Lenovo Camera</para>
-    /// <para>device://dshow?audio=Microphone (Relatek):video=Lenovo Camera</para>
+    /// <para>Can be used to choose which FFmpeg libs to load</para>
+    /// All (Devices &amp; Filters)<br/>
+    /// Filters<br/>
+    /// Main<br/>
     /// </summary>
-    public bool     FFmpegDevices           { get; set; }
+    public LoadProfile
+                    FFmpegLoadProfile       { get; set; } = LoadProfile.Filters; // change default to disable devices
 
     /// <summary>
     /// Whether to allow HLS live seeking (this can cause segmentation faults in case of incompatible ffmpeg version with library's custom structures)

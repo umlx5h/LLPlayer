@@ -107,6 +107,7 @@ public static class FlyleafLoader
             FFmpegPath = ":FFmpeg",
             FFmpegHLSLiveSeek = true,
             UIRefresh = true,
+            FFmpegLoadProfile = Flyleaf.FFmpeg.LoadProfile.Filters,
 #if DEBUG
             LogOutput = ":debug",
             LogLevel = LogLevel.Debug,

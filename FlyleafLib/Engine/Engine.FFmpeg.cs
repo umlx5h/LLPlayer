@@ -5,9 +5,6 @@ public class FFmpegEngine
     public string   Folder          { get; private set; }
     public string   Version         { get; private set; }
 
-    public bool     FiltersLoaded   { get; set; }
-    public bool     DevicesLoaded   { get; set; }
-
     const int           AV_LOG_BUFFER_SIZE = 5 * 1024;
     internal AVRational AV_TIMEBASE_Q;
 
@@ -17,17 +14,14 @@ public class FFmpegEngine
         {
             Engine.Log.Info($"Loading FFmpeg libraries from '{Engine.Config.FFmpegPath}'");
             Folder = Utils.GetFolderPath(Engine.Config.FFmpegPath);
-            LoadLibraries(Folder, Engine.Config.FFmpegDevices ? LoadProfile.All : LoadProfile.Filters);
-
-            FiltersLoaded = true; // Possible allow only main profile?
-            DevicesLoaded = Engine.Config.FFmpegDevices;
+            LoadLibraries(Folder, Engine.Config.FFmpegLoadProfile);
 
             uint ver = avformat_version();
             Version = $"{ver >> 16}.{(ver >> 8) & 255}.{ver & 255}";
 
             SetLogLevel();
             AV_TIMEBASE_Q   = av_get_time_base_q();
-            Engine.Log.Info($"FFmpeg Loaded (Location: {Folder}, Ver: {Version}) [Devices: {(DevicesLoaded ? "yes" : "no")}, Filters: {(FiltersLoaded ? "yes" : "no")}]");
+            Engine.Log.Info($"FFmpeg Loaded (Profile: {Engine.Config.FFmpegLoadProfile}, Location: {Folder}, FmtVer: {Version})");
         } catch (Exception e)
         {
             Engine.Log.Error($"Loading FFmpeg libraries '{Engine.Config.FFmpegPath}' failed\r\n{e.Message}\r\n{e.StackTrace}");
