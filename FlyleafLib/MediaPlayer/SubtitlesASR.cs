@@ -967,7 +967,7 @@ public class WhisperCppASRService : IASRService
 // https://github.com/Purfview/whisper-standalone-win
 // Purfview's Stand-alone Faster-Whisper-XXL & Faster-Whisper
 // Do not support official OpenAI Whisper version
-public class FasterWhisperASRService : IASRService
+public partial class FasterWhisperASRService : IASRService
 {
     private readonly Config _config;
 
@@ -1000,12 +1000,18 @@ public class FasterWhisperASRService : IASRService
     private readonly string _manualLanguage;
     private string? _detectedLanguage;
 
-    private static readonly Regex LanguageReg = new("^Detected language '(.+)' with probability");
-    // [08:15.050 --> 08:16.450] Text
-    private static readonly Regex SubShortReg = new(@"^\[\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}\.\d{3}\] ", RegexOptions.Compiled);
-    // [02:08:15.050 --> 02:08:16.450] Text
-    private static readonly Regex SubLongReg = new(@"^\[\d{2}:\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}:\d{2}\.\d{3}\] ", RegexOptions.Compiled);
-    private static readonly Regex EndReg = new("^Operation finished in:");
+    [GeneratedRegex("^Detected language '(.+)' with probability")]
+    private static partial Regex LanguageReg { get; }
+
+    [GeneratedRegex(@"^\[\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}\.\d{3}\] ")]
+    private static partial Regex SubShortReg { get; } // [08:15.050 --> 08:16.450] Text
+
+    [GeneratedRegex(@"^\[\d{2}:\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}:\d{2}\.\d{3}\] ")]
+    private static partial Regex SubLongReg { get; } // [02:08:15.050 --> 02:08:16.450] Text
+
+    [GeneratedRegex("^Operation finished in:")]
+    private static partial Regex EndReg { get; }
+
 
     public ValueTask DisposeAsync()
     {

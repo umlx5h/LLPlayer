@@ -190,8 +190,12 @@ public partial class SelectableSubtitleText : UserControl
 
     // SelectableTextBox uses char.IsPunctuation(), so use a regular expression for it.
     // TODO: L: Sharing the code with TextBox
-    private static readonly Regex WordSplitReg = new(@"((?:[^\P{P}'-]+|\s))", RegexOptions.Compiled);
-    private static readonly Regex WordSplitFullReg = new(@"^(?:[^\P{P}'-]+|\s)$", RegexOptions.Compiled);
+    [GeneratedRegex(@"((?:[^\P{P}'-]+|\s))")]
+    private static partial Regex WordSplitReg { get; }
+
+    [GeneratedRegex(@"^(?:[^\P{P}'-]+|\s)$")]
+    private static partial Regex WordSplitFullReg { get; }
+
 
     private static readonly Lazy<MeCabIpaDicTagger> MeCabTagger = new(() => MeCabIpaDicTagger.Create(), true);
 
