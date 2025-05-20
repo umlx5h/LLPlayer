@@ -196,6 +196,9 @@ public partial class SelectableSubtitleText : UserControl
     [GeneratedRegex(@"^(?:[^\P{P}'-]+|\s)$")]
     private static partial Regex WordSplitFullReg { get; }
 
+    [GeneratedRegex(@"((?:[^\P{P}'-]+|\s|[\p{IsCJKUnifiedIdeographs}\p{IsCJKUnifiedIdeographsExtensionA}]))")]
+    private static partial Regex ChineseWordSplitReg { get; }
+
 
     private static readonly Lazy<MeCabIpaDicTagger> MeCabTagger = new(() => MeCabIpaDicTagger.Create(), true);
 
@@ -228,31 +231,43 @@ public partial class SelectableSubtitleText : UserControl
         // Use an OutlinedTextBlock for each word to display the border Text and enclose it in a WrapPanel
         for (int i = 0; i < lines.Length; i++)
         {
-            List<string> words;
+            IEnumerable<string> words;
 
             if (TextLanguage != null && TextLanguage.ISO6391 == "ja")
             {
                 // word segmentation for Japanese
                 // TODO: L: Also do word segmentation in sidebar
                 var nodes = MeCabTagger.Value.Parse(lines[i]);
-                words = new List<string>(nodes.Length);
+                List<string> wordsList = new(nodes.Length);
                 foreach (var node in nodes)
                 {
                     // If there are space-separated characters, such as English, add them manually since they are not on the Surface
                     if (char.IsWhiteSpace(lines[i][node.BPos]))
                     {
-                        words.Add(" ");
+                        wordsList.Add(" ");
                     }
-                    words.Add(node.Surface);
+                    wordsList.Add(node.Surface);
                 }
+
+                words = wordsList;
+            }
+            else if (TextLanguage != null && TextLanguage.ISO6391 == "zh")
+            {
+                words = ChineseWordSplitReg.Split(lines[i]);
             }
             else
             {
-                words = WordSplitReg.Split(lines[i]).Where(w => w != "").ToList();
+                words = WordSplitReg.Split(lines[i]);
             }
 
             foreach (string word in words)
             {
+                // skip empty string because Split includes
+                if (word.Length == 0)
+                {
+                    continue;
+                }
+
                 if (string.IsNullOrWhiteSpace(word))
                 {
                     // Blanks are inserted with TextBlock.
