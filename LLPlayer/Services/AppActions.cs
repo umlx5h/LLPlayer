@@ -22,7 +22,7 @@ public class AppActions
     private FlyleafHost? _flyleafHost => _player.Host as FlyleafHost;
     private readonly IDialogService _dialogService;
 
-    #pragma warning disable CS9264
+#pragma warning disable CS9264
     public AppActions(Player player, AppConfig config, IDialogService dialogService)
     {
         _player = player;
@@ -33,7 +33,7 @@ public class AppActions
 
         RegisterCustomKeyBindingsAction();
     }
-    #pragma warning restore CS9264
+#pragma warning restore CS9264
 
     private void RegisterCustomKeyBindingsAction()
     {
@@ -99,6 +99,8 @@ public class AppActions
     {
         return
         [
+            new() { ActionName = nameof(CustomKeyBindingAction.OpenNextFile), Key = Key.Right, Alt = true, Shift = true, IsKeyUp = true },
+            new() { ActionName = nameof(CustomKeyBindingAction.OpenPrevFile), Key = Key.Left, Alt = true, Shift = true, IsKeyUp = true },
             new() { ActionName = nameof(CustomKeyBindingAction.SubsPositionUp), Key = Key.Up, Shift = true },
             new() { ActionName = nameof(CustomKeyBindingAction.SubsPositionDown), Key = Key.Down, Shift = true },
             new() { ActionName = nameof(CustomKeyBindingAction.SubsSizeIncrease), Key = Key.Right, Shift = true },
