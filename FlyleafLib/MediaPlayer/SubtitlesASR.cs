@@ -768,13 +768,48 @@ public class AudioReader : IDisposable
     private byte[] _sampledBuf = [];
     private int _sampledBufSize;
 
+    // for codec change detection
+    private int _lastFormat;
+    private int _lastSampleRate;
+    private ulong _lastChannelLayout;
+
     private unsafe void ResampleTo(Stream toStream, AVFrame* frame, int targetSampleRate, int targetChannel)
     {
-        AVChannelLayout outLayout;
-        av_channel_layout_default(&outLayout, targetChannel);
+        bool codecChanged = false;
+
+        if (_lastFormat != frame->format)
+        {
+            _lastFormat = frame->format;
+            codecChanged = true;
+        }
+        if (_lastSampleRate != frame->sample_rate)
+        {
+            _lastSampleRate = frame->sample_rate;
+            codecChanged = true;
+        }
+        if (_lastChannelLayout != frame->ch_layout.u.mask)
+        {
+            _lastChannelLayout = frame->ch_layout.u.mask;
+            codecChanged = true;
+        }
+
+        // Reinitialize SwrContext because codec changed
+        // Note that native error will occur if not reinitialized.
+        // Reference: AudioDecoder::RunInternal
+        if (_swrContext != null && codecChanged)
+        {
+            fixed (SwrContext** ptr = &_swrContext)
+            {
+                swr_free(ptr);
+            }
+            _swrContext = null;
+        }
 
         if (_swrContext == null)
         {
+            AVChannelLayout outLayout;
+            av_channel_layout_default(&outLayout, targetChannel);
+
             // NOTE: important to reuse this context
             fixed (SwrContext** ptr = &_swrContext)
             {
@@ -803,7 +838,7 @@ public class AudioReader : IDisposable
         {
             nOut += (int)Math.Min(delay, Math.Max(4096, nOut));
         }
-        int needed = nOut * outLayout.nb_channels * sizeof(ushort);
+        int needed = nOut * targetChannel * sizeof(ushort);
 
         if (_sampledBufSize < needed)
         {
@@ -824,7 +859,7 @@ public class AudioReader : IDisposable
         }
         samplesPerChannel.ThrowExceptionIfError("swr_convert");
 
-        int resampledDataSize = samplesPerChannel * outLayout.nb_channels * sizeof(ushort);
+        int resampledDataSize = samplesPerChannel * targetChannel * sizeof(ushort);
 
         toStream.Write(_sampledBuf, 0, resampledDataSize);
     }
