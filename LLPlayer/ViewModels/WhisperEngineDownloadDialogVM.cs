@@ -13,9 +13,9 @@ public class WhisperEngineDownloadDialogVM : Bindable, IDialogAware
 {
     // currently not reusable at all
     public static string EngineURL => "https://github.com/Purfview/whisper-standalone-win/releases/tag/Faster-Whisper-XXL";
-    public static string EngineFile => "Faster-Whisper-XXL_r245.3_windows.7z";
+    public static string EngineFile => "Faster-Whisper-XXL_r245.4_windows.7z";
     private static string EngineDownloadURL =
-        "https://github.com/umlx5h/LLPlayer/releases/download/v0.0.1/Faster-Whisper-XXL_r245.3_windows.7z";
+        "https://github.com/umlx5h/LLPlayer/releases/download/v0.0.1/Faster-Whisper-XXL_r245.4_windows.7z";
     private static string EngineName = "Faster-Whisper-XXL";
     private static string EnginePath = Path.Combine(WhisperConfig.EnginesDirectory, EngineName);
 
