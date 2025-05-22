@@ -441,7 +441,7 @@ public partial class SelectableSubtitleText : UserControl
                 double wordsX = 0;
                 double wordsWidth = wrapPanel.ActualWidth;
 
-                if (Math.Abs(startPoint.Y - endPoint.Y) < 1e-6)
+                if (startPoint.Y == endPoint.Y)
                 {
                     // selection in one line
 

@@ -162,7 +162,7 @@ public class SubsBitmapPosition : NotifyPropertyChanged
         }
 
         // Adjust x and y axes when changing subtitle size(centering)
-        if (Math.Abs(ConfScale - 1.0) > 1e-6)
+        if (ConfScale != 1.0)
         {
             // mpv: https://github.com/mpv-player/mpv/blob/df166c1333694cbfe70980dbded1984d48b0685a/sub/sd_lavc.c#L508-L515
             double ratio = (ConfScale - 1.0) / 2;

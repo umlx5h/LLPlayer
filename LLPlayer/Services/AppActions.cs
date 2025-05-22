@@ -540,7 +540,7 @@ public class AppActions
             _config.Subs.SubsFontStretch = dialog.Font.Stretch.ToString();
             _config.Subs.SubsFontStyle = dialog.Font.Style.ToString();
 
-            if (Math.Abs(prevFontSize - dialog.Font.Size) > 0.1)
+            if (prevFontSize != dialog.Font.Size)
             {
                 _config.Subs.SubsFontSize = dialog.Font.Size;
                 _config.Subs.SubsFontSize2 = dialog.Font.Size; // change secondary as well

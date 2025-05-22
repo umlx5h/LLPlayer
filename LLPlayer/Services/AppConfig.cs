@@ -316,7 +316,7 @@ public class AppConfigSubs : Bindable
                 return;
             }
 
-            if (Set(ref field, value))
+            if (Set(ref field, Math.Round(value)))
             {
                 OnPropertyChanged(nameof(SubsFontSizeFix));
                 CmdResetSubsFontSize2!.RaiseCanExecuteChanged();
@@ -338,7 +338,7 @@ public class AppConfigSubs : Bindable
                 return;
             }
 
-            if (Set(ref field, value))
+            if (Set(ref field, Math.Round(value)))
             {
                 OnPropertyChanged(nameof(SubsFontSize2Fix));
                 CmdResetSubsFontSize2!.RaiseCanExecuteChanged();
@@ -436,7 +436,7 @@ public class AppConfigSubs : Bindable
                 return;
             }
 
-            if (Set(ref field, value))
+            if (Set(ref field, Math.Round(value, 2)))
             {
                 OnPropertyChanged(nameof(SubsBackgroundBrush));
                 OnPropertyChanged(nameof(SubsBackgroundBrush2));
@@ -467,7 +467,7 @@ public class AppConfigSubs : Bindable
                 return;
             }
 
-            if (Set(ref field, value))
+            if (Set(ref field, Math.Round(value, 2)))
             {
                 OnPropertyChanged(nameof(SubsBackgroundBrush2));
                 CmdResetSubsBackgroundOpacity2!.RaiseCanExecuteChanged();
@@ -489,7 +489,7 @@ public class AppConfigSubs : Bindable
     public DelegateCommand? CmdResetSubsFontSize2 => field ??= new(() =>
     {
         SubsFontSize2 = SubsFontSize;
-    }, () => Math.Abs(SubsFontSize2 - SubsFontSize) > 0.1);
+    }, () => SubsFontSize2 != SubsFontSize);
 
     [JsonIgnore]
     public DelegateCommand? CmdResetSubsFont2 => field ??= new(() =>
@@ -517,7 +517,7 @@ public class AppConfigSubs : Bindable
     public DelegateCommand? CmdResetSubsBackgroundOpacity2 => field ??= new(() =>
     {
         SubsBackgroundOpacity2 = SubsBackgroundOpacity;
-    }, () => Math.Abs(SubsBackgroundOpacity2 - SubsBackgroundOpacity) > 0.001);
+    }, () => SubsBackgroundOpacity2 != SubsBackgroundOpacity);
 
     [JsonIgnore]
     public Size SubsPanelSize
