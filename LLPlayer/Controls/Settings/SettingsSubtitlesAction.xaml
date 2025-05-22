@@ -27,7 +27,10 @@
                 <x:Type TypeName="services:SubAutoTextCopyTarget"/>
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
-    </UserControl.Resources>
+
+        <local:TranslateServiceTypeEnumToStringConverter x:Key="TranslateServiceTypeEnumToStringConv" />
+        <local:TranslateServiceTypeEnumToUrlConverter x:Key="TranslateServiceTypeEnumToUrlConv" />
+</UserControl.Resources>
 
     <ScrollViewer>
         <StackPanel>
@@ -37,19 +40,29 @@
                 FontWeight="Bold"
                 Margin="0 0 0 16" />
 
-            <GroupBox Header="Word Translation Service">
+            <GroupBox Header="Word Translation Engine">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
-                            Width="180"
-                            Text="Service" />
+                            FontSize="14"
+                            FontWeight="Medium"
+                            Width="180">
+                            <Hyperlink Cursor="Help" NavigateUri="{Binding FL.PlayerConfig.Subtitles.TranslateWordServiceType, Converter={StaticResource TranslateServiceTypeEnumToUrlConv}}" helpers:HyperlinkHelper.OpenInBrowser="True">
+                                Translation Engine
+                            </Hyperlink>
+                        </TextBlock>
                         <ComboBox
-                            Width="100"
+                            Width="180"
                             ItemsSource="{Binding Source={StaticResource TranslateServiceTypeEnum}}"
-                            SelectedItem="{Binding FL.PlayerConfig.Subtitles.TranslateWordServiceType}" />
-
+                            SelectedItem="{Binding FL.PlayerConfig.Subtitles.TranslateWordServiceType}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource TranslateServiceTypeEnumToStringConv}}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
                     </StackPanel>
-                    <TextBlock Text="Please set the parameters in advance in the Translate tab." />
+                    <TextBlock Text="Please configure the settings in advance in the Translate tab." />
                 </StackPanel>
             </GroupBox>
 
