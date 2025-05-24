@@ -67,7 +67,7 @@ public class SubManager : INotifyPropertyChanged
 {
     private readonly Lock _locker = new();
     private CancellationTokenSource? _cts;
-    public SubtitleData? SelectedSub { get; set => Set(ref field, value); } = null;
+    public SubtitleData? SelectedSub { get; set => Set(ref field, value); }
     public int CurrentIndex { get; private set => Set(ref field, value); } = -1;
 
     public PositionState State
@@ -94,7 +94,7 @@ public class SubManager : INotifyPropertyChanged
     /// <summary>
     /// True when addition to Subs is running... (Reading all subtitles, OCR, ASR)
     /// </summary>
-    public bool IsLoading { get; private set => Set(ref field, value); } = false;
+    public bool IsLoading { get; private set => Set(ref field, value); }
 
     // LanguageSource with fallback
     public Language? Language
@@ -776,7 +776,7 @@ public unsafe class SubtitleReader : IDisposable
                     string text = Utils.BytePtrToStringUTF8(sub.rects[0]->ass).Trim();
                     avsubtitle_free(&sub);
 
-                    subData.Text = ParseSubtitles.SSAtoSubStyles(text, out var subStyles);
+                    subData.Text = ParseSubtitles.SSAtoSubStyles(text, out var subStyles).Trim();
                     subData.SubStyles = subStyles;
 
                     if (string.IsNullOrEmpty(subData.Text))
@@ -1183,8 +1183,7 @@ public class BulkObservableCollection<T> : ObservableCollection<T>
 
     public void AddRange(IEnumerable<T> list)
     {
-        if (list == null)
-            ArgumentNullException.ThrowIfNull(list);
+        ArgumentNullException.ThrowIfNull(list);
 
         _suppressNotification = true;
 

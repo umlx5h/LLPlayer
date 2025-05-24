@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.IO;
 using FlyleafLib;
+using FlyleafLib.MediaFramework.MediaPlaylist;
 using FlyleafLib.MediaPlayer;
 using LLPlayer.Extensions;
 using LLPlayer.Services;
@@ -211,12 +212,24 @@ public class SubtitlesDownloaderDialogVM : Bindable, IDialogAware
             FL.Player.Playlist.Selected != null)
         {
             // Update query when video changes
-            string? title = FL.Player.Playlist.Selected.Title;
-            if (Query != title)
+            UpdateQuery(FL.Player.Playlist.Selected);
+        }
+    }
+
+    private void UpdateQuery(PlaylistItem selected)
+    {
+        string title = selected.Title;
+        if (title == selected.OriginalTitle && File.Exists(selected.Url))
+        {
+            FileInfo fi = new(selected.Url);
+            if (!string.IsNullOrEmpty(fi.Extension) && title.EndsWith(fi.Extension))
             {
-                Query = title;
+                // remove extension part
+                title = title[..^fi.Extension.Length];
             }
         }
+
+        Query = title;
     }
 
     #region IDialogAware
@@ -241,18 +254,7 @@ public class SubtitlesDownloaderDialogVM : Bindable, IDialogAware
         var selected = FL.Player.Playlist.Selected;
         if (selected != null)
         {
-            string title = selected.Title;
-            if (title == selected.OriginalTitle && File.Exists(selected.Url))
-            {
-                FileInfo fi = new(selected.Url);
-                if (!string.IsNullOrEmpty(fi.Extension) && title.EndsWith(fi.Extension))
-                {
-                    // remove extension part
-                    title = title[..^fi.Extension.Length];
-                }
-            }
-
-            Query = title;
+            UpdateQuery(selected);
         }
 
         // Register update playlist event

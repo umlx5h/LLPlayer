@@ -380,7 +380,7 @@ namespace FlyleafLib.Plugins
                         const string suffix = "-orig";
 
                         string langCode = subtitle1.Key;
-                        bool isOriginal = langCode.EndsWith(suffix);
+                        bool isOriginal = langCode.EndsWith(suffix, StringComparison.OrdinalIgnoreCase);
 
                         if (isOriginal)
                         {

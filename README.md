@@ -28,7 +28,7 @@ LLPlayer has many features for language learning that are not available in norma
 - **Real-time Translation:** Supports [many translation engines](https://github.com/umlx5h/LLPlayer/wiki/Translation-Engine), such as Google, DeepL, Ollama, LM Studio, OpenAI.
 - **Context-aware Translation:** Highly accurate translation by recognizing the context of subtitles using LLM.
 - **Real-time OCR subtitles:** Can convert bitmap subtitles to text subtitles in real time, powered by [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) and Microsoft OCR.
-- **Subtitles Sidebar:** Both text and bitmap are supported. Seek and word lookup available. Has anti-spoiler functionality.
+- **Subtitles Sidebar:** Both text and bitmap are supported. Seek and word lookup available. Also supports incremental subtitle search.
 - **Instant word lookup:** Word lookup and browser searches can be performed on subtitle text.
 - **Customizable Browser Search:** Browser searches can be performed from the context menu of a word, and the search site can be completely customized.
 - **Plays online videos:** With [yt-dlp](https://github.com/yt-dlp/yt-dlp) integration, any online video can be played back in real time, with AI subtitle generation, word lookups!
@@ -314,17 +314,20 @@ If you want to update, please download and copy it to the specified path.
 VLC is a general-purpose media player.  
 In contrast, LLPlayer has many useful features especially for language learning.
 
-|                                  | VLC                            | LLPlayer                          |
-| -------------------------------- | ------------------------------ | --------------------------------- |
-| Cross-Platform (Win, Linux, Mac) | ✔️                              | ❌                                 |
-| Auto-generated subtitles         | not yet (whisper.cpp)          | ✔️ (whisper.cpp, faster-whisper)   |
-| Real-time translation            | not yet (probably SeamlessM4T) | ✔️ (Google, DeepL, Ollama, OpenAI) |
-| Context-aware translation        | ❌ (probably)                   | ✔️ (by LLM)                        |
-| Word Translation                 | ❌                              | ✔️                                 |
-| Word Search                      | ❌                              | ✔️                                 |
-| Subtitle Sidebar                 | ❌                              | ✔️                                 |
-| Subtitle Seeking                 | ❌                              | ✔️                                 |
-| Dual Subtitles                   | ✔️ (awkward to use)             | ✔️                                 |
+|                                  | VLC                    | LLPlayer                        |
+| -------------------------------- | ---------------------- | ------------------------------- |
+| Cross-Platform (Win, Linux, Mac) | ✔️                      | ❌                               |
+| Auto-generated subtitles         | not yet (whisper.cpp)  | ✔️ (whisper.cpp, faster-whisper) |
+| Real-time translation            | not yet                | ✔️                               |
+| Local translation                | not yet (SeamlessM4t?) | ✔️ (Ollama, LM Studio)           |
+| Online translation               | ❌                      | ✔️ (Google, DeepL, OpenAI)       |
+| Context-aware translation        | ❌                      | ✔️ (by LLM)                      |
+| Word Translation                 | ❌                      | ✔️                               |
+| Word Search                      | ❌                      | ✔️                               |
+| Subtitle Sidebar                 | ❌                      | ✔️                               |
+| Incremental Subtitle Search      | ❌                      | ✔️                               |
+| Subtitle Seeking                 | ❌                      | ✔️                               |
+| Dual Subtitles                   | ✔️ (awkward to use)     | ✔️                               |
 
 #### Q: Why perform subtitle generation and translation in real time?
 
