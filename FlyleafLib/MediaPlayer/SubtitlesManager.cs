@@ -603,13 +603,12 @@ public unsafe class SubtitleReader : IDisposable
 
         _decoder = new SubtitlesDecoder(_config, _subIndex + 1);
         _decoder.Log.Prefix = _decoder.Log.Prefix.Replace("Decoder: ", "DecoderS:");
-        error = _decoder.Open(_stream);
 
-        if (error != null)
+        if (!_decoder.Open(_stream))
         {
             token.ThrowIfCancellationRequested(); // if canceled
 
-            throw new InvalidOperationException($"decoder open error: {error}");
+            throw new InvalidOperationException($"decoder open error");
         }
     }
 

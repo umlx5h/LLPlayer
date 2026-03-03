@@ -377,14 +377,12 @@ public class AudioReader : IDisposable
         _decoder = new AudioDecoder(_config, _subIndex + 1);
         _decoder.Log.Prefix = _decoder.Log.Prefix.Replace("Decoder: ", "DecoderA:");
 
-        error = _decoder.Open(_stream);
-
-        if (error != null)
+        if (!_decoder.Open(_stream))
         {
             if (token.IsCancellationRequested)
                 return;
 
-            throw new InvalidOperationException($"decoder open error: {error}");
+            throw new InvalidOperationException($"decoder open error");
         }
 
         _isFile = File.Exists(url);

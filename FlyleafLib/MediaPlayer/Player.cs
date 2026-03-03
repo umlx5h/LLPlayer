@@ -581,8 +581,6 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
         if (renderer != null)
             renderer.forceNotExtractor = true;
 
-        //decoder.OpenPlaylistItemCompleted              += Decoder_OnOpenExternalSubtitlesStreamCompleted;
-
         decoder.OpenAudioStreamCompleted               += Decoder_OpenAudioStreamCompleted;
         decoder.OpenVideoStreamCompleted               += Decoder_OpenVideoStreamCompleted;
         decoder.OpenSubtitlesStreamCompleted           += Decoder_OpenSubtitlesStreamCompleted;
@@ -594,6 +592,7 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
 
         AudioDecoder.CodecChanged   = Decoder_AudioCodecChanged;
         VideoDecoder.CodecChanged   = Decoder_VideoCodecChanged;
+        VideoDecoder.OpeningCodec   = () => { OnOpeningVideoStream(new() { Player = this, VideoStream = VideoDecoder.VideoStream, VideoAcceleration = VideoDecoder.VideoAccelerated }); };
         decoder.RecordingCompleted += (o, e) => { IsRecording = false; };
         Chapters.CollectionChanged += (o, e) => { RaiseUI(nameof(Chapters)); };
 

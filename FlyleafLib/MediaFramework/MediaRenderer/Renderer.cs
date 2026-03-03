@@ -66,30 +66,16 @@ public partial class Renderer : NotifyPropertyChanged, IDisposable
     int panXOffset;
     public void SetPanX(int panX, bool refresh = true)
     {
-        lock(lockDevice)
-        {
-            panXOffset = panX;
-
-            if (Disposed)
-                return;
-
-            SetViewport(refresh);
-        }
+        panXOffset = panX;
+        SetViewport(refresh);
     }
 
     public int              PanYOffset      { get => panYOffset;                set => SetPanY(value); }
     int panYOffset;
     public void SetPanY(int panY, bool refresh = true)
     {
-        lock(lockDevice)
-        {
-            panYOffset = panY;
-
-            if (Disposed)
-                return;
-
-            SetViewport(refresh);
-        }
+        panYOffset = panY;
+        SetViewport(refresh);
     }
 
     public uint             Rotation        { get => _RotationAngle;            set => UpdateRotation(value); }
@@ -116,15 +102,8 @@ public partial class Renderer : NotifyPropertyChanged, IDisposable
     double zoom = 1;
     public void SetZoom(double zoom, bool refresh = true)
     {
-        lock(lockDevice)
-        {
-            this.zoom = zoom;
-
-            if (Disposed)
-                return;
-
-            SetViewport(refresh);
-        }
+        this.zoom = zoom;
+        SetViewport(refresh);
     }
 
     public Point            ZoomCenter      { get => zoomCenter;                set => SetZoomCenter(value); }
@@ -132,47 +111,23 @@ public partial class Renderer : NotifyPropertyChanged, IDisposable
     internal static Point ZoomCenterPoint = new(0.5, 0.5);
     public void SetZoomCenter(Point p, bool refresh = true)
     {
-        lock(lockDevice)
-        {
-            zoomCenter = p;
-
-            if (Disposed)
-                return;
-
-            if (refresh)
-                SetViewport();
-        }
+        zoomCenter = p;
+        SetViewport(refresh);
     }
     public void SetZoomAndCenter(double zoom, Point p, bool refresh = true)
     {
-        lock(lockDevice)
-        {
-            this.zoom = zoom;
-            zoomCenter = p;
-
-            if (Disposed)
-                return;
-
-            if (refresh)
-                SetViewport();
-        }
+        this.zoom = zoom;
+        zoomCenter = p;
+        SetViewport(refresh);
     }
     public void SetPanAll(int panX, int panY, uint rotation, double zoom, Point p, bool refresh = true)
     {
-        lock(lockDevice)
-        {
-            panXOffset = panX;
-            panYOffset = panY;
-            this.zoom = zoom;
-            zoomCenter = p;
-            UpdateRotation(rotation, false);
-
-            if (Disposed)
-                return;
-
-            if (refresh)
-                SetViewport();
-        }
+        panXOffset = panX;
+        panYOffset = panY;
+        this.zoom = zoom;
+        zoomCenter = p;
+        UpdateRotation(rotation, false);
+        SetViewport(refresh);
     }
 
     public int              UniqueId        { get; private set; }

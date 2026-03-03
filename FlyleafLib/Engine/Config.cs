@@ -635,7 +635,7 @@ public class Config : NotifyPropertyChanged
         /// Allows video accceleration even in codec's profile mismatch
         /// </summary>
         public bool             AllowProfileMismatch{ get => _AllowProfileMismatch; set => SetUI(ref _AllowProfileMismatch, value); }
-        bool _AllowProfileMismatch = true;
+        bool _AllowProfileMismatch = false;
 
         /// <summary>
         /// Allows corrupted frames (Parses AV_CODEC_FLAG_OUTPUT_CORRUPT to AVCodecContext)
@@ -662,13 +662,13 @@ public class Config : NotifyPropertyChanged
         bool _AllowDropFrames;
 
         public string           AudioCodec          { get => _AudioCodec;           set => SetUI(ref _AudioCodec, value); }
-        string _AudioCodec;
+        internal string _AudioCodec;
 
         public string           VideoCodec          { get => _VideoCodec;           set => SetUI(ref _VideoCodec, value); }
-        string _VideoCodec;
+        internal string _VideoCodec;
 
         public string           SubtitlesCodec      { get => _SubtitlesCodec;           set => SetUI(ref _SubtitlesCodec, value); }
-        string _SubtitlesCodec;
+        internal string _SubtitlesCodec;
 
         public string GetCodecPtr(MediaType type)
             => type == MediaType.Video ? _VideoCodec : type == MediaType.Audio ? _AudioCodec : _SubtitlesCodec;
@@ -1430,6 +1430,16 @@ public class EngineConfig
     /// Lines to cache before writing them to file
     /// </summary>
     public int      LogCachedLines          { get; set; } = 20;
+
+    /// <summary>
+    /// Max filesize (in bytes) of log before starting a new log file <see cref="LogRollMaxFiles"/>
+    /// </summary>
+    public long     LogRollMaxFileSize      { get; set; } = 10 * 1024 * 1024;
+
+    /// <summary>
+    /// Max number of log files to roll over before deleting the oldest
+    /// </summary>
+    public long     LogRollMaxFiles         { get; set; } = 0;
 
     /// <summary>
     /// Sets the logger's datetime string format

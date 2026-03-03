@@ -9,7 +9,6 @@ namespace FlyleafLib.MediaPlayer;
 unsafe partial class Player
 {
     #region Events
-
     public event EventHandler<OpeningArgs>                              Opening; // Will be also used for subtitles
     public event EventHandler<OpenCompletedArgs>                        OpenCompleted; // Will be also used for subtitles
     public event EventHandler<OpenPlaylistItemCompletedArgs>            OpenPlaylistItemCompleted;
@@ -23,6 +22,15 @@ unsafe partial class Player
     public event EventHandler<OpenExternalAudioStreamCompletedArgs>     OpenExternalAudioStreamCompleted;
     public event EventHandler<OpenExternalVideoStreamCompletedArgs>     OpenExternalVideoStreamCompleted;
     public event EventHandler<OpenExternalSubtitlesStreamCompletedArgs> OpenExternalSubtitlesStreamCompleted;
+
+    public event EventHandler<OpeningVideoStreamArgs>                   OpeningVideoStream;
+
+    public class OpeningVideoStreamArgs : EventArgs
+    {
+        public Player       Player              { get; set; }
+        public VideoStream  VideoStream         { get; set; }
+        public bool         VideoAcceleration   { get; set; }
+    }
 
     private void OnOpening(OpeningArgs args = null)
         => Opening?.Invoke(this, args);
@@ -48,6 +56,9 @@ unsafe partial class Player
         => OpenExternalVideoStreamCompleted?.Invoke(this, args);
     private void OnOpenExternalSubtitlesStreamCompleted(OpenExternalSubtitlesStreamCompletedArgs args = null)
         => OpenExternalSubtitlesStreamCompleted?.Invoke(this, args);
+
+    private void OnOpeningVideoStream(OpeningVideoStreamArgs args = null)
+        => OpeningVideoStream?.Invoke(this, args);
     #endregion
 
     #region Decoder Events

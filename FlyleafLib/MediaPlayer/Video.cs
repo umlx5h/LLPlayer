@@ -141,7 +141,7 @@ public class Video : NotifyPropertyChanged
         if (decoder.VideoStream == null) { Reset(); return; }
 
         streamIndex = decoder.VideoStream.StreamIndex;
-        codec       = decoder.VideoStream.Codec;
+        codec       = player.VideoDecoder.CurCodecSpec.Name;
         fps         = decoder.VideoStream.FPS;
         pixelFormat = decoder.VideoStream.PixelFormatStr;
         framesTotal = decoder.VideoStream.TotalFrames;

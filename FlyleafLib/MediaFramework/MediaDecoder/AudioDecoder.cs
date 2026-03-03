@@ -53,7 +53,58 @@ public unsafe partial class AudioDecoder : DecoderBase
     public AudioDecoder(Config config, int uniqueId = -1, VideoDecoder syncDecoder = null) : base(config, uniqueId)
         => VideoDecoder = syncDecoder;
 
-    protected override int Setup(AVCodec* codec) => 0;
+    protected override bool Setup()
+    {
+        AVCodec* codec = string.IsNullOrEmpty(Config.Decoder._AudioCodec) ? avcodec_find_decoder(Stream.CodecID) : avcodec_find_decoder_by_name(Config.Decoder._AudioCodec);
+        if (codec == null)
+        {
+            Log.Error($"Codec not found ({(string.IsNullOrEmpty(Config.Decoder._AudioCodec) ? Stream.CodecID : Config.Decoder._AudioCodec)})");
+            return false;
+        }
+
+        if (CanDebug) Log.Debug($"Using {avcodec_get_name(codec->id)} codec");
+
+        codecCtx = avcodec_alloc_context3(codec); // Pass codec to use default settings
+        if (codecCtx == null)
+        {
+            Log.Error($"Failed to allocate context");
+            return false;
+        }
+
+        int ret = avcodec_parameters_to_context(codecCtx, Stream.AVStream->codecpar);
+        if (ret < 0)
+        {
+            Log.Error($"Failed to pass parameters to context - {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
+            return false;
+        }
+
+        codecCtx->pkt_timebase  = Stream.AVStream->time_base;
+        codecCtx->codec_id      = codec->id; // avcodec_parameters_to_context will change this we need to set Stream's Codec Id (eg we change mp2 to mp3)
+
+        var codecOpts = Config.Decoder.AudioCodecOpt;
+        AVDictionary* avopt = null;
+        foreach(var optKV in codecOpts)
+            _ = av_dict_set(&avopt, optKV.Key, optKV.Value, 0);
+
+        ret = avcodec_open2(codecCtx, null, avopt == null ? null : &avopt);
+        if (ret < 0)
+        {
+            if (avopt != null) av_dict_free(&avopt);
+            Log.Error($"Failed to open codec - {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
+            return false;
+        }
+
+        if (avopt != null)
+        {
+            AVDictionaryEntry *t = null;
+            while ((t = av_dict_get(avopt, "", t, DictReadFlags.IgnoreSuffix)) != null)
+                Log.Debug($"Ignoring codec option {BytePtrToStringUTF8(t->key)}");
+
+            av_dict_free(&avopt);
+        }
+
+        return true;
+    }
     private int SetupSwr()
     {
         int ret;

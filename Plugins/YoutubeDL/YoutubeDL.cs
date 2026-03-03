@@ -7,7 +7,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
 using FlyleafLib.MediaFramework.MediaDemuxer;
 using FlyleafLib.MediaFramework.MediaPlaylist;
 using FlyleafLib.MediaFramework.MediaStream;
@@ -23,6 +22,15 @@ public class YoutubeDL : PluginBase, IOpen, ISuggestExternalAudio, ISuggestExter
      * 2) Check Best Audio bitrates/quality (mainly for audio only player)
      * 3) Dispose ytdl and not tag it to every item (use only format if required)
      * 4) Use playlist_index to set the default playlist item
+     * 5) Video with audio has the language of the audio (this makes the GetBestMatch video to take count also the audio but we don't know if it is enabled/required)
+     * 6) Review supported subtitles formats (allow more/other than vtt?) - when they will work again
+     *
+     * Lot of issues with yt-dlp currently:
+     * - Cookies can't be exported anymore (?)
+     * - Brings playlists when it shouldn't
+     * - Double entries for formats (w/o "default" - youtube only?) (clean-up here based on format's main-unique fields / urls?)
+     * - Subtitles 429 errors - https://github.com/yt-dlp/yt-dlp/issues/13831
+     * - Audio languages are new thing? Creates different streams for those (instead of single with embedded streams?)
      */
 
     public new int      Priority        { get; set; } = 1999;
@@ -44,7 +52,7 @@ public class YoutubeDL : PluginBase, IOpen, ISuggestExternalAudio, ISuggestExter
     int                 retries;
 
     static HashSet<string>
-                        subsExt = new(StringComparer.OrdinalIgnoreCase) { "vtt", "srt", "ass", "ssa" };
+                        subsExt = new(StringComparer.OrdinalIgnoreCase) { "vtt" };
 
     public override Dictionary<string, string> GetDefaultOptions()
         => new()
@@ -62,30 +70,30 @@ public class YoutubeDL : PluginBase, IOpen, ISuggestExternalAudio, ISuggestExter
 
     private Format GetAudioOnly(YoutubeDLJson ytdl)
     {
-        // Prefer best with no video and protocol
-        // Prioritize m3u8 protocol because https is very slow on YouTube
-        var m3u8Formats = ytdl.formats.Where(f => f.protocol == "m3u8_native").ToList();
-        for (int i = m3u8Formats.Count - 1; i >= 0; i--)
-            if (HasAudio(m3u8Formats[i]) && !HasVideo(m3u8Formats[i]))
-                return m3u8Formats[i];
+        foreach (var lang in Config.Audio.Languages)
+        {
+            // Prefer best with no video and protocol
+            // Prioritize m3u8 protocol because https is very slow on YouTube
+            var m3u8Formats = ytdl.formats.Where(f => f.protocol == "m3u8_native").ToList();
+            for (int i = m3u8Formats.Count - 1; i >= 0; i--)
+                if (lang == Language.Get(ytdl.formats[i].language) && HasAudio(m3u8Formats[i]) && !HasVideo(m3u8Formats[i]))
+                    return m3u8Formats[i];
 
-        // Prefer best with no video (dont waste bandwidth)
-        for (int i = ytdl.formats.Count - 1; i >= 0; i--)
-            if (HasAudio(ytdl.formats[i]) && !HasVideo(ytdl.formats[i]))
-                return ytdl.formats[i];
+            // Prefer best with no video (dont waste bandwidth)
+            for (int i = ytdl.formats.Count - 1; i >= 0; i--)
+                if (lang == Language.Get(ytdl.formats[i].language) && HasAudio(ytdl.formats[i]) && !HasVideo(ytdl.formats[i]))
+                    return ytdl.formats[i];
 
-        // Prefer audio from worst video?
-        for (int i = 0; i < ytdl.formats.Count; i++)
-            if (HasAudio(ytdl.formats[i]))
-                return ytdl.formats[i];
+            // Prefer audio from worst video?
+            for (int i = 0; i < ytdl.formats.Count; i++)
+                if (lang == Language.Get(ytdl.formats[i].language) && lang == Language.Get(ytdl.formats[i].language) && HasAudio(ytdl.formats[i]))
+                    return ytdl.formats[i];
+        }
 
         return null;
     }
     private Format GetBestMatch(YoutubeDLJson ytdl)
     {
-        // TODO: Expose in settings (vCodecs Blacklist) || Create a HW decoding failed list dynamic (check also for whitelist)
-        List<string> vCodecsBlacklist = [];
-
         int maxHeight;
 
         if (int.TryParse(Options["MaxVideoHeight"], out var height) && height > 0)
@@ -96,16 +104,21 @@ public class YoutubeDL : PluginBase, IOpen, ISuggestExternalAudio, ISuggestExter
         // Video Streams Order based on Screen Resolution
         var iresults =
             from    format in ytdl.formats
-            where   HasVideo(format) && format.height <= maxHeight && (!Regex.IsMatch(format.protocol, "dash", RegexOptions.IgnoreCase) || format.vcodec.ToLower() == "vp9")
+            where
+                HasVideo(format) &&
+                format.height <= maxHeight &&
+                (!HasAudio(format) || Config.Audio.Languages.Contains(Language.Get(format.language))) && // TBR: Does not respect audio language priority
+                (!Regex.IsMatch(format.protocol, "dash", RegexOptions.IgnoreCase) || format.vcodec.Equals("vp9", StringComparison.OrdinalIgnoreCase))
             orderby format.width    descending,
                     format.height   descending,
                     format.protocol descending, // prefer m3u8 over https (for performance)
                     format.vcodec   descending, // prefer vp09 over avc   (for performance)
                     format.tbr      descending,
                     format.fps      descending
+
             select  format;
 
-        if (iresults == null || iresults.Count() == 0)
+        if (iresults == null || !iresults.Any())
         {
             // Fall-back to any
             iresults =
@@ -119,10 +132,11 @@ public class YoutubeDL : PluginBase, IOpen, ISuggestExternalAudio, ISuggestExter
                         format.fps      descending
                 select  format;
 
-            if (iresults == null || iresults.Count() == 0) return null;
+            if (iresults == null || !iresults.Any())
+                return null;
         }
 
-        List<Format> results = iresults.ToList();
+        List<Format> results = [.. iresults];
 
         // Best Resolution
         double bestWidth = results[0].width;
@@ -141,9 +155,9 @@ public class YoutubeDL : PluginBase, IOpen, ISuggestExternalAudio, ISuggestExter
                 if (results[i].width != bestWidth || results[i].height != bestHeight)
                     break;
 
-                if (priority == 0 && !IsBlackListed(vCodecsBlacklist, results[i].vcodec) && results[i].acodec != "none")
+                if (priority == 0 && results[i].acodec != "none")
                     return results[i];
-                else if (priority == 1 && !IsBlackListed(vCodecsBlacklist, results[i].vcodec))
+                else if (priority == 1)
                     return results[i];
                 else if (priority == 2)
                     return results[i];
@@ -152,16 +166,9 @@ public class YoutubeDL : PluginBase, IOpen, ISuggestExternalAudio, ISuggestExter
             priority++;
         }
 
-        return results[results.Count - 1]; // Fall-back to any
+        return results[^1]; // Fall-back to any
     }
-    private static bool IsBlackListed(List<string> blacklist, string codec)
-    {
-        foreach (string codec2 in blacklist)
-            if (Regex.IsMatch(codec, codec2, RegexOptions.IgnoreCase))
-                return true;
 
-        return false;
-    }
     private static bool HasVideo(Format fmt)
     {
         if (fmt.height > 0 || fmt.vbr > 0 || fmt.vcodec != "none")
@@ -298,27 +305,33 @@ public class YoutubeDL : PluginBase, IOpen, ISuggestExternalAudio, ISuggestExter
             ytdl.formats = [ytdl];
 
         // Audio / Video Streams
-        for (int i=0; i<ytdl.formats.Count; i++)
+        for (int i = 0; i < ytdl.formats.Count; i++)
         {
             if (sessionId != Handler.OpenCounter)
                 return;
 
             Format fmt = ytdl.formats[i];
 
-            if (ytdl.formats[i].vcodec == null)
-                ytdl.formats[i].vcodec = "";
+            if (fmt.vcodec == null)
+                fmt.vcodec = "";
 
-            if (ytdl.formats[i].acodec == null)
-                ytdl.formats[i].acodec = "";
+            if (fmt.acodec == null)
+                fmt.acodec = "";
 
-            if (ytdl.formats[i].protocol == null)
-                ytdl.formats[i].protocol = "";
+            if (fmt.protocol == null)
+                fmt.protocol = "";
 
             bool hasAudio = HasAudio(fmt);
             bool hasVideo = HasVideo(fmt);
 
             if (!hasVideo && !hasAudio)
                 continue;
+
+            if (Language.Get(fmt.language) == Language.Unknown)
+                fmt.language = "en"; // Default to english ?
+
+            if (hasAudio && !Config.Audio.Languages.Contains(Language.Get(fmt.language)))
+                continue; // Just trying to reduce the number of streams?
 
             ExternalStream extStream;
 
@@ -332,7 +345,7 @@ public class YoutubeDL : PluginBase, IOpen, ISuggestExternalAudio, ISuggestExter
                     HasAudio    = hasAudio,
                     BitRate     = (long)fmt.vbr,
                     Codec       = fmt.vcodec,
-                    //Language = Language.Get(fmt.language),
+                    //Language = Language.Get(fmt.language), // TBR: this is audio language
                     Width       = (int)fmt.width,
                     Height      = (int)fmt.height,
                     FPS         = fmt.fps
@@ -345,7 +358,6 @@ public class YoutubeDL : PluginBase, IOpen, ISuggestExternalAudio, ISuggestExter
                     Url         = fmt.url,
                     UrlFallback = string.IsNullOrEmpty(fmt.manifest_url) ? ytdl.manifest_url : fmt.manifest_url,
                     Protocol    = fmt.protocol,
-                    HasVideo    = hasVideo,
                     BitRate     = (long)fmt.abr,
                     Codec       = fmt.acodec,
                     Language    = Language.Get(fmt.language)
@@ -498,6 +510,7 @@ public class YoutubeDL : PluginBase, IOpen, ISuggestExternalAudio, ISuggestExter
                     StartInfo = new ProcessStartInfo
                     {
                         FileName        = Path.Combine(Engine.Plugins.Folder, Name, plugin_path),
+                        // TBR: --extractor-args "youtube:skip=dash" | --youtube-skip-dash-manifest deprecated
                         Arguments       = $"{dynamicOptions}{Options["ExtraArguments"]} --no-check-certificate --skip-download --youtube-skip-dash-manifest --write-info-json -P \"{workingDir}\" \"{Playlist.Url}\" -o \"%(title).220B\"", // 418 max filename length
                         CreateNoWindow  = true,
                         UseShellExecute = false,

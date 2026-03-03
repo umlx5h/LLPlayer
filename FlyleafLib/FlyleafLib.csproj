@@ -6,7 +6,7 @@
     <UseWPF>true</UseWPF>
     <RepositoryUrl></RepositoryUrl>
     <Description>Media Player .NET Library for WinUI 3/WPF/WinForms (based on FFmpeg/DirectX)</Description>
-    <Version>3.9.4</Version>
+    <Version>3.9.5</Version>
     <Authors>SuRGeoNix</Authors>
     <Copyright>SuRGeoNix © 2025</Copyright>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>

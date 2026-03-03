@@ -13,12 +13,22 @@ using FlyleafLib.MediaFramework.MediaDemuxer;
 
 namespace FlyleafLib.MediaFramework.MediaDecoder;
 
-/* TODO
+/* TBR
  * HWFrames should be handled by renderer (we keep ref on hwframes and on avframe) | We keep avframe ref (in LastFrame) but we unref the hwframes (might cause issues)
+ * 
+ * Missing locks (e.g. GetFrameNext) / Missing checks after locks (e.g. disposed) / Mixing locks (actions/demuxer/codecCtx/renderer)
+ *  Currently no issues as we use locks at higher level
+ *  
+ * GetFrameNumberX: Still issues mainly with Prev, e.g. jumps from 279 to 281 frame | VFR / Timebase / FrameDuration / FPS inaccuracy
+ *  Should use just GetFramePrev/Next and work with pts (but we currenlty work with Player.CurTime)
+ *  
+ * Open/Open2: Merge and review quick Setup/Full Dispose
  */
 
 public unsafe class VideoDecoder : DecoderBase
 {
+    public Action           OpeningCodec;
+
     public ConcurrentQueue<VideoFrame>
                             Frames              { get; protected set; } = [];
     public Renderer         Renderer            { get; private set; }
@@ -28,8 +38,6 @@ public unsafe class VideoDecoder : DecoderBase
 
     public long             StartTime           { get; internal set; } = AV_NOPTS_VALUE;
     public long             StartRecordTime     { get; internal set; } = AV_NOPTS_VALUE;
-
-    const AVPixelFormat     PIX_FMT_HWACCEL     = AVPixelFormat.D3d11;
 
     internal SwsContext*    swsCtx;
     nint                    swsBufferPtr;
@@ -65,7 +73,7 @@ public unsafe class VideoDecoder : DecoderBase
     const long              FIX_SEEK_DELTA_MCS      = 2_100_000;
 
     public VideoDecoder(Config config, int uniqueId = -1) : base(config, uniqueId)
-        => getHWformat = new AVCodecContext_get_format(get_format);
+        => getHWformat = new AVCodecContext_get_format(GetFormat);
 
     protected override void OnSpeedChanged(double value)
     {
@@ -80,7 +88,7 @@ public unsafe class VideoDecoder : DecoderBase
     public void ResetSpeedFrame()
         => curSpeedFrame = 0;
 
-    public void CreateRenderer() // TBR: It should be in the constructor but DecoderContext will not work with null VideoDecoder for AudioOnly
+    public void EnsureRenderer() // TBR: It should be in the constructor but DecoderContext will not work with null VideoDecoder for AudioOnly
     {
         if (Renderer == null)
             Renderer = new Renderer(this, 0, UniqueId);
@@ -90,12 +98,12 @@ public unsafe class VideoDecoder : DecoderBase
     public void DestroyRenderer() => Renderer?.Dispose();
     public void CreateSwapChain(nint handle)
     {
-        CreateRenderer();
+        EnsureRenderer();
         Renderer.InitializeSwapChain(handle);
     }
     public void CreateSwapChain(Action<IDXGISwapChain2> swapChainWinUIClbk)
     {
-        CreateRenderer();
+        EnsureRenderer();
         Renderer.SwapChainWinUIClbk = swapChainWinUIClbk;
         if (Renderer.SwapChainWinUIClbk != null)
             Renderer.InitializeWinUISwapChain();
@@ -104,45 +112,100 @@ public unsafe class VideoDecoder : DecoderBase
     public void DestroySwapChain() => Renderer?.DisposeSwapChain();
 
     #region Video Acceleration (Should be disposed seperately)
-    const int               AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX = 0x01;
-    const AVHWDeviceType    HW_DEVICE = AVHWDeviceType.D3d11va;
+    public CodecSpec            CurCodecSpec;
+    const AVPixelFormat         PIX_FMT_HWACCEL = AVPixelFormat.D3d11;
+    const AVHWDeviceType        HW_DEVICE       = AVHWDeviceType.D3d11va;
+    internal ID3D11Texture2D    textureFFmpeg;
+    AVCodecContext_get_format   getHWformat;
+    AVBufferRef*                hw_device_ctx, hwframes;
 
-    internal ID3D11Texture2D
-                            textureFFmpeg;
-    AVCodecContext_get_format
-                            getHWformat;
-    AVBufferRef*            hwframes;
-    AVBufferRef*            hw_device_ctx;
-
-    internal static bool CheckCodecSupport(AVCodec* codec)
+    public class CodecSpec
     {
-        for (int i = 0; ; i++)
-        {
-            var config = avcodec_get_hw_config(codec, i);
-            if (config == null) break;
-            if ((config->methods & AVCodecHwConfigMethod.HwDeviceCtx) == 0 || config->pix_fmt == AVPixelFormat.None) continue;
+        public string   Name;
+        public AVCodec* Codec;
+        public bool     IsHW;
+        public bool     IsEmpty => Codec == null;
 
-            if (config->device_type == HW_DEVICE && config->pix_fmt == PIX_FMT_HWACCEL) return true;
+        public static CodecSpec Empty = new();
+    }
+    
+    static ConcurrentDictionary<AVCodecID,  CodecSpec> hwSpecs  = [];
+    static ConcurrentDictionary<AVCodecID,  CodecSpec> swSpecs  = [];
+    static ConcurrentDictionary<string,     CodecSpec> specs    = [];
+    static CodecSpec FindHWDecoder(AVCodecID id)
+    {
+        if (hwSpecs.TryGetValue(id, out CodecSpec spec))
+            return spec;
+
+        AVCodec* codec, found = null;
+        void* opaque = null;
+        while ((codec = av_codec_iterate(ref opaque)) != null)
+        {
+            if (codec->id != id || av_codec_is_decoder(codec) == 0)
+                continue;
+
+            int i = 0;
+            AVCodecHWConfig* config;
+            while((config = avcodec_get_hw_config(codec, i++)) != null)
+                if (config->pix_fmt == PIX_FMT_HWACCEL && config->methods.HasFlag(AVCodecHwConfigMethod.HwDeviceCtx))
+                {
+                    spec = new() { Codec = codec, Name = BytePtrToStringUTF8(codec->name), IsHW = true};
+                    hwSpecs[codec->id] = spec;
+                    return spec;
+                }
         }
 
-        return false;
+        hwSpecs[id] = CodecSpec.Empty;
+        return CodecSpec.Empty;
     }
-    internal int InitVA()
+    static CodecSpec FindSWDecoder(AVCodecID id)
     {
-        int ret;
-        AVHWDeviceContext*      device_ctx;
-        AVD3D11VADeviceContext* d3d11va_device_ctx;
+        if (swSpecs.TryGetValue(id, out CodecSpec spec))
+            return spec;
 
-        if (Renderer.Device == null || hw_device_ctx != null) return -1;
+        AVCodec* codec = avcodec_find_decoder(id);
+        spec = codec != null ? new() { Codec = codec, Name = BytePtrToStringUTF8(codec->name) } : CodecSpec.Empty;
+        swSpecs[codec->id] = spec;
+        return spec;
+    }
+    static CodecSpec FindDecoder(string name)
+    {
+        if (specs.TryGetValue(name, out CodecSpec spec))
+            return spec;
 
-        hw_device_ctx       = av_hwdevice_ctx_alloc(HW_DEVICE);
+        AVCodec* codec = avcodec_find_decoder_by_name(name);
+        if (codec == null)
+        {
+            specs[name] = CodecSpec.Empty;
+            return CodecSpec.Empty;
+        }
 
-        device_ctx          = (AVHWDeviceContext*) hw_device_ctx->data;
-        d3d11va_device_ctx  = (AVD3D11VADeviceContext*) device_ctx->hwctx;
-        d3d11va_device_ctx->device
-                            = (Flyleaf.FFmpeg.ID3D11Device*) Renderer.Device.NativePointer;
+        bool isHW = false;
+        int i = 0;
+        AVCodecHWConfig* config;
+        while((config = avcodec_get_hw_config(codec, i++)) != null)
+            if (config->pix_fmt == PIX_FMT_HWACCEL && config->methods.HasFlag(AVCodecHwConfigMethod.HwDeviceCtx))
+            {
+                isHW = true;
+                break;
+            }
 
-        ret                 = av_hwdevice_ctx_init(hw_device_ctx);
+        spec = new() { Codec = codec, Name = BytePtrToStringUTF8(codec->name), IsHW = isHW };
+        specs[name] = spec;
+        return spec;
+    }
+
+    bool InitVA()
+    {
+        AVHWDeviceContext*          device_ctx;
+        AVD3D11VADeviceContext*     d3d11va_device_ctx;
+
+        hw_device_ctx               = av_hwdevice_ctx_alloc(HW_DEVICE);
+        device_ctx                  = (AVHWDeviceContext*) hw_device_ctx->data;
+        d3d11va_device_ctx          = (AVD3D11VADeviceContext*) device_ctx->hwctx;
+        d3d11va_device_ctx->device  = (Flyleaf.FFmpeg.ID3D11Device*) Renderer.Device.NativePointer;
+        int ret                     = av_hwdevice_ctx_init(hw_device_ctx);
+
         if (ret != 0)
         {
             Log.Error($"VA Failed - {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
@@ -151,18 +214,19 @@ public unsafe class VideoDecoder : DecoderBase
                 av_buffer_unref(ptr);
 
             hw_device_ctx = null;
+            return false;
         }
 
         Renderer.Device.AddRef(); // Important to give another reference for FFmpeg so we can dispose without issues
 
-        return ret;
+        return true;
     }
 
-    private AVPixelFormat get_format(AVCodecContext* avctx, AVPixelFormat* pix_fmts)
+    private AVPixelFormat GetFormat(AVCodecContext* avctx, AVPixelFormat* pix_fmts)
     {
         if (CanDebug)
         {
-            Log.Debug($"Codec profile '{VideoStream.Codec} {avcodec_profile_name(codecCtx->codec_id, codecCtx->profile)}'");
+            Log.Debug($"Codec profile '{avcodec_profile_name(codecCtx->codec_id, codecCtx->profile)}'");
 
             if (CanTrace)
             {
@@ -202,11 +266,9 @@ public unsafe class VideoDecoder : DecoderBase
         lock (lockCodecCtx)
         {
             if (!foundHWformat || !VideoAccelerated || AllocateHWFrames() != 0)
-                // CRIT: Do we keep ref of texture array? do we dispose it on all refs? otherwise make sure we inform to dispose frames before re-alloc
             {
-                if (CanWarn)
-                    Log.Warn("HW format not found. Fallback to sw format");
-
+                // TBR: Do we keep ref of texture array? do we dispose it on all refs? otherwise make sure we inform to dispose frames before re-alloc
+                Log.Info("HW decoding failed");
                 swFallback = true;
                 return avcodec_default_get_format(avctx, pix_fmts);
             }
@@ -214,8 +276,8 @@ public unsafe class VideoDecoder : DecoderBase
             if (CanDebug)
                 Log.Debug("HW frame allocation completed");
 
-            if (ret == 2) // NOTE: It seems that codecCtx changes but upcoming frame still has previous configuration (this will fire FillFromCodec twice, could cause issues?)
-            {
+            if (ret == 2)                    
+            {   // TBR: It seems that codecCtx changes but upcoming frame still has previous configuration (this will fire FillFromCodec twice, could cause issues?)
                 filledFromCodec = false;
                 codecChanged    = true;
                 Log.Warn($"Codec changed {VideoStream.CodecID} {curFrameWidth}x{curFrameHeight} => {codecCtx->codec_id} {frame->width}x{frame->height}");
@@ -239,7 +301,6 @@ public unsafe class VideoDecoder : DecoderBase
 
         return 0;
     }
-
     private int AllocateHWFrames()
     {
         if (hwframes != null)
@@ -282,37 +343,78 @@ public unsafe class VideoDecoder : DecoderBase
     }
     #endregion
 
-    protected override int Setup(AVCodec* codec)
+    protected override bool Setup()
     {
-        // Ensures we have a renderer (no swap chain is required)
-        CreateRenderer();
+        EnsureRenderer();
+        //if (Renderer == null || Renderer.Device == null || hw_device_ctx != null) return false; // Should not happen*
 
-        vPackets        = demuxer.VideoPackets;
-        VideoAccelerated= false;
+        VideoAccelerated = !swFallback &&
+                           !Config.Video.SwsForce &&
+                            Config.Video.VideoAcceleration &&
+                            Renderer.Device.FeatureLevel >= Vortice.Direct3D.FeatureLevel.Level_10_0;
 
-        if (!swFallback && !Config.Video.SwsForce && Config.Video.VideoAcceleration && Renderer.Device.FeatureLevel >= Vortice.Direct3D.FeatureLevel.Level_10_0)
+        OpeningCodec?.Invoke();
+
+        if (!string.IsNullOrEmpty(Config.Decoder._VideoCodec))
+            CurCodecSpec = FindDecoder(Config.Decoder._VideoCodec);
+        else if (VideoAccelerated)
         {
-            if (CheckCodecSupport(codec))
+            CurCodecSpec = FindHWDecoder(Stream.CodecID);
+            if (CurCodecSpec.IsEmpty)
             {
-                if (InitVA() == 0)
-                {
-                    codecCtx->hw_device_ctx = av_buffer_ref(hw_device_ctx);
-                    VideoAccelerated = true;
-                    Log.Debug("VA Success");
-                }
+                if (CanDebug) Log.Debug($"HW decoding not supported for {Stream.CodecID}");
+                CurCodecSpec = FindSWDecoder(Stream.CodecID);
             }
-            else
-                Log.Info($"VA {codec->id} not supported");
         }
         else
-            Log.Debug("VA Disabled");
+            CurCodecSpec = FindSWDecoder(Stream.CodecID);
 
-        keyFrameRequired    = keyPacketRequired = false; // allow no key packet after open (lot of videos missing this)
-        filledFromCodec     = false;
-        lastFixedPts        = 0; // TBR: might need to set this to first known pts/dts
-        startPts            = VideoStream.StartTimePts;
-        codecCtx->apply_cropping
-                            = 0;
+        if (CurCodecSpec.IsEmpty)
+        {
+            Log.Error($"Decoder not found ({(!string.IsNullOrEmpty(Config.Decoder._VideoCodec) ? Config.Decoder._VideoCodec : Stream.CodecID)})");
+            return false;
+        }
+
+        codecCtx = avcodec_alloc_context3(CurCodecSpec.Codec); // Pass codec to use default settings
+        if (codecCtx == null)
+        {
+            Log.Error($"Failed to allocate context");
+            return false;
+        }
+
+        int ret = avcodec_parameters_to_context(codecCtx, Stream.AVStream->codecpar);
+        if (ret < 0)
+        {
+            Log.Error($"Failed to pass parameters to context - {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
+            return false;
+        }
+
+        codecCtx->pkt_timebase  = Stream.AVStream->time_base;
+        codecCtx->codec_id      = CurCodecSpec.Codec->id; // avcodec_parameters_to_context will change this we need to set Stream's Codec Id (eg we change mp2 to mp3)
+        codecCtx->apply_cropping= 0;
+
+        if (Config.Decoder.ShowCorrupted)
+            codecCtx->flags |= CodecFlags.OutputCorrupt;
+
+        if (Config.Decoder.LowDelay)
+        {
+            if (Config.Decoder.AllowDropFrames)
+                codecCtx->flags |= CodecFlags.LowDelay;
+            else
+            {
+                codecCtx->skip_frame = AVDiscard.None;
+                codecCtx->flags2 |= CodecFlags2.Fast;
+            }
+        }
+        else if (!Config.Decoder.AllowDropFrames)
+            codecCtx->skip_frame = AVDiscard.None;
+
+        var codecOpts = Config.Decoder.VideoCodecOpt;
+        AVDictionary* avopt = null;
+        foreach(var optKV in codecOpts)
+            _ = av_dict_set(&avopt, optKV.Key, optKV.Value, 0);
+
+        VideoAccelerated = VideoAccelerated && CurCodecSpec.IsHW && InitVA();
 
         if (VideoAccelerated)
         {
@@ -321,15 +423,41 @@ public unsafe class VideoDecoder : DecoderBase
             if (Config.Decoder.AllowProfileMismatch)
                 codecCtx->hwaccel_flags|= HWAccelFlags.AllowProfileMismatch;
             codecCtx->get_format        = getHWformat;
+            codecCtx->hw_device_ctx     = av_buffer_ref(hw_device_ctx);
             codecCtx->extra_hw_frames   = Config.Decoder.MaxVideoFrames + 1; // 1 extra for Renderer's LastFrame
         }
         else
-            codecCtx->thread_count = Math.Min(Config.Decoder.VideoThreads, codecCtx->codec_id == AVCodecID.Hevc ? 32 : 16);
+            codecCtx->thread_count      = Math.Min(Config.Decoder.VideoThreads, codecCtx->codec_id == AVCodecID.Hevc ? 32 : 16);
+
+        ret = avcodec_open2(codecCtx, null, avopt == null ? null : &avopt);
+        if (ret < 0)
+        {
+            if (avopt != null) av_dict_free(&avopt);
+            Log.Error($"Failed to open codec - {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
+            return false;
+        }
+
+        if (avopt != null)
+        {
+            AVDictionaryEntry *t = null;
+            while ((t = av_dict_get(avopt, "", t, DictReadFlags.IgnoreSuffix)) != null)
+                Log.Debug($"Ignoring codec option {BytePtrToStringUTF8(t->key)}");
+
+            av_dict_free(&avopt);
+        }
 
         if (codecCtx->codec_descriptor != null)
             isIntraOnly = codecCtx->codec_descriptor->props.HasFlag(CodecPropFlags.IntraOnly);
 
-        return 0;
+        vPackets            = demuxer.VideoPackets;
+        keyFrameRequired    = keyPacketRequired = false; // allow no key packet after open (lot of videos missing this)
+        filledFromCodec     = false;
+        lastFixedPts        = 0; // TBR: might need to set this to first known pts/dts
+        startPts            = VideoStream.StartTimePts;
+
+        if (CanDebug) Log.Debug($"Using {CurCodecSpec.Name} {(VideoAccelerated ? "(HW)" : "(SW)")}");
+
+        return true;
     }
     internal bool SetupSws()
     {
@@ -691,11 +819,11 @@ public unsafe class VideoDecoder : DecoderBase
         keyFrameRequired    = false;
     }
 
-    internal string SWFallback()
+    internal bool SWFallback()
     {
         lock (Renderer.lockDevice)
         {
-            string ret;
+            bool ret;
 
             DisposeInternal();
             if (codecCtx != null)
@@ -716,9 +844,7 @@ public unsafe class VideoDecoder : DecoderBase
     }
 
     private void RunInternalReverse()
-    {
-        // Bug with B-frames, we should not remove the ref packets (we miss frames each time we restart decoding the gop)
-
+    {   // BUG: with B-frames, we should not remove the ref packets (we miss frames each time we restart decoding the gop)
         int ret = 0;
         int allowedErrors = Config.Decoder.MaxErrors;
         AVPacket *packet;
@@ -906,19 +1032,11 @@ public unsafe class VideoDecoder : DecoderBase
                 return;
 
             bool wasRunning = IsRunning;
-
-            var stream = Stream;
-
-            Dispose();
-            Open(stream);
-
+            Open(Stream);
             if (wasRunning)
                 Start();
         }
     }
-
-    // TBR (GetFrameNumberX): Still issues mainly with Prev, e.g. jumps from 279 to 281 frame | VFR / Timebase / FrameDuration / FPS inaccuracy
-    // Should use just GetFramePrev/Next and work with pts (but we currenlty work with Player.CurTime)
 
     /// <summary>
     /// Gets the frame number of a VideoFrame timestamp
@@ -993,8 +1111,7 @@ public unsafe class VideoDecoder : DecoderBase
             {
                 if (curFrameNumber >= frameNumber ||
                     (backwards && curFrameNumber + 2 >= frameNumber && GetFrameNumber2((long)(frame->pts * VideoStream.Timebase) + VideoStream.FrameDuration + (VideoStream.FrameDuration / 2)) - curFrameNumber > 1))
-                    // At least return a previous frame in case of Tb inaccuracy and don't stuck at the same frame
-                {
+                {   // At least return a previous frame in case of Tb inaccuracy and don't stuck at the same frame
                     var mFrame = Renderer.FillPlanes(frame);
                     if (mFrame != null)
                         return mFrame;

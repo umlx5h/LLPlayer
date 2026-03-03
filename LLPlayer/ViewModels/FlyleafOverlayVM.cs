@@ -230,7 +230,7 @@ public class FlyleafOverlayVM : Bindable
         // CTRL + Wheel  : Zoom in / out
         // SHIFT + Wheel : Subtitles Up / Down
         // CTRL + SHIFT + Wheel : Subtitles Size Increase / Decrease
-        if (e.Delta == 0)
+        if (e.Delta == 0 || e.Handled)
         {
             return;
         }
@@ -239,6 +239,8 @@ public class FlyleafOverlayVM : Bindable
 
         bool ctrlDown = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl);
         bool shiftDown = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
+
+        bool actionDone = false;
 
         if (ctrlDown && shiftDown)
         {
@@ -250,6 +252,7 @@ public class FlyleafOverlayVM : Bindable
             {
                 FL.Action.CmdSubsSizeDecrease.Execute();
             }
+            actionDone = true;
         }
         else if (ctrlDown)
         {
@@ -263,6 +266,7 @@ public class FlyleafOverlayVM : Bindable
             {
                 FL.Player.ZoomOut(curDpi);
             }
+            actionDone = true;
         }
         else if (shiftDown)
         {
@@ -274,6 +278,7 @@ public class FlyleafOverlayVM : Bindable
             {
                 FL.Action.CmdSubsPositionDown.Execute();
             }
+            actionDone = true;
         }
         else
         {
@@ -287,10 +292,14 @@ public class FlyleafOverlayVM : Bindable
                 {
                     FL.Player.Audio.VolumeDown();
                 }
+                actionDone = true;
             }
         }
 
-        e.Handled = true;
+        if (actionDone)
+        {
+            e.Handled = true;
+        }
     }
     #endregion
 

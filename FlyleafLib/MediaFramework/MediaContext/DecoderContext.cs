@@ -169,7 +169,7 @@ public unsafe partial class DecoderContext : PluginHandler
         DataDecoder         = new(Config, UniqueId);
 
         if (EnableDecoding && config.Player.Usage != MediaPlayer.Usage.Audio)
-            VideoDecoder.CreateRenderer();
+            VideoDecoder.EnsureRenderer();
 
         VideoDecoder.recCompleted = RecordCompleted;
         AudioDecoder.recCompleted = RecordCompleted;

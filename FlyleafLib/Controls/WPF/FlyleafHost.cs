@@ -1335,7 +1335,9 @@ public class FlyleafHost : ContentControl, IHostPlayer, IDisposable
 
     private void Surface_MouseWheel(object sender, MouseWheelEventArgs e)
     {
-        if (Player == null || e.Delta == 0)
+        // NOTE/WPF BUG: Attached Surface (with Owner) will fire the global events (MouseWheel only?*) twice
+
+        if (Player == null || e.Delta == 0 || e.Handled)
             return;
 
         if      ((Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl)) &&
@@ -1347,6 +1349,8 @@ public class FlyleafHost : ContentControl, IHostPlayer, IDisposable
                 Player.ZoomIn(curDpi);
             else
                 Player.ZoomOut(curDpi);
+
+            e.Handled = true;
         }
         else if ((Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift)) &&
             (PanRotateOnShiftWheel == AvailableWindows.Surface || PanZoomOnCtrlWheel == AvailableWindows.Both))
@@ -1355,6 +1359,8 @@ public class FlyleafHost : ContentControl, IHostPlayer, IDisposable
                 Player.RotateRight();
             else
                 Player.RotateLeft();
+
+            e.Handled = true;
         }
 
         //else if (IsAttached) // TBR ScrollViewer

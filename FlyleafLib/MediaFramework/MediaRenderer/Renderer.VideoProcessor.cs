@@ -437,8 +437,7 @@ unsafe public partial class Renderer
 
         player?.Host?.Player_RatioChanged(curRatio); // return handled and avoid SetViewport?*
 
-        if (refresh)
-            SetViewport();
+        SetViewport(refresh);
     }
 
     internal void UpdateCropping(bool refresh = true)
@@ -497,8 +496,8 @@ unsafe public partial class Renderer
             curRatio = actualRotation == 90 || actualRotation == 270 ? 1 / keepRatio : keepRatio;
             player?.Host?.Player_RatioChanged(curRatio);
         }
-        else if (refresh)
-            SetViewport();
+
+        SetViewport(refresh);
     }
 
     internal void UpdateVideoProcessor()

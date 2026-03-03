@@ -14,7 +14,7 @@ public unsafe class DataDecoder : DecoderBase
     public DataDecoder(Config config, int uniqueId = -1) : base(config, uniqueId) { }
 
 
-    protected override unsafe int Setup(AVCodec* codec) => 0;
+    protected override unsafe bool Setup() => true;
     protected override void DisposeInternal()
         => Frames = [];
 
