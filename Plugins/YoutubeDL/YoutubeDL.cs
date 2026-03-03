@@ -70,23 +70,27 @@ public class YoutubeDL : PluginBase, IOpen, ISuggestExternalAudio, ISuggestExter
 
     private Format GetAudioOnly(YoutubeDLJson ytdl)
     {
-        foreach (var lang in Config.Audio.Languages)
+        // When the audio is in an unknown lang or matches the video's lang, always load it by inserting null at the end.
+        List<Language> confLangs = [.. Config.Audio.Languages];
+        confLangs.Add(null);
+
+        foreach (Language lang in confLangs)
         {
             // Prefer best with no video and protocol
             // Prioritize m3u8 protocol because https is very slow on YouTube
             var m3u8Formats = ytdl.formats.Where(f => f.protocol == "m3u8_native").ToList();
             for (int i = m3u8Formats.Count - 1; i >= 0; i--)
-                if (lang == Language.Get(ytdl.formats[i].language) && HasAudio(m3u8Formats[i]) && !HasVideo(m3u8Formats[i]))
+                if ((lang == null || lang == Language.Get(m3u8Formats[i].language)) && HasAudio(m3u8Formats[i]) && !HasVideo(m3u8Formats[i]))
                     return m3u8Formats[i];
 
             // Prefer best with no video (dont waste bandwidth)
             for (int i = ytdl.formats.Count - 1; i >= 0; i--)
-                if (lang == Language.Get(ytdl.formats[i].language) && HasAudio(ytdl.formats[i]) && !HasVideo(ytdl.formats[i]))
+                if ((lang == null || lang == Language.Get(ytdl.formats[i].language)) && HasAudio(ytdl.formats[i]) && !HasVideo(ytdl.formats[i]))
                     return ytdl.formats[i];
 
             // Prefer audio from worst video?
             for (int i = 0; i < ytdl.formats.Count; i++)
-                if (lang == Language.Get(ytdl.formats[i].language) && lang == Language.Get(ytdl.formats[i].language) && HasAudio(ytdl.formats[i]))
+                if ((lang == null || lang == Language.Get(ytdl.formats[i].language)) && HasAudio(ytdl.formats[i]))
                     return ytdl.formats[i];
         }
 
@@ -304,6 +308,9 @@ public class YoutubeDL : PluginBase, IOpen, ISuggestExternalAudio, ISuggestExter
         if (ytdl.formats == null)
             ytdl.formats = [ytdl];
 
+        // language of the original video (may not be available)
+        Language videoLang = ytdl.language == null ? Language.Unknown : Language.Get(ytdl.language);
+
         // Audio / Video Streams
         for (int i = 0; i < ytdl.formats.Count; i++)
         {
@@ -327,11 +334,15 @@ public class YoutubeDL : PluginBase, IOpen, ISuggestExternalAudio, ISuggestExter
             if (!hasVideo && !hasAudio)
                 continue;
 
-            if (Language.Get(fmt.language) == Language.Unknown)
-                fmt.language = "en"; // Default to english ?
+            Language lang = Language.Get(fmt.language);
 
-            if (hasAudio && !Config.Audio.Languages.Contains(Language.Get(fmt.language)))
-                continue; // Just trying to reduce the number of streams?
+            // Skip audios in languages different from the video and not configured in the settings
+            // if the language is unknown, it will always be loaded
+            if (hasAudio && lang != Language.Unknown && videoLang != Language.Unknown)
+            {
+                if (videoLang != lang && !Config.Audio.Languages.Contains(lang))
+                    continue;
+            }
 
             ExternalStream extStream;
 
@@ -360,7 +371,7 @@ public class YoutubeDL : PluginBase, IOpen, ISuggestExternalAudio, ISuggestExter
                     Protocol    = fmt.protocol,
                     BitRate     = (long)fmt.abr,
                     Codec       = fmt.acodec,
-                    Language    = Language.Get(fmt.language)
+                    Language    = lang
                 };
             }
 
@@ -377,8 +388,6 @@ public class YoutubeDL : PluginBase, IOpen, ISuggestExternalAudio, ISuggestExter
         // Subtitles Streams
         try
         {
-            // May not be available
-            Language videoLang = ytdl.language == null ? Language.Unknown : Language.Get(ytdl.language);
             HashSet<string> addedUrl = new(); // for de-duplication
 
             if (ytdl.automatic_captions != null)
