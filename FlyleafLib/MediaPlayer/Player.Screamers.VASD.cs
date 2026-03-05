@@ -356,6 +356,8 @@ unsafe partial class Player
             {
                 if (VideoDecoder.Status == MediaFramework.Status.Ended) // TBR: Transfer to Playback finally for all screamers*?
                 {
+                    Thread.Sleep(Math.Min((int)(VideoDemuxer.VideoStream.FrameDuration / 10000), 40)); // TBR: Last frame's duration | Pauses the rendering(*) | Let audio for proper closure?*
+
                     UpdateCurTime(
                         Math.Abs(VideoDemuxer.Duration - curTime) < 2 * VideoDemuxer.VideoStream.FrameDuration ?
                         VideoDemuxer.Duration :

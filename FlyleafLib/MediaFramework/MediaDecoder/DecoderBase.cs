@@ -22,7 +22,7 @@ public abstract unsafe class DecoderBase : RunThreadBase
 
     internal bool               codecChanged;
     internal bool               filledFromCodec;
-    protected AVFrame*          frame;
+    internal AVFrame*           frame;
     protected AVCodecContext*   codecCtx;
     internal  object            lockCodecCtx    = new();
 

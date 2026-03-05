@@ -82,7 +82,7 @@ public static partial class Utils
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
         public static extern EXECUTION_STATE SetThreadExecutionState(EXECUTION_STATE esFlags);
-        [FlagsAttribute]
+        [Flags]
         public enum EXECUTION_STATE : uint
         {
             ES_AWAYMODE_REQUIRED    = 0x00000040,

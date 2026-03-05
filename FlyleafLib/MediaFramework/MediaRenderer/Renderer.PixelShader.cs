@@ -126,8 +126,6 @@ unsafe public partial class Renderer
                 VideoDecoder.DisposeFrames();
             }
 
-            textDesc[0].BindFlags
-                            &= ~BindFlags.RenderTarget; // Only D3D11VP without ZeroCopy requires it
             curPSCase       = PSCase.None;
             prevPSUniqueId  = curPSUniqueId;
             curPSUniqueId   = "";

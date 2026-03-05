@@ -68,6 +68,7 @@ public unsafe partial class Renderer
 
     internal ID3D11Device   Device;
     IDXGIDevice1            dxgiDevice;
+    public FeatureLevel     FeatureLevel    { get; private set; }
     public GPUAdapter       GPUAdapter      => gpuAdapter;
     IDXGIAdapter            dxgiAdapter;
     GPUAdapter              gpuAdapter;
@@ -162,6 +163,7 @@ public unsafe partial class Renderer
                     }
                 }
 
+                FeatureLevel = Device.FeatureLevel;
                 context = Device.ImmediateContext;
                 dxgiDevice.MaximumFrameLatency = Config.Video.MaxFrameLatency;
                 using (var mthread = Device.QueryInterface<ID3D11Multithread>())
@@ -222,7 +224,7 @@ public unsafe partial class Renderer
                 if (!gpuForceWarp)
                     InitializeVideoProcessor();
 
-                if (CanInfo) Log.Info($"Initialized with Feature Level {(int)Device.FeatureLevel >> 12}.{((int)Device.FeatureLevel >> 8) & 0xf}");
+                if (CanInfo) Log.Info($"Initialized with Feature Level {(int)FeatureLevel >> 12}.{((int)FeatureLevel >> 8) & 0xf}");
 
             }
             catch (Exception e)

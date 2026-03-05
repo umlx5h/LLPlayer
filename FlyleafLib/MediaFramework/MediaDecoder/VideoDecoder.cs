@@ -47,6 +47,7 @@ public unsafe class VideoDecoder : DecoderBase
     internal bool           swFallback;
     internal bool           keyPacketRequired;
     internal bool           keyFrameRequired;   // Broken formats even with key packet don't return key frame
+    bool                    checkKeyFrame;
     internal bool           isIntraOnly;
     internal long           startPts;
     internal long           lastFixedPts;
@@ -263,28 +264,25 @@ public unsafe class VideoDecoder : DecoderBase
             return PIX_FMT_HWACCEL;
         }
 
-        lock (lockCodecCtx)
+        if (!foundHWformat || !VideoAccelerated || AllocateHWFrames() != 0)
         {
-            if (!foundHWformat || !VideoAccelerated || AllocateHWFrames() != 0)
-            {
-                // TBR: Do we keep ref of texture array? do we dispose it on all refs? otherwise make sure we inform to dispose frames before re-alloc
-                Log.Info("HW decoding failed");
-                swFallback = true;
-                return avcodec_default_get_format(avctx, pix_fmts);
-            }
-
-            if (CanDebug)
-                Log.Debug("HW frame allocation completed");
-
-            if (ret == 2)                    
-            {   // TBR: It seems that codecCtx changes but upcoming frame still has previous configuration (this will fire FillFromCodec twice, could cause issues?)
-                filledFromCodec = false;
-                codecChanged    = true;
-                Log.Warn($"Codec changed {VideoStream.CodecID} {curFrameWidth}x{curFrameHeight} => {codecCtx->codec_id} {frame->width}x{frame->height}");
-            }
-
-            return PIX_FMT_HWACCEL;
+            // TBR: Do we keep ref of texture array? do we dispose it on all refs? otherwise make sure we inform to dispose frames before re-alloc
+            Log.Info("HW decoding failed");
+            swFallback = true;
+            return avcodec_default_get_format(avctx, pix_fmts);
         }
+
+        if (CanDebug)
+            Log.Debug("HW frame allocation completed");
+
+        if (ret == 2)                    
+        {   // TBR: It seems that codecCtx changes but upcoming frame still has previous configuration (this will fire FillFromCodec twice, could cause issues?)
+            filledFromCodec = false;
+            codecChanged    = true;
+            Log.Warn($"Codec changed {VideoStream.CodecID} {curFrameWidth}x{curFrameHeight} => {codecCtx->codec_id} {frame->width}x{frame->height}");
+        }
+
+        return PIX_FMT_HWACCEL;
     }
     private int ShouldAllocateNew() // 0: No, 1: Yes, 2: Yes+Codec Changed
     {
@@ -351,7 +349,7 @@ public unsafe class VideoDecoder : DecoderBase
         VideoAccelerated = !swFallback &&
                            !Config.Video.SwsForce &&
                             Config.Video.VideoAcceleration &&
-                            Renderer.Device.FeatureLevel >= Vortice.Direct3D.FeatureLevel.Level_10_0;
+                            Renderer.FeatureLevel >= Vortice.Direct3D.FeatureLevel.Level_10_0;
 
         OpeningCodec?.Invoke();
 
@@ -418,6 +416,11 @@ public unsafe class VideoDecoder : DecoderBase
 
         if (VideoAccelerated)
         {
+            /* TODO: Frame threading [codecCtx->thread_type = ThreadTypeFlags.Frame]
+             * Possible requires patching FFmpeg to pass BindFlags.ShaderResource to new allocated textures (get_buffer maybe?)
+             * Seems to work fine with D3D11VP (if we pass the right texture from frame->data[0])
+             */
+
             codecCtx->thread_count      = 1;
             codecCtx->hwaccel_flags    |= HWAccelFlags.IgnoreLevel;
             if (Config.Decoder.AllowProfileMismatch)
@@ -452,8 +455,15 @@ public unsafe class VideoDecoder : DecoderBase
         vPackets            = demuxer.VideoPackets;
         keyFrameRequired    = keyPacketRequired = false; // allow no key packet after open (lot of videos missing this)
         filledFromCodec     = false;
+        isDraining          = false;
         lastFixedPts        = 0; // TBR: might need to set this to first known pts/dts
         startPts            = VideoStream.StartTimePts;
+        allowedErrors       = Config.Decoder.MaxErrors;
+
+        // Not all codecs fill key frame flag | https://github.com/SuRGeoNix/Flyleaf/issues/638 | Old MOV/MP4 container marking packets loosely as key
+        checkKeyFrame       = codecCtx->codec_id != AVCodecID.Av1 &&
+                             (VideoAccelerated ||
+                              codecCtx->codec_id != AVCodecID.Vp8 && codecCtx->codec_id != AVCodecID.Vp9);
 
         if (CanDebug) Log.Debug($"Using {CurCodecSpec.Name} {(VideoAccelerated ? "(HW)" : "(SW)")}");
 
@@ -488,12 +498,11 @@ public unsafe class VideoDecoder : DecoderBase
 
                 if (Status == Status.Ended)
                     Status = Status.Stopped;
-                else if (Status == Status.Draining)
-                    Status = Status.Stopping;
 
                 DisposeFrames();
                 avcodec_flush_buffers(codecCtx);
 
+                isDraining          = false;
                 keyFrameRequired    = false;
                 keyPacketRequired   = !isIntraOnly;
                 StartTime           = AV_NOPTS_VALUE;
@@ -501,6 +510,9 @@ public unsafe class VideoDecoder : DecoderBase
             }
     }
 
+    #region Run Loop
+    int allowedErrors;
+    bool isDraining;
     protected override void RunInternal()
     {
         if (demuxer.IsReversePlayback)
@@ -509,8 +521,7 @@ public unsafe class VideoDecoder : DecoderBase
             return;
         }
 
-        int allowedErrors   = Config.Decoder.MaxErrors;
-        int sleepMs         = Config.Decoder.MaxVideoFrames > 2 && Config.Player.MaxLatency == 0 ? 10 : 2;
+        int sleepMs = Config.Player.MaxLatency == 0 ? 10 : 2;
         int ret;
         AVPacket *packet;
 
@@ -533,7 +544,7 @@ public unsafe class VideoDecoder : DecoderBase
             }
 
             // While Packets Queue Empty (Drain | Quit if Demuxer stopped | Wait until we get packets)
-            if (vPackets.IsEmpty)
+            if (vPackets.IsEmpty && !isDraining)
             {
                 CriticalArea = true;
 
@@ -546,12 +557,11 @@ public unsafe class VideoDecoder : DecoderBase
                     {
                         lock (lockStatus)
                         {
-                            // TODO: let the demuxer push the draining packet
                             Log.Debug("Draining");
-                            Status = Status.Draining;
-                            var drainPacket = av_packet_alloc();
-                            drainPacket->data = null;
-                            drainPacket->size = 0;
+                            isDraining          = true;
+                            var drainPacket     = av_packet_alloc();
+                            drainPacket->data   = null;
+                            drainPacket->size   = 0;
                             vPackets.Enqueue(drainPacket);
                         }
 
@@ -590,16 +600,39 @@ public unsafe class VideoDecoder : DecoderBase
                 lock (lockStatus)
                 {
                     CriticalArea = false;
-                    if (Status != Status.QueueEmpty && Status != Status.Draining) break;
-                    if (Status != Status.Draining) Status = Status.Running;
+                    if (Status != Status.QueueEmpty) break;
+                    Status = Status.Running;
                 }
             }
 
+            // RecvFrame | GetPacket | SendPacket
             lock (lockCodecCtx)
             {
                 if (Status == Status.Stopped)
                     continue;
 
+                if (!keyPacketRequired)
+                {
+                    ret = RecvAVFrame();
+                    if (ret == 0)
+                    {
+                        if (FillAVFrame() == -1234)
+                        {
+                            Status = Status.Stopping;
+                            break;
+                        }
+
+                        continue;
+                    }
+                    else if (ret != AVERROR_EAGAIN)
+                    {
+                        if (ret == -1234)
+                            Status = Status.Stopping;
+
+                        break; // else EOF
+                    }
+                }
+                
                 packet = vPackets.Dequeue();
 
                 if (packet == null)
@@ -617,158 +650,213 @@ public unsafe class VideoDecoder : DecoderBase
                         curRecorder.Write(av_packet_clone(packet));
                 }
 
-                if (keyPacketRequired)
+                ret = SendAVPacket(packet);
+                if (ret != 0)
                 {
-                    if (packet->flags.HasFlag(PktFlags.Key) || packet->pts == startPts)
-                    {
-                        keyFrameRequired  = Config.Decoder._KeyFrameValidation;
-                        keyPacketRequired = false;
-                    }
-                    else
-                    {
-                        if (CanWarn) Log.Warn("Ignoring non-key packet");
-                        av_packet_unref(packet);
-                        continue;
-                    }
-                }
+                    if (ret == AVERROR_EAGAIN)
+                    {   // Fast retry => Legitimate decoding errors | Waiting for key packet
+                        while (Status == Status.Running && ret == AVERROR_EAGAIN && (packet = vPackets.Dequeue()) != null)
+                            ret = SendAVPacket(packet); // TBR: Should record those?
 
-                // TBR: AVERROR(EAGAIN) means avcodec_receive_frame but after resend the same packet
-                ret = avcodec_send_packet(codecCtx, packet);
-
-                if (swFallback) // Should use 'global' packet to reset it in get_format (same packet should use also from DecoderContext)
-                {
-                    SWFallback();
-                    ret = avcodec_send_packet(codecCtx, packet);
-                }
-
-                if (ret != 0 && ret != AVERROR_EAGAIN)
-                {
-                    // TBR: Possible check for VA failed here (normally this will happen during get_format)
-                    av_packet_free(&packet);
-
-                    if (ret == AVERROR_EOF)
-                    {
-                        if (!vPackets.IsEmpty) { avcodec_flush_buffers(codecCtx); continue; } // TBR: Happens on HLS while switching video streams
-                        Status = Status.Ended;
-                        break;
-                    }
-                    else
-                    {
-                        if (ret == AVERROR_ENOMEM) { Log.Error($"{FFmpegEngine.ErrorCodeToMsg(ret)}"); Status = Status.Stopping; break; }
-
-                        allowedErrors--;
-                        if (CanWarn) Log.Warn($"{FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
-
-                        if (allowedErrors == 0) { Log.Error("Too many errors!"); Status = Status.Stopping; break; }
-
-                        continue;
-                    }
-                }
-
-                while (true)
-                {
-                    ret = avcodec_receive_frame(codecCtx, frame);
-                    if (ret != 0)
-                    {
-                        if (ret == AVERROR_EAGAIN)
-                            break;
-
-                        if (ret == AVERROR_EOF)
-                        {
-                            if (!vPackets.IsEmpty) { avcodec_flush_buffers(codecCtx); break; } // TBR: Happens on HLS while switching video streams
-                            Status = Status.Ended;
-                            break;
-                        }
-
-                        if (ret == AVERROR_ENOMEM || ret == AVERROR_EINVAL)
-                            { Log.Error($"{FFmpegEngine.ErrorCodeToMsg(ret)}"); Status = Status.Stopping; break; }
-
-                        allowedErrors--;
-                        if (CanWarn) Log.Warn($"{FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
-
-                        if (allowedErrors == 0) { Log.Error("Too many errors!"); Status = Status.Stopping; }
-
-                        break;
-                    }
-
-                    if (keyFrameRequired)
-                    {
-                        if (!frame->flags.HasFlag(FrameFlags.Key)) { av_frame_unref(frame); continue; }
-                        keyFrameRequired = false;
-                    }
-
-                    // GetFormat checks already for this but only for hardware accelerated (should also check for codec/fps* and possible reset sws if required)
-                    // Might use AVERROR_INPUT_CHANGED to let ffmpeg check for those (requires a flag to be set*)
-                    if ((frame->height != curFrameHeight || frame->width != curFrameWidth) && filledFromCodec) // could be already changed on getformat
-                    {
-                        codecChanged    = true;
-                        filledFromCodec = false;
-                        Log.Warn($"Codec changed {VideoStream.CodecID} {curFrameWidth}x{curFrameHeight} => {codecCtx->codec_id} {frame->width}x{frame->height}");
-                    }
-
-                    if (frame->best_effort_timestamp != AV_NOPTS_VALUE)
-                        frame->pts = frame->best_effort_timestamp;
-
-                    else if (frame->pts == AV_NOPTS_VALUE)
-                    {
-                        if (!VideoStream.FixTimestamps && VideoStream.Duration > TimeSpan.FromSeconds(1).Ticks)
-                        {
-                            // TBR: it is possible to have a single frame / image with no dts/pts which actually means pts = 0 ? (ticket_3449.264) - GenPts will not affect it
-                            // TBR: first frame might no have dts/pts which probably means pts = 0 (and not start time!)
-                            av_frame_unref(frame);
+                        if (ret == 0 || packet == null)
                             continue;
-                        }
-
-                        // Create timestamps for h264/hevc raw streams (Needs also to handle this with the remuxer / no recording currently supported!)
-                        frame->pts = lastFixedPts + VideoStream.StartTimePts;
-                        lastFixedPts += av_rescale_q(VideoStream.FrameDuration / 10, Engine.FFmpeg.AV_TIMEBASE_Q, VideoStream.AVStream->time_base);
                     }
 
-                    if (StartTime == NoTs)
-                        StartTime = (long)(frame->pts * VideoStream.Timebase) - demuxer.StartTime;
+                    if (ret == -1234)
+                        Status = Status.Stopping;
 
-                    if (!filledFromCodec) // Ensures we have a proper frame before filling from codec
-                    {
-                        ret = FillFromCodec(frame);
-                        if (ret == -1234)
-                        {
-                            Status = Status.Stopping;
-                            break;
-                        }
-                    }
-                    
-                    if (skipSpeedFrames > 1)
-                    {
-                        curSpeedFrame++;
-                        if (curSpeedFrame < skipSpeedFrames)
-                        {
-                            av_frame_unref(frame);
-                            continue;
-                        }
-                        curSpeedFrame = 0;
-                    }
-
-                    var mFrame = Renderer.FillPlanes(frame);
-                    if (mFrame != null)
-                        Frames.Enqueue(mFrame); // TBR: Does not respect Config.Decoder.MaxVideoFrames
-                    else if (handleDeviceReset)
-                    {
-                        HandleDeviceReset();
-                        break;
-                    }
+                    break;
                 }
-
-                av_packet_free(&packet);
             }
 
         } while (Status == Status.Running);
 
-        checkExtraFrames = true;
-
-        if (isRecording) { StopRecording(); recCompleted(MediaType.Video); }
-
-        if (Status == Status.Draining) Status = Status.Ended;
+        if (isRecording)
+        {
+            StopRecording();
+            recCompleted(MediaType.Video);
+        }
     }
+    internal int SendAVPacket(AVPacket* packet)
+    {   /* Sends the provided packet to the decoder (avcodec_send_packet) | Should be used as tied to Run Loop (vPackets[] / Frames[])
+         * - Key Packet / Frame Validations
+         * - Software Fallback
+         * - Global Errors Counter
+         * 
+         * Returns
+         *  0       : Call RecvAVFrame  (Success | HasMoreOutput)   * Ideally we should not dipose packet when more output (but should not happen with current design)
+         *  EAGAIN  : Call SendAVPacket (Ignored)                   * Invalid Packet, send next one
+         *  EOF     : Quit Loop
+         *  -1234   : Quit Loop         (Critical)                  * E.g. Status = Stopping
+         */
+
+        if (keyPacketRequired)
+        {
+            if (!packet->flags.HasFlag(PktFlags.Key) && packet->pts != startPts)
+            {   // https://trac.ffmpeg.org/ticket/9412 | HEVC fails to seek at key packet (Fixed?) | Don't treat as error (?)
+                if (CanDebug) Log.Debug("Ignoring non-key packet");
+                av_packet_free(&packet);
+                return AVERROR_EAGAIN;
+                
+            }
+
+            keyFrameRequired  = checkKeyFrame;
+            keyPacketRequired = false;
+        }
+
+        // TBR: AVERROR(EAGAIN) ideally we keep the packet and resend it after recv (it shouldn't happen at all as we keep track)
+        int ret = avcodec_send_packet(codecCtx, packet);
+
+        if (swFallback)
+        {   // Could happen during (VA) GetFormat (called by avcodec_send_packet)
+            SWFallback();
+            ret = avcodec_send_packet(codecCtx, packet);
+        }
+
+        av_packet_free(&packet);
+
+        if (ret == 0 || ret == AVERROR_EAGAIN)
+            return 0;
+
+        // TBR: Possible check for VA failed here (normally this will happen during get_format)
+
+        if (ret == AVERROR_EOF)
+        {
+            if (!vPackets.IsEmpty) { avcodec_flush_buffers(codecCtx); return AVERROR_EAGAIN; } // TBR: Happens on HLS while switching video streams
+            Status = Status.Ended;
+            return AVERROR_EOF;
+        }
+
+        if (ret == AVERROR_ENOMEM) { Log.Error($"{FFmpegEngine.ErrorCodeToMsg(ret)}"); return -1234; }
+
+        allowedErrors--;
+        if (CanWarn) Log.Warn($"{FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
+
+        if (allowedErrors == 0) { Log.Error("Too many errors!"); return -1234; }
+
+        return AVERROR_EAGAIN;
+    }
+    internal int RecvAVFrame()
+    {   /* Receives frame from the decoder (avcodec_receive_frame) | Should be used as tied to Run Loop (vPackets[] / Frames[])
+         * - Key Frame Validation
+         * - Codec Change
+         * - Fix Timestamps
+         * - Fill Stream From Codec
+         * - Skip Frames
+         * - Global Errors Counter
+         * 
+         * Returns
+         *  0       : Call RecvAVFrame  (Success)           * Try for more output
+         *  EAGAIN  : Call SendAVPacket (NeedsMoreInput)    * Invalid Packet, send next one
+         *  EOF     : Quit Loop         (Ended)             * Drained
+         *  -1234   : Quit Loop         (Critical)          * E.g. Status = Stopping
+         */
+        int ret = avcodec_receive_frame(codecCtx, frame);
+        if (ret != 0)
+        {
+            if (ret == AVERROR_EAGAIN)
+                return AVERROR_EAGAIN;
+
+            if (ret == AVERROR_EOF)
+            {
+                if (!vPackets.IsEmpty) { avcodec_flush_buffers(codecCtx); return AVERROR_EAGAIN; } // TBR: Happens on HLS while switching video streams
+                Status = Status.Ended;
+                return AVERROR_EOF;
+            }
+
+            if (ret == AVERROR_ENOMEM || ret == AVERROR_EINVAL)
+                { Log.Error($"{FFmpegEngine.ErrorCodeToMsg(ret)}"); return -1234; }
+
+            allowedErrors--;
+            if (CanWarn) Log.Warn($"{FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
+
+            if (allowedErrors == 0) { Log.Error("Too many errors!"); return -1234; }
+
+            return RecvAVFrame(); // TBR maybe try another packet EAGAIN
+        }
+
+        if (keyFrameRequired)
+        {
+            if (!frame->flags.HasFlag(FrameFlags.Key))
+            {
+                if (CanInfo) Log.Info("Ignoring non-key frame");
+                av_frame_unref(frame);
+                return RecvAVFrame();
+            }
+            
+            keyFrameRequired = false;
+        }
+
+        // GetFormat checks already for this but only for hardware accelerated (should also check for codec/fps* and possible reset sws if required)
+        // Might use AVERROR_INPUT_CHANGED to let ffmpeg check for those (requires a flag to be set*)
+        if ((frame->height != curFrameHeight || frame->width != curFrameWidth) && filledFromCodec) // could be already changed on getformat
+        {
+            codecChanged    = true;
+            filledFromCodec = false;
+            Log.Warn($"Codec changed {VideoStream.CodecID} {curFrameWidth}x{curFrameHeight} => {codecCtx->codec_id} {frame->width}x{frame->height}");
+        }
+
+        if (frame->best_effort_timestamp != AV_NOPTS_VALUE)
+            frame->pts = frame->best_effort_timestamp;
+
+        else if (frame->pts == AV_NOPTS_VALUE)
+        {
+            if (!VideoStream.FixTimestamps && VideoStream.Duration > TimeSpan.FromSeconds(1).Ticks)
+            {
+                // TBR: it is possible to have a single frame / image with no dts/pts which actually means pts = 0 ? (ticket_3449.264) - GenPts will not affect it
+                // TBR: first frame might no have dts/pts which probably means pts = 0 (and not start time!)
+                av_frame_unref(frame);
+                return RecvAVFrame();
+            }
+
+            // Create timestamps for h264/hevc raw streams (Needs also to handle this with the remuxer / no recording currently supported!)
+            frame->pts = lastFixedPts + VideoStream.StartTimePts;
+            lastFixedPts += av_rescale_q(VideoStream.FrameDuration / 10, Engine.FFmpeg.AV_TIMEBASE_Q, VideoStream.AVStream->time_base);
+        }
+
+        if (!filledFromCodec) // Ensures we have a proper frame before filling from codec
+        {
+            ret = FillFromCodec(frame);
+            if (ret == -1234)
+                return -1234;
+        }
+
+        if (skipSpeedFrames > 1)
+        {
+            curSpeedFrame++;
+            if (curSpeedFrame < skipSpeedFrames)
+            {
+                av_frame_unref(frame);
+                return RecvAVFrame();
+            }
+            curSpeedFrame = 0;
+        }
+
+        return 0;
+    }
+    internal int FillAVFrame()
+    {
+        var mFrame = Renderer.FillPlanes(frame);
+        if (mFrame != null)
+        {
+            allowedErrors = Config.Decoder.MaxErrors;
+
+            if (StartTime == NoTs)
+                StartTime = mFrame.timestamp;
+
+            Frames.Enqueue(mFrame);
+
+            return 0;
+        }
+
+        allowedErrors--;
+        if (allowedErrors == 0) { Log.Error("Too many errors!"); return -1234; }
+
+        HandleDeviceReset();
+
+        return AVERROR_EAGAIN;
+    }
+    #endregion
 
     internal int FillFromCodec(AVFrame* frame)
     {
@@ -933,7 +1021,7 @@ public unsafe class VideoDecoder : DecoderBase
 
                 lock (lockCodecCtx)
                 {
-                    if (keyPacketRequired == true)
+                    if (keyPacketRequired)
                     {
                         keyPacketRequired = false;
                         curReversePacketPos = 0;
@@ -1115,11 +1203,8 @@ public unsafe class VideoDecoder : DecoderBase
                     var mFrame = Renderer.FillPlanes(frame);
                     if (mFrame != null)
                         return mFrame;
-                    else if (handleDeviceReset)
-                    {
-                        HandleDeviceReset();
-                        continue;
-                    }
+
+                    HandleDeviceReset();
                 }
 
                 av_frame_unref(frame);
@@ -1140,13 +1225,15 @@ public unsafe class VideoDecoder : DecoderBase
     /// <returns>The next VideoFrame</returns>
     public VideoFrame GetFrameNext()
     {
+        checkExtraFrames = true;
+
         if (DecodeFrameNext() == 0)
         {
             var mFrame = Renderer.FillPlanes(frame);
             if (mFrame != null)
                 return mFrame;
-            else if (handleDeviceReset)
-                HandleDeviceReset();
+            
+            HandleDeviceReset();
         }
 
         return null;
@@ -1169,9 +1256,8 @@ public unsafe class VideoDecoder : DecoderBase
             if (DecodeFrameNextInternal() == 0)
                 return 0;
 
-            if (Demuxer.Status == Status.Ended && vPackets.IsEmpty && Frames.IsEmpty)
+            if (Demuxer.Status == Status.Ended)
             {
-                Stop();
                 Status = Status.Ended;
                 return AVERROR_EOF;
             }
@@ -1187,7 +1273,7 @@ public unsafe class VideoDecoder : DecoderBase
                 if (demuxer.Status != Status.Ended)
                     return ret;
 
-                // Drain
+                // Drain (TBR: probably only first drained working here)
                 ret = avcodec_send_packet(codecCtx, demuxer.packet);
                 av_packet_unref(demuxer.packet);
 
@@ -1203,7 +1289,7 @@ public unsafe class VideoDecoder : DecoderBase
                 if (demuxer.packet->flags.HasFlag(PktFlags.Key) || demuxer.packet->pts == startPts)
                 {
                     keyPacketRequired = false;
-                    keyFrameRequired  = Config.Decoder._KeyFrameValidation;
+                    keyFrameRequired  = checkKeyFrame;
                 }
                 else
                 {

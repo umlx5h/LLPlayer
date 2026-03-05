@@ -124,7 +124,7 @@ unsafe public partial class Renderer
     {
         lock (lockDevice)
         {
-            if (Disposed || D3D11VPFailed)
+            if (Disposed || vc == null)
                 return;
 
             vc.VideoProcessorSetStreamFilter(vp, 0, ConvertFromVideoProcessorFilterCaps((VideoProcessorFilterCaps)cfgFilter.Filter), true,

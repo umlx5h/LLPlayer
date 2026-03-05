@@ -644,12 +644,6 @@ public class Config : NotifyPropertyChanged
         bool _ShowCorrupted;
 
         /// <summary>
-        /// Ensures that after a key packet receives a also key frame (can create artifacts on some broken formats when disabled and seek issues when enabled)
-        /// </summary>
-        public bool             KeyFrameValidation  { get => _KeyFrameValidation;   set => SetUI(ref _KeyFrameValidation, value); }
-        internal bool _KeyFrameValidation;
-
-        /// <summary>
         /// Forces low delay (Parses AV_CODEC_FLAG2_FAST or AV_CODEC_FLAG_LOW_DELAY -based on DropFrames- to AVCodecContext) (auto-enabled with MaxLatency)
         /// </summary>
         public bool             LowDelay            { get => _LowDelay;             set => SetUI(ref _LowDelay, value); }

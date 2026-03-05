@@ -873,6 +873,8 @@ public static class KeyBindingActionExtensions
             case KeyBindingAction.SeekBackward3:
             case KeyBindingAction.SeekForward4:
             case KeyBindingAction.SeekBackward4:
+            case KeyBindingAction.SeekToStart:
+            case KeyBindingAction.SeekToEnd:
                 return KeyBindingActionGroup.Playback;
 
             case KeyBindingAction.Flush:

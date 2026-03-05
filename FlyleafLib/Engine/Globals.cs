@@ -64,19 +64,13 @@ public enum VideoProcessors
     D3D11,
     Flyleaf,
 }
-public enum ZeroCopy : int
-{
-    Auto        = 0,
-    Enabled     = 1,
-    Disabled    = 2
-}
 [Flags]
 public enum Cropping
 {
     None,
-    Stream,
-    Codec,
-    Texture
+    Stream  = 1 << 0,
+    Codec   = 1 << 1,
+    Texture = 1 << 2
 }
 public enum ColorSpace : int
 {

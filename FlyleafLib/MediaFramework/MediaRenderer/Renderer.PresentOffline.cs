@@ -102,14 +102,13 @@ public unsafe partial class Renderer
         try
         {
             lock (lockDevice)
-                lock (LastFrame)
-                {
-                    if (Disposed)
-                        return null;
+            {
+                if (Disposed)
+                    return null;
 
-                    Todo(width, height, frame);
-                    return GetBitmap(singleStage);
-                }
+                Todo(width, height, frame);
+                return GetBitmap(singleStage);
+            }
         }
         catch (Exception e)
         {
@@ -201,8 +200,6 @@ public unsafe partial class Renderer
 
     void Todo(int width = -1, int height = -1, VideoFrame frame = null)
     {
-        frame ??= LastFrame;
-
         if (width == -1 && height == -1)
         {
             width  = VideoRect.Right;
@@ -231,12 +228,16 @@ public unsafe partial class Renderer
             singleViewport = new Viewport(width, height);
         }
 
-        PresentOffline(frame, singleGpuRtv, singleViewport);
+        lock (lockRenderLoops)
+        {
+            frame ??= LastFrame;
+            PresentOffline(frame, singleGpuRtv, singleViewport);
 
-        if (videoProcessor == VideoProcessors.D3D11)
-            SetViewport();
-        else
-            context.RSSetViewport(GetViewport);
+            if (videoProcessor == VideoProcessors.D3D11)
+                SetViewport();
+            else
+                context.RSSetViewport(GetViewport);
+        }
 
         context.CopyResource(singleStage, singleGpu);
     }

@@ -38,7 +38,6 @@ public partial class Renderer : NotifyPropertyChanged, IDisposable
 
     public bool             Disposed        { get; private set; } = true;
     public bool             SCDisposed      { get; private set; } = true;
-    public bool             D3D11VPFailed   => vc == null;
     public int              MaxOffScreenTextures
                                             { get; set; } = 20;
     public VideoDecoder     VideoDecoder    { get; internal set; }
