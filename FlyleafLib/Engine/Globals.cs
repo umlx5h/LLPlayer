@@ -64,6 +64,14 @@ public enum VideoProcessors
     D3D11,
     Flyleaf,
 }
+public enum SplitFrameAlphaPosition
+{
+    None,
+    Top,
+    Left,
+    Bottom,
+    Right
+}
 [Flags]
 public enum Cropping
 {

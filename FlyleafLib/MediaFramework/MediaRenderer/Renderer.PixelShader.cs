@@ -224,12 +224,57 @@ unsafe public partial class Renderer
                         // HW || HWZeroCopy | TODO: Fix calculation of uniqueId (those are actually same sampling - without different defines)
                         curPSUniqueId += "3";
 
-                        SetPS(curPSUniqueId, @"
+                        switch (Config.Video._SplitFrameAlphaPosition)
+                        {
+                            case SplitFrameAlphaPosition.None:
+                                SetPS(curPSUniqueId, @"
     color = float4(
         Texture1.Sample(Sampler, input.Texture).r,
         Texture2.Sample(Sampler, input.Texture).rg,
         1.0f);
 ", defines);
+                                break;
+
+                            case SplitFrameAlphaPosition.Left:
+                                curPSUniqueId += "l";
+                                SetPS(curPSUniqueId, @"
+    color = float4(
+        Texture1.Sample(Sampler, float2(0.5 + (input.Texture.x / 2), input.Texture.y)).r,
+        Texture2.Sample(Sampler, float2(0.5 + (input.Texture.x / 2), input.Texture.y)).rg,
+        Texture1.Sample(Sampler, float2(input.Texture.x / 2, input.Texture.y)).r);
+", defines);
+                                break;
+
+                                case SplitFrameAlphaPosition.Right:
+                                curPSUniqueId += "r";
+                                SetPS(curPSUniqueId, @"
+    color = float4(
+        Texture1.Sample(Sampler, float2(input.Texture.x / 2, input.Texture.y)).r,
+        Texture2.Sample(Sampler, float2(input.Texture.x / 2, input.Texture.y)).rg,
+        Texture1.Sample(Sampler, float2(0.5 + (input.Texture.x / 2), input.Texture.y)).r);
+", defines);
+                                break;
+
+                                case SplitFrameAlphaPosition.Top:
+                                curPSUniqueId += "t";
+                                SetPS(curPSUniqueId, @"
+    color = float4(
+        Texture1.Sample(Sampler, float2(input.Texture.x, 0.5 + (input.Texture.y / 2))).r,
+        Texture2.Sample(Sampler, float2(input.Texture.x, 0.5 + (input.Texture.y / 2))).rg,
+        Texture1.Sample(Sampler, float2(input.Texture.x, input.Texture.y / 2)).r);
+", defines);
+                                break;
+
+                                case SplitFrameAlphaPosition.Bottom:
+                                curPSUniqueId += "b";
+                                SetPS(curPSUniqueId, @"
+    color = float4(
+        Texture1.Sample(Sampler, float2(input.Texture.x, input.Texture.y / 2)).r,
+        Texture2.Sample(Sampler, float2(input.Texture.x, input.Texture.y / 2)).rg,
+        Texture1.Sample(Sampler, float2(input.Texture.x, 0.5 + (input.Texture.y / 2))).r);
+", defines);
+                                break;
+                        }
                     }
 
                     else if (VideoStream.ColorType == ColorType.YUV)

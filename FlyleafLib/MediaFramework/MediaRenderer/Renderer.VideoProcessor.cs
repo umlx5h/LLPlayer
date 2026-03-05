@@ -493,6 +493,15 @@ unsafe public partial class Renderer
         VisibleWidth    = textWidth  - (cropRect.Left + cropRect.Right);
         VisibleHeight   = textHeight - (cropRect.Top  + cropRect.Bottom);
 
+        var alphaPos = Config.Video._SplitFrameAlphaPosition;
+        if (alphaPos != SplitFrameAlphaPosition.None)
+        {
+            if      (alphaPos == SplitFrameAlphaPosition.Left  || alphaPos == SplitFrameAlphaPosition.Right)
+                VisibleWidth /= 2;
+            else if (alphaPos == SplitFrameAlphaPosition.Top   || alphaPos == SplitFrameAlphaPosition.Bottom)
+                VisibleHeight /= 2;
+        }
+
         int x, y;
         _ = av_reduce(&x, &y, VisibleWidth * VideoStream.SAR.Num, VisibleHeight * VideoStream.SAR.Den, 1024 * 1024);
         DAR = new(x, y);
