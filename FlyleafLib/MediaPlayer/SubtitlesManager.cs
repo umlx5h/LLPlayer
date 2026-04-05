@@ -694,19 +694,19 @@ public unsafe class SubtitleReader : IDisposable
                 continue;
             }
 
-            long pts = AV_NOPTS_VALUE; // 0.1us
-            if (sub.pts != AV_NOPTS_VALUE)
+            long pts = NoTs; // 0.1us
+            if (sub.pts != NoTs)
             {
                 pts = sub.pts /*us*/ * 10;
             }
-            else if (_packet->pts != AV_NOPTS_VALUE)
+            else if (_packet->pts != NoTs)
             {
                 pts = (long)(_packet->pts * _stream.Timebase);
             }
 
             av_packet_unref(_packet);
 
-            if (pts == AV_NOPTS_VALUE)
+            if (pts == NoTs)
             {
                 continue;
             }

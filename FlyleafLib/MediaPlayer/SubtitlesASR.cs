@@ -576,7 +576,7 @@ public class AudioReader : IDisposable
 
             int chunkCnt = 0;
             TimeSpan? chunkStart = null;
-            long framePts = AV_NOPTS_VALUE;
+            long framePts = NoTs;
 
             int demuxErrors = 0;
             int decodeErrors = 0;
@@ -651,11 +651,11 @@ public class AudioReader : IDisposable
                     }
                     ret.ThrowExceptionIfError("avcodec_receive_frame");
 
-                    if (_frame->best_effort_timestamp != AV_NOPTS_VALUE)
+                    if (_frame->best_effort_timestamp != NoTs)
                     {
                         framePts = _frame->best_effort_timestamp;
                     }
-                    else if (_frame->pts != AV_NOPTS_VALUE)
+                    else if (_frame->pts != NoTs)
                     {
                         framePts = _frame->pts;
                     }
@@ -707,7 +707,7 @@ public class AudioReader : IDisposable
 
                         chunkStart = null;
                         chunkSw.Restart();
-                        framePts = AV_NOPTS_VALUE;
+                        framePts = NoTs;
                     }
                 }
             }
@@ -715,7 +715,7 @@ public class AudioReader : IDisposable
             token.ThrowIfCancellationRequested();
 
             // Process remaining
-            if (waveStream.Length > waveHeaderSize && framePts != AV_NOPTS_VALUE)
+            if (waveStream.Length > waveHeaderSize && framePts != NoTs)
             {
                 TimeSpan chunkEnd = new TimeSpan((long)(framePts * _stream.Timebase) - _demuxer.StartTime);
 
