@@ -22,12 +22,6 @@ using Vortice.DXGI;
 
 namespace FlyleafLib;
 
-public enum PixelFormatType
-{
-    Hardware,
-    Software_Handled,
-    Software_Sws
-}
 public enum MediaType
 {
     Audio,
@@ -63,6 +57,7 @@ public enum VideoProcessors
     Auto,
     D3D11,
     Flyleaf,
+    SwsScale
 }
 public enum SplitFrameAlphaPosition
 {
@@ -122,6 +117,28 @@ public enum SubASREngineType
     [Description("faster-whisper (Recommended)")]
     FasterWhisper
 }
+public enum UIRefreshType
+{
+    PerFrame,
+    PerFrameSecond,
+    PerUIRefreshInterval,
+    PerUISecond
+}
+
+public enum SwapChainFormat : uint
+{
+    BGRA        = Vortice.DXGI.Format.B8G8R8A8_UNorm,
+    RGBA        = Vortice.DXGI.Format.R8G8B8A8_UNorm,
+    RGBA10bit   = Vortice.DXGI.Format.R10G10B10A2_UNorm
+}
+
+public enum FLFilters
+{
+    Brightness,
+    Contrast,
+    Hue,
+    Saturation
+}
 
 public class GPUOutput
 {
@@ -173,20 +190,6 @@ public enum GPUVendor : uint
     Qualcomm    = 0x4D4F4351,
     S3Graphics  = 0x5333,
     VIA         = 0x1106,
-}
-
-public enum VideoFilters
-{
-    // Ensure we have the same values with Vortice.Direct3D11.VideoProcessorFilterCaps (d3d11.h) | we can extended if needed with other values
-
-    Brightness          = 0x01,
-    Contrast            = 0x02,
-    Hue                 = 0x04,
-    Saturation          = 0x08,
-    NoiseReduction      = 0x10,
-    EdgeEnhancement     = 0x20,
-    AnamorphicScaling   = 0x40,
-    StereoAdjustment    = 0x80
 }
 
 public struct AspectRatio : IEquatable<AspectRatio>
@@ -276,10 +279,14 @@ public struct CropRect(uint top = 0, uint left= 0, uint bottom= 0, uint right= 0
     public uint             Bottom  = bottom;
     public uint             Right   = right;
 
-    public readonly uint    Width   => Right - Left;
-    public readonly uint    Height  => Bottom - Top;
+    public readonly uint    Width   => Right  + Left;
+    public readonly uint    Height  => Bottom + Top;
     public readonly bool    IsEmpty => Top == 0 && Left == 0 && Bottom == 0 && Right == 0;
 
+    public static CropRect operator +(CropRect a, CropRect b)
+        => new(a.Top + b.Top, a.Left + b.Left, a.Bottom + b.Bottom, a.Right + b.Right);
+    public static CropRect operator -(CropRect a, CropRect b)
+        => new(a.Top - b.Top, a.Left - b.Left, a.Bottom - b.Bottom, a.Right - b.Right);
     public static bool operator ==(CropRect a, CropRect b)
         => a.Top == b.Top && a.Bottom == b.Bottom && a.Left == b.Left && a.Right == b.Right;
     public static bool operator !=(CropRect left, CropRect right)

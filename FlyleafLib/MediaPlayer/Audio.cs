@@ -11,6 +11,8 @@ namespace FlyleafLib.MediaPlayer;
 
 public class Audio : NotifyPropertyChanged
 {
+    // TODO: Add Volume/Mute to Config.Audio (consider allowing saving and separate config field (flags) whether to load those?)
+
     public event EventHandler<AudioFrame> SamplesAdded;
 
     #region Properties
@@ -82,7 +84,7 @@ public class Audio : NotifyPropertyChanged
         }
         set
         {
-            if (value > Config.Player.VolumeMax || value < 0)
+            if (value > Config.Audio.VolumeMax || value < 0)
                 return;
 
             if (value == 0)
@@ -187,7 +189,7 @@ public class Audio : NotifyPropertyChanged
         };
 
         // Set default volume
-        Volume = Math.Min(Config.Player.VolumeDefault, Config.Player.VolumeMax);
+        Volume = Math.Min(Config.Audio.VolumeDefault, Config.Audio.VolumeMax);
     }
 
     internal void Initialize()
@@ -226,7 +228,7 @@ public class Audio : NotifyPropertyChanged
 
                 submittedSamples        = 0;
                 Timebase                = 1000 * 10000.0 / sampleRate;
-                masteringVoice.Volume   = Config.Player.VolumeMax / 100.0f;
+                masteringVoice.Volume   = Config.Audio.VolumeMax / 100.0f;
                 sourceVoice.Volume      = mute ? 0 : Math.Max(0, _Volume / 100.0f);
                 curSampleRate           = sampleRate;
             }
@@ -263,7 +265,7 @@ public class Audio : NotifyPropertyChanged
             try
             {
                 if (CanTrace)
-                    player.Log.Trace($"[A] Presenting {TicksToTime(player.aFrame.timestamp)}");
+                    player.Log.Trace($"[A] Presenting {TicksToTime(player.aFrame.Timestamp)}");
 
                 framesDisplayed++;
 
@@ -397,39 +399,4 @@ public class Audio : NotifyPropertyChanged
         Reset();
         player.UIAll();
     }
-
-    public void DelayAdd()      => Config.Audio.Delay += Config.Player.AudioDelayOffset;
-    public void DelayAdd2()     => Config.Audio.Delay += Config.Player.AudioDelayOffset2;
-    public void DelayRemove()   => Config.Audio.Delay -= Config.Player.AudioDelayOffset;
-    public void DelayRemove2()  => Config.Audio.Delay -= Config.Player.AudioDelayOffset2;
-    public void Toggle()        => Config.Audio.Enabled = !Config.Audio.Enabled;
-    public void ToggleMute()    => Mute = !Mute;
-    public void VolumeUp()
-    {
-        if (Volume == Config.Player.VolumeMax) return;
-        Volume = Math.Min(Volume + Config.Player.VolumeOffset, Config.Player.VolumeMax);
-    }
-    public void VolumeDown()
-    {
-        if (Volume == 0) return;
-        Volume = Math.Max(Volume - Config.Player.VolumeOffset, 0);
-    }
-
-    /// <summary>
-    /// Reloads filters from Config.Audio.Filters (experimental)
-    /// </summary>
-    /// <returns>0 on success</returns>
-    public int ReloadFilters() => player.AudioDecoder.ReloadFilters();
-
-    /// <summary>
-    /// <para>
-    /// Updates filter's property (experimental)
-    /// Note: This will not update the property value in Config.Audio.Filters
-    /// </para>
-    /// </summary>
-    /// <param name="filterId">Filter's unique id specified in Config.Audio.Filters</param>
-    /// <param name="key">Filter's property to change</param>
-    /// <param name="value">Filter's property value</param>
-    /// <returns>0 on success</returns>
-    public int UpdateFilter(string filterId, string key, string value) => player.AudioDecoder.UpdateFilter(filterId, key, value);
 }

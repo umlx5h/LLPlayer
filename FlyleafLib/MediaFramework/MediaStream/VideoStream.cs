@@ -20,7 +20,8 @@ public unsafe class VideoStream : StreamBase
                                         ColorTransfer       { get; set; }
     public Cropping                     Cropping            { get; set; }
     public VideoFrameFormat             FieldOrder          { get; set; }
-    public double                       Rotation            { get; set; }
+    public uint                         Rotation            { get; set; }
+    public bool                         VFlip               { get; set; }
     public double                       FPS                 { get; set; }
     public long                         FrameDuration       { get ;set; }
     public double                       FPS2                { get; set; } // interlace
@@ -34,13 +35,12 @@ public unsafe class VideoStream : StreamBase
     public AVPixFmtDescriptor*          PixelFormatDesc     { get; set; }
     public string                       PixelFormatStr      { get; set; }
     public int                          PixelPlanes         { get; set; }
-    public bool                         PixelInterleaved    { get; set; }
     public long                         TotalFrames         { get; set; }
     public uint                         Width               { get; set; }
     public bool                         FixTimestamps       { get; set; }
 
-    internal CropRect cropStreamRect, cropFrameRect, cropRect; // Stream Crop + Codec Padding + Texture Padding
-    bool hasStreamCrop;
+    internal uint txtWidth, txtHeight;
+    internal CropRect cropStream, Crop; // Stream Crop + Codec Padding + Texture Padding
 
     public VideoStream(Demuxer demuxer, AVStream* st) : base(demuxer, st)
         => Type = MediaType.Video;
@@ -48,7 +48,7 @@ public unsafe class VideoStream : StreamBase
     /* NOTES
     * Initialize()  during Demuxer.FillInfo      (Analysed or Basic)
     * Refresh()     during Decoder.FillFromCodec (First valid frame + Format Changed)
-    *
+    * 
     * Some fields might know only during Refresh, should make sure we fill them (especially if we didn't analyse the input)
     * Don't default (eg Color Range) during Initialize, wait for Refresh
     * Priorities: AVFrame => AVCodecContext => AVStream (AVCodecParameters) *Try to keep Color config from stream instead
@@ -57,40 +57,36 @@ public unsafe class VideoStream : StreamBase
     // First time fill from AVStream's Codec Parameters | Info to help choosing stream quality mainly (not in use yet)
     public override void Initialize()
     {
-        PixelFormat     = (AVPixelFormat)cp->format;
-        if (PixelFormat != AVPixelFormat.None)
-            AnalysePixelFormat();
-
+        PixelFormat = (AVPixelFormat)cp->format;
         Width       = (uint)cp->width;
         Height      = (uint)cp->height;
         SAR         = av_guess_sample_aspect_ratio(null, AVStream, null);
         TotalFrames = AVStream->nb_frames;
+        FieldOrder  = cp->field_order == AVFieldOrder.Tt ? VideoFrameFormat.InterlacedTopFieldFirst : (cp->field_order == AVFieldOrder.Bb ? VideoFrameFormat.InterlacedBottomFieldFirst : VideoFrameFormat.Progressive);
 
         if (Demuxer.FormatContext->iformat->flags.HasFlag(FmtFlags.Notimestamps))
             FixTimestamps = true;
 
         if (Demuxer.Config.ForceFPS > 0)
             FPS = Demuxer.Config.ForceFPS;
-        else
+        else if (FieldOrder != VideoFrameFormat.Progressive)
+        {   // TBR: Some interlaced sources will return either progressive or interlaced fps with av_guess_frame_rate so we focus on cp->framerate
+            FPS = av_q2d(cp->framerate);
+            if (double.IsNaN(FPS) || double.IsInfinity(FPS) || FPS <= 0.0 || FPS > 200)
+                FPS = 0;
+        }
+
+        if (FPS == 0)
         {
-            var fps1 = av_q2d(cp->framerate);
-            if (double.IsNaN(fps1) || double.IsInfinity(fps1) || fps1 <= 0.0 || fps1 > 144)
-            {
-                var fps2 = av_q2d(av_guess_frame_rate(Demuxer.FormatContext, AVStream, null));
-                if (double.IsNaN(fps2) || double.IsInfinity(fps2) || fps2 <= 0.0 || fps2 > 144)
-                    FPS = 0.0;
-                else
-                    FPS = fps2;
-            }
-            else
-                FPS = fps1;
+            FPS = av_q2d(av_guess_frame_rate(Demuxer.FormatContext, AVStream, null));
+            if (double.IsNaN(FPS) || double.IsInfinity(FPS) || FPS <= 0.0 || FPS > 200)
+                FPS = 0;
         }
 
         if (FPS > 0)
             FrameDuration = (long)(10_000_000 / FPS);
 
-        FieldOrder      = cp->field_order == AVFieldOrder.Tt ? VideoFrameFormat.InterlacedTopFieldFirst : (cp->field_order == AVFieldOrder.Bb ? VideoFrameFormat.InterlacedBottomFieldFirst : VideoFrameFormat.Progressive);
-        ColorTransfer   = cp->color_trc;
+        ColorTransfer = cp->color_trc;
 
         if (cp->color_range == AVColorRange.Mpeg)
             ColorRange = ColorRange.Limited;
@@ -106,26 +102,27 @@ public unsafe class VideoStream : StreamBase
 
         if (cp->nb_coded_side_data == 0)
             return;
-
+        
         var rotData = av_packet_side_data_get(cp->coded_side_data, cp->nb_coded_side_data, AVPacketSideDataType.Displaymatrix);
         if (rotData != null && rotData->data != null)
         {
             double rotation = -Math.Round(av_display_rotation_get((int*)rotData->data));
-            Rotation = rotation - (360 * Math.Floor(rotation / 360 + 0.9 / 360));
+            Rotation = (uint)(rotation - (360 * Math.Floor(rotation / 360 + 0.9 / 360))); // TBR: fixed 0 - 90 - 180 - 270
         }
 
         var cropData= av_packet_side_data_get(cp->coded_side_data, cp->nb_coded_side_data, AVPacketSideDataType.FrameCropping);
         if (cropData != null && cropData->size == 16)
         {
             var cropByes = new ReadOnlySpan<byte>(cropData->data, 16).ToArray();
-            cropStreamRect = new(
+            cropStream = new(
                 top:    BitConverter.ToUInt32(cropByes, 0),
                 bottom: BitConverter.ToUInt32(cropByes, 4),
                 left:   BitConverter.ToUInt32(cropByes, 8),
                 right:  BitConverter.ToUInt32(cropByes, 12)
                 );
 
-            hasStreamCrop = cropStreamRect != CropRect.Empty;
+            if (cropStream != CropRect.Empty)
+                Cropping = Cropping.Stream;
         }
     }
 
@@ -154,6 +151,9 @@ public unsafe class VideoStream : StreamBase
         else if (format == AVPixelFormat.None) // Both None (Should be removed from Demuxer's streams?*)
             return;
 
+        if (PixelFormatDesc == null)
+            AnalysePixelFormat();
+
         ReUpdate();
 
         if (codecCtx->bit_rate > 0)
@@ -169,56 +169,68 @@ public unsafe class VideoStream : StreamBase
                 SAR = new(1, 1);
         }
 
-        cropRect = CropRect.Empty;
+        Crop = CropRect.Empty;
 
         // Stream's Crop
-        if (hasStreamCrop)
+        if (Cropping.HasFlag(Cropping.Stream))
         {
-            Cropping =  Cropping.Stream;
+            Cropping = Cropping.Stream;
 
-            cropRect.Top    += cropStreamRect.Top;
-            cropRect.Bottom += cropStreamRect.Bottom;
-            cropRect.Left   += cropStreamRect.Left;
-            cropRect.Right  += cropStreamRect.Right;
-
+            Crop.Top    += cropStream.Top;
+            Crop.Bottom += cropStream.Bottom;
+            Crop.Left   += cropStream.Left;
+            Crop.Right  += cropStream.Right;
+            
         }
         else
             Cropping = Cropping.None;
 
         // Codec's Crop (Frame)
-        cropFrameRect = new(
+        var cropCodec = new CropRect(
             top:    (uint)frame->crop_top,
             bottom: (uint)frame->crop_bottom,
             left:   (uint)frame->crop_left,
             right:  (uint)frame->crop_right
             );
 
-        if (cropFrameRect != CropRect.Empty)
+        if (cropCodec != CropRect.Empty)
         {
             Cropping |= Cropping.Codec;
 
-            cropRect.Top    += cropFrameRect.Top;
-            cropRect.Bottom += cropFrameRect.Bottom;
-            cropRect.Left   += cropFrameRect.Left;
-            cropRect.Right  += cropFrameRect.Right;
+            Crop.Top    += cropCodec.Top;
+            Crop.Bottom += cropCodec.Bottom;
+            Crop.Left   += cropCodec.Left;
+            Crop.Right  += cropCodec.Right;
         }
 
         // HW Texture's Crop
         if (decoder.VideoAccelerated)
         {
-            var desc = decoder.textureFFmpeg.Description;
+            var desc    = decoder.Renderer.ffTextureDesc;
+            txtWidth    = desc.Width;
+            txtHeight   = desc.Height;
 
             if (desc.Width > codecCtx->coded_width)
             {
-                cropRect.Right += (uint)(desc.Width - codecCtx->coded_width);
+                Crop.Right += (uint)(desc.Width - codecCtx->coded_width);
                 Cropping |= Cropping.Texture;
             }
 
             if (desc.Height > codecCtx->coded_height)
             {
-                cropRect.Bottom += (uint)(desc.Height - codecCtx->coded_height);
+                Crop.Bottom += (uint)(desc.Height - codecCtx->coded_height);
                 Cropping |= Cropping.Texture;
             }
+        }
+        else
+        {
+            txtWidth    = (uint)frame->width;
+            txtHeight   = (uint)frame->height;
+
+            // TBR: Odd dimensions
+            //txtWidth    = (uint)((frame->width  + 1) & ~1);
+            //txtHeight   = (uint)((frame->height + 1) & ~1);
+            //Crop.Right += 1;*
         }
 
         if (Width == 0)
@@ -253,7 +265,7 @@ public unsafe class VideoStream : StreamBase
             else if (ColorRange == ColorRange.None)
                 ColorRange = ColorType == ColorType.YUV && !PixelFormatStr.Contains('j') ? ColorRange.Limited : ColorRange.Full; // yuvj family defaults to full
         }
-
+        
         if (ColorTransfer == AVColorTransferCharacteristic.AribStdB67)
             HDRFormat = HDRFormat.HLG;
         else if (ColorTransfer == AVColorTransferCharacteristic.Smpte2084)
@@ -286,13 +298,13 @@ public unsafe class VideoStream : StreamBase
             else if (ColorSpace == ColorSpace.None)
                 ColorSpace = Height > 576 ? ColorSpace.Bt709 : ColorSpace.Bt601;
         }
-
-        // We consider that FPS can't change (only if it was missing we fill it)
+        
         if (FPS == 0)
-        {
-            var newFps      = av_q2d(codecCtx->framerate);
-            FPS             = double.IsNaN(newFps) || double.IsInfinity(newFps) || newFps <= 0.0 || newFps > 144 ? 25 : newFps; // Force default to 25 fps
-            FrameDuration   = (long)(10_000_000 / FPS);
+        {   // We consider that FPS can't change (only if it was missing we fill it)
+            FPS = av_q2d(codecCtx->framerate);
+            if (double.IsNaN(FPS) || double.IsInfinity(FPS) || FPS <= 0.0 || FPS > 200)
+                FPS = 25; // Force default to 25 fps
+            FrameDuration = (long)(10_000_000 / FPS);
         }
 
         // FPS2 / FrameDuration2 (DeInterlace) | we consider FPS (CFR) is progressive
@@ -308,9 +320,11 @@ public unsafe class VideoStream : StreamBase
         if (rotData != null && rotData->data != null)
         {
             var rotation = -Math.Round(av_display_rotation_get((int*)rotData->data));
-            Rotation = rotation - (360*Math.Floor(rotation/360 + 0.9/360));
+            Rotation = (uint)(rotation - (360 * Math.Floor(rotation / 360 + 0.9 / 360)));
         }
 
+        VFlip = frame->linesize[0] < 0;
+        
         if (CanDebug)
             Demuxer.Log.Debug($"Stream Info (Filled)\r\n{GetDump()}");
     }
@@ -320,10 +334,9 @@ public unsafe class VideoStream : StreamBase
         PixelFormatStr  = LowerCaseFirstChar(PixelFormat.ToString());
         PixelFormatDesc = av_pix_fmt_desc_get(PixelFormat);
         PixelComps      = PixelFormatDesc->comp.ToArray();
-        PixelInterleaved= PixelFormatDesc->log2_chroma_w != PixelFormatDesc->log2_chroma_h;
         ColorType       = PixelComps.Length == 1 ? ColorType.Gray : ((PixelFormatDesc->flags & PixFmtFlags.Rgb) != 0 ? ColorType.RGB : ColorType.YUV);
         PixelPlanes     = 0;
-
+        
         if (PixelComps.Length > 0)
         {
             PixelComp0Depth = PixelComps[0].depth;

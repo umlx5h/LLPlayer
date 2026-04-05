@@ -4,7 +4,6 @@ using System.Windows;
 using FlyleafLib.MediaFramework.MediaDecoder;
 using FlyleafLib.MediaFramework.MediaDemuxer;
 using FlyleafLib.MediaFramework.MediaFrame;
-using FlyleafLib.MediaFramework.MediaRenderer;
 
 namespace FlyleafLib.MediaPlayer;
 
@@ -142,15 +141,15 @@ unsafe partial class Player
             decoder.Flush();
             decoder.RequiresResync = true;
 
-            vFrame = VideoDecoder.GetFrame(frameIndex);
-            if (vFrame == null) return;
+            var vFrame = VideoDecoder.GetFrame(frameIndex);
+            if (vFrame == null)
+                return;
 
-            if (CanDebug) Log.Debug($"SFI: {VideoDecoder.GetFrameNumber(vFrame.timestamp)}");
-
-            renderer.RenderRequest(vFrame);
-            UpdateCurTime(vFrame.timestamp);
+            if (CanDebug) Log.Debug($"SFI: {VideoDecoder.GetFrameNumber(vFrame.Timestamp)}");
+            vFrames.Enqueue(vFrame, true);
+            Renderer.RenderRequest(vFrame);
+            UpdateCurTime(vFrame.Timestamp);
             reversePlaybackResync = true;
-            vFrame = null;
         }
     }
 
@@ -181,7 +180,7 @@ unsafe partial class Player
                 decoder.Flush();
                 shouldFlushNext = false;
 
-                VideoDecoder.DisposeFrame(VideoDecoder.GetFrame(VideoDecoder.GetFrameNumber(curTime)));
+                VideoDecoder.GetFrame(VideoDecoder.GetFrameNumber(curTime))?.Dispose();
             }
 
             for (int i = 0; i < subNum; i++)
@@ -190,20 +189,19 @@ unsafe partial class Player
                 SubtitleClear(i);
             }
 
-            if (vFrames.IsEmpty)
+            if (!vFrames.TryDequeue(out var vFrame))
+            {
+                Renderer.Frames.PushCurrentToLast();
                 vFrame = VideoDecoder.GetFrameNext();
-            else
-                vFrames.TryDequeue(out vFrame);
+                if (vFrame == null) return;
+                vFrames.Enqueue(vFrame, true);
+            }
 
-            if (vFrame == null)
-                return;
+            if (CanDebug) Log.Debug($"SFN: {VideoDecoder.GetFrameNumber(vFrame.Timestamp)}");
 
-            if (CanDebug) Log.Debug($"SFN: {VideoDecoder.GetFrameNumber(vFrame.timestamp)}");
-
-            renderer.RenderRequest(vFrame);
-            UpdateCurTime(vFrame.timestamp);
+            Renderer.RenderRequest(vFrame);
+            UpdateCurTime(vFrame.Timestamp);
             reversePlaybackResync = true;
-            vFrame = null;
         }
     }
     public void ShowFramePrev()
@@ -237,22 +235,19 @@ unsafe partial class Player
                 SubtitleClear(i);
             }
 
-            if (vFrames.IsEmpty)
+            if (!vFrames.TryDequeue(out var vFrame))
             {
                 reversePlaybackResync = true; // Temp fix for previous timestamps until we seperate GetFrame for Extractor and the Player
+                Renderer.Frames.PushCurrentToLast();
                 vFrame = VideoDecoder.GetFrame(VideoDecoder.GetFrameNumber(CurTime) - 1, true);
+                if (vFrame == null) return;
+                vFrames.Enqueue(vFrame, true);
             }
-            else
-                vFrames.TryDequeue(out vFrame);
 
-            if (vFrame == null)
-                return;
+            if (CanDebug) Log.Debug($"SFB: {VideoDecoder.GetFrameNumber(vFrame.Timestamp)}");
 
-            if (CanDebug) Log.Debug($"SFB: {VideoDecoder.GetFrameNumber(vFrame.timestamp)}");
-
-            renderer.RenderRequest(vFrame);
-            UpdateCurTime(vFrame.timestamp);
-            vFrame = null;
+            Renderer.RenderRequest(vFrame);
+            UpdateCurTime(vFrame.Timestamp);
         }
     }
 
@@ -260,9 +255,6 @@ unsafe partial class Player
     public void SpeedUp2()      => Speed += Config.Player.SpeedOffset2;
     public void SpeedDown()     => Speed -= Config.Player.SpeedOffset;
     public void SpeedDown2()    => Speed -= Config.Player.SpeedOffset2;
-
-    public void RotateRight()   => renderer.Rotation = (renderer.Rotation + 90) % 360;
-    public void RotateLeft()    => renderer.Rotation = renderer.Rotation < 90 ? 360 + renderer.Rotation - 90 : renderer.Rotation - 90;
 
     public void FullScreen()    => Host?.Player_SetFullScreen(true);
     public void NormalScreen()  => Host?.Player_SetFullScreen(false);
@@ -336,11 +328,10 @@ unsafe partial class Player
     /// <para>If frame not specified will use the current/last frame</para>
     /// </summary>
     /// <param name="filename">Specify the filename (null: will use Config.Player.FolderSnapshots and with default filename title_frameNumber.ext (ext from Config.Player.SnapshotFormat)</param>
-    /// <param name="width">Specify the width (-1: will keep the ratio based on height)</param>
-    /// <param name="height">Specify the height (-1: will keep the ratio based on width)</param>
-    /// <param name="frame">Specify the frame (null: will use the current/last frame)</param>
+    /// <param name="width">Specify the width (0: will keep the ratio based on height)</param>
+    /// <param name="height">Specify the height (0: will keep the ratio based on width)</param>
     /// <exception cref="Exception"></exception>
-    public void TakeSnapshotToFile(string filename = null, int width = -1, int height = -1, VideoFrame frame = null)
+    public void TakeSnapshotToFile(string filename = null, uint width = 0, uint height = 0)
     {
         if (!CanPlay)
             return;
@@ -353,42 +344,25 @@ unsafe partial class Player
                     Directory.CreateDirectory(Config.Player.FolderSnapshots);
 
                 // TBR: if frame is specified we don't know the frame's number
-                filename = GetValidFileName(string.IsNullOrEmpty(Playlist.Selected.Title) ? "Snapshot" : Playlist.Selected.Title) + $"_{(frame == null ? VideoDecoder.GetFrameNumber(CurTime).ToString() : "X")}.{Config.Player.SnapshotFormat}";
+                filename = GetValidFileName(string.IsNullOrEmpty(Playlist.Selected.Title) ? "Snapshot" : Playlist.Selected.Title) + $"_{VideoDecoder.GetFrameNumber(CurTime).ToString()}.{Config.Player.SnapshotFormat}";
                 filename = FindNextAvailableFile(Path.Combine(Config.Player.FolderSnapshots, filename));
             } catch { return; }
         }
 
         string ext = GetUrlExtention(filename);
 
-        ImageFormat imageFormat;
-
-        switch (ext)
+        var imageFormat = ext switch
         {
-            case "bmp":
-                imageFormat = ImageFormat.Bmp;
-                break;
+            "bmp"           => ImageFormat.Bmp,
+            "png"           => ImageFormat.Png,
+            "jpg" or "jpeg" => ImageFormat.Jpeg,
+            _ => throw new($"Invalid snapshot extention '{ext}' (valid .bmp, .png, .jpeg, .jpg"),
+        };
 
-            case "png":
-                imageFormat = ImageFormat.Png;
-                break;
-
-            case "jpg":
-            case "jpeg":
-                imageFormat = ImageFormat.Jpeg;
-                break;
-
-            default:
-                throw new Exception($"Invalid snapshot extention '{ext}' (valid .bmp, .png, .jpeg, .jpg");
-        }
-
-        if (renderer == null)
-            return;
-
-        var snapshotBitmap = renderer.GetBitmap(width, height, frame);
+        var snapshotBitmap = Renderer.TakeSnapshot(width, height);
         if (snapshotBitmap == null)
             return;
 
-        Exception e = null;
         try
         {
             snapshotBitmap.Save(filename, imageFormat);
@@ -398,14 +372,11 @@ unsafe partial class Player
                 OSDMessage = $"Save snapshot to {Path.GetFileName(filename)}";
             });
         }
-        catch (Exception e2)
+        catch (Exception)
         {
-            e = e2;
+            snapshotBitmap.Dispose();
+            throw;
         }
-        snapshotBitmap.Dispose();
-
-        if (e != null)
-            throw e;
     }
 
     /// <summary>
@@ -413,49 +384,18 @@ unsafe partial class Player
     /// <para>If width/height not specified will use the original size. If one of them will be set, the other one will be set based on original ratio</para>
     /// <para>If frame not specified will use the current/last frame</para>
     /// </summary>
-    /// <param name="width">Specify the width (-1: will keep the ratio based on height)</param>
-    /// <param name="height">Specify the height (-1: will keep the ratio based on width)</param>
-    /// <param name="frame">Specify the frame (null: will use the current/last frame)</param>
+    /// <param name="width">Specify the width (0: will keep the ratio based on height)</param>
+    /// <param name="height">Specify the height (0: will keep the ratio based on width)</param>
     /// <returns></returns>
-    public System.Drawing.Bitmap TakeSnapshotToBitmap(int width = -1, int height = -1, VideoFrame frame = null) => renderer?.GetBitmap(width, height, frame);
-
-    public void ZoomIn()         => Zoom += Config.Player.ZoomOffset;
-    public void ZoomOut()       { if (Zoom - Config.Player.ZoomOffset < 1) return; Zoom -= Config.Player.ZoomOffset; }
-
-    /// <summary>
-    /// Pan zoom in with center point
-    /// </summary>
-    /// <param name="p"></param>
-    public void ZoomIn(Point p) { renderer.ZoomWithCenterPoint(p, renderer.Zoom + Config.Player.ZoomOffset / 100.0); RaiseUI(nameof(Zoom)); }
-
-    /// <summary>
-    /// Pan zoom out with center point
-    /// </summary>
-    /// <param name="p"></param>
-    public void ZoomOut(Point p){ double zoom = renderer.Zoom - Config.Player.ZoomOffset / 100.0; if (zoom < 0.001) return; renderer.ZoomWithCenterPoint(p, zoom); RaiseUI(nameof(Zoom)); }
-
-    /// <summary>
-    /// Pan zoom (no raise)
-    /// </summary>
-    /// <param name="zoom"></param>
-    public void SetZoom(double zoom) => renderer.SetZoom(zoom);
-    /// <summary>
-    /// Pan zoom's center point (no raise, no center point change)
-    /// </summary>
-    /// <param name="p"></param>
-    public void SetZoomCenter(Point p) => renderer.SetZoomCenter(p);
-    /// <summary>
-    /// Pan zoom and center point (no raise)
-    /// </summary>
-    /// <param name="zoom"></param>
-    /// <param name="p"></param>
-    public void SetZoomAndCenter(double zoom, Point p) => renderer.SetZoomAndCenter(zoom, p);
+    public System.Drawing.Bitmap TakeSnapshotToBitmap(uint width = 0, uint height = 0) => Renderer?.TakeSnapshot(width, height);
 
     public void ResetAll()
     {
+        ReversePlayback = false;
+
         ResetSpeed();
-        ResetRotation();
-        ResetZoom();
+        // reset zoom and rotation at once
+        Config.Video.ResetViewport();
     }
 
     public void ResetSpeed()
@@ -465,21 +405,12 @@ unsafe partial class Player
 
     public void ResetRotation()
     {
-        Rotation = 0;
+        Config.Video.Rotation = 0;
     }
 
     public void ResetZoom()
     {
-        bool npx = renderer.PanXOffset != 0;
-        bool npy = renderer.PanYOffset != 0;
-        bool npz = renderer.Zoom != 1;
-        renderer.SetPanAll(0, 0, Rotation, 1, Renderer.ZoomCenterPoint, true); // Pan X/Y, Rotation, Zoom, Zoomcenter, Refresh
-
-        UI(() =>
-        {
-            if (npx) Raise(nameof(PanXOffset));
-            if (npy) Raise(nameof(PanYOffset));
-            if (npz) Raise(nameof(Zoom));
-        });
+        // reset without rotation
+        Config.Video.ResetViewport(Config.Video.Rotation);
     }
 }

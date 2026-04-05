@@ -146,7 +146,7 @@ public unsafe class DataDecoder : DecoderBase
 
         DataFrame mFrame = new()
         {
-            timestamp   = (long)(packet->pts * DataStream.Timebase) - demuxer.StartTime,
+            Timestamp   = (long)(packet->pts * DataStream.Timebase) - demuxer.StartTime,
             DataCodecId = DataStream.CodecID,
             Data        = dataFrame
         };

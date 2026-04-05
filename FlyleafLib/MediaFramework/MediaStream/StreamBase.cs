@@ -129,7 +129,7 @@ public abstract unsafe class StreamBase : NotifyPropertyChanged
         {
             b = av_dict_get(AVStream->metadata, "", b, DictReadFlags.IgnoreSuffix);
             if (b == null) break;
-            Metadata.Add(BytePtrToStringUTF8(b->key), BytePtrToStringUTF8(b->value));
+            Metadata[BytePtrToStringUTF8(b->key)] = BytePtrToStringUTF8(b->value);
         }
 
         foreach (var kv in Metadata)

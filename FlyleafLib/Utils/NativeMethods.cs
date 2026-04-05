@@ -37,8 +37,8 @@ public static partial class Utils
         [DllImport("user32.dll", EntryPoint = "SetWindowLongPtr")]
         static extern nint SetWindowLongPtr64(nint hWnd, int nIndex, nint dwNewLong);
 
-        [DllImport("user32.dll")]
-        public static extern IntPtr CallWindowProc(IntPtr lpPrevWndFunc, IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+        //[DllImport("user32.dll")]
+        //public static extern IntPtr CallWindowProc(IntPtr lpPrevWndFunc, IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
         [DllImport("comctl32.dll")]
         public static extern bool SetWindowSubclass(IntPtr hWnd, IntPtr pfnSubclass, UIntPtr uIdSubclass, UIntPtr dwRefData);
@@ -47,7 +47,7 @@ public static partial class Utils
         public static extern bool RemoveWindowSubclass(IntPtr hWnd, IntPtr pfnSubclass, UIntPtr uIdSubclass);
 
         [DllImport("comctl32.dll")]
-        public static extern IntPtr DefSubclassProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+        public static extern IntPtr DefSubclassProc(IntPtr hWnd, WndProcMessages msg, IntPtr wParam, IntPtr lParam);
 
         [DllImport("user32.dll")]
         public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int x, int y, int cx, int cy, UInt32 uFlags);
@@ -64,6 +64,8 @@ public static partial class Utils
         [StructLayout(LayoutKind.Sequential)]
         public struct POINT : IEquatable<POINT>
         {
+            public static readonly POINT Empty = new();
+
             public int X;
             public int Y;
 
@@ -265,11 +267,19 @@ public static partial class Utils
             SW_MAX = 11
         }
 
-        public delegate IntPtr WndProcDelegate(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
-        public delegate IntPtr SubclassWndProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam, IntPtr uIdSubclass, IntPtr dwRefData);
+        public enum WndProcMessages : uint
+        {
+            WM_MOVE         = 0x0003,
+            WM_SIZE         = 0x0005,
+            WM_DISPLAYCHANGE= 0x007E,
+            WM_NCDESTROY    = 0x0082
+        }
 
-        public static int SignedHIWORD(IntPtr n) => SignedHIWORD(unchecked((int)(long)n));
-        public static int SignedLOWORD(IntPtr n) => SignedLOWORD(unchecked((int)(long)n));
+        //public delegate nint WndProcDelegate(nint hWnd, WndProcMessages msg, nint wParam, nint lParam);
+        public delegate nint SubclassWndProc(nint hWnd, WndProcMessages msg, nint wParam, nint lParam, nint uIdSubclass, nint dwRefData);
+
+        public static int SignedHIWORD(nint n) => SignedHIWORD(unchecked((int)(long)n));
+        public static int SignedLOWORD(nint n) => SignedLOWORD(unchecked((int)(long)n));
         public static int SignedHIWORD(int n) => (short)((n >> 16) & 0xffff);
         public static int SignedLOWORD(int n) => (short)(n & 0xFFFF);
 

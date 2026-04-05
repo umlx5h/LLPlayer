@@ -95,9 +95,6 @@ partial class Player
                     ScreamerVASD();
                 }
 
-                if (vFrame != renderer.LastFrame) // Audio does not have renderer
-                    VideoDecoder.DisposeFrame(vFrame);
-
                 vFrame = null;
             }
 
@@ -328,7 +325,7 @@ partial class Player
                                 {
                                     sFramesPrev[i] = new SubtitlesFrame
                                     {
-                                        timestamp = cur.StartTime.Ticks + Config.Subtitles[i].Delay,
+                                        Timestamp = cur.StartTime.Ticks + Config.Subtitles[i].Delay,
                                         duration = (uint)cur.Duration.TotalMilliseconds,
                                         isTranslated = cur.UseTranslated
                                     };
@@ -431,7 +428,7 @@ partial class Player
         lock (lockActions)
         {
             Initialize();
-            renderer?.Flush();
+            Renderer.Reset();
         }
     }
     public void SubtitleClear()
@@ -445,7 +442,8 @@ partial class Player
     public void SubtitleClear(int subIndex)
     {
         Subtitles[subIndex].Data.Clear();
-        //renderer.ClearOverlayTexture();
+        //Renderer.SubsDispose();
+        //Subtitles.ClearSubsText();
     }
 
     /// <summary>

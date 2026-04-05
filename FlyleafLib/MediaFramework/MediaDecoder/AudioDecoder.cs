@@ -436,11 +436,11 @@ public unsafe partial class AudioDecoder : DecoderBase
 
             AudioFrame mFrame = new()
             {
-                timestamp   = (long)(frame->pts * AudioStream.Timebase) - demuxer.StartTime + Config.Audio.Delay,
+                Timestamp   = (long)(frame->pts * AudioStream.Timebase) - demuxer.StartTime + Config.Audio.Delay,
                 dataLen     = speedDataLen,
                 speed       = speed
             };
-            if (CanTrace) Log.Trace($"Processes {TicksToTime(mFrame.timestamp)}");
+            if (CanTrace) Log.Trace($"Processes {TicksToTime(mFrame.Timestamp)}");
 
             if (frame->nb_samples > cBufSamples)
                 AllocateCircularBuffer(frame->nb_samples);

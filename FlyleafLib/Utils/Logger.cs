@@ -22,7 +22,7 @@ public static class Logger
 
     static Logger()
     {
-        foreach (LogLevel loglevel in Enum.GetValues(typeof(LogLevel)))
+        foreach (LogLevel loglevel in Enum.GetValues<LogLevel>())
             logLevels.Add(loglevel, loglevel.ToString().PadRight(5, ' '));
 
         // Flush File Data on Application Exit
@@ -55,7 +55,7 @@ public static class Logger
             else if (output == ":custom")
                 Output = CustomOutput;
             else
-                throw new Exception("Invalid log output");
+                throw new("Invalid log output");
         }
         else
         {
@@ -74,19 +74,19 @@ public static class Logger
 
                 if (Engine.Config.LogAppend)
                 {
-                    fileStream = new FileStream(output, FileMode.Append, FileAccess.Write);
+                    fileStream = new(output, FileMode.Append, FileAccess.Write);
                     Output = FilePtr;
                 }
                     
                 else if (Engine.Config.LogRollMaxFiles > 0 && Engine.Config.LogRollMaxFileSize > 0)
                 {
                     RollLogFiles(); // If we have rolling log enables and do not append, then we need to roll the log files first
-                    fileStream = new FileStream(Engine.Config.LogOutput, FileMode.Create, FileAccess.Write);
+                    fileStream = new(Engine.Config.LogOutput, FileMode.Create, FileAccess.Write);
                     Output = FileRollPtr;
                 }
                 else
                 {
-                    fileStream = new FileStream(output, FileMode.Create, FileAccess.Write);
+                    fileStream = new(output, FileMode.Create, FileAccess.Write);
                     Output = FilePtr;
                 }
             }
@@ -158,7 +158,7 @@ public static class Logger
             {
                 fileStream.Dispose();
                 RollLogFiles();
-                fileStream = new FileStream(Engine.Config.LogOutput, FileMode.Create, FileAccess.Write);
+                fileStream = new(Engine.Config.LogOutput, FileMode.Create, FileAccess.Write);
             }
 
             fileTaskRunning = false;
@@ -199,18 +199,15 @@ public static class Logger
     }
 }
 
-public class LogHandler
+public class LogHandler(string prefix = "")
 {
-    public string Prefix;
+    public string Prefix = prefix;
 
-    public LogHandler(string prefix = "")
-        => Prefix = prefix;
-
-    public void Error(string msg)   => Log($"{Prefix}{msg}", LogLevel.Error);
-    public void Info(string msg)    => Log($"{Prefix}{msg}", LogLevel.Info);
-    public void Warn(string msg)    => Log($"{Prefix}{msg}", LogLevel.Warn);
-    public void Debug(string msg)   => Log($"{Prefix}{msg}", LogLevel.Debug);
-    public void Trace(string msg)   => Log($"{Prefix}{msg}", LogLevel.Trace);
+    public void Error   (string msg)    => Log($"{Prefix}{msg}", LogLevel.Error);
+    public void Info    (string msg)    => Log($"{Prefix}{msg}", LogLevel.Info);
+    public void Warn    (string msg)    => Log($"{Prefix}{msg}", LogLevel.Warn);
+    public void Debug   (string msg)    => Log($"{Prefix}{msg}", LogLevel.Debug);
+    public void Trace   (string msg)    => Log($"{Prefix}{msg}", LogLevel.Trace);
 }
 
 public enum LogLevel

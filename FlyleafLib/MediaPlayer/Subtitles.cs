@@ -3,10 +3,8 @@ using FlyleafLib.MediaFramework.MediaStream;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media.Imaging;
-using static FlyleafLib.Utils;
 
 namespace FlyleafLib.MediaPlayer;
 
@@ -109,9 +107,10 @@ public class SubsBitmapPosition : NotifyPropertyChanged
         }
 
         SubsBitmap bitmap = _player.Subtitles[_subIndex].Data.Bitmap;
+        var viewport = _player.Renderer.Viewport;
 
         // Calculate the ratio of the current width of the window to the width of the video
-        double renderWidth = _player.VideoDecoder.Renderer.GetViewport.Width;
+        double renderWidth = viewport.Width;
         double videoWidth = _player.SubtitlesDecoders[_subIndex].Width;
         if (videoWidth == 0)
         {
@@ -120,7 +119,7 @@ public class SubsBitmapPosition : NotifyPropertyChanged
         }
 
         // double videoHeight_ = (int)(videoWidth / Player.VideoDemuxer.VideoStream.AspectRatio.Value);
-        double renderHeight = _player.VideoDecoder.Renderer.GetViewport.Height;
+        double renderHeight = viewport.Height;
         double videoHeight = _player.SubtitlesDecoders[_subIndex].Height;
         if (videoHeight == 0)
         {
@@ -129,8 +128,8 @@ public class SubsBitmapPosition : NotifyPropertyChanged
 
         // In aspect ratio like a movie, a black background may be added to the top and bottom.
         // In this case, the subtitles should be placed based on the video display area, so the offset from the image rendering area excluding the black background should be taken into consideration.
-        double yOffset = _player.renderer.GetViewport.Y;
-        double xOffset = _player.renderer.GetViewport.X;
+        double xOffset = viewport.X;
+        double yOffset = Math.Max(_player.Renderer.ControlHeight - (viewport.Y + viewport.Height), 0);
 
         double scaleFactorX = renderWidth / videoWidth;
         // double scaleFactorY = renderHeight / videoHeight;
@@ -565,11 +564,11 @@ public class Subtitle : NotifyPropertyChanged
         _player.SubtitlesOCR.Reset(_subIndex);
         _player.SubtitlesManager[_subIndex].Reset();
 
-        if (_player.renderer != null)
+        if (_player.Renderer != null)
         {
             // Adjust bitmap subtitle size when resizing screen
-            _player.renderer.ViewportChanged -= RendererOnViewportChanged;
-            _player.renderer.ViewportChanged += RendererOnViewportChanged;
+            _player.Renderer.ViewportChanged -= RendererOnViewportChanged;
+            _player.Renderer.ViewportChanged += RendererOnViewportChanged;
         }
 
         UpdateUI();
@@ -761,34 +760,6 @@ public class Subtitles
         {
             this[i].Refresh();
         }
-    }
-
-    // TODO: L: refactor
-    public void DelayRemovePrimary()   => Config.Subtitles[0].Delay -= Config.Player.SubtitlesDelayOffset;
-    public void DelayAddPrimary()      => Config.Subtitles[0].Delay += Config.Player.SubtitlesDelayOffset;
-    public void DelayRemove2Primary()  => Config.Subtitles[0].Delay -= Config.Player.SubtitlesDelayOffset2;
-    public void DelayAdd2Primary()     => Config.Subtitles[0].Delay += Config.Player.SubtitlesDelayOffset2;
-
-    public void DelayRemoveSecondary()   => Config.Subtitles[1].Delay -= Config.Player.SubtitlesDelayOffset;
-    public void DelayAddSecondary()      => Config.Subtitles[1].Delay += Config.Player.SubtitlesDelayOffset;
-    public void DelayRemove2Secondary()  => Config.Subtitles[1].Delay -= Config.Player.SubtitlesDelayOffset2;
-    public void DelayAdd2Secondary()     => Config.Subtitles[1].Delay += Config.Player.SubtitlesDelayOffset2;
-
-    public void ToggleEnabled()        => Config.Subtitles.Enabled = !Config.Subtitles.Enabled;
-
-    public void ToggleVisibility()
-    {
-        Config.Subtitles[0].Visible = !Config.Subtitles[0].Visible;
-        Config.Subtitles[1].Visible = Config.Subtitles[0].Visible;
-    }
-    public void ToggleVisibilityPrimary()
-    {
-        Config.Subtitles[0].Visible = !Config.Subtitles[0].Visible;
-    }
-
-    public void ToggleVisibilitySecondary()
-    {
-        Config.Subtitles[1].Visible = !Config.Subtitles[1].Visible;
     }
 
     private bool _prevSeek(int subIndex)

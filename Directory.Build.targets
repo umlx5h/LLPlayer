@@ -1,0 +1,9 @@
+<Project>
+	<!-- Global cleanup of leftover WPF wpftmp files after builds -->
+	<Target Name="RemoveWpfTempFiles" AfterTargets="Clean">
+		<ItemGroup>
+			<WpfTempFiles Include="$([System.IO.Directory]::GetFiles('$(BaseIntermediateOutputPath)', '*_wpftmp*.*', System.IO.SearchOption.AllDirectories))" />
+		</ItemGroup>
+		<Delete Files="@(WpfTempFiles)" TreatErrorsAsWarnings="true" />
+	</Target>
+</Project>

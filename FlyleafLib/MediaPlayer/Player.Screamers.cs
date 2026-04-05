@@ -59,11 +59,13 @@ unsafe partial class Player
         {
             sFrames[i] = null;
         }
-        if (!vFrames.TryDequeue(out vFrame))
+        if (!vFrames.TryDequeue(out var vFrame))
             return;
 
-        renderer.RenderRequest(vFrame);
-        UpdateCurTime(vFrame.timestamp);
+        Log.Error($"ShowOneFrame #{vFrame.Id}");
+        Renderer.RenderRequest(vFrame);
+
+        UpdateCurTime(vFrame.Timestamp);
         showFrameCount++;
 
         for (int i = 0; i < subNum; i++)
@@ -82,7 +84,7 @@ unsafe partial class Player
             }
 
             // Clear last subtitles text if video timestamp is not within subs timestamp + duration (to prevent clearing current subs on pause/play)
-            if (sFramesPrev[i] == null || sFramesPrev[i].timestamp > vFrame.timestamp || (sFramesPrev[i].timestamp + (sFramesPrev[i].duration * (long)10000)) < vFrame.timestamp)
+            if (sFramesPrev[i] == null || sFramesPrev[i].Timestamp > vFrame.Timestamp || (sFramesPrev[i].Timestamp + (sFramesPrev[i].duration * (long)10000)) < vFrame.Timestamp)
             {
                 sFramesPrev[i] = null;
                 SubtitleClear(i);
@@ -91,9 +93,7 @@ unsafe partial class Player
 
         // Required for buffering on paused
         if (decoder.RequiresResync && !IsPlaying && seeks.IsEmpty)
-            decoder.Resync(vFrame.timestamp);
-
-        vFrame = null;
+            decoder.Resync(vFrame.Timestamp);
     }
 
     private void AudioBuffer()
@@ -119,7 +119,7 @@ unsafe partial class Player
         if (aFrame == null)
             return;
 
-        UpdateCurTime(aFrame.timestamp, false);
+        UpdateCurTime(aFrame.Timestamp, false);
 
         while(seeks.IsEmpty && decoder.AudioStream.Demuxer.BufferedDuration < Config.Player.MinBufferDuration && AudioDecoder.Frames.Count < Config.Decoder.MaxAudioFrames / 2 && IsPlaying && decoder.AudioStream.Demuxer.IsRunning && decoder.AudioStream.Demuxer.Status != MediaFramework.Status.QueueFull)
             Thread.Sleep(20);
@@ -209,7 +209,7 @@ unsafe partial class Player
 
                     Audio.AddSamples(aFrame);
                     bufferedDuration += (long) ((aFrame.dataLen / 4) * Audio.Timebase);
-                    UpdateCurTime(aFrame.timestamp, false);
+                    UpdateCurTime(aFrame.Timestamp, false);
                 } while (bufferedDuration < 100 * 10000);
 
                 Thread.Sleep(20);
@@ -229,9 +229,8 @@ unsafe partial class Player
         {
             if (seeks.TryPop(out var seekData))
             {
-                if (vFrame != null)
-                    { VideoDecoder.DisposeFrame(vFrame); vFrame = null; } // should never be LastFrame
-                renderer.RenderPlayStop();
+                vFrame = null;
+                Renderer.RenderIdleStart();
 
                 seeks.Clear();
                 if (decoder.Seek(seekData.ms, seekData.forward) < 0)
@@ -243,7 +242,7 @@ unsafe partial class Player
                 if (VideoDecoder.Status == MediaFramework.Status.Ended)
                     break;
 
-                renderer.RenderPlayStop();
+                Renderer.RenderIdleStart();
                 OnBufferingStarted();
                 if (reversePlaybackResync)
                 {
@@ -260,21 +259,21 @@ unsafe partial class Player
                 if (!vFrames.TryDequeue(out vFrame))
                     { Log.Warn("No video frame"); break; }
 
-                startTicks = vFrame.timestamp;
-                UpdateCurTime(vFrame.timestamp, false);
-                renderer.RenderPlayStart();
+                startTicks = vFrame.Timestamp;
+                UpdateCurTime(vFrame.Timestamp, false);
+                Renderer.RenderIdleStop();
                 sw.Restart();
             }
 
             elapsedTicks    = (long)(sw.ElapsedTicks * SWFREQ_TO_TICKS);
-            vDistanceMs     = (int) ((((startTicks - vFrame.timestamp) / speed) - elapsedTicks) / 10000);
+            vDistanceMs     = (int) ((((startTicks - vFrame.Timestamp) / speed) - elapsedTicks) / 10000);
             sleepMs         = vDistanceMs - 1;
 
             if (sleepMs < 0) sleepMs = 0;
 
             if (Math.Abs(vDistanceMs - sleepMs) > 5)
             {
-                VideoDecoder.DisposeFrame(vFrame); vFrame = null; // should never be LastFrame
+                vFrame = null; // should never be LastFrame
                 Thread.Sleep(5);
                 continue; // rebuffer
             }
@@ -283,7 +282,7 @@ unsafe partial class Player
             {
                 if (sleepMs > 2000)
                 {
-                    VideoDecoder.DisposeFrame(vFrame); vFrame = null; // should never be LastFrame
+                    vFrame = null; // should never be LastFrame
                     Thread.Sleep(5);
                     continue;
                 }
@@ -291,18 +290,18 @@ unsafe partial class Player
                 Thread.Sleep(sleepMs);
             }
 
-            if (renderer.RenderPlay(vFrame, false))
-                renderer.PresentPlay();
+            if (Renderer.RenderPlay(vFrame, false))
+                Renderer.PresentPlay();
 
-            UpdateCurTime(vFrame.timestamp, false);
+            UpdateCurTime(vFrame.Timestamp, false);
 
             vFrame = null;
             int dequeueRetries  = MAX_DEQUEUE_RETRIES;
             while (!isVideoSwitch && !vFrames.TryDequeue(out vFrame) && dequeueRetries-- > 0)
                 Thread.Sleep(1);
         }
-        if (vFrame != null)
-            { VideoDecoder.DisposeFrame(vFrame); vFrame = null; } // should never be LastFrame
+
+        vFrame = null;
         if (CanInfo) Log.Info($"Finished at {TicksToTimeMini(curTime)}");
     }
 
@@ -313,21 +312,21 @@ unsafe partial class Player
         VideoDemuxer.DisposePackets();
         VideoDecoder.Flush();
 
-        renderer.RenderPlayStart();
+        Renderer.RenderIdleStop();
         while (status == Status.Playing)
         {
             vFrame = VideoDecoder.GetFrameNext();
             if (vFrame == null)
                 break;
 
-            if (renderer.RenderPlay(vFrame, false))
-                renderer.PresentPlay();
+            if (Renderer.RenderPlay(vFrame, false))
+                Renderer.PresentPlay();
 
-            UpdateCurTime(vFrame.timestamp, false);
+            UpdateCurTime(vFrame.Timestamp, false);
         }
 
         vFrame = null;
-        renderer.RenderPlayStop();
+        Renderer.RenderIdleStart();
 
         if (CanInfo) Log.Info($"Finished at {TicksToTimeMini(curTime)}");
     }

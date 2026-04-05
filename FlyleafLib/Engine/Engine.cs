@@ -306,7 +306,7 @@ public static class Engine
                                 // TBR: Let Fps enable even for Idle
                                 //if (player.status == Status.Playing)
                                 //{
-                                var presentCount = player.renderer.GetFrameStatistics().PresentCount; // might cause a delay, keep it last
+                                var presentCount = player.Renderer.SwapChain.GetFrameStatistics().PresentCount; // might cause a delay, keep it last
                                 player.Video.fpsCurrent  = (presentCount - curStats.FramesDisplayed) / curSecond;
                                 curStats.FramesDisplayed = presentCount;
                                 //}

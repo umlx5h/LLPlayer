@@ -235,13 +235,13 @@ public class AppConfigSubs : Bindable
 
     public void FlyleafHostLoaded()
     {
-        Viewport = FL.Player.renderer.GetViewport;
+        Viewport = FL.Player.Renderer.Viewport;
 
-        FL.Player.renderer.ViewportChanged += (sender, args) =>
+        FL.Player.Renderer.ViewportChanged += (sender, args) =>
         {
             Utils.UIIfRequired(() =>
             {
-                Viewport = FL.Player.renderer.GetViewport;
+                Viewport = FL.Player.Renderer.Viewport;
             });
         };
     }

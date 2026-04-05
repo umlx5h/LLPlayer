@@ -51,7 +51,7 @@
                             Text="Volume Offset" />
                         <TextBox
                             Width="100"
-                            Text="{Binding FL.PlayerConfig.Player.VolumeOffset}"
+                            Text="{Binding FL.PlayerConfig.Audio.VolumeOffset}"
                             helpers:TextBoxHelper.OnlyNumeric="Uint" />
                     </StackPanel>
 
@@ -61,7 +61,7 @@
                             Text="Delay Offset1 (ms)" />
                         <TextBox
                             Width="100"
-                            Text="{Binding FL.PlayerConfig.Player.AudioDelayOffset, Converter={StaticResource TicksToMilliSecondsConv}}"
+                            Text="{Binding FL.PlayerConfig.Audio.DelayOffset, Converter={StaticResource TicksToMilliSecondsConv}}"
                             helpers:TextBoxHelper.OnlyNumeric="Uint" />
                     </StackPanel>
 
@@ -71,7 +71,7 @@
                             Text="Delay Offset2 (ms)" />
                         <TextBox
                             Width="100"
-                            Text="{Binding FL.PlayerConfig.Player.AudioDelayOffset2, Converter={StaticResource TicksToMilliSecondsConv}}"
+                            Text="{Binding FL.PlayerConfig.Audio.DelayOffset2, Converter={StaticResource TicksToMilliSecondsConv}}"
                             helpers:TextBoxHelper.OnlyNumeric="Uint" />
                     </StackPanel>
                 </StackPanel>
@@ -85,7 +85,7 @@
                             Text="Delay Offset1 (ms) " />
                         <TextBox
                             Width="100"
-                            Text="{Binding FL.PlayerConfig.Player.SubtitlesDelayOffset, Converter={StaticResource TicksToMilliSecondsConv}}"
+                            Text="{Binding FL.PlayerConfig.Subtitles.DelayOffset, Converter={StaticResource TicksToMilliSecondsConv}}"
                             helpers:TextBoxHelper.OnlyNumeric="Uint" />
                     </StackPanel>
 
@@ -95,7 +95,7 @@
                             Text="Delay Offset2 (ms)" />
                         <TextBox
                             Width="100"
-                            Text="{Binding FL.PlayerConfig.Player.SubtitlesDelayOffset2, Converter={StaticResource TicksToMilliSecondsConv}}"
+                            Text="{Binding FL.PlayerConfig.Subtitles.DelayOffset2, Converter={StaticResource TicksToMilliSecondsConv}}"
                             helpers:TextBoxHelper.OnlyNumeric="Uint" />
                     </StackPanel>
                 </StackPanel>
@@ -213,7 +213,7 @@
                         Text="Zoom Unit (%)" />
                         <TextBox
                         Width="100"
-                        Text="{Binding FL.PlayerConfig.Player.ZoomOffset}"
+                        Text="{Binding FL.PlayerConfig.Video.ZoomOffset}"
                         helpers:TextBoxHelper.OnlyNumeric="Uint" />
                     </StackPanel>
                 </StackPanel>

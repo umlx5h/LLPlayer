@@ -540,7 +540,7 @@ AncestorType={x:Type MenuItem}}}">
             </MenuItem>
             <MenuItem Header="HW Acceleration" IsCheckable="True" IsChecked="{Binding FL.PlayerConfig.Video.VideoAcceleration}"/>
             <MenuItem Header="Record" IsCheckable="True" IsChecked="{Binding FL.Player.IsRecording, Mode=OneWay}" Command="{Binding FL.Player.Commands.ToggleRecording}"/>
-            <MenuItem Header="{Binding FL.Player.Rotation}" HeaderStringFormat="Rotation ({0}°)">
+            <MenuItem Header="{Binding FL.PlayerConfig.Video.Rotation}" HeaderStringFormat="Rotation ({0}°)">
                 <MenuItem Header="0°"       CommandParameter="0"    Command="{Binding FL.Player.Commands.RotationSet}"/>
                 <MenuItem Header="90°"      CommandParameter="90"   Command="{Binding FL.Player.Commands.RotationSet}"/>
                 <MenuItem Header="180°"     CommandParameter="180"  Command="{Binding FL.Player.Commands.RotationSet}"/>
@@ -548,8 +548,8 @@ AncestorType={x:Type MenuItem}}}">
             </MenuItem>
 
             <MenuItem Header="Flip">
-                <MenuItem Header="Horizontal Flip" IsCheckable="True" IsChecked="{Binding FL.Player.renderer.HFlip}"/>
-                <MenuItem Header="Vertical Flip" IsCheckable="True" IsChecked="{Binding FL.Player.renderer.VFlip}"/>
+                <MenuItem Header="Horizontal Flip" IsCheckable="True" IsChecked="{Binding FL.PlayerConfig.Video.HFlip}"/>
+                <MenuItem Header="Vertical Flip" IsCheckable="True" IsChecked="{Binding FL.PlayerConfig.Video.VFlip}"/>
             </MenuItem>
 
             <MenuItem Header="Reverse Playback" IsCheckable="True" IsChecked="{Binding FL.Player.ReversePlayback}"/>
@@ -569,7 +569,7 @@ AncestorType={x:Type MenuItem}}}">
 
             <MenuItem Header="Take a Snapshot" Command="{Binding FL.Player.Commands.TakeSnapshot}" Icon="{materialDesign:PackIcon Kind=PhotoCamera}"/>
             <MenuItem Header="V.Sync" IsCheckable="True" IsChecked="{Binding FL.PlayerConfig.Video.VSync}"/>
-            <MenuItem Header="{Binding FL.Player.Zoom}" HeaderStringFormat="Zoom ({0}%)">
+            <MenuItem Header="{Binding FL.PlayerConfig.Video.Zoom}" HeaderStringFormat="Zoom ({0}%)">
                 <MenuItem Header="Reset ..." Command="{Binding FL.Player.Commands.ResetAll}"/>
                 <MenuItem Header="Zoom In"   Command="{Binding FL.Player.Commands.ZoomIn}" Icon="{materialDesign:PackIcon Kind=ZoomIn}"/>
                 <MenuItem Header="Zoom out"  Command="{Binding FL.Player.Commands.ZoomOut}" Icon="{materialDesign:PackIcon Kind=ZoomOut}"/>

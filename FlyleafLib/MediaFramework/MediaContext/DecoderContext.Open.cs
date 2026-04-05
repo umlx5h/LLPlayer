@@ -186,13 +186,17 @@ public partial class DecoderContext
         if (CanInfo) Log.Info($"[OpenVideoStream] #{(args.OldStream != null ? args.OldStream.StreamIndex.ToString() : "_")} => #{(args.Stream != null ? args.Stream.StreamIndex.ToString() : "_")}{(!args.Success ? " [Error: " + args.Error  + "]": "")}");
         OpenVideoStreamCompleted?.Invoke(this, args);
     }
-    private void OnOpenSubtitlesStreamCompleted(OpenSubtitlesStreamCompletedArgs args = null)
+    private unsafe void OnOpenSubtitlesStreamCompleted(OpenSubtitlesStreamCompletedArgs args = null)
     {
         if (shouldDispose)
         {
             Dispose();
             return;
         }
+
+        // currently not used
+        //if (!SubtitlesDecoder.Disposed) // Bitmap Subs Size
+        //    VideoDecoder.Renderer?.SubsConfig(SubtitlesDecoder.CodecCtx->width, SubtitlesDecoder.CodecCtx->height);
 
         if (CanInfo) Log.Info($"[OpenSubtitlesStream] #{(args.OldStream != null ? args.OldStream.StreamIndex.ToString() : "_")} => #{(args.Stream != null ? args.Stream.StreamIndex.ToString() : "_")}{(!args.Success ? " [Error: " + args.Error  + "]": "")}");
         OpenSubtitlesStreamCompleted?.Invoke(this, args);

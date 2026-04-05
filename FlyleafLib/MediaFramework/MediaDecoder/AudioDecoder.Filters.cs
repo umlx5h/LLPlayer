@@ -158,13 +158,15 @@ public unsafe partial class AudioDecoder
             avfilter_graph_free(filterGraphPtr);
 
         if (filtframe != null)
-            fixed (AVFrame** ptr = &filtframe)
-                av_frame_free(ptr);
+        {
+            fixed (AVFrame** ptr = &filtframe) av_frame_free(ptr);
+            filtframe = null;
+        }
+            
 
         abufferCtx      = null;
         abufferSinkCtx  = null;
         filterGraph     = null;
-        filtframe       = null;
     }
     protected override void OnSpeedChanged(double value)
     {
@@ -378,11 +380,11 @@ public unsafe partial class AudioDecoder
         AudioFrame mFrame = new()
         {
             dataLen     = curLen,
-            timestamp   = (long)((newPts * AudioStream.Timebase) - demuxer.StartTime + Config.Audio.Delay),
+            Timestamp   = (long)((newPts * AudioStream.Timebase) - demuxer.StartTime + Config.Audio.Delay),
             speed       = speed
         };
 
-        if (CanTrace) Log.Trace($"Processes {TicksToTime(mFrame.timestamp)}");
+        if (CanTrace) Log.Trace($"Processes {TicksToTime(mFrame.Timestamp)}");
 
         fixed (byte* circularBufferPosPtr = &cBuf[cBufPos])
             mFrame.dataPtr = (IntPtr)circularBufferPosPtr;

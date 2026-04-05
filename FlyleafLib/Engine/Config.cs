@@ -3,14 +3,19 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows.Data;
 
+using Vortice.Direct3D11;
+
+using ID2D1DeviceContext = Vortice.Direct2D1.ID2D1DeviceContext;
+
 using FlyleafLib.Controls.WPF;
-using FlyleafLib.MediaFramework.MediaDecoder;
 using FlyleafLib.MediaFramework.MediaFrame;
 using FlyleafLib.MediaFramework.MediaRenderer;
 using FlyleafLib.MediaPlayer;
 using FlyleafLib.MediaPlayer.Translation;
 using FlyleafLib.MediaPlayer.Translation.Services;
 using FlyleafLib.Plugins;
+
+using Filter = FlyleafLib.MediaFramework.MediaDecoder.Filter;
 
 namespace FlyleafLib;
 
@@ -39,8 +44,8 @@ public class Config : NotifyPropertyChanged
         // save default plugin options for later
         defaultPlugins = Plugins;
 
-        Player.config = this;
-        Demuxer.config = this;
+        Player.config   = this;
+        Demuxer.config  = this;
     }
 
     public Config(bool test) { }
@@ -126,6 +131,10 @@ public class Config : NotifyPropertyChanged
         }
 
         jsonOptions ??= jsonOpts;
+
+        // TBR: Just sync filter values? *We need to know the current VP or keep the last used VP
+        if (Video.player != null && Video.player.Renderer != null)
+            Video.player.Renderer.SyncFilters();
 
         File.WriteAllText(path, JsonSerializer.Serialize(this, jsonOptions));
     }
@@ -354,26 +363,10 @@ public class Config : NotifyPropertyChanged
                         UICurTime                   { get; set; } = UIRefreshType.PerFrameSecond;
 
         /// <summary>
-        /// The upper limit of the volume amplifier
-        /// </summary>
-        public int      VolumeMax                   { get => _VolumeMax; set { Set(ref _VolumeMax, value); if (player != null && player.Audio.masteringVoice != null) player.Audio.masteringVoice.Volume = value / 100f;  } }
-        int _VolumeMax = 150;
-
-        /// <summary>
-        /// The default volume
-        /// </summary>
-        public int      VolumeDefault               { get; set => Set(ref field, value); } = 75;
-
-        /// <summary>
         /// The purpose of the player
         /// </summary>
         public Usage    Usage                       { get; set; } = Usage.AVS;
 
-        // Offsets
-        public long     AudioDelayOffset            { get; set; } =  100 * 10000;
-        public long     AudioDelayOffset2           { get; set; } = 1000 * 10000;
-        public long     SubtitlesDelayOffset        { get; set; } =  100 * 10000;
-        public long     SubtitlesDelayOffset2       { get; set; } = 1000 * 10000;
         public long     SeekOffset                  { get; set; } = 1 * (long)1000 * 10000;
         public long     SeekOffset2                 { get; set; } = 5 * (long)1000 * 10000;
         public long     SeekOffset3                 { get; set; } = 15 * (long)1000 * 10000;
@@ -384,10 +377,6 @@ public class Config : NotifyPropertyChanged
         public bool     SeekOffsetAccurate4         { get; set; } = false;
         public double   SpeedOffset                 { get; set; } = 0.10;
         public double   SpeedOffset2                { get; set; } = 0.25;
-        public int      ZoomOffset                  { get => _ZoomOffset; set { if (SetUI(ref _ZoomOffset, value)) player?.ResetAll(); } }
-        int _ZoomOffset = 10;
-
-        public int      VolumeOffset                { get; set; } = 5;
     }
     public class DemuxerConfig : NotifyPropertyChanged
     {
@@ -612,6 +601,12 @@ public class Config : NotifyPropertyChanged
         internal void SetMaxVideoFrames(int maxVideoFrames) { _MaxVideoFrames = maxVideoFrames; RaiseUI(nameof(MaxVideoFrames)); } // can be updated by video decoder if fails to allocate them
 
         /// <summary>
+        /// Maximum video frames to be decoded and processed for rendering
+        /// </summary>
+        public int              MaxVideoFramesPrev  { get => _MaxVideoFramesPrev;   set { if (Set(ref _MaxVideoFramesPrev, value)) { player?.RefreshMaxVideoFrames(); } } }
+        int _MaxVideoFramesPrev = 0;
+
+        /// <summary>
         /// Maximum audio frames to be decoded and processed for playback
         /// </summary>
         public int              MaxAudioFrames      { get; set; } = 5;
@@ -634,34 +629,34 @@ public class Config : NotifyPropertyChanged
         /// <summary>
         /// Allows video accceleration even in codec's profile mismatch
         /// </summary>
-        public bool             AllowProfileMismatch{ get => _AllowProfileMismatch; set => SetUI(ref _AllowProfileMismatch, value); }
+        public bool             AllowProfileMismatch{ get => _AllowProfileMismatch; set => Set(ref _AllowProfileMismatch, value); }
         bool _AllowProfileMismatch = false;
 
         /// <summary>
         /// Allows corrupted frames (Parses AV_CODEC_FLAG_OUTPUT_CORRUPT to AVCodecContext)
         /// </summary>
-        public bool             ShowCorrupted       { get => _ShowCorrupted;        set => SetUI(ref _ShowCorrupted, value); }
+        public bool             ShowCorrupted       { get => _ShowCorrupted;        set => Set(ref _ShowCorrupted, value); }
         bool _ShowCorrupted;
 
         /// <summary>
         /// Forces low delay (Parses AV_CODEC_FLAG2_FAST or AV_CODEC_FLAG_LOW_DELAY -based on DropFrames- to AVCodecContext) (auto-enabled with MaxLatency)
         /// </summary>
-        public bool             LowDelay            { get => _LowDelay;             set => SetUI(ref _LowDelay, value); }
+        public bool             LowDelay            { get => _LowDelay;             set => Set(ref _LowDelay, value); }
         bool _LowDelay;
 
         /// <summary>
         /// Sets AVCodecContext skip_frame to None or Default (affects also LowDelay)
         /// </summary>
-        public bool             AllowDropFrames     { get => _AllowDropFrames;      set => SetUI(ref _AllowDropFrames, value); }
+        public bool             AllowDropFrames     { get => _AllowDropFrames;      set => Set(ref _AllowDropFrames, value); }
         bool _AllowDropFrames;
 
-        public string           AudioCodec          { get => _AudioCodec;           set => SetUI(ref _AudioCodec, value); }
+        public string           AudioCodec          { get => _AudioCodec;           set => Set(ref _AudioCodec, value); }
         internal string _AudioCodec;
 
-        public string           VideoCodec          { get => _VideoCodec;           set => SetUI(ref _VideoCodec, value); }
+        public string           VideoCodec          { get => _VideoCodec;           set => Set(ref _VideoCodec, value); }
         internal string _VideoCodec;
 
-        public string           SubtitlesCodec      { get => _SubtitlesCodec;           set => SetUI(ref _SubtitlesCodec, value); }
+        public string           SubtitlesCodec      { get => _SubtitlesCodec;       set => Set(ref _SubtitlesCodec, value); }
         internal string _SubtitlesCodec;
 
         public string GetCodecPtr(MediaType type)
@@ -677,12 +672,15 @@ public class Config : NotifyPropertyChanged
         public Dictionary<string, string> GetCodecOptPtr(MediaType type)
             => type == MediaType.Video ? VideoCodecOpt : type == MediaType.Audio ? AudioCodecOpt : SubtitlesCodecOpt;
     }
-    public class VideoConfig : NotifyPropertyChanged
+    public class VideoConfig : VPConfig
     {
         public VideoConfig()
         {
-            BindingOperations.EnableCollectionSynchronization(Filters,  lockFilters);
-            BindingOperations.EnableCollectionSynchronization(D3Filters,lockD3Filters);
+            UIInvokeIfRequired(() =>
+            {
+                BindingOperations.EnableCollectionSynchronization(FLFilters, lockFLFilters);
+                BindingOperations.EnableCollectionSynchronization(D3Filters, lockD3Filters);
+            });
         }
 
         public VideoConfig Clone()
@@ -693,7 +691,16 @@ public class Config : NotifyPropertyChanged
             return video;
         }
 
-        internal Player player;
+        internal Player player { get => _player; set { _player = value; vp = value != null ? value.Renderer : null; } }
+        Player _player;
+
+        /// <summary>
+        /// Whether video should be allowed
+        /// </summary>
+        public bool             Enabled                     { get => _Enabled;          set { if (Set(ref _Enabled, value)) if (value) player?.Video.Enable(); else player?.Video.Disable(); } }
+        bool _Enabled = true;
+        internal void SetEnabled(bool enabled)              => Set(ref _Enabled, enabled, true, nameof(Enabled));
+        public void Toggle() => Enabled = !Enabled;
 
         /// <summary>
         /// <para>Forces a specific GPU Adapter to be used by the renderer</para>
@@ -707,24 +714,6 @@ public class Config : NotifyPropertyChanged
         public SplitFrameAlphaPosition
                                 SplitFrameAlphaPosition     { get => _SplitFrameAlphaPosition;   set => Set(ref _SplitFrameAlphaPosition, value); }
         internal SplitFrameAlphaPosition _SplitFrameAlphaPosition;
-        /// <summary>
-        /// Video aspect ratio
-        /// </summary>
-        public AspectRatio      AspectRatio                 { get => _AspectRatio;          set { if (Set(ref _AspectRatio, value))     player?.renderer?.UpdateAspectRatio(); } }
-        AspectRatio    _AspectRatio = AspectRatio.Keep;
-
-        /// <summary>
-        /// Custom aspect ratio (AspectRatio must be set to Custom to have an effect)
-        /// </summary>
-        public AspectRatio      CustomAspectRatio           { get => _CustomAspectRatio;    set { if (Set(ref _CustomAspectRatio, value) && AspectRatio == AspectRatio.Custom) { _AspectRatio = AspectRatio.Fill; AspectRatio = AspectRatio.Custom; } } }
-        AspectRatio    _CustomAspectRatio = new(16, 9);
-
-        /// <summary>
-        /// Background color of the player's control
-        /// </summary>
-        public System.Windows.Media.Color
-                                BackgroundColor             { get => VorticeToWPFColor(_BackgroundColor);  set { Set(ref _BackgroundColor, WPFToVorticeColor(value)); player?.renderer?.UpdateBackgroundColor(); } }
-        internal Vortice.Mathematics.Color _BackgroundColor = (Vortice.Mathematics.Color)Vortice.Mathematics.Colors.Black;
 
         /// <summary>
         /// Clears the screen on stop/close/open
@@ -732,29 +721,9 @@ public class Config : NotifyPropertyChanged
         public bool             ClearScreen                 { get; set; } = true;
 
         /// <summary>
-        /// Cropping rectagle to crop the output frame (based on frame size)
-        /// </summary>
-        [JsonIgnore]
-        public CropRect         Crop                        { get => _Crop;             set { _Crop = value; HasUserCrop = _Crop != CropRect.Empty; player?.renderer?.UpdateCropping(); } }
-        internal CropRect _Crop = CropRect.Empty;
-        internal bool HasUserCrop = false;
-
-        /// <summary>
-        /// Whether video should be allowed
-        /// </summary>
-        public bool             Enabled                     { get => _Enabled;          set { if (Set(ref _Enabled, value)) if (value) player?.Video.Enable(); else player?.Video.Disable(); } }
-        bool _Enabled = true;
-        internal void SetEnabled(bool enabled)              => Set(ref _Enabled, enabled, true, nameof(Enabled));
-
-        /// <summary>
         /// Used to limit the number of frames rendered, particularly at increased speed
         /// </summary>
         public double           MaxOutputFps                { get; set; } = 60;
-
-        /// <summary>
-        /// DXGI Maximum Frame Latency (1 - 16)
-        /// </summary>
-        public uint             MaxFrameLatency             { get; set; } = 1;
 
         /// <summary>
         /// The max resolution that the current system can achieve and will be used from the input/stream suggester plugins
@@ -777,7 +746,7 @@ public class Config : NotifyPropertyChanged
         /// <summary>
         /// Sets Super Resolution (Nvidia / Intel - D3D11VP only)
         /// </summary>
-        public bool             SuperResolution             { get => _SuperResolution;  set { if (Set(ref _SuperResolution, value)) player?.renderer?.UpdateSuperRes(); } }
+        public bool             SuperResolution             { get => _SuperResolution;  set { if (Set(ref _SuperResolution, value)) player?.Renderer?.VPRequest(VPRequestType.Viewport); } }
         internal bool _SuperResolution;
 
         /// <summary>
@@ -789,24 +758,20 @@ public class Config : NotifyPropertyChanged
         /// Activates Direct3D video acceleration (decoding)
         /// </summary>
         public bool             VideoAcceleration           { get; set => Set(ref field, value); } = true;
+        public void ToggleVideoAcceleration() => VideoAcceleration = !VideoAcceleration;
 
         /// <summary>
         /// Whether to use embedded video processor with custom pixel shaders or D3D11<br/>
         /// * FLVP supports HDR to SDR, hardware/software frames and more formats<br/>
         /// * D3D11 uses less power, supports only hardware frames, deinterlace, super resolution and more accurate filters based on gpu
         /// </summary>
-        public VideoProcessors  VideoProcessor              { get => _VideoProcessor;   set { if (Set(ref _VideoProcessor, value))  player?.renderer?.UpdateVideoProcessor(); } }
+        public VideoProcessors  VideoProcessor              { get => _VideoProcessor;   set { if (Set(ref _VideoProcessor, value))  player?.Renderer?.VPSwitchCheck(); } }
         VideoProcessors _VideoProcessor = VideoProcessors.Auto;
-
-        /// <summary>
-        /// Whether Vsync should be enabled (0: Disabled, 1: Enabled)
-        /// </summary>
-        public uint             VSync                       { get; set; } = 1;
 
         /// <summary>
         /// Sets DeInterlace (D3D11VP only)
         /// </summary>
-        public DeInterlace      DeInterlace                 { get => _DeInterlace;      set { if (Set(ref _DeInterlace, value))     player?.renderer?.UpdateDeinterlace(); } }
+        public DeInterlace      DeInterlace                 { get => _DeInterlace;      set { if (Set(ref _DeInterlace, value))     player?.Renderer?.VPRequest(VPRequestType.Deinterlace); } }
         DeInterlace _DeInterlace = DeInterlace.Auto;
 
         /// <summary>
@@ -818,7 +783,7 @@ public class Config : NotifyPropertyChanged
         /// <summary>
         /// The HDR to SDR method that will be used by the pixel shader
         /// </summary>
-        public HDRtoSDRMethod   HDRtoSDRMethod              { get => _HDRtoSDRMethod;   set { if (Set(ref _HDRtoSDRMethod, value))  player?.renderer?.UpdateHDRtoSDR(); } }
+        public HDRtoSDRMethod   HDRtoSDRMethod              { get => _HDRtoSDRMethod;   set { if (Set(ref _HDRtoSDRMethod, value))  player?.Renderer?.VPRequest(VPRequestType.HDRtoSDR); } }
         HDRtoSDRMethod _HDRtoSDRMethod = HDRtoSDRMethod.Hable;
 
        /// <summary>
@@ -835,60 +800,54 @@ public class Config : NotifyPropertyChanged
         /// SDR Display Peak Luminance - tonemap for HDR to SDR (Recommended)
         /// </summary>
         [JsonIgnore]
-        public float            SDRDisplayNitsAuto          { get => _SDRDisplayNitsAuto;   set { if (Set(ref _SDRDisplayNitsAuto, value) && _SDRDisplayNitsCustom == 0) { player?.renderer?.UpdateHDRtoSDR(); RaiseUI(nameof(SDRDisplayNits)); } } }
+        public float            SDRDisplayNitsAuto          { get => _SDRDisplayNitsAuto;   set { if (Set(ref _SDRDisplayNitsAuto, value) && _SDRDisplayNitsCustom == 0) { player?.Renderer?.VPRequest(VPRequestType.HDRtoSDR); RaiseUI(nameof(SDRDisplayNits)); } } }
         float _SDRDisplayNitsAuto;
 
         /// <summary>
         /// SDR Display Peak Luminance - tonemap for HDR to SDR (Custom)
         /// </summary>
-        public float            SDRDisplayNitsCustom        { get => _SDRDisplayNitsCustom; set { if (Set(ref _SDRDisplayNitsCustom, value)) { player?.renderer?.UpdateHDRtoSDR(); RaiseUI(nameof(SDRDisplayNits)); } } }
+        public float            SDRDisplayNitsCustom        { get => _SDRDisplayNitsCustom; set { if (Set(ref _SDRDisplayNitsCustom, value)) { player?.Renderer?.VPRequest(VPRequestType.HDRtoSDR); } } }
         float _SDRDisplayNitsCustom;
 
-        /// <summary>
-        /// Whether the renderer will use 10-bit swap chaing or 8-bit output
-        /// </summary>
-        public bool             Swap10Bit                   { get; set; }
-
-        /// <summary>
-        /// The number of buffers to use for the renderer's swap chain
-        /// </summary>
-        public uint             SwapBuffers                 { get; set; } = 2;
-
-        /// <summary>
-        /// <para>
-        /// Whether the renderer will use R8G8B8A8_UNorm instead of B8G8R8A8_UNorm format for the swap chain (experimental)<br/>
-        /// (TBR: causes slightly different colors with D3D11VP)
-        /// </para>
-        /// </summary>
-        public bool             SwapForceR8G8B8A8           { get; set; } // TBR: Causes issues with NVidia Super Resolution (with some formats)
+        //public SwapChainFormat  SwapChainFormat             { get; set; } = SwapChainFormat.BGRA;
 
         /// <summary>
         /// Enables custom Direct2D drawing over playback frames
         /// </summary>
         public bool             Use2DGraphics               { get; set; }
 
-        public event EventHandler<Vortice.Direct2D1.ID2D1DeviceContext> D2DInitialized;
-        public event EventHandler<Vortice.Direct2D1.ID2D1DeviceContext> D2DDisposing;
-        public event EventHandler<Vortice.Direct2D1.ID2D1DeviceContext> D2DDraw;
+        /// <summary>
+        /// Scaling quality used for bitmap subtitle rendering.
+        /// </summary>
+        public SwsFlags         BitmapSubsScaleQuality      { get; set; } = SwsFlags.Bilinear | SwsFlags.Bitexact;
 
-        internal void OnD2DInitialized(Renderer renderer, Vortice.Direct2D1.ID2D1DeviceContext context)
+        public event EventHandler<ID2D1DeviceContext> D2DInitialized;
+        public event EventHandler<ID2D1DeviceContext> D2DDisposing;
+        public event EventHandler<ID2D1DeviceContext> D2DDraw;
+
+        internal void OnD2DInitialized(Renderer renderer, ID2D1DeviceContext context)
             => D2DInitialized?.Invoke(renderer, context);
 
-        internal void OnD2DDisposing(Renderer renderer, Vortice.Direct2D1.ID2D1DeviceContext context)
+        internal void OnD2DDisposing(Renderer renderer, ID2D1DeviceContext context)
             => D2DDisposing?.Invoke(renderer, context);
 
-        internal void OnD2DDraw(Renderer renderer, Vortice.Direct2D1.ID2D1DeviceContext context)
+        internal void OnD2DDraw(Renderer renderer, ID2D1DeviceContext context)
             => D2DDraw?.Invoke(renderer, context);
 
         /// <summary>
         /// When you change a filter value from one VP will update also the other if exists (however might not exact same picture output)
         /// </summary>
         public bool             SyncVPFilters               { get; set; } = true;
-        public ObservableDictionary<VideoFilters, FLVideoFilter> Filters
-                                                            { get ; set; } = [];
-        public ObservableDictionary<VideoFilters, D3VideoFilter> D3Filters
-                                                            { get ; set; } = [];
-        internal readonly object lockFilters    = new();
+        public ObservableDictionary<FLFilters, FLFilter>
+                                FLFilters                   { get ; set; } = [];
+        public ObservableDictionary<VideoProcessorFilter, D3Filter>
+                                D3Filters                   { get ; set; } = [];
+
+        internal bool flFiltersFilled;
+        internal bool d3FiltersFilled;
+        internal bool hasFLFilters;
+        internal bool hasD3Filters;
+        internal readonly object lockFLFilters  = new();
         internal readonly object lockD3Filters  = new();
     }
     public class AudioConfig : NotifyPropertyChanged
@@ -904,18 +863,53 @@ public class Config : NotifyPropertyChanged
         internal Player player;
 
         /// <summary>
-        /// Audio delay ticks (will be reseted to 0 for every new audio stream)
-        /// </summary>
-        public long             Delay               { get => _Delay;            set { if (player != null && !player.Audio.IsOpened) return;  if (Set(ref _Delay, value)) player?.ReSync(player.decoder.AudioStream); } }
-        long _Delay;
-        internal void SetDelay(long delay)          => Set(ref _Delay, delay, true, nameof(Delay));
-
-        /// <summary>
         /// Whether audio should allowed
         /// </summary>
         public bool             Enabled             { get => _Enabled;          set { if (Set(ref _Enabled, value)) if (value) player?.Audio.Enable(); else player?.Audio.Disable(); } }
         bool _Enabled = true;
         internal void SetEnabled(bool enabled)      => Set(ref _Enabled, enabled, true, nameof(Enabled));
+        public void Toggle() => Enabled = !Enabled;
+
+        /// <summary>
+        /// Audio delay ticks (will be reseted to 0 for every new audio stream)
+        /// </summary>
+        [JsonIgnore] // We reset this on open (TBR: Resync should be Task?* can block UI | Same for Enable)
+        public long             Delay               { get => _Delay;            set { if (player != null && !player.Audio.IsOpened) return;  if (Set(ref _Delay, value)) player?.ReSync(player.decoder.AudioStream); } }
+        long _Delay;
+        internal void SetDelay(long delay)          => Set(ref _Delay, delay, true, nameof(Delay));
+
+        public long             DelayOffset         { get; set; } =  100 * 10000;
+        public long             DelayOffset2        { get; set; } = 1000 * 10000;
+
+        public void DelayAdd()      => Delay += DelayOffset;
+        public void DelayRemove()   => Delay -= DelayOffset;
+        public void DelayAdd2()     => Delay += DelayOffset2;
+        public void DelayRemove2()  => Delay -= DelayOffset2;
+
+        public int              VolumeOffset        { get; set; } = 5;
+
+        /// <summary>
+        /// The upper limit of the volume amplifier
+        /// </summary>
+        public int              VolumeMax           { get => _VolumeMax; set { Set(ref _VolumeMax, value); if (player != null && player.Audio.masteringVoice != null) player.Audio.masteringVoice.Volume = value / 100f;  } }
+        int _VolumeMax = 150;
+
+        /// <summary>
+        /// The default volume
+        /// </summary>
+        public int              VolumeDefault       { get; set => Set(ref field, value); } = 75;
+
+        public void ToggleMute()    => player.Audio.Mute = !player.Audio.Mute;
+        public void VolumeUp()
+        {
+            if (player.Audio.Volume == VolumeMax) return;
+            player.Audio.Volume = Math.Min(player.Audio.Volume + VolumeOffset, VolumeMax);
+        }
+        public void VolumeDown()
+        {
+            if (player.Audio.Volume == 0) return;
+            player.Audio.Volume = Math.Max(player.Audio.Volume - VolumeOffset, 0);
+        }
 
         /// <summary>
         /// Uses FFmpeg filters instead of Swr (better speed quality and support for extra filters, requires avfilter-X.dll)
@@ -928,6 +922,24 @@ public class Config : NotifyPropertyChanged
         /// (Requires FiltersEnabled)
         /// </summary>
         public List<Filter>     Filters             { get; set; }
+
+        /// <summary>
+        /// Reloads filters from Config.Audio.Filters (experimental)
+        /// </summary>
+        /// <returns>0 on success</returns>
+        public int ReloadFilters() => player.AudioDecoder.ReloadFilters();
+
+        /// <summary>
+        /// <para>
+        /// Updates filter's property (experimental)
+        /// Note: This will not update the property value in Config.Audio.Filters
+        /// </para>
+        /// </summary>
+        /// <param name="filterId">Filter's unique id specified in Config.Audio.Filters</param>
+        /// <param name="key">Filter's property to change</param>
+        /// <param name="value">Filter's property value</param>
+        /// <returns>0 on success</returns>
+        public int UpdateFilter(string filterId, string key, string value) => player.AudioDecoder.UpdateFilter(filterId, key, value);
 
         /// <summary>
         /// Audio languages preference by priority
@@ -992,6 +1004,7 @@ public class Config : NotifyPropertyChanged
         /// <summary>
         /// Subtitle delay ticks (will be reset to 0 for every new subtitle stream)
         /// </summary>
+        [JsonIgnore] // We reset this on open (TBR: Resync should be Task?* can block UI | Same for Enable)
         public long Delay
         {
             get => _delay;
@@ -1012,12 +1025,21 @@ public class Config : NotifyPropertyChanged
 
         internal void SetDelay(long delay) => Set(ref _delay, delay, true, nameof(Delay));
 
+        public void DelayAdd() => Delay += player != null ? player.Config.Subtitles.DelayOffset : 0;
+        public void DelayRemove() => Delay -= player != null ? player.Config.Subtitles.DelayOffset : 0;
+        public void DelayAdd2() => Delay += player != null ? player.Config.Subtitles.DelayOffset2 : 0;
+        public void DelayRemove2() => Delay -= player != null ? player.Config.Subtitles.DelayOffset2 : 0;
+
         /// <summary>
         /// Whether subtitle should be visible
         /// TODO: L: should move to AppConfig?
         /// </summary>
         [JsonIgnore]
         public bool Visible { get; set => Set(ref field, value); } = true;
+        public void ToggleVisible()
+        {
+            Visible = !Visible;
+        }
 
         /// <summary>
         /// OCR Engine Type
@@ -1078,6 +1100,16 @@ public class Config : NotifyPropertyChanged
         public bool             Enabled             { get => _Enabled; set { if(Set(ref _Enabled, value)) if (value) player?.Subtitles.Enable(); else player?.Subtitles.Disable(); } }
         bool _Enabled = true;
         internal void SetEnabled(bool enabled)      => Set(ref _Enabled, enabled, true, nameof(Enabled));
+        public void Toggle() => Enabled = !Enabled;
+
+        public void ToggleVisible()
+        {
+            SubConfigs[0].ToggleVisible();
+            SubConfigs[1].Visible = SubConfigs[0].Visible; // align to primary
+        }
+
+        public long             DelayOffset    { get; set; } =  100 * 10000;
+        public long             DelayOffset2   { get; set; } = 1000 * 10000;
 
         /// <summary>
         /// Max number of subtitles (currently not configurable)
@@ -1502,10 +1534,3 @@ public class EngineConfig
     }
 }
 
-public enum UIRefreshType
-{
-    PerFrame,
-    PerFrameSecond,
-    PerUIRefreshInterval,
-    PerUISecond
-}

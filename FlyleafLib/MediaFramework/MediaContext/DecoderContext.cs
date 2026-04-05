@@ -137,10 +137,11 @@ public unsafe partial class DecoderContext : PluginHandler
     bool shouldDispose;
     int subNum => Config.Subtitles.Max;
 
-    public DecoderContext(Config config = null, int uniqueId = -1, bool enableDecoding = true) : base(config, uniqueId)
+    public DecoderContext(Config config = null, int uniqueId = -1, bool enableDecoding = true, Player player = null) : base(config, uniqueId)
     {
-        Log = new(("[#" + UniqueId + "]").PadRight(8, ' ') + " [DecoderContext] ");
+        Log                 = new(("[#" + UniqueId + "]").PadRight(8, ' ') + " [DecoderContext] ");
         Playlist.decoder    = this;
+        Tag                 = player;
 
         EnableDecoding      = enableDecoding;
 
@@ -159,7 +160,7 @@ public unsafe partial class DecoderContext : PluginHandler
 
         Recorder            = new(UniqueId);
 
-        VideoDecoder        = new(Config, UniqueId);
+        VideoDecoder        = new(Config, UniqueId, EnableDecoding && config.Player.Usage != Usage.Audio, player);
         AudioDecoder        = new(Config, UniqueId, VideoDecoder);
         SubtitlesDecoders   = new SubtitlesDecoder[subNum];
         for (int i = 0; i < subNum; i++)
@@ -167,9 +168,6 @@ public unsafe partial class DecoderContext : PluginHandler
             SubtitlesDecoders[i] = new(Config, UniqueId, i);
         }
         DataDecoder         = new(Config, UniqueId);
-
-        if (EnableDecoding && config.Player.Usage != MediaPlayer.Usage.Audio)
-            VideoDecoder.EnsureRenderer();
 
         VideoDecoder.recCompleted = RecordCompleted;
         AudioDecoder.recCompleted = RecordCompleted;
@@ -653,7 +651,7 @@ public unsafe partial class DecoderContext : PluginHandler
                 }
             }
             else
-                packet = VideoDemuxer.VideoPackets.Dequeue(); // TBR: This comes after seek, we shouldn't have packets here?*
+                packet = VideoDemuxer.VideoPackets.Dequeue(); // When found in Queue during Seek
 
             if (!VideoDemuxer.EnabledStreams.Contains(packet->stream_index)) { av_packet_free(&packet); continue; }
 
@@ -720,7 +718,7 @@ public unsafe partial class DecoderContext : PluginHandler
 
                         return; // Critical
                     }
-                   
+
                     while (VideoDemuxer.VideoStream != null && !Interrupt)
                     {
                         ret = VideoDecoder.RecvAVFrame();
@@ -740,7 +738,7 @@ public unsafe partial class DecoderContext : PluginHandler
                             continue;
                         }
 
-                        ret = VideoDecoder.FillAVFrame();
+                        ret = VideoDecoder.FillEnqueueAVFrame();
                         if (ret == 0)
                             return; // Success
 
@@ -767,7 +765,7 @@ public unsafe partial class DecoderContext : PluginHandler
         shouldDispose = true;
         Stop();
         Interrupt = true;
-        VideoDecoder.DestroyRenderer();
+        VideoDecoder.Renderer?.Dispose();
         base.Dispose();
     }
 
@@ -788,7 +786,7 @@ public unsafe partial class DecoderContext : PluginHandler
             dump += $"\r\n SubtitlesPackets{i+1}  ({SubtitlesDemuxers[i].SubtitlesStreamsAll.Count}): {SubtitlesDemuxers[i].SubtitlesPackets[0].Count} (SubtitlesDemuxer)";
         }
 
-        dump += $"\r\n Video Frames         : {VideoDecoder.Frames.Count}";
+        dump += $"\r\n Video Frames         : {VideoDecoder.Renderer.Frames.Count}";
         dump += $"\r\n Audio Frames         : {AudioDecoder.Frames.Count}";
         for (int i = 0; i < subNum; i++)
         {

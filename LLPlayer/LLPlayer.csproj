@@ -18,7 +18,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Flyleaf.FFmpeg.Bindings" Version="8.0.0" />
+    <PackageReference Include="Flyleaf.FFmpeg.Bindings" Version="8.0.1" />
     <PackageReference Include="LibNMeCab" Version="0.10.2" />
     <PackageReference Include="LibNMeCab.IpaDicBin" Version="0.10.0" />
     <PackageReference Include="MaterialDesignThemes" Version="5.2.1" />

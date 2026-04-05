@@ -8,11 +8,17 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using CliWrap;
 using Microsoft.Win32;
+using Vortice.Direct3D11;
 
 namespace FlyleafLib;
 
 public static partial class Utils
 {
+    public static readonly Rect         RectZero            = new(); // Rect.Empty has infinity values
+    public static readonly Point        PointEmpty          = new();
+    public static readonly CornerRadius CornerRadiusEmpty   = new();
+
+
     // VLC : https://github.com/videolan/vlc/blob/master/modules/gui/qt/dialogs/preferences/simple_preferences.cpp
     // Kodi: https://github.com/xbmc/xbmc/blob/master/xbmc/settings/AdvancedSettings.cpp
 
@@ -135,8 +141,24 @@ public static partial class Utils
         int mod = num % align;
         return mod == 0 ? num : num + (align - mod);
     }
+
+    /// <summary>
+    /// Works only for power of 2
+    /// </summary>
+    /// <param name="num"></param>
+    /// <param name="align"></param>
+    /// <returns></returns>
+    public static int FFALIGN(int num, int align)
+        => (num + align - 1) & ~(align - 1);
+
     public static float Scale(float value, float inMin, float inMax, float outMin, float outMax)
         => ((value - inMin) * (outMax - outMin) / (inMax - inMin)) + outMin;
+
+    public static double SnapToInt(double value, double epsilon = 1e-6)
+    {
+        double nearest = Math.Round(value);
+        return Math.Abs(value - nearest) < epsilon ? nearest : value;
+    }
 
     /// <summary>
     /// Adds a windows firewall rule if not already exists for the specified program path
@@ -647,6 +669,20 @@ public static partial class Utils
         => System.Windows.Media.Color.FromArgb(sColor.A, sColor.R, sColor.G, sColor.B);
     public static Vortice.Mathematics.Color WPFToVorticeColor(System.Windows.Media.Color wColor)
         => new(wColor.R, wColor.G, wColor.B, wColor.A);
+    public static VideoColor WPFToVideoColor(System.Windows.Media.Color wColor)
+    {
+        return new()
+        {
+            Rgba = new()
+            {
+                R = wColor.R / 255.0f,
+                G = wColor.G / 255.0f,
+                B = wColor.B / 255.0f,
+                A = wColor.A / 255.0f
+            }
+        };
+    }
+        
 
     public static readonly double SWFREQ_TO_TICKS = 10000000.0 / Stopwatch.Frequency;
     public static string ToHexadecimal(byte[] bytes)

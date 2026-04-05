@@ -12,6 +12,9 @@ Chroma Location / Sampling
 Up/Down Scaling
     High performance penalty and difficult implementation for good quality
     Use D3D11VA proprietary and add shader support
+
+Filters
+    Contrast might still not properly working for RGB or YUV full?*
 */
 
 namespace FlyleafLib.MediaFramework.MediaRenderer;
@@ -45,15 +48,7 @@ cbuffer         Config          : register(b0)
     ConfigData Config;
 };
 
-SamplerState Sampler : IMMUTABLE
-{
-    Filter          = MIN_MAG_MIP_LINEAR;
-    AddressU        = CLAMP;
-    AddressV        = CLAMP;
-    AddressW        = CLAMP;
-    ComparisonFunc  = NEVER;
-    MinLOD          = 0;
-};
+SamplerState    Sampler         : register(s0);
 
 inline float3 LinearToSRGB(float3 c)
 {
@@ -274,7 +269,7 @@ inline float3 Saturation(float3 rgb, float saturation)
 struct PSInput
 {
     float4 Position : SV_POSITION;
-    float2 Texture  : TEXCOORD;
+    float2 Texture  : TEXCOORD0;
 };
 
 float4 main(PSInput input) : SV_TARGET
@@ -286,8 +281,16 @@ float4 main(PSInput input) : SV_TARGET
     float3 c = color.rgb;
 
 #if defined(dYUVLimited)
+    #if defined(dFilters)
+    if (Config.contrast != 1.0)
+        c.x = lerp(c.x, pow(c.x, 2.0 - Config.contrast), smoothstep(0.0, 1.0, c.x));
+    #endif
 	c = YUVToRGBLimited(c);
 #elif defined(dYUVFull)
+    #if defined(dFilters)
+    if (Config.contrast != 1.0)
+        c.x = lerp(c.x, pow(c.x, 2.0 - Config.contrast), smoothstep(0.0, 1.0, c.x));
+    #endif
 	c = YUVToRGBFull(c);
 #endif
 
@@ -341,7 +344,9 @@ float4 main(PSInput input) : SV_TARGET
 #endif
 
 #if defined(dFilters)
-    c *= Config.contrast;
+    #if !defined(dYUVLimited) && !defined(dYUVFull)
+    c = (c - 0.5) * (2.0 - Config.contrast) + 0.5;
+    #endif
     c += Config.brightness;
     c  = Hue(c, Config.hue);
     c  = Saturation(c, Config.saturation);

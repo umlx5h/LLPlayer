@@ -18,7 +18,9 @@ internal static partial class ShaderCompiler
     static readonly string  PSVER           = $"ps{SHADERVER}";
     static readonly string  VSVER           = $"vs{SHADERVER}";
     internal static Blob    VSBlob          = Compile(VS, false);
+    internal static Blob    VSSimpleBlob    = Compile(VSSimple, false);
 
+    class BlobWrapper { public Blob blob; } // For locking per Blob (before creation)
     static Dictionary<string, BlobWrapper> cache = [];
 
     internal static ID3D11PixelShader CompilePS(ID3D11Device device, string uniqueId, ReadOnlySpan<char> hlslSample, List<string> defines = null)
@@ -85,7 +87,7 @@ internal static partial class ShaderCompiler
         }
 
         // NOTE: Enable for Reviewing HLSL after defines
-        //fixed(byte* hlslPtr = bytes)
+        //fixed (byte* hlslPtr = bytes)
         //{
         //    Compiler.Preprocess((nint)hlslPtr, new((uint)bytes.Length), null, definesMacro, null, out var debugBlob, out var debugError);
         //    Engine.Log.Error(debugBlob.AsString());
@@ -110,5 +112,3 @@ internal static partial class ShaderCompiler
     static void LogDebug(string msg) => Engine.Log.Debug($"{LOG_PREFIX}{msg}");
     static void LogTrace(string msg) => Engine.Log.Trace($"{LOG_PREFIX}{msg}");
 }
-
-class BlobWrapper { public Blob blob; } // For locking per Blob (before creation)

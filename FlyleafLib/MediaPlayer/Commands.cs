@@ -1,4 +1,5 @@
-﻿using System.Windows.Input;
+﻿using System.Globalization;
+using System.Windows.Input;
 
 using FlyleafLib.Controls.WPF;
 using FlyleafLib.MediaFramework.MediaPlaylist;
@@ -95,13 +96,16 @@ public class Commands
     public ICommand RefreshActive           { get; set; }
     public ICommand RefreshFullActive       { get; set; }
 
-    public ICommand ResetFilter             { get; set; }
+    public ICommand ResetFilters            { get; set; }
 
     Player player;
 
     public Commands(Player player)
     {
         this.player = player;
+        var vcfg = player.Config.Video;
+        var acfg = player.Config.Audio;
+        var scfg = player.Config.Subtitles;
 
         Open                    = new RelayCommand(OpenAction);
         OpenFromClipboard       = new RelayCommandSimple(player.OpenFromClipboard);
@@ -139,11 +143,11 @@ public class Commands
         ToggleRecording         = new RelayCommandSimple(player.ToggleRecording);
 
         TakeSnapshot            = new RelayCommandSimple(TakeSnapshotAction);
-        ZoomIn                  = new RelayCommandSimple(player.ZoomIn);
-        ZoomOut                 = new RelayCommandSimple(player.ZoomOut);
+        ZoomIn                  = new RelayCommandSimple(vcfg.ZoomIn);
+        ZoomOut                 = new RelayCommandSimple(vcfg.ZoomOut);
         RotationSet             = new RelayCommand(RotationSetAction);
-        RotateLeft              = new RelayCommandSimple(player.RotateLeft);
-        RotateRight             = new RelayCommandSimple(player.RotateRight);
+        RotateLeft              = new RelayCommandSimple(vcfg.RotateLeft);
+        RotateRight             = new RelayCommandSimple(vcfg.RotateRight);
         ResetAll                = new RelayCommandSimple(player.ResetAll);
         ResetSpeed              = new RelayCommandSimple(player.ResetSpeed);
         ResetRotation           = new RelayCommandSimple(player.ResetRotation);
@@ -155,30 +159,30 @@ public class Commands
         SpeedUp2                = new RelayCommandSimple(player.SpeedUp2);
         SpeedDown2              = new RelayCommandSimple(player.SpeedDown2);
 
-        VolumeUp                = new RelayCommandSimple(player.Audio.VolumeUp);
-        VolumeDown              = new RelayCommandSimple(player.Audio.VolumeDown);
-        ToggleMute              = new RelayCommandSimple(player.Audio.ToggleMute);
+        VolumeUp                = new RelayCommandSimple(acfg.VolumeUp);
+        VolumeDown              = new RelayCommandSimple(acfg.VolumeDown);
+        ToggleMute              = new RelayCommandSimple(acfg.ToggleMute);
 
         AudioDelaySet           = new RelayCommand(AudioDelaySetAction);
         AudioDelaySet2          = new RelayCommand(AudioDelaySetAction2);
-        AudioDelayAdd           = new RelayCommandSimple(player.Audio.DelayAdd);
-        AudioDelayAdd2          = new RelayCommandSimple(player.Audio.DelayAdd2);
-        AudioDelayRemove        = new RelayCommandSimple(player.Audio.DelayRemove);
-        AudioDelayRemove2       = new RelayCommandSimple(player.Audio.DelayRemove2);
+        AudioDelayAdd           = new RelayCommandSimple(acfg.DelayAdd);
+        AudioDelayAdd2          = new RelayCommandSimple(acfg.DelayAdd2);
+        AudioDelayRemove        = new RelayCommandSimple(acfg.DelayRemove);
+        AudioDelayRemove2       = new RelayCommandSimple(acfg.DelayRemove2);
 
         SubtitlesDelaySetPrimary       = new RelayCommand(SubtitlesDelaySetActionPrimary);
         SubtitlesDelaySet2Primary      = new RelayCommand(SubtitlesDelaySetAction2Primary);
-        SubtitlesDelayAddPrimary       = new RelayCommandSimple(player.Subtitles.DelayAddPrimary);
-        SubtitlesDelayAdd2Primary      = new RelayCommandSimple(player.Subtitles.DelayAdd2Primary);
-        SubtitlesDelayRemovePrimary    = new RelayCommandSimple(player.Subtitles.DelayRemovePrimary);
-        SubtitlesDelayRemove2Primary   = new RelayCommandSimple(player.Subtitles.DelayRemove2Primary);
+        SubtitlesDelayAddPrimary       = new RelayCommandSimple(scfg[0].DelayAdd);
+        SubtitlesDelayAdd2Primary      = new RelayCommandSimple(scfg[0].DelayAdd2);
+        SubtitlesDelayRemovePrimary    = new RelayCommandSimple(scfg[0].DelayRemove);
+        SubtitlesDelayRemove2Primary   = new RelayCommandSimple(scfg[0].DelayRemove2);
 
         SubtitlesDelaySetSecondary     = new RelayCommand(SubtitlesDelaySetActionSecondary);
         SubtitlesDelaySet2Secondary    = new RelayCommand(SubtitlesDelaySetAction2Secondary);
-        SubtitlesDelayAddSecondary     = new RelayCommandSimple(player.Subtitles.DelayAddSecondary);
-        SubtitlesDelayAdd2Secondary    = new RelayCommandSimple(player.Subtitles.DelayAdd2Secondary);
-        SubtitlesDelayRemoveSecondary  = new RelayCommandSimple(player.Subtitles.DelayRemoveSecondary);
-        SubtitlesDelayRemove2Secondary = new RelayCommandSimple(player.Subtitles.DelayRemove2Secondary);
+        SubtitlesDelayAddSecondary     = new RelayCommandSimple(scfg[1].DelayAdd);
+        SubtitlesDelayAdd2Secondary    = new RelayCommandSimple(scfg[1].DelayAdd2);
+        SubtitlesDelayRemoveSecondary  = new RelayCommandSimple(scfg[1].DelayRemove);
+        SubtitlesDelayRemove2Secondary = new RelayCommandSimple(scfg[1].DelayRemove2);
 
         OpenSubtitles           = new RelayCommand(OpenSubtitlesAction);
         OpenSubtitlesASR        = new RelayCommand(OpenSubtitlesASRAction);
@@ -190,31 +194,39 @@ public class Commands
         RefreshActive           = new RelayCommandSimple(player.Activity.RefreshActive);
         RefreshFullActive       = new RelayCommandSimple(player.Activity.RefreshFullActive);
 
-        ResetFilter             = new RelayCommand(ResetFilterAction);
+        ResetFilters            = new RelayCommand(ResetFiltersAction);
     }
 
     private void RotationSetAction(object obj)
-        => player.Rotation = uint.Parse(obj.ToString());
+        => player.Config.Video.Rotation = uint.Parse(obj.ToString());
 
-    private void ResetFilterAction(object filter)
+    private void ResetFiltersAction(object filter)
     {
-        if (player.renderer.VideoProcessor == VideoProcessors.Flyleaf && player.Config.Video.Filters.TryGetValue((VideoFilters)filter, out var flFilter))
-            flFilter.Value = flFilter.Default;
-        else if (player.renderer.VideoProcessor == VideoProcessors.D3D11 && player.Config.Video.D3Filters.TryGetValue((VideoFilters)filter, out var d3Filter))
-            d3Filter.Value = d3Filter.Default;
+        var cfg = player.Config.Video;
+        var vp = cfg.VideoProcessor == VideoProcessors.Auto ? player.Renderer.VideoProcessor : cfg.VideoProcessor;
+
+        if (vp == VideoProcessors.D3D11)
+            foreach (var kv in cfg.D3Filters)
+                kv.Value.Value = kv.Value.Default;
+        else
+            foreach (var kv in cfg.FLFilters)
+                kv.Value.Value = kv.Value.Default;
+
+        cfg.SDRDisplayNitsCustom   = 0;
+        cfg.HDRtoSDRMethod         = HDRtoSDRMethod.Hable;
     }
 
     public void SpeedSetAction(object speed)
     {
         string speedstr = speed.ToString().Replace(',', '.');
-        if (double.TryParse(speedstr, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double value))
+        if (double.TryParse(speedstr, NumberStyles.Any, CultureInfo.InvariantCulture, out double value))
             player.Speed = value;
     }
 
-    public void AudioDelaySetAction(object delay)
-        => player.Config.Audio.Delay = int.Parse(delay.ToString()) * (long)10000;
-    public void AudioDelaySetAction2(object delay)
-        => player.Config.Audio.Delay += int.Parse(delay.ToString()) * (long)10000;
+    public void AudioDelaySetAction     (object delay)
+        => player.Config.Audio.Delay        = int.Parse(delay.ToString()) * (long)10000;
+    public void AudioDelaySetAction2    (object delay)
+        => player.Config.Audio.Delay       += int.Parse(delay.ToString()) * (long)10000;
 
     public void SubtitlesDelaySetActionPrimary(object delay)
         => player.Config.Subtitles[0].Delay = int.Parse(delay.ToString()) * (long)10000;
@@ -227,8 +239,8 @@ public class Commands
     public void SubtitlesDelaySetAction2Secondary(object delay)
         => player.Config.Subtitles[1].Delay += int.Parse(delay.ToString()) * (long)10000;
 
-
-    public void TakeSnapshotAction() => Task.Run(() => { try { player.TakeSnapshotToFile(); } catch { } });
+    public void TakeSnapshotAction()
+        => Task.Run(() => { try { player.TakeSnapshotToFile(); } catch { } });
 
     public void SeekToChapterAction(object chapter)
     {
@@ -350,14 +362,14 @@ public class Commands
         if (input == null)
             return;
 
-        if (input is StreamBase)
-            player.OpenAsync((StreamBase)input);
-        else if (input is PlaylistItem)
-            player.OpenAsync((PlaylistItem)input);
-        else if (input is ExternalStream)
-            player.OpenAsync((ExternalStream)input);
-        else if (input is Stream)
-            player.OpenAsync((Stream)input);
+        if (input is StreamBase streamBase)
+            player.OpenAsync(streamBase);
+        else if (input is PlaylistItem playlistItem)
+            player.OpenAsync(playlistItem);
+        else if (input is ExternalStream extStream)
+            player.OpenAsync(extStream);
+        else if (input is Stream stream)
+            player.OpenAsync(stream);
         else
             player.OpenAsync(input.ToString());
     }

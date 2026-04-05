@@ -142,21 +142,21 @@
                         <TextBlock Style="{StaticResource TextInfo}" Text="Pan Offsets"/>
                         <TextBlock Style="{StaticResource TextValue}">
                             <TextBlock Style="{StaticResource TextValue}">
-                                <Run Text="{Binding Player.PanXOffset, Mode=OneWay}"/>
+                                <Run Text="{Binding Player.Config.Video.PanXOffset, Mode=OneWay}"/>
                                 <Run Text="|"/>
-                                <Run Text="{Binding Player.PanYOffset, Mode=OneWay}"/>
+                                <Run Text="{Binding Player.Config.Video.PanYOffset, Mode=OneWay}"/>
                             </TextBlock>
                         </TextBlock>
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Style="{StaticResource TextInfo}" Text="Rotation"/>
-                        <TextBlock Style="{StaticResource TextValue}" Text="{Binding Player.Rotation}"/>
+                        <TextBlock Style="{StaticResource TextValue}" Text="{Binding Player.Config.Video.Rotation}"/>
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Margin="0 0 0 10">
                         <TextBlock Style="{StaticResource TextInfo}" Text="Zoom"/>
-                        <TextBlock Style="{StaticResource TextValue}" Text="{Binding Player.Zoom}"/>
+                        <TextBlock Style="{StaticResource TextValue}" Text="{Binding Player.Config.Video.Zoom}"/>
                     </StackPanel>
 
                 </StackPanel>
@@ -278,12 +278,12 @@
 
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Style="{StaticResource TextInfo}" Text="Deinterlace"/>
-                        <TextBlock Style="{StaticResource TextValue}" Text="{Binding Player.renderer.FieldType, Converter={StaticResource DeInterlaceConverter}}"/>
+                        <TextBlock Style="{StaticResource TextValue}" Text="{Binding Player.Renderer.FieldType, Converter={StaticResource DeInterlaceConverter}}"/>
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Style="{StaticResource TextInfo}" Text="Super Resolution"/>
-                        <TextBlock Style="{StaticResource TextValue}" Text="{Binding Player.renderer.SuperResolution}"/>
+                        <TextBlock Style="{StaticResource TextValue}" Text="{Binding Player.Renderer.SuperResolution}"/>
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal">
@@ -293,7 +293,7 @@
 
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Style="{StaticResource TextInfo}" Text="Processor"/>
-                        <TextBlock Style="{StaticResource TextValue}" Text="{Binding Player.renderer.VideoProcessor}"/>
+                        <TextBlock Style="{StaticResource TextValue}" Text="{Binding Player.Renderer.VideoProcessor}"/>
                     </StackPanel>
                 </StackPanel>
 

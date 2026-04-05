@@ -54,7 +54,7 @@
                             Text="Max Volume (1-1000%)" />
                         <TextBox
                             Width="100"
-                            Text="{Binding FL.PlayerConfig.Player.VolumeMax}"
+                            Text="{Binding FL.PlayerConfig.Audio.VolumeMax}"
                             helpers:TextBoxHelper.OnlyNumeric="Uint"/>
                     </StackPanel>
 
@@ -64,7 +64,7 @@
                             Text="Default Volume (%)" />
                         <TextBox
                             Width="100"
-                            Text="{Binding FL.PlayerConfig.Player.VolumeDefault}"
+                            Text="{Binding FL.PlayerConfig.Audio.VolumeDefault}"
                             helpers:TextBoxHelper.OnlyNumeric="Uint"/>
                     </StackPanel>
                 </StackPanel>

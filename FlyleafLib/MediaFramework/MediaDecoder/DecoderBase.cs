@@ -124,14 +124,18 @@ public abstract unsafe class DecoderBase : RunThreadBase
             }
 
             if (frame != null)
-                fixed (AVFrame** ptr = &frame)
-                    av_frame_free(ptr);
+            {
+                fixed (AVFrame** ptr = &frame) av_frame_free(ptr);
+                frame = null;
+            }
+                
 
             if (codecCtx != null)
-                fixed (AVCodecContext** ptr = &codecCtx)
-                    avcodec_free_context(ptr);
-
-            codecCtx        = null;
+            {
+                fixed (AVCodecContext** ptr = &codecCtx) avcodec_free_context(ptr);
+                codecCtx = null;
+            }
+            
             demuxer         = null;
             Stream          = null;
             Status          = Status.Stopped;

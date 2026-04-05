@@ -22,7 +22,7 @@
 
     <materialDesign:Card x:Name="MyCard" TextElement.FontSize="14" TextElement.FontWeight="Medium" TextElement.Foreground="White" FontFamily="{materialDesign:MaterialDesignFont}" VerticalAlignment="Bottom" Focusable="False">
         <materialDesign:Card.Background>
-            <SolidColorBrush Color="{Binding FL.PlayerConfig.Video.BackgroundColor}" Opacity="0.15"/>
+            <SolidColorBrush Color="{Binding FL.PlayerConfig.Video.BackColor}" Opacity="0.15"/>
         </materialDesign:Card.Background>
         <Grid>
             <Grid.RowDefinitions>
@@ -282,7 +282,7 @@ Right Click: Open Context Menu</ToolTip>
                 </Button>
 
                 <!-- Volume Slider -->
-                <Slider Grid.Column="8" Style="{DynamicResource FlyleafSlider}" Foreground="{DynamicResource MaterialDesignBody}" Focusable="False" Margin="0,0,6,6" Width="100" VerticalAlignment="Bottom" Minimum="0" Maximum="{Binding FL.PlayerConfig.Player.VolumeMax, Mode=OneWay}" d:Maximum="150" d:Value="75" Value="{Binding FL.Player.Audio.Volume}"/>
+                <Slider Grid.Column="8" Style="{DynamicResource FlyleafSlider}" Foreground="{DynamicResource MaterialDesignBody}" Focusable="False" Margin="0,0,6,6" Width="100" VerticalAlignment="Bottom" Minimum="0" Maximum="{Binding FL.PlayerConfig.Audio.VolumeMax, Mode=OneWay}" d:Maximum="150" d:Value="75" Value="{Binding FL.Player.Audio.Volume}"/>
 
                 <!-- Open Settings Button -->
                 <Button Grid.Column="9" Style="{StaticResource IconButton}" Content="{materialDesign:PackIcon Kind=SettingsOutline}" Command="{Binding FL.Action.CmdOpenWindowSettings}" ToolTip="Open Settings"/>

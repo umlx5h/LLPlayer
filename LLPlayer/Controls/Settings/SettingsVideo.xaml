@@ -60,7 +60,7 @@
                             VerticalContentAlignment="Center"
                             Margin="10 0 0 0"
                             PreviewTextInput="ValidationRatio"
-                            Text="{Binding FL.PlayerConfig.Video.CustomAspectRatio, Converter={StaticResource StringToRationalConv}}">
+                            Text="{Binding FL.PlayerConfig.Video.AspectRatioCustom, Converter={StaticResource StringToRationalConv}}">
                             <TextBox.Style>
                                 <Style TargetType="TextBox" BasedOn="{StaticResource MaterialDesignTextBox}">
                                     <Setter Property="Visibility" Value="Collapsed" />
@@ -150,7 +150,7 @@
                             Text="Zoom Unit" />
                         <TextBox
                             Width="100"
-                            Text="{Binding FL.PlayerConfig.Player.ZoomOffset}"
+                            Text="{Binding FL.PlayerConfig.Video.ZoomOffset}"
                             helpers:TextBoxHelper.OnlyNumeric="Int" />
                     </StackPanel>
 
@@ -205,76 +205,66 @@
             </GroupBox>
 
             <GroupBox Header="Filters">
-                <ItemsControl>
-                    <ItemsControl.Style>
-                        <Style TargetType="ItemsControl">
-                            <Setter Property="ItemsSource" Value="{x:Null}"/>
-                            <Style.Triggers>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding FL.PlayerConfig.Video.VideoProcessor}" Value="{x:Static flyleaf:VideoProcessors.Auto}"/>
-                                        <Condition Binding="{Binding FL.Player.renderer.VideoProcessor}" Value="{x:Static flyleaf:VideoProcessors.Flyleaf}"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <MultiDataTrigger.Setters>
-                                        <Setter Property="ItemsSource" Value="{Binding FL.PlayerConfig.Video.Filters.Values}"/>
-                                    </MultiDataTrigger.Setters>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding FL.PlayerConfig.Video.VideoProcessor}" Value="{x:Static flyleaf:VideoProcessors.Auto}"/>
-                                        <Condition Binding="{Binding FL.Player.renderer.VideoProcessor}" Value="{x:Static flyleaf:VideoProcessors.D3D11}"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <MultiDataTrigger.Setters>
+                <StackPanel>
+                    <ItemsControl>
+                        <ItemsControl.Style>
+                            <Style TargetType="ItemsControl">
+                                <Setter Property="ItemsSource" Value="{Binding FL.PlayerConfig.Video.FLFilters.Values}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding FL.PlayerConfig.Video.VideoProcessor}" Value="{x:Static flyleaf:VideoProcessors.D3D11}">
                                         <Setter Property="ItemsSource" Value="{Binding FL.PlayerConfig.Video.D3Filters.Values}"/>
-                                    </MultiDataTrigger.Setters>
-                                </MultiDataTrigger>
-                                <DataTrigger Binding="{Binding FL.PlayerConfig.Video.VideoProcessor}" Value="{x:Static flyleaf:VideoProcessors.Flyleaf}">
-                                    <Setter Property="ItemsSource" Value="{Binding FL.PlayerConfig.Video.Filters.Values}"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding FL.PlayerConfig.Video.VideoProcessor}" Value="{x:Static flyleaf:VideoProcessors.D3D11}">
-                                    <Setter Property="ItemsSource" Value="{Binding FL.PlayerConfig.Video.D3Filters.Values}"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ItemsControl.Style>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding FL.Player.Renderer.VideoProcessor}" Value="{x:Static flyleaf:VideoProcessors.D3D11}">
+                                        <Setter Property="ItemsSource" Value="{Binding FL.PlayerConfig.Video.D3Filters.Values}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ItemsControl.Style>
 
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel
-                                Orientation="Horizontal"
-                                Margin="0 0 0 8"
-                                Visibility="{Binding Available, Converter={StaticResource BooleanToVisibilityConv}}">
-                                <TextBlock
-                                    Width="180"
-                                    Text="{Binding Filter}" />
-                                <Slider
-                                    Width="200"
-                                    Value="{Binding Value}"
-                                    Minimum="{Binding Minimum}"
-                                    Maximum="{Binding Maximum}"
-                                    Style="{StaticResource MaterialDesignDiscreteSlider}"
-                                    materialDesign:SliderAssist.OnlyShowFocusVisualWhileDragging="True"
-                                    VerticalAlignment="Center"
-                                    IsSnapToTickEnabled="True" />
-                                <TextBox
-                                    Width="30"
-                                    Margin="4 0 0 0"
-                                    Text="{Binding Value}"
-                                    helpers:TextBoxHelper.OnlyNumeric="Int" />
-                                <Button
-                                    Margin="6 0 0 0"
-                                    ToolTip="Reset to default"
-                                    Style="{StaticResource MaterialDesignIconButton}"
-                                    HorizontalAlignment="Center"
-                                    Width="24"
-                                    Height="24"
-                                    Command="{Binding SetDefaultValue}">
-                                    <materialDesign:PackIcon Kind="BackupRestore" />
-                                </Button>
-                            </StackPanel>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel
+                                    Orientation="Horizontal"
+                                    Margin="0 0 0 8"
+                                    Visibility="{Binding Available, Converter={StaticResource BooleanToVisibilityConv}}">
+                                    <TextBlock
+                                        Width="180"
+                                        Text="{Binding Filter}" />
+                                    <Slider
+                                        Width="200"
+                                        Value="{Binding Value}"
+                                        Minimum="{Binding Minimum}"
+                                        Maximum="{Binding Maximum}"
+                                        Style="{StaticResource MaterialDesignDiscreteSlider}"
+                                        materialDesign:SliderAssist.OnlyShowFocusVisualWhileDragging="True"
+                                        VerticalAlignment="Center"
+                                        IsSnapToTickEnabled="True" />
+                                    <TextBox
+                                        Width="30"
+                                        Margin="4 0 0 0"
+                                        Text="{Binding Value}"
+                                        helpers:TextBoxHelper.OnlyNumeric="Int" />
+                                    <Button
+                                        Margin="6 0 0 0"
+                                        ToolTip="Reset to default"
+                                        Style="{StaticResource MaterialDesignIconButton}"
+                                        HorizontalAlignment="Center"
+                                        Width="24"
+                                        Height="24"
+                                        Command="{Binding SetDefaultValue}">
+                                        <materialDesign:PackIcon Kind="BackupRestore" />
+                                    </Button>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Button
+                        Margin="360 6 0 0"
+                        HorizontalAlignment="Left"
+                        Content="Reset all"
+                        Command="{Binding FL.Player.Commands.ResetFilters}" />
+                </StackPanel>
             </GroupBox>
         </StackPanel>
     </ScrollViewer>

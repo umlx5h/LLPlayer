@@ -3,7 +3,6 @@
 using FlyleafLib.MediaFramework.MediaDemuxer;
 using FlyleafLib.MediaFramework.MediaStream;
 using FlyleafLib.MediaFramework.MediaFrame;
-using FlyleafLib.MediaFramework.MediaRenderer;
 
 namespace FlyleafLib.MediaFramework.MediaDecoder;
 
@@ -225,7 +224,7 @@ public unsafe class SubtitlesDecoder : DecoderBase
                     if (SubtitlesStream.IsBitmap) // clear prev subs frame
                     {
                         subFrame.duration   = uint.MaxValue;
-                        subFrame.timestamp  = pts - demuxer.StartTime + Config.Subtitles[subIndex].Delay;
+                        subFrame.Timestamp  = pts - demuxer.StartTime + Config.Subtitles[subIndex].Delay;
                         subFrame.isBitmap   = true;
                         Frames.Enqueue(subFrame);
                     }
@@ -237,7 +236,7 @@ public unsafe class SubtitlesDecoder : DecoderBase
                 }
 
                 subFrame.duration   = subFrame.sub.end_display_time;
-                subFrame.timestamp  = pts - demuxer.StartTime + Config.Subtitles[subIndex].Delay;
+                subFrame.Timestamp  = pts - demuxer.StartTime + Config.Subtitles[subIndex].Delay;
 
                 if (subFrame.sub.rects[0]->type == AVSubtitleType.Ass)
                 {
@@ -263,7 +262,7 @@ public unsafe class SubtitlesDecoder : DecoderBase
                 else if (subFrame.sub.rects[0]->type == AVSubtitleType.Bitmap)
                 {
                     var rect = subFrame.sub.rects[0];
-                    byte[] data = Renderer.ConvertBitmapSub(subFrame.sub, false);
+                    byte[] data = ConvertBitmapSub(subFrame.sub, false);
 
                     subFrame.isBitmap = true;
                     subFrame.bitmap = new SubtitlesFrameBitmap()
@@ -276,7 +275,7 @@ public unsafe class SubtitlesDecoder : DecoderBase
                     };
                 }
 
-                if (CanTrace) Log.Trace($"Processes {TicksToTime(subFrame.timestamp)}");
+                if (CanTrace) Log.Trace($"Processes {TicksToTime(subFrame.Timestamp)}");
 
                 Frames.Enqueue(subFrame);
             }
@@ -302,6 +301,58 @@ public unsafe class SubtitlesDecoder : DecoderBase
                 Frames.TryDequeue(out var frame);
                 DisposeFrame(frame);
             }
+        }
+    }
+
+    // copy from old Flyleaf code
+    public static byte[] ConvertBitmapSub(AVSubtitle sub, bool grey)
+    {
+        var rect = sub.rects[0];
+        var stride = rect->linesize[0] * 4;
+
+        byte[] data = new byte[rect->w * rect->h * 4];
+        Span<uint> colors = stackalloc uint[256];
+
+        fixed (byte* ptr = data)
+        {
+            var colorsData = new Span<uint>((byte*)rect->data[1], rect->nb_colors);
+
+            for (int i = 0; i < colorsData.Length; i++)
+                colors[i] = colorsData[i];
+
+            ConvertPal(colors, 256, grey);
+
+            for (int y = 0; y < rect->h; y++)
+            {
+                uint* xout = (uint*)(ptr + y * stride);
+                byte* xin = ((byte*)rect->data[0]) + y * rect->linesize[0];
+
+                for (int x = 0; x < rect->w; x++)
+                    *xout++ = colors[*xin++];
+            }
+        }
+
+        return data;
+    }
+
+    private static void ConvertPal(Span<uint> colors, int count, bool gray) // subs bitmap (source: mpv)
+    {
+        for (int n = 0; n < count; n++)
+        {
+            uint c = colors[n];
+            uint b = c & 0xFF;
+            uint g = (c >> 8) & 0xFF;
+            uint r = (c >> 16) & 0xFF;
+            uint a = (c >> 24) & 0xFF;
+
+            if (gray)
+                r = g = b = (r + g + b) / 3;
+
+            // from straight to pre-multiplied alpha
+            b = b * a / 255;
+            g = g * a / 255;
+            r = r * a / 255;
+            colors[n] = b | (g << 8) | (r << 16) | (a << 24);
         }
     }
 }

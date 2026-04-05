@@ -72,13 +72,13 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
     /// (Normally you should not access this directly)
     /// </summary>
     public VideoDecoder         VideoDecoder;
-    ConcurrentQueue<VideoFrame> vFrames;
+    VideoCache vFrames;
 
     /// <summary>
     /// Player's Renderer
     /// (Normally you should not access this directly)
     /// </summary>
-    public Renderer             renderer            { get; private set; }
+    public Renderer            Renderer            { get; private set; }
 
     /// <summary>
     /// Subtitles Decoder
@@ -345,16 +345,6 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
     bool _IsRecording;
 
     /// <summary>
-    /// Pan X Offset to change the X location
-    /// </summary>
-    public int          PanXOffset          { get => renderer.PanXOffset; set { renderer.PanXOffset = value; Raise(nameof(PanXOffset)); } }
-
-    /// <summary>
-    /// Pan Y Offset to change the Y location
-    /// </summary>
-    public int          PanYOffset          { get => renderer.PanYOffset; set { renderer.PanYOffset = value; Raise(nameof(PanYOffset)); } }
-
-    /// <summary>
     /// Playback's speed (x1 - x4)
     /// </summary>
     public double       Speed {
@@ -387,37 +377,6 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
         }
     }
     double speed = 1;
-
-    /// <summary>
-    /// Pan zoom percentage (100 for 100%)
-    /// </summary>
-    public int          Zoom
-    {
-        get => (int)(renderer.Zoom * 100);
-        set { renderer.SetZoom(renderer.Zoom = value / 100.0); RaiseUI(nameof(Zoom)); }
-        //set { renderer.SetZoomAndCenter(renderer.Zoom = value / 100.0, Renderer.ZoomCenterPoint); RaiseUI(nameof(Zoom)); } // should reset the zoom center point?
-    }
-
-    /// <summary>
-    /// Pan rotation angle (for D3D11 VP allowed values are 0, 90, 180, 270 only)
-    /// </summary>
-    public uint Rotation            { get => renderer.Rotation;
-        set
-        {
-            renderer.Rotation = value;
-            RaiseUI(nameof(Rotation));
-        }
-    }
-
-    /// <summary>
-    /// Pan Horizontal Flip (FlyleafVP only)
-    /// </summary>
-    public bool HFlip { get => renderer.HFlip; set => renderer.HFlip = value; }
-
-    /// <summary>
-    /// Pan Vertical Flip (FlyleafVP only)
-    /// </summary>
-    public bool VFlip { get => renderer.VFlip; set => renderer.VFlip = value; }
 
     /// <summary>
     /// Whether to use reverse playback mode
@@ -467,9 +426,7 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
                 {
                     VideoDemuxer.DisableReversePlayback();
 
-                    var vFrame = VideoDecoder.GetFrame(VideoDecoder.GetFrameNumber(CurTime));
-                    VideoDecoder.DisposeFrame(vFrame);
-                    vFrame = null;
+                    VideoDecoder.GetFrame(VideoDecoder.GetFrameNumber(CurTime))?.Dispose();
                     decoder.RequiresResync = true;
                 }
 
@@ -548,15 +505,13 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
         Data        = new(this);
         Commands    = new(this);
 
-        Config.SetPlayer(this);
-
         if (Config.Player.Usage == Usage.Audio)
         {
             Config.Video.Enabled = false;
             Config.Subtitles.Enabled = false;
         }
 
-        decoder = new(Config, PlayerId) { Tag = this };
+        decoder = new(Config, PlayerId, true, this);
         Engine.AddPlayer(this);
 
         AudioDecoder     = decoder.AudioDecoder;
@@ -573,13 +528,11 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
         Playlist         = decoder.Playlist;
 
         // We keep the same instance
-        renderer         = VideoDecoder.Renderer;
-        vFrames          = VideoDecoder.Frames;
-        vPackets         = VideoDemuxer.VideoPackets;
+        Renderer        = VideoDecoder.Renderer;
+        vFrames         = Renderer.Frames;
+        vPackets        = VideoDemuxer.VideoPackets;
 
         UpdateMainDemuxer();
-        if (renderer != null)
-            renderer.forceNotExtractor = true;
 
         decoder.OpenAudioStreamCompleted               += Decoder_OpenAudioStreamCompleted;
         decoder.OpenVideoStreamCompleted               += Decoder_OpenVideoStreamCompleted;
@@ -603,6 +556,8 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
 
         status = Status.Stopped;
         Reset();
+
+        Config.SetPlayer(this);
         Log.Debug("Created");
     }
 
@@ -733,7 +688,7 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
     public override int GetHashCode() => PlayerId.GetHashCode();
 
     // Avoid having this code in OnPaintBackground as it can cause designer issues (renderer will try to load FFmpeg.Autogen assembly because of HDR Data)
-    internal bool WFPresent() { if (renderer == null || renderer.SCDisposed) return false; renderer?.RenderRequest(); return true; }
+    internal bool WFPresent() { if (Renderer == null || Renderer.SwapChain.Disposed) return false; Renderer?.RenderRequest(); return true; }
 
     internal void RaiseKnownErrorOccurred(string message, KnownErrorType errorType)
     {

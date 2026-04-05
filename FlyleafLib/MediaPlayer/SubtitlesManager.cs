@@ -14,7 +14,6 @@ using System.Windows.Media.Imaging;
 using FlyleafLib.MediaFramework.MediaDecoder;
 using FlyleafLib.MediaFramework.MediaDemuxer;
 using FlyleafLib.MediaFramework.MediaFrame;
-using FlyleafLib.MediaFramework.MediaRenderer;
 using FlyleafLib.MediaFramework.MediaStream;
 using FlyleafLib.MediaPlayer.Translation;
 using static FlyleafLib.Logger;
@@ -893,7 +892,7 @@ public class SubtitleBitmapData : IDisposable
             _rwLock.EnterReadLock();
 
             AVSubtitleRect rect = *Sub.rects[0];
-            byte[] data = Renderer.ConvertBitmapSub(Sub, isGrey);
+            byte[] data = SubtitlesDecoder.ConvertBitmapSub(Sub, isGrey);
 
             return (data, rect);
         }
