@@ -128,6 +128,7 @@ public unsafe partial class Renderer : NotifyPropertyChanged
             }
 
         Disposed    = false;
+        canIdle     = true;
         context     = device.ImmediateContext;
         FeatureLevel= device.FeatureLevel;
         DXGIDevice  = device.QueryInterface<IDXGIDevice1>();

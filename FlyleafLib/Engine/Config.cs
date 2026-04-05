@@ -1499,6 +1499,11 @@ public class EngineConfig
     public int      UIRefreshInterval       { get; set; } = 250;
 
     /// <summary>
+    /// Keep display powered on while video is playing
+    /// </summary>
+    public bool     KeepDisplayActive       { get; set; } = true;
+
+    /// <summary>
     /// Loads engine's configuration
     /// </summary>
     /// <param name="path">Absolute or relative path to load the configuraiton</param>

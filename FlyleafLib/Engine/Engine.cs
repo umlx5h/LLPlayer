@@ -123,7 +123,7 @@ public static class Engine
                 Log.Trace("ThreadExecutionStateBegin");
                 #endif
 
-                _ = NativeMethods.SetThreadExecutionState(NativeMethods.EXECUTION_STATE.ES_CONTINUOUS | NativeMethods.EXECUTION_STATE.ES_SYSTEM_REQUIRED | NativeMethods.EXECUTION_STATE.ES_DISPLAY_REQUIRED);
+                _ = NativeMethods.SetThreadExecutionState(NativeMethods.EXECUTION_STATE.ES_CONTINUOUS | NativeMethods.EXECUTION_STATE.ES_SYSTEM_REQUIRED | (Config.KeepDisplayActive ? NativeMethods.EXECUTION_STATE.ES_DISPLAY_REQUIRED : 0));
             }
         }
     }

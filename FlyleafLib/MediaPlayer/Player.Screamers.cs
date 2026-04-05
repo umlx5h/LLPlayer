@@ -320,8 +320,14 @@ unsafe partial class Player
             if (vFrame == null)
                 break;
 
+            var prevFrame = Renderer.Frames.RendererFrame;
             if (Renderer.RenderPlay(vFrame, false))
+            {
                 Renderer.PresentPlay();
+                prevFrame?.Dispose();
+            }
+            else
+                vFrame.Dispose();
 
             UpdateCurTime(vFrame.Timestamp, false);
         }
