@@ -332,6 +332,7 @@ public class KeysConfig
         Add(Key.Down,               KeyBindingAction.VolumeDown);
 
         Add(Key.D0,                 KeyBindingAction.ResetAll);
+        Add(Key.D1,                 KeyBindingAction.ResetSpeed);
 
         Add(Key.Escape,             KeyBindingAction.NormalScreen);
         Add(Key.Q,                  KeyBindingAction.Stop, ctrl: true);
