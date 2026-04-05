@@ -301,6 +301,7 @@ unsafe partial class Player
                 Thread.Sleep(1);
         }
 
+        Renderer.RenderIdleStart(true);
         vFrame = null;
         if (CanInfo) Log.Info($"Finished at {TicksToTimeMini(curTime)}");
     }
@@ -326,7 +327,7 @@ unsafe partial class Player
         }
 
         vFrame = null;
-        Renderer.RenderIdleStart();
+        Renderer.RenderIdleStart(true);
 
         if (CanInfo) Log.Info($"Finished at {TicksToTimeMini(curTime)}");
     }

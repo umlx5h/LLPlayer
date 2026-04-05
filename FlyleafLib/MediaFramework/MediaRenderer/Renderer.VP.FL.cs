@@ -159,11 +159,15 @@ public unsafe partial class Renderer
     }
     void FLSetCrop()
     {
-        SetCrop();
+        crop            = scfg.Crop + ucfg.crop;
+        VisibleWidth    = scfg.txtWidth  - crop.Width;
+        VisibleHeight   = scfg.txtHeight - crop.Height;
 
         if (VideoProcessor == VideoProcessors.SwsScale &&
             (scfg.Cropping.HasFlag(Cropping.Codec) || scfg.Cropping.HasFlag(Cropping.Texture)))
         {   // SwsScale does codec's cropping and we don't use texture cropping
+            crop = scfg.cropStream + ucfg.crop;
+
             var totalWidth  = VisibleWidth  + scfg.cropStream.Width;
             var totalHeight = VisibleHeight + scfg.cropStream.Height;
 
@@ -193,7 +197,10 @@ public unsafe partial class Renderer
                 VisibleHeight /= 2;
         }
 
-        vpRequests |= VPRequestType.UpdateVS;
+        SetVisibleSizeAndRatioHelper();
+
+        vpRequests &= ~VPRequestType.Crop;
+        vpRequests |=  VPRequestType.Viewport | VPRequestType.UpdateVS;
     }
     void FLSetHDRtoSDR()
     {

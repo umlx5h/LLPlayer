@@ -134,6 +134,12 @@ public unsafe partial class Renderer : IVP
             if (!VideoDecoder.VideoAccelerated)
             {
                 Frames.Dispose();
+
+                // Clear Screen
+                context.OMSetRenderTargets(SwapChain.BackBufferRtv);
+                context.ClearRenderTargetView(SwapChain.BackBufferRtv, ucfg.flBackColor);
+                SwapChain.Present(1, Vortice.DXGI.PresentFlags.None);
+
                 return;
             }
 
@@ -349,16 +355,9 @@ public unsafe partial class Renderer : IVP
         vpRequests &= ~VPRequestType.AspectRatio;
         vpRequests |=  VPRequestType.Viewport;
     }
-    void SetCrop()
+
+    void SetVisibleSizeAndRatioHelper()
     {
-        crop            = scfg.Crop + ucfg.crop;
-        VisibleWidth    = scfg.txtWidth  - crop.Width;
-        VisibleHeight   = scfg.txtHeight - crop.Height;
-
-        if (VideoProcessor == VideoProcessors.SwsScale &&
-            (scfg.Cropping.HasFlag(Cropping.Codec) || scfg.Cropping.HasFlag(Cropping.Texture)))
-            crop = scfg.cropStream + ucfg.crop; // SwsScale does codec's cropping and we don't use texture cropping
-
         int x, y;
         _ = av_reduce(&x, &y, VisibleWidth * scfg.SAR.Num, VisibleHeight * scfg.SAR.Den, 1024 * 1024);
         DAR = new(x, y);
@@ -371,9 +370,6 @@ public unsafe partial class Renderer : IVP
             curRatio = rotation == 0 || rotation == 180 ? keepRatio : 1 / keepRatio;
             player?.Host?.Player_RatioChanged(curRatio);
         }
-
-        vpRequests &= ~VPRequestType.Crop;
-        vpRequests |=  VPRequestType.Viewport;
     }
 
     internal void SyncFilters()

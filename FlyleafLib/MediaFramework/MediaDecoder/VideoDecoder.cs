@@ -320,7 +320,7 @@ public unsafe class VideoDecoder : DecoderBase
         // Not all codecs fill key frame flag | https://github.com/SuRGeoNix/Flyleaf/issues/638 | Old MOV/MP4 container marking packets loosely as key
         checkKeyFrame       = codecCtx->codec_id != AVCodecID.Av1 &&
                              (VideoAccelerated ||
-                              codecCtx->codec_id != AVCodecID.Vp8 && codecCtx->codec_id != AVCodecID.Vp9);
+                              codecCtx->codec_id != AVCodecID.Vp8 && codecCtx->codec_id != AVCodecID.Vp9 && codecCtx->codec_id != AVCodecID.Qtrle);
 
         if (CanDebug) Log.Debug($"Using {CurCodecSpec.Name} {(VideoAccelerated ? "(HW)" : "(SW)")}");
 

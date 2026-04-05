@@ -10,7 +10,7 @@ namespace FlyleafLib.MediaFramework.MediaRenderer;
 public unsafe partial class Renderer
 {
     long            renderRequestAt, lastRenderAt;
-    volatile bool   canIdle;
+    volatile bool   canIdle = true;
     volatile bool   isIdleRunning;
     object          lockRenderLoops = new();
 

@@ -455,6 +455,17 @@ color = float4(Texture2.Sample(Sampler, input.Texture).r, Texture3.Sample(Sample
             return VideoProcessorRotation.Rotation270;
         }
     }
+    void D3SetCrop()
+    {
+        crop            = scfg.Crop + ucfg.crop;
+        VisibleWidth    = scfg.txtWidth  - crop.Width;
+        VisibleHeight   = scfg.txtHeight - crop.Height;
+
+        SetVisibleSizeAndRatioHelper();
+
+        vpRequests &= ~VPRequestType.Crop;
+        vpRequests |=  VPRequestType.Viewport;
+    }
     void D3Deinterlace()
     {
         FieldType = ucfg.DeInterlace == DeInterlace.Auto ? scfg.FieldOrder : (VideoFrameFormat)ucfg.DeInterlace;
@@ -558,7 +569,7 @@ color = float4(Texture2.Sample(Sampler, input.Texture).r, Texture3.Sample(Sample
                 D3SetRotationFlip();
 
             if (vpRequests.HasFlag(VPRequestType.Crop))
-                SetCrop();
+                D3SetCrop();
 
             if (vpRequests.HasFlag(VPRequestType.Resize))
                 D3SetSize();

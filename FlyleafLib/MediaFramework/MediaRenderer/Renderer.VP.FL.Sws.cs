@@ -51,10 +51,50 @@ public unsafe partial class Renderer
         txtDesc[0].Format  = srvDesc[0].Format = Format.R8G8B8A8_UNorm;
         srvDesc[0].ViewDimension = ShaderResourceViewDimension.Texture2D;
 
-        if (VideoProcessor != VideoProcessors.D3D11)
-        {   // We don't render with FL/Sws no need to set this with D3
-            psId += "rgb";
-            SetPS(psId, @"color = float4(Texture1.Sample(Sampler, input.Texture).rgb, 1.0);", defines);
+        if (VideoProcessor == VideoProcessors.D3D11)
+            return true; // We don't render with FL/Sws no need to set this with D3
+
+        psId += "rgb";
+
+        if (ucfg._SplitFrameAlphaPosition == SplitFrameAlphaPosition.None || scfg.ColorType != ColorType.YUV || scfg.PixelPlanes > 3)
+            SetPS(psId, @"color = Texture1.Sample(Sampler, input.Texture);", defines);
+        else
+        {   // Split Frame Alpha: Ensure we have YUV (w/o Alpha) | SwsScale will do the YUVtoRGB for embedded alpha
+            switch (ucfg._SplitFrameAlphaPosition)
+            {
+                case SplitFrameAlphaPosition.Left:
+                    psId += "l";
+                    SetPS(psId, @"
+color = float4(
+Texture1.Sample(Sampler, float2(0.5 + (input.Texture.x / 2), input.Texture.y)).rgb,
+Texture1.Sample(Sampler, float2(input.Texture.x / 2, input.Texture.y)).r);
+", defines);
+                    break;
+                case SplitFrameAlphaPosition.Right:
+                    psId += "r";
+                    SetPS(psId, @"
+color = float4(
+Texture1.Sample(Sampler, float2(input.Texture.x / 2, input.Texture.y)).rgb,
+Texture1.Sample(Sampler, float2(0.5 + (input.Texture.x / 2), input.Texture.y)).r);
+", defines);
+                    break;
+                case SplitFrameAlphaPosition.Top:
+                    psId += "t";
+                    SetPS(psId, @"
+color = float4(
+Texture1.Sample(Sampler, float2(input.Texture.x, 0.5 + (input.Texture.y / 2))).rgb,
+Texture1.Sample(Sampler, float2(input.Texture.x, input.Texture.y / 2)).r);
+", defines);
+                    break;
+                case SplitFrameAlphaPosition.Bottom:
+                    psId += "b";
+                    SetPS(psId, @"
+color = float4(
+Texture1.Sample(Sampler, float2(input.Texture.x, input.Texture.y / 2)).rgb,
+Texture1.Sample(Sampler, float2(input.Texture.x, 0.5 + (input.Texture.y / 2))).r);
+", defines);
+                    break;
+            }
         }
         
         return true;
