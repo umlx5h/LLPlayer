@@ -987,14 +987,17 @@ public class FlyleafHost : ContentControl, IHostPlayer, IDisposable
     {
         IsSwappingStarted = false;
         Surface.ReleaseMouseCapture();
-        FlyleafHostDropWrap hostWrap = (FlyleafHostDropWrap) e.Data.GetData(typeof(FlyleafHostDropWrap));
-
-        // Swap FlyleafHosts
-        if (hostWrap != null)
+        if (e.Data.GetDataPresent(typeof(FlyleafHostDropWrap)))
         {
-            (hostWrap.FlyleafHost.Player, Player) = (Player, hostWrap.FlyleafHost.Player);
-            Surface.Activate();
-            return;
+            FlyleafHostDropWrap hostWrap = (FlyleafHostDropWrap) e.Data.GetData(typeof(FlyleafHostDropWrap));
+
+            // Swap FlyleafHosts
+            if (hostWrap != null)
+            {
+                (hostWrap.FlyleafHost.Player, Player) = (Player, hostWrap.FlyleafHost.Player);
+                Surface.Activate();
+                return;
+            }
         }
 
         if (Player == null)
@@ -1027,14 +1030,17 @@ public class FlyleafHost : ContentControl, IHostPlayer, IDisposable
     {
         IsSwappingStarted = false;
         Overlay.ReleaseMouseCapture();
-        FlyleafHostDropWrap hostWrap = (FlyleafHostDropWrap) e.Data.GetData(typeof(FlyleafHostDropWrap));
-
-        // Swap FlyleafHosts
-        if (hostWrap != null)
+        if (e.Data.GetDataPresent(typeof(FlyleafHostDropWrap)))
         {
-            (hostWrap.FlyleafHost.Player, Player) = (Player, hostWrap.FlyleafHost.Player);
-            Overlay.Activate();
-            return;
+            FlyleafHostDropWrap hostWrap = (FlyleafHostDropWrap) e.Data.GetData(typeof(FlyleafHostDropWrap));
+
+            // Swap FlyleafHosts
+            if (hostWrap != null)
+            {
+                (hostWrap.FlyleafHost.Player, Player) = (Player, hostWrap.FlyleafHost.Player);
+                Overlay.Activate();
+                return;
+            }
         }
 
         if (Player == null)

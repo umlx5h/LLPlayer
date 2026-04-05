@@ -245,6 +245,8 @@ public unsafe partial class Renderer : NotifyPropertyChanged
             }
             
             SwapChain.DisposeLocal();
+            if (!isDeviceReset)
+                RenderIdleStop(); // Ensures it didn't start again (after CanPresent = false)
             Frames.Dispose();
             D3Dispose();
             FLDispose();

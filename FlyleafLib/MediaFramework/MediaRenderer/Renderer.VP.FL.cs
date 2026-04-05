@@ -240,6 +240,9 @@ public unsafe partial class Renderer
             vpRequests  = vpRequestsIn;
             vpRequestsIn= VPRequestType.Empty;
 
+            if (vpRequests.HasFlag(VPRequestType.BackColor))
+                SetBackColor();
+
             if (vpRequests.HasFlag(VPRequestType.RotationFlip))
                 FLSetRotationFlip();
 

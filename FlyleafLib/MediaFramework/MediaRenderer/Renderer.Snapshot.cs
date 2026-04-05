@@ -33,22 +33,10 @@ public unsafe partial class Renderer
         return snapshot = new(device, vd, ve, width, height);
     }
 
-    public Bitmap TakeSnapshot(uint width = 0, uint height = 0)
+    ID3D11Texture2D GetTexture(Snapshot snapshot)
     {
         try
         {
-            if (width == 0 && height == 0)
-            {
-                width  = VisibleWidth;
-                height = VisibleHeight;
-            }
-            else if (width != 0 && height == 0)
-                height = (uint)(width / curRatio);
-            else if (height != 0 && width == 0)
-                width  = (uint)(height * curRatio);
-
-            var snapshot = GetSnapshot(width, height);
-
             lock (lockRenderLoops)
             {
                 var rFrame = Frames.RendererFrame;
@@ -70,12 +58,58 @@ public unsafe partial class Renderer
                     context.RSSetViewport(Viewport);
                 }
             }
-            
+
             context.CopyResource(snapshot.txtStage, snapshot.txt);
 
-            return GetBitmap(snapshot.txtStage);
+            return snapshot.txtStage;
         }
-        catch { return null; }   
+        catch { return null; }
+    }
+
+    public Bitmap TakeSnapshot(uint width = 0, uint height = 0)
+    {
+        try
+        {
+            if (width == 0 && height == 0)
+            {
+                width = VisibleWidth;
+                height = VisibleHeight;
+            }
+            else if (width != 0 && height == 0)
+                height = (uint)(width / curRatio);
+            else if (height != 0 && width == 0)
+                width = (uint)(height * curRatio);
+
+            var snapshot = GetSnapshot(width, height);
+            var texture = GetTexture(snapshot);
+            if (texture is null)
+                return null;
+            return GetBitmap(texture);
+        }
+        catch { return null; }
+    }
+
+    public BitmapSource TakeSnapshotBitmapSource(uint width = 0, uint height = 0)
+    {
+        try
+        {
+            if (width == 0 && height == 0)
+            {
+                width = VisibleWidth;
+                height = VisibleHeight;
+            }
+            else if (width != 0 && height == 0)
+                height = (uint)(width / curRatio);
+            else if (height != 0 && width == 0)
+                width = (uint)(height * curRatio);
+
+            var snapshot = GetSnapshot(width, height);
+            var texture = GetTexture(snapshot);
+            if (texture is null)
+                return null;
+            return GetBitmapSource(texture);
+        }
+        catch { return null; }
     }
 
     #region Bitmap Helpers

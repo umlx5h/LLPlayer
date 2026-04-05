@@ -389,6 +389,16 @@ unsafe partial class Player
     /// <returns></returns>
     public System.Drawing.Bitmap TakeSnapshotToBitmap(uint width = 0, uint height = 0) => Renderer?.TakeSnapshot(width, height);
 
+    /// <summary>
+    /// <para>Returns a bitmap of the current or specified video frame</para>
+    /// <para>If width/height not specified will use the original size. If one of them will be set, the other one will be set based on original ratio</para>
+    /// <para>If frame not specified will use the current/last frame</para>
+    /// </summary>
+    /// <param name="width">Specify the width (0: will keep the ratio based on height)</param>
+    /// <param name="height">Specify the height (0: will keep the ratio based on width)</param>
+    /// <returns></returns>
+    public System.Windows.Media.Imaging.BitmapSource TakeSnapshotToBitmapSource(uint width = 0, uint height = 0) => Renderer?.TakeSnapshotBitmapSource(width, height);
+
     public void ResetAll()
     {
         ReversePlayback = false;

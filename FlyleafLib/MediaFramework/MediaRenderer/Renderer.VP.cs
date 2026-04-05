@@ -355,6 +355,12 @@ public unsafe partial class Renderer : IVP
         vpRequests &= ~VPRequestType.AspectRatio;
         vpRequests |=  VPRequestType.Viewport;
     }
+    void SetBackColor()
+    {
+        vc?.VideoProcessorSetOutputBackgroundColor(vp, false, ucfg.d3BackColor);
+        vpRequests &= ~VPRequestType.BackColor;
+        vpRequests |=  VPRequestType.Viewport;
+    }
 
     void SetVisibleSizeAndRatioHelper()
     {
@@ -427,7 +433,7 @@ public class VPConfig : NotifyPropertyChanged
     /// Background color of the player's control
     /// </summary>
     public System.Windows.Media.Color
-                            BackColor               { get => VorticeToWPFColor(flBackColor);  set { Set(ref flBackColor, WPFToVorticeColor(value)); { WPFToVideoColor(value); vp?.VPRequest(VPRequestType.BackColor); } } }
+                            BackColor               { get => VorticeToWPFColor(flBackColor);  set { if (Set(ref flBackColor, WPFToVorticeColor(value))) { d3BackColor = WPFToVideoColor(value); vp?.VPRequest(VPRequestType.BackColor); } } }
     internal Color flBackColor = new(0, 0, 0, 1);
     internal VideoColor d3BackColor = new() { Rgba = new() { R = 0, G = 0, B = 0, A = 1 } };
 

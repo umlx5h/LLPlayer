@@ -313,14 +313,6 @@ color = float4(Texture2.Sample(Sampler, input.Texture).r, Texture3.Sample(Sample
         psUVIdPrev  = psUVId;
     }
 
-    internal void D3SetBackColor()
-    {   // Direct Call from Config
-        if (vc != null)
-        {
-            vc.VideoProcessorSetOutputBackgroundColor(vp, false, ucfg.d3BackColor);
-            RenderRequest();
-        }
-    }
     void D3SetViewport(int width, int height)
     {   // NOTE: D3 expects even width/height for output/dst (it will crop it internally)
         SetViewport(width, height);
@@ -564,6 +556,9 @@ color = float4(Texture2.Sample(Sampler, input.Texture).r, Texture3.Sample(Sample
 
             vpRequests  = vpRequestsIn;
             vpRequestsIn= VPRequestType.Empty;
+
+            if (vpRequests.HasFlag(VPRequestType.BackColor))
+                SetBackColor();
 
             if (vpRequests.HasFlag(VPRequestType.RotationFlip))
                 D3SetRotationFlip();

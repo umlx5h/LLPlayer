@@ -85,9 +85,9 @@ public abstract class RunThreadBase : NotifyPropertyChanged
 
                 PauseOnQueueFull = false;
 
-                if (Status == Status.Draining) while (Status != Status.Draining) Thread.Sleep(3);
-                if (Status == Status.Stopping) while (Status != Status.Stopping) Thread.Sleep(3);
-                if (Status == Status.Pausing)  while (Status != Status.Pausing)  Thread.Sleep(3);
+                while (Status == Status.Draining) Thread.Sleep(3);
+                while (Status == Status.Stopping) Thread.Sleep(3);
+                while (Status == Status.Pausing)  Thread.Sleep(3);
 
                 if (Status == Status.Ended) return;
 

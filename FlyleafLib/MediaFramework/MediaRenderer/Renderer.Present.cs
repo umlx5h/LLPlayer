@@ -132,6 +132,7 @@ public unsafe partial class Renderer
         catch (SharpGenException e)
         {
             Log.Error($"[RenderIdle] Device Lost ({e.ResultCode.NativeApiCode} ({e.ResultCode}) | {device.DeviceRemovedReason} | {e.Message})");
+            isIdleRunning = false; // TBR: Possible to call RenderIdleStop which will freeze it #681
             ResetLocal();
 
             return false;

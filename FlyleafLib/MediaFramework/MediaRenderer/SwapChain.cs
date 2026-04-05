@@ -50,6 +50,7 @@ public unsafe class SwapChain
     IVP                 vp;
     LogHandler          Log;
     VPConfig            ucfg;
+    object              lockDispose = new();
 
     internal SwapChain(Renderer renderer, IVP vp = null)
     {
@@ -222,58 +223,63 @@ public unsafe class SwapChain
     }
     internal void DisposeLocal(bool rendererFrame = true)
     {
-        if (Disposed)
-            return;
-
-        Renderer.ClearScreen(force: true, rendererFrame: rendererFrame);
-        Disposed    = true;
-        CanPresent  = false;
-
-        if (WinUIClbk != null)
+        lock (lockDispose)
         {
-            DisposeLocalWinUI();
-            return;
+            if (Disposed)
+                return;
+
+            Renderer.ClearScreen(force: true, rendererFrame: rendererFrame);
+            Disposed = true;
+            CanPresent = false;
+
+            if (WinUIClbk != null)
+            {
+                DisposeLocalWinUI();
+                return;
+            }
+
+            if (CanDebug)
+                Log.Debug($"SC Disposing [Hwnd: {ControlHwnd}]");
+
+            RemoveSubClass();
+
+            if (dcClip != null)
+            {
+                dcClip.Dispose();
+                dcClip = null;
+            }
+
+            if (dcTarget != null)
+            {
+                dcTarget.SetRoot(null);
+                dcTarget.Dispose();
+                dcTarget = null;
+            }
+
+            if (dcVisual != null)
+            {
+                dcVisual.SetContent(null);
+                dcVisual.Dispose();
+                dcVisual = null;
+            }
+
+            DisposeHelper();
+
+            if (sc != null)
+            {
+                sc.Dispose();
+                sc = null;
+            }
+
+            if (dcDevice != null)
+            {
+                dcDevice.Dispose();
+                dcDevice = null;
+            }
+
+            if (CanInfo)
+                Log.Info($"SC Disposed [Hwnd: {ControlHwnd}]");
         }
-
-        if (CanDebug) Log.Debug($"SC Disposing [Hwnd: {ControlHwnd}]");
-
-        RemoveSubClass();
-
-        if (dcClip != null)
-        {
-            dcClip.Dispose();
-            dcClip = null;
-        }
-
-        if (dcTarget != null)
-        {
-            dcTarget.SetRoot(null);
-            dcTarget.Dispose();
-            dcTarget = null;
-        }
-
-        if (dcVisual != null)
-        {
-            dcVisual.SetContent(null);
-            dcVisual.Dispose();
-            dcVisual = null;
-        }
-
-        DisposeHelper();
-
-        if (sc != null)
-        {
-            sc.Dispose();
-            sc = null;
-        }
-            
-        if (dcDevice != null)
-        {
-            dcDevice.Dispose();
-            dcDevice = null;
-        }
-
-        if (CanInfo) Log.Info($"SC Disposed [Hwnd: {ControlHwnd}]");
     }
     void DisposeLocalWinUI()
     {
