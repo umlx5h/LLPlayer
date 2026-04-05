@@ -393,6 +393,7 @@ unsafe partial class Player
     {
         ReversePlayback = false;
 
+        ResetDelay();
         ResetSpeed();
         // reset zoom and rotation at once
         Config.Video.ResetViewport();
@@ -401,6 +402,13 @@ unsafe partial class Player
     public void ResetSpeed()
     {
         Speed = 1;
+    }
+
+    public void ResetDelay()
+    {
+        Config.Audio.Delay = 0;
+        for (int i = 0; i < subNum; i++)
+            Config.Subtitles[i].Delay = 0;
     }
 
     public void ResetRotation()

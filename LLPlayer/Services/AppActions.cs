@@ -913,6 +913,7 @@ public static class KeyBindingActionExtensions
 
             case KeyBindingAction.ResetAll:
             case KeyBindingAction.ResetSpeed:
+            case KeyBindingAction.ResetDelay:
             case KeyBindingAction.ResetRotation:
             case KeyBindingAction.ResetZoom:
             case KeyBindingAction.ZoomIn:

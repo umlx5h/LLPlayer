@@ -532,6 +532,9 @@ public class KeysConfig
             case KeyBindingAction.ResetSpeed:
                 return player.ResetSpeed;
 
+            case KeyBindingAction.ResetDelay:
+                return player.ResetDelay;
+
             case KeyBindingAction.ResetRotation:
                 return player.ResetRotation;
 
@@ -579,6 +582,7 @@ public class KeysConfig
         { KeyBindingAction.SpeedRemove },
         { KeyBindingAction.SpeedRemove2 },
         { KeyBindingAction.ResetAll },
+        { KeyBindingAction.ResetDelay },
         { KeyBindingAction.ResetSpeed },
         { KeyBindingAction.ResetRotation },
         { KeyBindingAction.ResetZoom },
@@ -779,10 +783,12 @@ public enum KeyBindingAction
     [Description("Show Previous Frame")]
     ShowPrevFrame,
 
-    [Description("Reset Zoom / Rotation / Speed")]
+    [Description("Reset Zoom / Rotation / Speed / Delay")]
     ResetAll,
     [Description("Reset Speed")]
     ResetSpeed,
+    [Description("Reset Audio / Subtitles Delay")]
+    ResetDelay,
     [Description("Reset Rotation")]
     ResetRotation,
     [Description("Reset Zoom")]

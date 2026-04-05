@@ -77,6 +77,7 @@ public class Commands
     public ICommand RotateRight             { get; set; }
     public ICommand ResetAll                { get; set; }
     public ICommand ResetSpeed              { get; set; }
+    public ICommand ResetDelay              { get; set; }
     public ICommand ResetRotation           { get; set; }
     public ICommand ResetZoom               { get; set; }
 
@@ -150,6 +151,7 @@ public class Commands
         RotateRight             = new RelayCommandSimple(vcfg.RotateRight);
         ResetAll                = new RelayCommandSimple(player.ResetAll);
         ResetSpeed              = new RelayCommandSimple(player.ResetSpeed);
+        ResetDelay              = new RelayCommandSimple(player.ResetDelay);
         ResetRotation           = new RelayCommandSimple(player.ResetRotation);
         ResetZoom               = new RelayCommandSimple(player.ResetZoom);
 
