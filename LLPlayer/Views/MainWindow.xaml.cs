@@ -1,6 +1,8 @@
 ﻿using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Interop;
+using FlyleafLib.Controls.WPF;
 using LLPlayer.Services;
 using LLPlayer.ViewModels;
 
@@ -76,6 +78,25 @@ public partial class MainWindow : Window
         // ref: https://stackoverflow.com/questions/71362654/wpf-window-titlebar
         IntPtr hWnd = new WindowInteropHelper(window).EnsureHandle();
         DwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, [darkMode ? 1 : 0], 4);
+    }
+    #endregion
+
+    #region Disable IME
+    private void FlyleafHost_SurfaceCreated(object sender, EventArgs e)
+    {
+        FlyleafHost host = (FlyleafHost)sender;
+        DisableIME(host.Surface);
+    }
+
+    private void FlyleafHost_OverlayCreated(object sender, EventArgs e)
+    {
+        FlyleafHost host = (FlyleafHost)sender;
+        DisableIME(host.Overlay);
+    }
+
+    private static void DisableIME(Window window)
+    {
+        InputMethod.SetIsInputMethodEnabled(window, false);
     }
     #endregion
 }

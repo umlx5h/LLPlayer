@@ -87,6 +87,8 @@
         <flyleaf:FlyleafHost
             Grid.Column="0"
             FlowDirection="LeftToRight"
+            SurfaceCreated="FlyleafHost_SurfaceCreated"
+            OverlayCreated="FlyleafHost_OverlayCreated"
             Player="{Binding FL.Player}"
             KeyBindings="Both"
             PanRotateOnShiftWheel="None"
