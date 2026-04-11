@@ -434,7 +434,7 @@ public class VPConfig : NotifyPropertyChanged
     /// </summary>
     public System.Windows.Media.Color
                             BackColor               { get => VorticeToWPFColor(flBackColor);  set { if (Set(ref flBackColor, WPFToVorticeColor(value))) { d3BackColor = WPFToVideoColor(value); vp?.VPRequest(VPRequestType.BackColor); } } }
-    internal Color flBackColor = new(0, 0, 0, 1);
+    internal Color flBackColor = new(0, 0, 0, 255);
     internal VideoColor d3BackColor = new() { Rgba = new() { R = 0, G = 0, B = 0, A = 1 } };
 
     // === Viewport ===
