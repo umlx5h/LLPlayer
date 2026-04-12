@@ -232,7 +232,7 @@ public class FasterWhisperConfig : NotifyPropertyChanged
                                   Model is "distil-large-v2"
                                         or "distil-large-v3"
                                         or "distil-large-v3.5";
-    public string ExtraArguments { get; set => Set(ref field, value); } = string.Empty;
+    public string ExtraArguments { get; set => Set(ref field, value); } = "--device cpu";
 
     public ProcessPriorityClass ProcessPriority { get; set => Set(ref field, value); } = ProcessPriorityClass.Normal;
 }

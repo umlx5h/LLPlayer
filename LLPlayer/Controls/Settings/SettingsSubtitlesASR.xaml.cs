@@ -200,9 +200,11 @@ public class SettingsSubtitlesASRVM : Bindable
     #region faster-whisper
     public OrderedDictionary<string, string> ExtraArgumentsPresets { get; } = new()
     {
+        ["Use CPU device"] = "--device cpu",
+        ["Use CUDA device with >= RTX 50XX (requires less GPU memory, slow)"] = "--device cuda --compute_type float16",
+        ["Use CUDA device with >= RTX 50XX (requires more GPU memory)"] = "--device cuda --compute_type float32",
         ["Use CUDA device"] = "--device cuda",
         ["Use CUDA second device"] = "--device cuda:1",
-        ["Use CPU device"] = "--device cpu",
         ["Use Chinese (Simplified), with punctuation"] = "--initial_prompt \"以下是普通话的句子。\"",
         ["Use Chinese (Traditional), with punctuation"] = "--initial_prompt \"以下是普通話的句子。\""
     };
