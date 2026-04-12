@@ -281,3 +281,30 @@ public class NullableIntConverter : IValueConverter
         return null;
     }
 }
+
+[ValueConversion(typeof(double), typeof(string))]
+[ValueConversion(typeof(int), typeof(string))]
+public class HalfConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is double d)
+            return d / 2;
+
+        if (value is int n)
+            return n / 2;
+
+        return value;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is double d)
+            return d * 2;
+
+        if (value is int n)
+            return n * 2;
+
+        return value;
+    }
+}

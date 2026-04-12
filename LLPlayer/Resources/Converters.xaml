@@ -36,6 +36,7 @@
     <conv:KeyToStringConverter x:Key="KeyToStringConv"/>
     <conv:FileSizeHumanConverter x:Key="FileSizeHumanConv"/>
     <conv:NullableIntConverter x:Key="NullableIntConv" />
+    <conv:HalfConverter x:Key="HalfConv" />
 
     <!--Subtitle Converters-->
     <conv:WidthPercentageMultiConverter x:Key="WidthPercentageMultiConv"/>

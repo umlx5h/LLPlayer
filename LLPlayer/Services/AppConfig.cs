@@ -125,6 +125,9 @@ public class AppConfig : Bindable
     public bool SeekBarShowOnlyMouseOver { get; set => Set(ref field, value); } = false;
     public int SeekBarFadeInTimeMs { get; set => Set(ref field, value); } = 80;
     public int SeekBarFadeOutTimeMs { get; set => Set(ref field, value); } = 150;
+    public int SeekBarHeight { get; set => Set(ref field, Math.Max(1, value)); } = 5;
+    public int SeekBarTrackHeight { get; set => Set(ref field, Math.Max(1, value)); } = 20;
+    public int SeekBarThumbHeight { get; set => Set(ref field, Math.Max(1, value)); } = 12;
     #endregion
 
     #region Mouse

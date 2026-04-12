@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:local="clr-namespace:LLPlayer.Controls"
+             xmlns:resources="clr-namespace:LLPlayer.Resources"
              mc:Ignorable="d"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              d:DataContext="{d:DesignInstance local:FlyleafBar}"
@@ -20,7 +21,7 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <materialDesign:Card x:Name="MyCard" TextElement.FontSize="14" TextElement.FontWeight="Medium" TextElement.Foreground="White" FontFamily="{materialDesign:MaterialDesignFont}" VerticalAlignment="Bottom" Focusable="False">
+    <materialDesign:Card x:Name="MyCard" TextElement.FontSize="14" TextElement.FontWeight="Medium" TextElement.Foreground="White" FontFamily="{materialDesign:MaterialDesignFont}" VerticalAlignment="Bottom" Focusable="False" Padding="2,4,2,0">
         <materialDesign:Card.Background>
             <SolidColorBrush Color="{Binding FL.PlayerConfig.Video.BackColor}" Opacity="0.15"/>
         </materialDesign:Card.Background>
@@ -30,7 +31,7 @@
                 <RowDefinition/>
             </Grid.RowDefinitions>
 
-            <Grid Margin="5,0,5,0">
+            <Grid Margin="5,0,5,2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="auto"/>
                     <ColumnDefinition Width="*"/>
@@ -41,6 +42,11 @@
                 <TextBlock Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Text="{Binding FL.Player.CurTime, Converter={StaticResource TicksToTimeConv}}" d:Text="00:00:00"/>
                 <Slider
                     Grid.Column="1"
+                    Cursor="Hand"
+                    Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
+                    resources:SliderLayout.BarHeight="{Binding FL.Config.SeekBarHeight}"
+                    resources:SliderLayout.TrackHeight="{Binding FL.Config.SeekBarTrackHeight}"
+                    resources:SliderLayout.ThumbHeight="{Binding FL.Config.SeekBarThumbHeight}"
                     TickPlacement="{Binding FL.Player.Chapters, Converter={StaticResource ChaptersToTickPlacementConv}}"
                     Ticks="{Binding FL.Player.Chapters, Converter={StaticResource ChaptersToTicksConv}}"
                     IsSelectionRangeEnabled="True" SelectionStart="{Binding RelativeSource={RelativeSource Self}, Path=Value, Mode=OneWay}" Style="{DynamicResource FlyleafSlider}" Focusable="False" Margin="10,0,10,0" VerticalAlignment="Center" Value="{Binding FL.Player.CurTime, Mode=TwoWay, Converter={StaticResource TicksToSecondsConv}}" Maximum="{Binding FL.Player.Duration, Converter={StaticResource TicksToSecondsConv}}">
@@ -213,7 +219,7 @@
                         </Button.Style>
                     </Button>
                     <materialDesign:PackIcon Kind="VideoInputAntenna" Height="20" Width="20" Foreground="{DynamicResource MaterialDesign.Brush.Secondary}" VerticalAlignment="Center" Visibility="{Binding FL.Player.IsLive, Converter={StaticResource BooleanToVisibilityConv}, FallbackValue=Collapsed, TargetNullValue=Collapsed}"/>
-                    <TextBlock VerticalAlignment="Center" FontStyle="Italic" FontSize="14" Margin="5,4,0,0" Text="{Binding FL.Player.Playlist.Selected.Title}" Cursor="Hand">
+                    <TextBlock VerticalAlignment="Center" FontStyle="Italic" FontSize="14" Margin="5,0,0,0" Text="{Binding FL.Player.Playlist.Selected.Title}" Cursor="Hand">
                         <TextBlock.ToolTip>
                             <ToolTip xml:space="preserve">Left Click: Open File Dialog
 Right Click: Open Context Menu</ToolTip>
@@ -282,7 +288,7 @@ Right Click: Open Context Menu</ToolTip>
                 </Button>
 
                 <!-- Volume Slider -->
-                <Slider Grid.Column="8" Style="{DynamicResource FlyleafSlider}" Foreground="{DynamicResource MaterialDesignBody}" Focusable="False" Margin="0,0,6,6" Width="100" VerticalAlignment="Bottom" Minimum="0" Maximum="{Binding FL.PlayerConfig.Audio.VolumeMax, Mode=OneWay}" d:Maximum="150" d:Value="75" Value="{Binding FL.Player.Audio.Volume}"/>
+                <Slider Grid.Column="8" Style="{DynamicResource FlyleafSlider}" Cursor="Hand" Foreground="{DynamicResource MaterialDesignBody}" Focusable="False" Margin="0,0,6,0" Width="100" VerticalAlignment="Center" Minimum="0" Maximum="{Binding FL.PlayerConfig.Audio.VolumeMax, Mode=OneWay}" d:Maximum="150" d:Value="75" Value="{Binding FL.Player.Audio.Volume}"/>
 
                 <!-- Open Settings Button -->
                 <Button Grid.Column="9" Style="{StaticResource IconButton}" Content="{materialDesign:PackIcon Kind=SettingsOutline}" Command="{Binding FL.Action.CmdOpenWindowSettings}" ToolTip="Open Settings"/>

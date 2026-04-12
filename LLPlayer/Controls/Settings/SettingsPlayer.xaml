@@ -165,6 +165,36 @@
 
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
+                            Width="180"
+                            Text="SeekBar Height" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.Config.SeekBarHeight}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="SeekBar Thumb Height" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.Config.SeekBarThumbHeight}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="SeekBar Track Height" />
+                        <TextBox
+                            Width="100"
+                            Text="{Binding FL.Config.SeekBarTrackHeight}"
+                            helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
                             Text="Always On Top"
                             Width="180">
                         </TextBlock>
