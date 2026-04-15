@@ -35,19 +35,19 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CliWrap" Version="3.8.2" />
-    <PackageReference Include="DeepL.net" Version="1.15.0" />
+    <PackageReference Include="CliWrap" Version="3.10.1" />
+    <PackageReference Include="DeepL.net" Version="1.21.0" />
     <PackageReference Include="Flyleaf.FFmpeg.Bindings" Version="7.1.1" />
-    <PackageReference Include="SearchPioneer.Lingua" Version="1.0.4" />
-    <PackageReference Include="TesseractOCR" Version="5.5.1" />
-    <PackageReference Include="UTF.Unknown" Version="2.5.1" />
+    <PackageReference Include="SearchPioneer.Lingua" Version="1.0.5" />
+    <PackageReference Include="TesseractOCR" Version="5.5.2" />
+    <PackageReference Include="UTF.Unknown" Version="2.6.0" />
     <PackageReference Include="Vortice.D3DCompiler" Version="3.7.6-beta" />
     <PackageReference Include="Vortice.Direct3D11" Version="3.7.6-beta" />
     <PackageReference Include="Vortice.DirectComposition" Version="3.7.6-beta" />
     <PackageReference Include="Vortice.Mathematics" Version="1.9.3" />
     <PackageReference Include="Vortice.MediaFoundation" Version="3.7.6-beta" />
     <PackageReference Include="Vortice.XAudio2" Version="3.7.6-beta" />
-    <PackageReference Include="Whisper.net" Version="1.8.1" />
+    <PackageReference Include="Whisper.net" Version="1.9.0" />
   </ItemGroup>
 
 </Project>

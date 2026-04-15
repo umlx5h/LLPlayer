@@ -98,6 +98,8 @@
             </TextBlock>
 
             <!--Loading Spinner-->
+            <!--TODO: L: Binding errors occur in MaterialDesign 5.3.1
+            ref: https://github.com/MaterialDesignInXAML/MaterialDesignInXamlToolkit/issues/3814-->
             <ProgressBar
                 IsIndeterminate="True"
                 Width="50"
