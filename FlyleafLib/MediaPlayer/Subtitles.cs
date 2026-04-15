@@ -629,12 +629,15 @@ public class Subtitle : NotifyPropertyChanged
 
         // TODO: L: For some reason, there is a problem with subtitles temporarily not being
         // displayed, waiting for about 10 seconds will fix it.
-        Decoder.OpenSuggestedSubtitles(_subIndex);
+        if (_subIndex == 0) // currently only primary sub is opened automatically
+        {
+            Decoder.OpenSuggestedSubtitles();
+            _player.ReSync(Decoder.SubtitlesStreams[_subIndex], (int)(_player.CurTime / 10000), true);
 
-        _player.ReSync(Decoder.SubtitlesStreams[_subIndex], (int)(_player.CurTime / 10000), true);
-
-        Refresh();
-        UpdateUI();
+            // disabled because this is called in Decoder.OpenSuggestedSubtitles()
+            // Refresh();
+            UpdateUI();
+        }
     }
     internal void Disable()
     {
@@ -744,6 +747,11 @@ public class Subtitles
         {
             this[i].Disable();
         }
+
+        // Reset global state
+        SubtitlesSelectedHelper.CurIndex = 0;
+        SubtitlesSelectedHelper.PrimaryMethod = SelectSubMethod.Original;
+        SubtitlesSelectedHelper.SecondaryMethod = SelectSubMethod.Original;
     }
 
     internal void Reset()
@@ -752,6 +760,11 @@ public class Subtitles
         {
             this[i].Reset();
         }
+
+        // Reset global state
+        SubtitlesSelectedHelper.CurIndex = 0;
+        SubtitlesSelectedHelper.PrimaryMethod = SelectSubMethod.Original;
+        SubtitlesSelectedHelper.SecondaryMethod = SelectSubMethod.Original;
     }
 
     internal void Refresh()

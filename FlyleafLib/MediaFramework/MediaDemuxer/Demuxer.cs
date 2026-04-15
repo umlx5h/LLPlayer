@@ -234,16 +234,19 @@ public unsafe class Demuxer : RunThreadBase
         string typeStr = Type == MediaType.Video ? "Main" : Type.ToString();
         threadName = $"Demuxer: {typeStr,5}";
 
-        UIInvokeIfRequired(() =>
+        if (useAVSPackets)
         {
-            BindingOperations.EnableCollectionSynchronization(Programs,         lockStreams);
-            BindingOperations.EnableCollectionSynchronization(AudioStreams,     lockStreams);
-            BindingOperations.EnableCollectionSynchronization(VideoStreams,     lockStreams);
-            BindingOperations.EnableCollectionSynchronization(SubtitlesStreamsAll, lockStreams);
-            BindingOperations.EnableCollectionSynchronization(DataStreams,      lockStreams);
+            UIInvokeIfRequired(() =>
+            {
+                BindingOperations.EnableCollectionSynchronization(Programs,         lockStreams);
+                BindingOperations.EnableCollectionSynchronization(AudioStreams,     lockStreams);
+                BindingOperations.EnableCollectionSynchronization(VideoStreams,     lockStreams);
+                BindingOperations.EnableCollectionSynchronization(SubtitlesStreamsAll, lockStreams);
+                BindingOperations.EnableCollectionSynchronization(DataStreams,      lockStreams);
 
-            BindingOperations.EnableCollectionSynchronization(Chapters,         lockStreams);
-        });
+                BindingOperations.EnableCollectionSynchronization(Chapters,         lockStreams);
+            });
+        }
 
         ioopen = IOOpen;
     }

@@ -815,7 +815,7 @@ public partial class DecoderContext
 
         return error;
     }
-    public void OpenSuggestedSubtitles(int? subIndex = -1)
+    public void OpenSuggestedSubtitles()
     {
         long sessionId = OpenItemCounter;
 
@@ -860,8 +860,6 @@ public partial class DecoderContext
                     return;
                 }
             }
-
-
         }
         catch (Exception e)
         {
