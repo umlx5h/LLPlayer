@@ -1,12 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
-using System.Text;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 using FlyleafLib.Controls.WPF;
 
 namespace FlyleafLib.MediaPlayer.Translation.Services;

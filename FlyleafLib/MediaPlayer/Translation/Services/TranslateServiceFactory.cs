@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace FlyleafLib.MediaPlayer.Translation.Services;
+﻿namespace FlyleafLib.MediaPlayer.Translation.Services;
 
 public class TranslateServiceFactory
 {

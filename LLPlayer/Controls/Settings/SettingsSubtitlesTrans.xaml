@@ -265,7 +265,7 @@
                             <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
                                 <ToolTipService.ToolTip>
                                     <TextBlock
-                                        Text="Set your native language. It will be translated into that language. If it is in the same language as the video, it will not be translated. Some languages are not supported by DeepL."
+                                        Text="Set your native language. It will be translated into that language. If it is in the same language as the video, it will not be translated. Some engines do not support certain languages."
                                         TextWrapping="Wrap"
                                         MaxWidth="400" />
                                 </ToolTipService.ToolTip>

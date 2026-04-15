@@ -1,6 +1,4 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-using DeepL;
+﻿using DeepL;
 using DeepL.Model;
 
 namespace FlyleafLib.MediaPlayer.Translation.Services;
@@ -47,9 +45,11 @@ public class DeepLTranslateService : ITranslateService
     internal static string ToSourceCode(string iso6391)
     {
         // ref: https://developers.deepl.com/docs/resources/supported-languages
-
-        // Just capitalize ISO6391.
-        return iso6391.ToUpper();
+        return iso6391 switch
+        {
+            "ku" => "KMR", // Kurdish (Kurmanji)
+            _ => iso6391.ToUpper()
+        };
     }
 
     internal static string ToTargetCode(TargetLanguage target)
@@ -62,6 +62,9 @@ public class DeepLTranslateService : ITranslateService
             TargetLanguage.PortugueseBrazilian => "PT-BR",
             TargetLanguage.ChineseSimplified => "ZH-HANS",
             TargetLanguage.ChineseTraditional => "ZH-HANT",
+
+            TargetLanguage.Kurdish => "KMR",
+
             _ => target.ToISO6391().ToUpper()
         };
     }

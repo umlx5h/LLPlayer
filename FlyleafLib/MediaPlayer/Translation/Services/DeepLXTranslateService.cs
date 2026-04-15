@@ -1,9 +1,6 @@
 ﻿using System.Net.Http;
-using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace FlyleafLib.MediaPlayer.Translation.Services;
 
