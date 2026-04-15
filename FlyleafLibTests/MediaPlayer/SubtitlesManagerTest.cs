@@ -1,5 +1,5 @@
-﻿using FluentAssertions;
-using FluentAssertions.Execution;
+﻿using AwesomeAssertions;
+using AwesomeAssertions.Execution;
 
 namespace FlyleafLib.MediaPlayer;
 
@@ -9,7 +9,9 @@ public class SubManagerTests
 
     public SubManagerTests()
     {
-        SubManager subManager = new(new Config(true), 0, false);
+        Utils.IsTesting = true;
+
+        SubManager subManager = new(new Config(true), 0);
         List<SubtitleData> subsData =
         [
             new() { StartTime = TimeSpan.FromSeconds(1), EndTime = TimeSpan.FromSeconds(5), Text = "1. Hello World!" },

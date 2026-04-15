@@ -1,12 +1,9 @@
-﻿using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Collections.Specialized;
+﻿using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Threading;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
@@ -16,7 +13,6 @@ using FlyleafLib.MediaFramework.MediaDemuxer;
 using FlyleafLib.MediaFramework.MediaFrame;
 using FlyleafLib.MediaFramework.MediaStream;
 using FlyleafLib.MediaPlayer.Translation;
-using static FlyleafLib.Logger;
 
 namespace FlyleafLib.MediaPlayer;
 
@@ -132,7 +128,7 @@ public class SubManager : INotifyPropertyChanged
     private readonly SubTranslator _subTranslator;
     private readonly LogHandler Log;
 
-    public SubManager(Config config, int subIndex, bool enableSync = true)
+    public SubManager(Config config, int subIndex)
     {
         _config = config;
         _subIndex = subIndex;
@@ -140,14 +136,11 @@ public class SubManager : INotifyPropertyChanged
         _subTranslator = new SubTranslator(this, config.Subtitles, subIndex);
         Log = new LogHandler(("[#1]").PadRight(8, ' ') + $" [SubManager{subIndex + 1}   ] ");
 
-        if (enableSync)
+        // Enable binding to ItemsControl
+        UIInvokeIfRequired(() =>
         {
-            // Enable binding to ItemsControl
-            Utils.UIInvokeIfRequired(() =>
-            {
-                BindingOperations.EnableCollectionSynchronization(Subs, _subsLocker);
-            });
-        }
+            BindingOperations.EnableCollectionSynchronization(Subs, _subsLocker);
+        });
     }
 
     public enum PositionState
@@ -165,7 +158,7 @@ public class SubManager : INotifyPropertyChanged
     {
         // NOTE: If it is not executed in the main thread, the following error occurs.
         // System.NotSupportedException: 'This type of CollectionView does not support'
-        Utils.UI(() =>
+        UI(() =>
         {
             CollectionViewSource.GetDefaultView(Subs).Refresh();
             OnPropertyChanged(nameof(CurrentIndex)); // required for translating current sub
@@ -761,7 +754,7 @@ public unsafe class SubtitleReader : IDisposable
             switch (sub.rects[0]->type)
             {
                 case AVSubtitleType.Text:
-                    subData.Text = Utils.BytePtrToStringUTF8(sub.rects[0]->text).Trim();
+                    subData.Text = BytePtrToStringUTF8(sub.rects[0]->text).Trim();
                     avsubtitle_free(&sub);
 
                     if (string.IsNullOrEmpty(subData.Text))
@@ -771,7 +764,7 @@ public unsafe class SubtitleReader : IDisposable
 
                     break;
                 case AVSubtitleType.Ass:
-                    string text = Utils.BytePtrToStringUTF8(sub.rects[0]->ass).Trim();
+                    string text = BytePtrToStringUTF8(sub.rects[0]->ass).Trim();
                     avsubtitle_free(&sub);
 
                     subData.Text = ParseSubtitles.SSAtoSubStyles(text, out var subStyles).Trim();
@@ -866,7 +859,7 @@ public class SubtitleBitmapData : IDisposable
 
         WriteableBitmap wb = new(
             rect.w, rect.h,
-            Utils.NativeMethods.DpiXSource, Utils.NativeMethods.DpiYSource,
+            NativeMethods.DpiXSource, NativeMethods.DpiYSource,
             PixelFormats.Bgra32, null
         );
         Int32Rect dirtyRect = new(0, 0, rect.w, rect.h);

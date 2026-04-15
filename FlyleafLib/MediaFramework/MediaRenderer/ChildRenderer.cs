@@ -20,6 +20,8 @@ using static FlyleafLib.MediaFramework.MediaRenderer.Renderer;
 
 namespace FlyleafLib.MediaFramework.MediaRenderer;
 
+#pragma warning disable CS0169
+
 class ChildRenderer : IVP
 {
     public VPConfig             Config          => ucfg;
@@ -31,7 +33,7 @@ class ChildRenderer : IVP
     public int                  ControlHeight   { get; private set; }
     public int                  SideXPixels     => sideXPixels;
     public int                  SideYPixels     => sideYPixels;
-    int                         sideXPixels, sideYPixels;
+    int                         sideXPixels = 0, sideYPixels = 0;
 
     ID3D11DeviceContext     context;
     ID3D11Buffer            vsBuffer;

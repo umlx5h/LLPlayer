@@ -14,6 +14,8 @@ namespace FlyleafLib;
 
 public static partial class Utils
 {
+    public static bool IsTesting { private get; set; } = false;
+
     public static readonly Rect         RectZero            = new(); // Rect.Empty has infinity values
     public static readonly Point        PointEmpty          = new();
     public static readonly CornerRadius CornerRadiusEmpty   = new();
@@ -115,6 +117,8 @@ public static partial class Utils
     /// <param name="action"></param>
     public static void UIInvokeIfRequired(Action action)
     {
+        if (IsTesting) return;
+
         if (Environment.CurrentManagedThreadId == Application.Current.Dispatcher.Thread.ManagedThreadId)
             action();
         else
