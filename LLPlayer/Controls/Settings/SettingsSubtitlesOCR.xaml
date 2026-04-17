@@ -207,7 +207,7 @@
 
                     <TextBlock Grid.Column="0" Grid.Row="2" Margin="5 10 5 0">
                         You will need to install a language pack on your OS or install an OCR engine using
-                        <Hyperlink NavigateUri="https://learn.microsoft.com/en-us/windows/powertoys/text-extractor#supported-languages" helpers:HyperlinkHelper.OpenInBrowser="True">
+                        <Hyperlink Style="{StaticResource MyHyperLink}" NavigateUri="https://learn.microsoft.com/en-us/windows/powertoys/text-extractor#supported-languages" helpers:HyperlinkHelper.OpenInBrowser="True">
                             this link
                         </Hyperlink>
                         as a reference.

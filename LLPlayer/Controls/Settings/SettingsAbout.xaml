@@ -73,8 +73,8 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock>
-                                            <Hyperlink NavigateUri="{Binding Url}" helpers:HyperlinkHelper.OpenInBrowser="True">
-                                                <TextBlock Foreground="{DynamicResource MaterialDesign.Brush.Secondary}" Text="{Binding Name}" />
+                                            <Hyperlink Style="{StaticResource MyHyperLink}" NavigateUri="{Binding Url}" helpers:HyperlinkHelper.OpenInBrowser="True">
+                                                <Run Text="{Binding Name}" />
                                             </Hyperlink>
                                         </TextBlock>
                                     </DataTemplate>

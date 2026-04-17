@@ -47,7 +47,7 @@
                             FontSize="14"
                             FontWeight="Medium"
                             Width="180">
-                            <Hyperlink Cursor="Help" NavigateUri="{Binding FL.PlayerConfig.Subtitles.TranslateWordServiceType, Converter={StaticResource TranslateServiceTypeEnumToUrlConv}}" helpers:HyperlinkHelper.OpenInBrowser="True">
+                            <Hyperlink Style="{StaticResource MyHyperLink}" NavigateUri="{Binding FL.PlayerConfig.Subtitles.TranslateWordServiceType, Converter={StaticResource TranslateServiceTypeEnumToUrlConv}}" helpers:HyperlinkHelper.OpenInBrowser="True">
                                 Translation Engine
                             </Hyperlink>
                         </TextBlock>
@@ -311,28 +311,35 @@ Note that this does not work for bitmap subtitles. In that case, please use OCR 
 
                     <TextBlock Margin="5 10 5 0">
                         You can send subtitle text to your browser via the clipboard and work with browser extensions such as Yomitan and 10ten.
-                        See <Hyperlink NavigateUri="https://github.com/umlx5h/LLPlayer/wiki/Browser-Extensions-Integration" helpers:HyperlinkHelper.OpenInBrowser="True">this link</Hyperlink>
+                        See <Hyperlink Style="{StaticResource MyHyperLink}" NavigateUri="https://github.com/umlx5h/LLPlayer/wiki/Browser-Extensions-Integration" helpers:HyperlinkHelper.OpenInBrowser="True">this link</Hyperlink>
                         for more information.
                     </TextBlock>
                 </StackPanel>
             </GroupBox>
 
-            <GroupBox Header="Word Special Actions">
+            <GroupBox Header="Word Special Actions for Japanese" Visibility="{Binding IsTargetJapanese, Converter={StaticResource BooleanToVisibilityConv}}">
                 <StackPanel>
                     <DockPanel>
                         <TextBlock
-                            Text="PDIC Executable Path (for Japanese users)"
+                            Text="PDIC Executable Path"
                             Width="180" />
                         <TextBox
                             HorizontalContentAlignment="Left"
                             Text="{Binding FL.Config.Subs.PDICPipeExecutablePath}" />
                     </DockPanel>
 
+                    <Button
+                        Content="Auto Set"
+                        HorizontalAlignment="Left"
+                        Command="{Binding CmdSetPdicPath}"
+                        Style="{StaticResource MaterialDesignRaisedSecondaryButton}"
+                        Margin="180 0 0 0" />
+
                     <TextBlock Margin="5 10 5 0">
                         (For Japanese-speaking learners of English)
                         <LineBreak />
                         It can be linked to the PDIC dictionary tool.
-                        See <Hyperlink NavigateUri="https://github.com/umlx5h/LLPlayer/wiki/PDIC-Integration-(For-Japanese-users)" helpers:HyperlinkHelper.OpenInBrowser="True">this link</Hyperlink>
+                        See <Hyperlink Style="{StaticResource MyHyperLink}" NavigateUri="https://github.com/umlx5h/LLPlayer/wiki/PDIC-Integration-(For-Japanese-users)" helpers:HyperlinkHelper.OpenInBrowser="True">this link</Hyperlink>
                         for more information.
                     </TextBlock>
                 </StackPanel>

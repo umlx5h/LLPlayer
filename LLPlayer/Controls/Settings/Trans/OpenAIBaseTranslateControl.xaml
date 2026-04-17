@@ -105,7 +105,7 @@
                     Margin="8 0 0 8"
                     HorizontalAlignment="Left"
                     Width="180">
-                    <Hyperlink Cursor="Help" NavigateUri="https://platform.openai.com/docs/api-reference/chat/create" helpers:HyperlinkHelper.OpenInBrowser="True">
+                    <Hyperlink Style="{StaticResource MyHyperLink}" NavigateUri="https://platform.openai.com/docs/api-reference/chat/create" helpers:HyperlinkHelper.OpenInBrowser="True">
                         OpenAI Reference
                     </Hyperlink>
                 </TextBlock>

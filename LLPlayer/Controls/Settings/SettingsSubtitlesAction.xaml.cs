@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -102,6 +103,21 @@ public class SettingsSubtitlesActionVM : Bindable
     });
 
     // TODO: L: SaveCommand?
+
+    public bool IsTargetJapanese => FL.PlayerConfig.Subtitles.TranslateTargetLanguage == FlyleafLib.MediaPlayer.Translation.TargetLanguage.Japanese;
+
+    public DelegateCommand CmdSetPdicPath => field ??= new(() =>
+    {
+        string pdicPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "PDIC-R Unicode for EIJIRO XI",
+            "pdic-pipe.exe");
+
+        if (File.Exists(pdicPath))
+        {
+            FL.Config.Subs.PDICPipeExecutablePath = pdicPath;
+        }
+    });
 }
 
 class DataGridRowOrderBehaviorMenuAction : DataGridRowOrderBehavior<IMenuAction>;

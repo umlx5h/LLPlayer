@@ -306,7 +306,7 @@
                             FontSize="14"
                             FontWeight="Medium"
                             Width="180">
-                            <Hyperlink Cursor="Help" NavigateUri="{Binding SelectedTranslateServiceType, Converter={StaticResource TranslateServiceTypeEnumToUrlConv}}" helpers:HyperlinkHelper.OpenInBrowser="True">
+                            <Hyperlink Style="{StaticResource MyHyperLink}" NavigateUri="{Binding SelectedTranslateServiceType, Converter={StaticResource TranslateServiceTypeEnumToUrlConv}}" helpers:HyperlinkHelper.OpenInBrowser="True">
                                 Translation Engine
                             </Hyperlink>
                         </TextBlock>

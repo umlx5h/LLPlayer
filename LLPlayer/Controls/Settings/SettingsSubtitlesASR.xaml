@@ -45,7 +45,7 @@
                             FontSize="14"
                             FontWeight="Medium"
                             Width="180">
-                            <Hyperlink Cursor="Help" NavigateUri="https://github.com/umlx5h/LLPlayer/wiki/Whisper-Engine" helpers:HyperlinkHelper.OpenInBrowser="True">
+                            <Hyperlink Style="{StaticResource MyHyperLink}" NavigateUri="https://github.com/umlx5h/LLPlayer/wiki/Whisper-Engine" helpers:HyperlinkHelper.OpenInBrowser="True">
                                 Whisper Engine
                             </Hyperlink>
                         </TextBlock>
@@ -462,7 +462,7 @@
 
                                 <TextBlock Margin="5 10 5 0">
                                     Some runtimes require the installation of a toolkit or others beforehand. Please check
-                                    <Hyperlink NavigateUri="https://github.com/sandrohanea/whisper.net?tab=readme-ov-file#runtimes-description" helpers:HyperlinkHelper.OpenInBrowser="True">
+                                    <Hyperlink Style="{StaticResource MyHyperLink}" NavigateUri="https://github.com/sandrohanea/whisper.net?tab=readme-ov-file#runtimes-description" helpers:HyperlinkHelper.OpenInBrowser="True">
                                         this link
                                     </Hyperlink>
                                     for details.
