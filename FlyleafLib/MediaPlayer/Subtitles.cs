@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace FlyleafLib.MediaPlayer;
@@ -11,10 +12,27 @@ namespace FlyleafLib.MediaPlayer;
 public class SubsBitmap
 {
     public WriteableBitmap Source { get; set; }
+    // retain for recreating WritableBitmap when dpi change
+    internal byte[] Data { get; set; }
     public int X { get; set; }
     public int Y { get; set; }
     public int Width { get; set; }
     public int Height { get; set; }
+
+    internal static WriteableBitmap CreateWritableBitmap(byte[] data, int width, int height)
+    {
+        WriteableBitmap wb = new(
+            width, height,
+            NativeMethods.DpiXSource, NativeMethods.DpiYSource,
+            PixelFormats.Bgra32, null
+        );
+
+        wb.WritePixels(new Int32Rect(0, 0, width, height), data, width * 4, 0);
+        // Note that you will get a UI thread error if you don't call
+        wb.Freeze();
+
+        return wb;
+    }
 }
 
 public class SubsBitmapPosition : NotifyPropertyChanged
@@ -175,7 +193,7 @@ public class SubsBitmapPosition : NotifyPropertyChanged
             scaleY *= ConfScale;
         }
 
-        Margin = new Thickness(x, y, 0, 0);
+        Margin = new Thickness(x / NativeMethods.DpiX, y / NativeMethods.DpiY, 0, 0);
         ScaleX = scaleX;
         ScaleY = scaleY;
     }
@@ -284,6 +302,22 @@ public class SubsData : NotifyPropertyChanged
     /// Bind target Used for switching Visibility
     /// </summary>
     public bool IsVisible => Config.Subtitles[_subIndex].Visible;
+
+    internal void RefreshBitmap()
+    {
+        if (Bitmap == null)
+            return;
+
+        Bitmap = new SubsBitmap
+        {
+            X = Bitmap.X,
+            Y = Bitmap.Y,
+            Width = Bitmap.Width,
+            Height = Bitmap.Height,
+            Data = Bitmap.Data,
+            Source = SubsBitmap.CreateWritableBitmap(Bitmap.Data, Bitmap.Width, Bitmap.Height),
+        };
+    }
 
     /// <summary>
     /// Subtitles Text (updates dynamically while playing based on the duration that it should be displayed)
@@ -772,6 +806,14 @@ public class Subtitles
         for (int i = 0; i < subNum; i++)
         {
             this[i].Refresh();
+        }
+    }
+
+    internal void RefreshBitmap()
+    {
+        for (int i = 0; i < subNum; i++)
+        {
+            this[i].Data.RefreshBitmap();
         }
     }
 

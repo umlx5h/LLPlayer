@@ -283,6 +283,12 @@ public class AppConfigSubs : Bindable
         }
     }
 
+    // support high-dpi
+    private double ViewportWidth => Viewport.Width / Utils.NativeMethods.DpiX;
+    private double ViewportHeight => Viewport.Height / Utils.NativeMethods.DpiY;
+    private double ViewportX => Viewport.X / Utils.NativeMethods.DpiX;
+    private double ViewportY => Viewport.Y / Utils.NativeMethods.DpiY;
+
     public bool SubsUseSeparateFonts
     {
         get;
@@ -356,7 +362,7 @@ public class AppConfigSubs : Bindable
 
     private double GetFixFontSize(double fontSize)
     {
-        double scaleFactor = Viewport.Width / 1920;
+        double scaleFactor = ViewportWidth / 1920;
         double size = fontSize * scaleFactor;
         if (size > 0)
         {
@@ -704,7 +710,7 @@ public class AppConfigSubs : Bindable
         if (!Loaded)
             return;
 
-        float scaleFactor = Viewport.Height / 1080;
+        double scaleFactor = ViewportHeight / 1080;
         double newDistance = SubsDistance * scaleFactor;
 
         SubsDistanceFix = newDistance;
@@ -717,8 +723,8 @@ public class AppConfigSubs : Bindable
 
         // Set the margin from the top based on Viewport, not Window
         // Allow going above or below the Viewport
-        float offset = Viewport.Y;
-        float height = Viewport.Height;
+        double offset = ViewportY;
+        double height = ViewportHeight;
 
         double marginTop = height * (SubsPosition / 100.0);
         double marginTopFix = marginTop + offset;
@@ -754,7 +760,7 @@ public class AppConfigSubs : Bindable
     {
         double subHeight = SubsPanelSize.Height;
 
-        double bottomMargin = Viewport.Height * (SubsFixOverflowMargin / 100.0);
+        double bottomMargin = ViewportHeight * (SubsFixOverflowMargin / 100.0);
 
         if (subHeight + marginTop + bottomMargin > _rootConfig.ScreenHeight)
         {

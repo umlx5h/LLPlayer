@@ -284,8 +284,50 @@ public static partial class Utils
         public static int SignedLOWORD(int n) => (short)(n & 0xFFFF);
 
         #region DPI
-        public static double DpiX = 0, DpiY = 0;
-        public static double DpiXSource = 96, DpiYSource = 96;
+        public static double DpiX
+        {
+            get;
+            internal set
+            {
+                if (value <= 0)
+                    field = 1;
+                else
+                    field = value;
+            }
+        } = 1;
+        public static double DpiY
+        {
+            get;
+            internal set
+            {
+                if (value <= 0)
+                    field = 1;
+                else
+                    field = value;
+            }
+        } = 1;
+        public static double DpiXSource
+        {
+            get;
+            internal set
+            {
+                if (value <= 0)
+                    field = 96;
+                else
+                    field = value;
+            }
+        } = 96;
+        public static double DpiYSource
+        {
+            get;
+            internal set
+            {
+                if (value <= 0)
+                    field = 96;
+                else
+                    field = value;
+            }
+        } = 96;
 
         [DllImport("user32.dll")]
         public static extern IntPtr MonitorFromPoint(Point pt, MonitorOptions dwFlags);

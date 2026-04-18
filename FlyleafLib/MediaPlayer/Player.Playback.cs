@@ -1,8 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using System.Windows;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using FlyleafLib.MediaFramework.MediaDecoder;
+﻿using FlyleafLib.MediaFramework.MediaDecoder;
 using FlyleafLib.MediaFramework.MediaFrame;
 
 namespace FlyleafLib.MediaPlayer;
@@ -494,36 +490,14 @@ partial class Player
     /// <param name="subIndex"></param>
     public void SubtitleDisplay(SubtitlesFrameBitmap bitmap, int subIndex)
     {
-        // TODO: L: refactor
-
-        // Each subtitle has a different size and needs to be generated each time.
-        WriteableBitmap wb = new(
-            bitmap.width, bitmap.height,
-            NativeMethods.DpiXSource, NativeMethods.DpiYSource,
-            PixelFormats.Bgra32, null
-        );
-        Int32Rect rect = new(0, 0, bitmap.width, bitmap.height);
-        wb.Lock();
-
-        Marshal.Copy(bitmap.data, 0, wb.BackBuffer, bitmap.data.Length);
-
-        wb.AddDirtyRect(rect);
-        wb.Unlock();
-        // Note that you will get a UI thread error if you don't call
-        wb.Freeze();
-
-        int x = bitmap.x;
-        int y = bitmap.y;
-        int w = bitmap.width;
-        int h = bitmap.height;
-
         SubsBitmap subsBitmap = new()
         {
-            X = x,
-            Y = y,
-            Width = w,
-            Height = h,
-            Source = wb,
+            X = bitmap.x,
+            Y = bitmap.y,
+            Width = bitmap.width,
+            Height = bitmap.height,
+            Data = bitmap.data,
+            Source = SubsBitmap.CreateWritableBitmap(bitmap.data, bitmap.width, bitmap.height),
         };
 
         UI(() =>

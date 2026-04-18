@@ -854,6 +854,7 @@ public class FlyleafHost : ContentControl, IHostPlayer, IDisposable
             DpiXSource = e.NewDpi.PixelsPerInchX;
             DpiYSource = e.NewDpi.PixelsPerInchY;
             ResizeRatio();
+            RefreshBitmapSubtitlesDpi();
         }
     }
 
@@ -1494,7 +1495,13 @@ public class FlyleafHost : ContentControl, IHostPlayer, IDisposable
             DpiYSource = e.NewDpi.PixelsPerInchY;
             SetRectOverlay(null, null);
             ResizeRatio();
+            RefreshBitmapSubtitlesDpi();
         }
+    }
+
+    private void RefreshBitmapSubtitlesDpi()
+    {
+        Player?.Subtitles?.RefreshBitmap();
     }
     #endregion
 

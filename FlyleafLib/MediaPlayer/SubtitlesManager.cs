@@ -4,9 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Windows;
 using System.Windows.Data;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using FlyleafLib.MediaFramework.MediaDecoder;
 using FlyleafLib.MediaFramework.MediaDemuxer;
@@ -856,22 +854,7 @@ public class SubtitleBitmapData : IDisposable
     public WriteableBitmap SubToWritableBitmap(bool isGrey)
     {
         (byte[] data, AVSubtitleRect rect) = SubToBitmap(isGrey);
-
-        WriteableBitmap wb = new(
-            rect.w, rect.h,
-            NativeMethods.DpiXSource, NativeMethods.DpiYSource,
-            PixelFormats.Bgra32, null
-        );
-        Int32Rect dirtyRect = new(0, 0, rect.w, rect.h);
-        wb.Lock();
-
-        Marshal.Copy(data, 0, wb.BackBuffer, data.Length);
-
-        wb.AddDirtyRect(dirtyRect);
-        wb.Unlock();
-        wb.Freeze();
-
-        return wb;
+        return SubsBitmap.CreateWritableBitmap(data, rect.w, rect.h);
     }
 
     public unsafe (byte[] data, AVSubtitleRect rect) SubToBitmap(bool isGrey)
