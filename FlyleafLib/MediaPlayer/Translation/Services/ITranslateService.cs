@@ -36,59 +36,71 @@ public enum TranslateServiceType
     GoogleV1 = 1 << 0,
 
     /// <summary>
+    /// Bing
+    /// </summary>
+    [Description(nameof(Bing))]
+    Bing = 1 << 1,
+
+    /// <summary>
+    /// Azure
+    /// </summary>
+    [Description(nameof(Azure))]
+    Azure = 1 << 2,
+
+    /// <summary>
     /// DeepL
     /// </summary>
     [Description(nameof(DeepL))]
-    DeepL = 1 << 1,
+    DeepL = 1 << 3,
 
     /// <summary>
     /// DeepLX
     /// https://github.com/OwO-Network/DeepLX
     /// </summary>
     [Description(nameof(DeepLX))]
-    DeepLX = 1 << 2,
+    DeepLX = 1 << 4,
 
     /// <summary>
     /// Ollama
     /// </summary>
     [Description(nameof(Ollama))]
-    Ollama = 1 << 3,
+    Ollama = 1 << 5,
 
     /// <summary>
     /// LM Studio
     /// </summary>
     [Description("LM Studio")]
-    LMStudio = 1 << 4,
+    LMStudio = 1 << 6,
 
     /// <summary>
     /// KoboldCpp
     /// </summary>
     [Description(nameof(KoboldCpp))]
-    KoboldCpp = 1 << 5,
+    KoboldCpp = 1 << 7,
 
     /// <summary>
     /// OpenAI (ChatGPT)
     /// </summary>
     [Description(nameof(OpenAI))]
-    OpenAI = 1 << 6,
+    OpenAI = 1 << 8,
 
     /// <summary>
     /// OpenAI compatible
     /// </summary>
     [Description("OpenAI Like")]
-    OpenAILike = 1 << 7,
+    OpenAILike = 1 << 9,
 
     /// <summary>
     /// Anthropic Claude
     /// </summary>
     [Description(nameof(Claude))]
-    Claude = 1 << 8,
+    Claude = 1 << 10,
 
     /// <summary>
     /// LiteLLM
     /// </summary>
     [Description(nameof(LiteLLM))]
-    LiteLLM = 1 << 9,
+    LiteLLM = 1 << 11,
 }
 
 public static class TranslateServiceTypeExtensions
@@ -113,6 +125,10 @@ public static class TranslateServiceTypeExtensions
         {
             case TranslateServiceType.GoogleV1:
                 return new GoogleV1TranslateSettings();
+            case TranslateServiceType.Bing:
+                return new BingTranslateSettings();
+            case TranslateServiceType.Azure:
+                return new AzureTranslateSettings();
             case TranslateServiceType.DeepL:
                 return new DeepLTranslateSettings();
             case TranslateServiceType.DeepLX:

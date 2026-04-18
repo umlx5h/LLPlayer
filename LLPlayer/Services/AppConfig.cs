@@ -184,6 +184,8 @@ public class AppConfig : Bindable
         Dictionary<string, Type> typeMappingTranslateSettings = new()
         {
             { nameof(GoogleV1TranslateSettings), typeof(GoogleV1TranslateSettings) },
+            { nameof(BingTranslateSettings), typeof(BingTranslateSettings) },
+            { nameof(AzureTranslateSettings), typeof(AzureTranslateSettings) },
             { nameof(DeepLTranslateSettings), typeof(DeepLTranslateSettings) },
             { nameof(DeepLXTranslateSettings), typeof(DeepLXTranslateSettings) },
             { nameof(OllamaTranslateSettings), typeof(OllamaTranslateSettings) },

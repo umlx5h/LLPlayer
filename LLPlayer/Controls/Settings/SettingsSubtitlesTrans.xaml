@@ -107,6 +107,148 @@
             </StackPanel>
         </DataTemplate>
 
+        <!-- Bing -->
+        <DataTemplate DataType="{x:Type flyleafServices:BingTranslateSettings}">
+            <StackPanel>
+                <DockPanel Margin="0 0 0 8">
+                    <TextBlock
+                        Width="180"
+                        Text="Endpoint" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox
+                            Grid.Column="0"
+                            HorizontalContentAlignment="Left"
+                            Text="{Binding Endpoint, UpdateSourceTrigger=PropertyChanged}">
+                        </TextBox>
+                        <Button
+                            Grid.Column="1"
+                            Margin="10 0 0 0"
+                            Content="Reset"
+                            Command="{Binding CmdSetDefaultEndpoint}"
+                            Style="{StaticResource MaterialDesignOutlinedButton}" />
+                    </Grid>
+                </DockPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
+                    <TextBlock
+                        Width="180"
+                        Text="Timeout (ms)" />
+                    <TextBox
+                        Width="100"
+                        Text="{Binding TimeoutMs}"
+                        helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
+                    <TextBlock
+                        Width="180"
+                        Text="Source Language Region" />
+
+                    <ListView
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        ItemsSource="{Binding LanguageRegions}" Margin="10">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding Name}" Width="100" VerticalAlignment="Center"/>
+                                    <ComboBox
+                                        ItemsSource="{Binding Regions}"
+                                        SelectedItem="{Binding SelectedRegionMember, Mode=TwoWay}"
+                                        DisplayMemberPath="Name"
+                                        Width="150"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- Azure -->
+        <DataTemplate DataType="{x:Type flyleafServices:AzureTranslateSettings}">
+            <StackPanel>
+                <DockPanel Margin="0 0 0 8">
+                    <TextBlock
+                        Width="180"
+                        Text="Endpoint" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox
+                            Grid.Column="0"
+                            HorizontalContentAlignment="Left"
+                            Text="{Binding Endpoint, UpdateSourceTrigger=PropertyChanged}">
+                        </TextBox>
+                        <Button
+                            Grid.Column="1"
+                            Margin="10 0 0 0"
+                            Content="Reset"
+                            Command="{Binding CmdSetDefaultEndpoint}"
+                            Style="{StaticResource MaterialDesignOutlinedButton}" />
+                    </Grid>
+                </DockPanel>
+
+                <DockPanel Margin="0 0 0 8">
+                    <TextBlock
+                        Width="180"
+                        Text="API Key" />
+                    <TextBox
+                        HorizontalContentAlignment="Left"
+                        Text="{Binding ApiKey}" />
+                </DockPanel>
+
+                <DockPanel Margin="0 0 0 8">
+                    <TextBlock
+                        Width="180"
+                        Text="Region (optional)" />
+                    <TextBox
+                        HorizontalContentAlignment="Left"
+                        Text="{Binding Region}" />
+                </DockPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
+                    <TextBlock
+                        Width="180"
+                        Text="Timeout (ms)" />
+                    <TextBox
+                        Width="100"
+                        Text="{Binding TimeoutMs}"
+                        helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
+                    <TextBlock
+                        Width="180"
+                        Text="Source Language Region" />
+
+                    <ListView
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        ItemsSource="{Binding LanguageRegions}" Margin="10">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding Name}" Width="100" VerticalAlignment="Center"/>
+                                    <ComboBox
+                                        ItemsSource="{Binding Regions}"
+                                        SelectedItem="{Binding SelectedRegionMember, Mode=TwoWay}"
+                                        DisplayMemberPath="Name"
+                                        Width="150"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+
         <!-- DeepL -->
         <DataTemplate DataType="{x:Type flyleafServices:DeepLTranslateSettings}">
             <StackPanel>

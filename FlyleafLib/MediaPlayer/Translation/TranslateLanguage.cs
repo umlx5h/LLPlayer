@@ -2,6 +2,8 @@
 using System.Reflection;
 using System.Runtime.Serialization;
 
+using ST = FlyleafLib.MediaPlayer.Translation.Services.TranslateServiceType;
+
 namespace FlyleafLib.MediaPlayer.Translation;
 
 public class TranslateLanguage
@@ -10,57 +12,59 @@ public class TranslateLanguage
     {
         // Google: https://cloud.google.com/translate/docs/languages
         // DeepL: https://developers.deepl.com/docs/getting-started/supported-languages
-        ["ab"] = new("Abkhaz", "ab", TranslateServiceType.GoogleV1),
+        // Bing: https://learn.microsoft.com/en-us/azure/ai-services/translator/language-support
+        ["ab"] = new("Abkhaz", "ab", ST.GoogleV1),
         ["af"] = new("Afrikaans", "af"),
         ["sq"] = new("Albanian", "sq"),
-        ["am"] = new("Amharic", "am", TranslateServiceType.GoogleV1),
+        ["am"] = new("Amharic", "am", ST.GoogleV1 | ST.Bing),
         ["ar"] = new("Arabic", "ar"),
-        ["an"] = new("Aragonese", "an", TranslateServiceType.DeepL),
+        ["an"] = new("Aragonese", "an", ST.DeepL),
         ["hy"] = new("Armenian", "hy"),
         ["as"] = new("Assamese", "as"),
-        ["ay"] = new("Aymara", "ay"),
+        ["ay"] = new("Aymara", "ay", ST.GoogleV1 | ST.DeepL),
         ["az"] = new("Azerbaijani", "az"),
-        ["bm"] = new("Bambara", "bm", TranslateServiceType.GoogleV1),
+        ["bm"] = new("Bambara", "bm", ST.GoogleV1),
         ["ba"] = new("Bashkir", "ba"),
         ["eu"] = new("Basque", "eu"),
-        ["be"] = new("Belarusian", "be"),
+        ["be"] = new("Belarusian", "be", ST.GoogleV1 | ST.DeepL),
         ["bn"] = new("Bengali", "bn"),
         ["bs"] = new("Bosnian", "bs"),
-        ["br"] = new("Breton", "br"),
+        ["br"] = new("Breton", "br", ST.GoogleV1 | ST.DeepL),
         ["bg"] = new("Bulgarian", "bg"),
         ["ca"] = new("Catalan", "ca"),
-        ["ny"] = new("Chichewa (Nyanja)", "ny", TranslateServiceType.GoogleV1),
+        ["ny"] = new("Chichewa (Nyanja)", "ny", ST.GoogleV1 | ST.Bing),
 
         // special handling
         ["zh"] = new("Chinese", "zh"),
 
-        ["cv"] = new("Chuvash", "cv", TranslateServiceType.GoogleV1),
-        ["co"] = new("Corsican", "co", TranslateServiceType.GoogleV1),
+        ["cv"] = new("Chuvash", "cv", ST.GoogleV1),
+        ["co"] = new("Corsican", "co", ST.GoogleV1),
         ["hr"] = new("Croatian", "hr"),
         ["cs"] = new("Czech", "cs"),
         ["da"] = new("Danish", "da"),
-        ["dv"] = new("Divehi", "dv", TranslateServiceType.GoogleV1),
+        ["dv"] = new("Divehi", "dv", ST.GoogleV1 | ST.Bing),
         ["nl"] = new("Dutch", "nl"),
-        ["dz"] = new("Dzongkha", "dz", TranslateServiceType.GoogleV1),
+        ["dz"] = new("Dzongkha", "dz", ST.GoogleV1),
         ["en"] = new("English", "en"),
-        ["eo"] = new("Esperanto", "eo"),
+        ["eo"] = new("Esperanto", "eo", ST.GoogleV1 | ST.DeepL),
         ["et"] = new("Estonian", "et"),
-        ["ee"] = new("Ewe", "ee", TranslateServiceType.GoogleV1),
-        ["fj"] = new("Fijian", "fj", TranslateServiceType.GoogleV1),
-        ["tl"] = new("Tagalog", "tl"),
+        ["ee"] = new("Ewe", "ee", ST.GoogleV1),
+        ["fo"] = new("Faroese", "fo", ST.Bing),
+        ["fj"] = new("Fijian", "fj", ST.GoogleV1 | ST.Bing),
+        ["tl"] = new("Tagalog", "tl", ST.GoogleV1 | ST.DeepL), // review this
         ["fi"] = new("Finnish", "fi"),
 
         // special handling
         ["fr"] = new("French", "fr"),
 
-        ["fy"] = new("Frisian", "fy", TranslateServiceType.GoogleV1),
-        ["ff"] = new("Fulfulde", "ff", TranslateServiceType.GoogleV1),
+        ["fy"] = new("Frisian", "fy", ST.GoogleV1),
+        ["ff"] = new("Fulfulde", "ff", ST.GoogleV1),
         ["gl"] = new("Galician", "gl"),
-        ["lg"] = new("Ganda (Luganda)", "lg", TranslateServiceType.GoogleV1),
+        ["lg"] = new("Ganda (Luganda)", "lg", ST.GoogleV1 | ST.Bing),
         ["ka"] = new("Georgian", "ka"),
         ["de"] = new("German", "de"),
         ["el"] = new("Greek", "el"),
-        ["gn"] = new("Guarani", "gn"),
+        ["gn"] = new("Guarani", "gn", ST.GoogleV1 | ST.DeepL),
         ["gu"] = new("Gujarati", "gu"),
         ["ht"] = new("Haitian Creole", "ht"),
         ["ha"] = new("Hausa", "ha"),
@@ -70,24 +74,26 @@ public class TranslateLanguage
         ["is"] = new("Icelandic", "is"),
         ["ig"] = new("Igbo", "ig"),
         ["id"] = new("Indonesian", "id"),
+        ["iu"] = new("Inuktitut", "iu", ST.Bing),
         ["ga"] = new("Irish", "ga"),
         ["it"] = new("Italian", "it"),
         ["ja"] = new("Japanese", "ja"),
-        ["jv"] = new("Javanese", "jv"),
-        ["kn"] = new("Kannada", "kn", TranslateServiceType.GoogleV1),
+        ["jv"] = new("Javanese", "jv", ST.GoogleV1 | ST.DeepL),
+        ["kn"] = new("Kannada", "kn", ST.GoogleV1 | ST.Bing),
+        ["ks"] = new("Kashmiri", "ks", ST.Bing),
         ["kk"] = new("Kazakh", "kk"),
-        ["km"] = new("Khmer", "km", TranslateServiceType.GoogleV1),
-        ["rw"] = new("Kinyarwanda", "rw", TranslateServiceType.GoogleV1),
+        ["km"] = new("Khmer", "km", ST.GoogleV1 | ST.Bing),
+        ["rw"] = new("Kinyarwanda", "rw", ST.GoogleV1 | ST.Bing),
         ["ko"] = new("Korean", "ko"),
         ["ku"] = new("Kurdish (Kurmanji)", "ku"),
         ["ky"] = new("Kyrgyz", "ky"),
-        ["lo"] = new("Lao", "lo", TranslateServiceType.GoogleV1),
-        ["la"] = new("Latin", "la"),
+        ["lo"] = new("Lao", "lo", ST.GoogleV1 | ST.Bing),
+        ["la"] = new("Latin", "la", ST.GoogleV1 | ST.DeepL),
         ["lv"] = new("Latvian", "lv"),
-        ["li"] = new("Limburgan", "li", TranslateServiceType.GoogleV1),
+        ["li"] = new("Limburgan", "li", ST.GoogleV1),
         ["ln"] = new("Lingala", "ln"),
         ["lt"] = new("Lithuanian", "lt"),
-        ["lb"] = new("Luxembourgish", "lb"),
+        ["lb"] = new("Luxembourgish", "lb", ST.GoogleV1 | ST.DeepL),
         ["mk"] = new("Macedonian", "mk"),
         ["mg"] = new("Malagasy", "mg"),
         ["ms"] = new("Malay", "ms"),
@@ -95,9 +101,10 @@ public class TranslateLanguage
         ["mt"] = new("Maltese", "mt"),
         ["mi"] = new("Maori", "mi"),
         ["mr"] = new("Marathi", "mr"),
+        // special handling (Bing)
         ["mn"] = new("Mongolian", "mn"),
         ["my"] = new("Myanmar (Burmese)", "my"),
-        ["nr"] = new("Ndebele (South)", "nr", TranslateServiceType.GoogleV1),
+        ["nr"] = new("Ndebele (South)", "nr", ST.GoogleV1),
         ["ne"] = new("Nepali", "ne"),
 
         // TODO: L: review handling
@@ -105,9 +112,9 @@ public class TranslateLanguage
         ["no"] = new("Norwegian", "no"),
         ["nb"] = new("Norwegian Bokmål", "nb"),
 
-        ["oc"] = new("Occitan", "oc"),
-        ["or"] = new("Odia (Oriya)", "or", TranslateServiceType.GoogleV1),
-        ["om"] = new("Oromo", "om"),
+        ["oc"] = new("Occitan", "oc", ST.GoogleV1 | ST.DeepL),
+        ["or"] = new("Odia (Oriya)", "or", ST.GoogleV1 | ST.Bing),
+        ["om"] = new("Oromo", "om", ST.GoogleV1 | ST.DeepL),
         ["ps"] = new("Pashto", "ps"),
         ["fa"] = new("Persian", "fa"),
         ["pl"] = new("Polish", "pl"),
@@ -116,54 +123,58 @@ public class TranslateLanguage
         ["pt"] = new("Portuguese", "pt"),
 
         ["pa"] = new("Punjabi", "pa"),
-        ["qu"] = new("Quechua", "qu"),
+        ["qu"] = new("Quechua", "qu", ST.GoogleV1 | ST.Bing),
         ["ro"] = new("Romanian", "ro"),
-        ["rn"] = new("Rundi", "rn", TranslateServiceType.GoogleV1),
+        ["rn"] = new("Rundi", "rn", ST.GoogleV1 | ST.Bing),
         ["ru"] = new("Russian", "ru"),
-        ["sm"] = new("Samoan", "sm", TranslateServiceType.GoogleV1),
-        ["sg"] = new("Sango", "sg", TranslateServiceType.GoogleV1),
-        ["sa"] = new("Sanskrit", "sa"),
-        ["gd"] = new("Scots Gaelic", "gd", TranslateServiceType.GoogleV1),
+        ["sm"] = new("Samoan", "sm", ST.GoogleV1 | ST.Bing),
+        ["sg"] = new("Sango", "sg", ST.GoogleV1),
+        ["sa"] = new("Sanskrit", "sa", ST.GoogleV1 | ST.DeepL),
+        ["gd"] = new("Scots Gaelic", "gd", ST.GoogleV1),
+        // special handling (Bing)
         ["sr"] = new("Serbian", "sr"),
         ["st"] = new("Sesotho", "st"),
-        ["sn"] = new("Shona", "sn", TranslateServiceType.GoogleV1),
-        ["sd"] = new("Sindhi", "sd", TranslateServiceType.GoogleV1),
-        ["si"] = new("Sinhala (Sinhalese)", "si", TranslateServiceType.GoogleV1),
+        ["sn"] = new("Shona", "sn", ST.GoogleV1 | ST.Bing),
+        ["sd"] = new("Sindhi", "sd", ST.GoogleV1 | ST.Bing),
+        ["si"] = new("Sinhala (Sinhalese)", "si", ST.GoogleV1 | ST.Bing),
         ["sk"] = new("Slovak", "sk"),
         ["sl"] = new("Slovenian", "sl"),
-        ["so"] = new("Somali", "so", TranslateServiceType.GoogleV1),
+        ["so"] = new("Somali", "so", ST.GoogleV1 | ST.Bing),
         ["es"] = new("Spanish", "es"),
-        ["su"] = new("Sundanese", "su"),
+        ["su"] = new("Sundanese", "su", ST.GoogleV1 | ST.DeepL),
         ["sw"] = new("Swahili", "sw"),
-        ["ss"] = new("Swati", "ss", TranslateServiceType.GoogleV1),
+        ["ss"] = new("Swati", "ss", ST.GoogleV1),
         ["sv"] = new("Swedish", "sv"),
-        ["tg"] = new("Tajik", "tg"),
+        ["ty"] = new("Tahitian", "ty", ST.Bing),
+        ["tg"] = new("Tajik", "tg", ST.GoogleV1 | ST.DeepL),
         ["ta"] = new("Tamil", "ta"),
         ["tt"] = new("Tatar", "tt"),
         ["te"] = new("Telugu", "te"),
         ["th"] = new("Thai", "th"),
-        ["ti"] = new("Tigrinya", "ti", TranslateServiceType.GoogleV1),
-        ["ts"] = new("Tsonga", "ts"),
+        ["bo"] = new("Tibetan", "bo", ST.Bing),
+        ["ti"] = new("Tigrinya", "ti", ST.GoogleV1 | ST.Bing),
+        ["to"] = new("Tongan", "to", ST.Bing),
+        ["ts"] = new("Tsonga", "ts", ST.GoogleV1 | ST.Bing),
         ["tn"] = new("Tswana", "tn"),
         ["tr"] = new("Turkish", "tr"),
         ["tk"] = new("Turkmen", "tk"),
-        ["ak"] = new("Twi (Akan)", "ak", TranslateServiceType.GoogleV1),
+        ["ak"] = new("Twi (Akan)", "ak", ST.GoogleV1),
         ["uk"] = new("Ukrainian", "uk"),
         ["ur"] = new("Urdu", "ur"),
-        ["ug"] = new("Uyghur", "ug", TranslateServiceType.GoogleV1),
+        ["ug"] = new("Uyghur", "ug", ST.GoogleV1 | ST.Bing),
         ["uz"] = new("Uzbek", "uz"),
         ["vi"] = new("Vietnamese", "vi"),
         ["cy"] = new("Welsh", "cy"),
-        ["wo"] = new("Wolof", "wo", TranslateServiceType.DeepL),
+        ["wo"] = new("Wolof", "wo", ST.DeepL),
         ["xh"] = new("Xhosa", "xh"),
-        ["yi"] = new("Yiddish", "yi"),
-        ["yo"] = new("Yoruba", "yo", TranslateServiceType.GoogleV1),
+        ["yi"] = new("Yiddish", "yi", ST.GoogleV1 | ST.DeepL),
+        ["yo"] = new("Yoruba", "yo", ST.GoogleV1 | ST.Bing),
         ["zu"] = new("Zulu", "zu"),
     };
 
     public TranslateLanguage(string name, string iso6391,
         TranslateServiceType supportedServices =
-            TranslateServiceType.GoogleV1 | TranslateServiceType.DeepL)
+            TranslateServiceType.GoogleV1 | TranslateServiceType.DeepL | TranslateServiceType.Bing)
     {
         // all LLMs support all languages
         supportedServices |= TranslateServiceTypeExtensions.LLMServices;
@@ -172,6 +183,11 @@ public class TranslateLanguage
         if (supportedServices.HasFlag(TranslateServiceType.DeepL))
         {
             supportedServices |= TranslateServiceType.DeepLX;
+        }
+
+        if (supportedServices.HasFlag(TranslateServiceType.Bing))
+        {
+            supportedServices |= TranslateServiceType.Azure;
         }
 
         Name = name;
@@ -205,6 +221,7 @@ public enum TargetLanguage
     [EnumMember(Value = "el")] Greek,
     [EnumMember(Value = "hu")] Hungarian,
     [EnumMember(Value = "id")] Indonesian,
+    [EnumMember(Value = "iu")] Inuktitut,
     [EnumMember(Value = "it")] Italian,
     [EnumMember(Value = "ja")] Japanese,
     [EnumMember(Value = "ko")] Korean,
@@ -219,6 +236,7 @@ public enum TargetLanguage
     [EnumMember(Value = "sl")] Slovenian,
     [EnumMember(Value = "es")] Spanish,
     [EnumMember(Value = "sv")] Swedish,
+    [EnumMember(Value = "ty")] Tahitian,
     [EnumMember(Value = "tr")] Turkish,
     [EnumMember(Value = "uk")] Ukrainian,
 
@@ -247,6 +265,7 @@ public enum TargetLanguage
     [EnumMember(Value = "dz")] Dzongkha,
     [EnumMember(Value = "eo")] Esperanto,
     [EnumMember(Value = "ee")] Ewe,
+    [EnumMember(Value = "fo")] Faroese,
     [EnumMember(Value = "fj")] Fijian,
     [EnumMember(Value = "tl")] Tagalog,
     [EnumMember(Value = "fi")] Finnish,
@@ -266,6 +285,7 @@ public enum TargetLanguage
     [EnumMember(Value = "ga")] Irish,
     [EnumMember(Value = "jv")] Javanese,
     [EnumMember(Value = "kn")] Kannada,
+    [EnumMember(Value = "ks")] Kashmiri,
     [EnumMember(Value = "kk")] Kazakh,
     [EnumMember(Value = "km")] Khmer,
     [EnumMember(Value = "rw")] Kinyarwanda,
@@ -314,7 +334,9 @@ public enum TargetLanguage
     [EnumMember(Value = "tt")] Tatar,
     [EnumMember(Value = "te")] Telugu,
     [EnumMember(Value = "th")] Thai,
+    [EnumMember(Value = "bo")] Tibetan,
     [EnumMember(Value = "ti")] Tigrinya,
+    [EnumMember(Value = "to")] Tongan,
     [EnumMember(Value = "ts")] Tsonga,
     [EnumMember(Value = "tn")] Tswana,
     [EnumMember(Value = "tk")] Turkmen,

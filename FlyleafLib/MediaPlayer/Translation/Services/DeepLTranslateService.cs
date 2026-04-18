@@ -44,10 +44,13 @@ public class DeepLTranslateService : ITranslateService
 
     internal static string ToSourceCode(string iso6391)
     {
-        // ref: https://developers.deepl.com/docs/resources/supported-languages
+        // ref: https://developers.deepl.com/docs/getting-started/supported-languages
         return iso6391 switch
         {
             "ku" => "KMR", // Kurdish (Kurmanji)
+
+            "no" => "nb", // Norwegian Bokmål
+
             _ => iso6391.ToUpper()
         };
     }
