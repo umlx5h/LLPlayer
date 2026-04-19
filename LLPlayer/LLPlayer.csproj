@@ -8,12 +8,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <Authors>umlx5h</Authors>
-    <Copyright>umlx5h © 2025</Copyright>
+    <Copyright>umlx5h © 2026</Copyright>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <ApplicationIcon>LLPlayer.ico</ApplicationIcon>
     <Description>The media player for language learning.</Description>
     <PackageProjectUrl>https://llplayer.com</PackageProjectUrl>
-    <Version>0.2.2</Version>
+    <Version>0.3.0</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 

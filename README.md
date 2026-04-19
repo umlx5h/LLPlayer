@@ -54,14 +54,14 @@ LLPlayer has many features for language learning that are not available in norma
 * Windows 11 x64
 
 [Pre-requisites]
-* [.NET Desktop Runtime 9](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
+* [.NET Desktop Runtime 10](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
   * If not installed, a installer dialog will appear
 * [Microsoft Visual C++ Redistributable Version >= 2022](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#latest-microsoft-visual-c-redistributable-version) (for Whisper ASR, Tesseract OCR)
   * Note that if this is not installed, the app will launch, but **will crash when ASR or OCR is enabled**!
 
 [For Nvidia User (RTX GPU)]
-  * Note: Having CUDA driver will make the rendering of subtitle faster
-  [CUDA 12.8](https://developer.nvidia.com/cuda-downloads) (please take note that this is the required driver if you're using Blackwell GPU's and if you want to use CUDA (RTX 50xx))
+  * Note: Having CUDA driver will make the generating of subtitles faster
+  [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads)
 
 ## 🚀 Getting Started
 
