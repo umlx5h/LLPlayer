@@ -1131,6 +1131,12 @@ public class Config : NotifyPropertyChanged
         public bool OpenAutomaticSubs { get; set => Set(ref field, value); }
 
         /// <summary>
+        /// Whether to automatically start ASR (Whisper) on the primary subtitle when a media file is opened.
+        /// Skipped for live streams and when no ASR engine/model is available.
+        /// </summary>
+        public bool AutoStartASR { get; set => Set(ref field, value); }
+
+        /// <summary>
         /// Subtitle languages preference by priority
         /// </summary>
         public List<Language> Languages
