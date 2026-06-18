@@ -155,6 +155,16 @@ public class MainWindowVM : Bindable
             Title = $"{name} - {App.Name}";
             TaskBarProgressValue = 0;
             TaskBarProgressState = TaskbarItemProgressState.Normal;
+
+            // Auto-start ASR on the primary subtitle when enabled.
+            // Pre-guarded (live / engine availability) so it silently no-ops instead of raising error dialogs.
+            if (FL.PlayerConfig.Subtitles.AutoStartASR
+                && !FL.Player.IsLive
+                && FL.Player.Audio.IsOpened
+                && FL.Player.SubtitlesASR.CanExecute(out _))
+            {
+                FL.Player.Commands.OpenSubtitlesASR.Execute("0");
+            }
         };
 
         if (App.CmdUrl != null)
