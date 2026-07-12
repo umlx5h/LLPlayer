@@ -35,7 +35,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CliWrap" Version="3.10.1" />
+    <PackageReference Include="CliWrap" Version="3.10.2" />
     <PackageReference Include="DeepL.net" Version="1.21.0" />
     <PackageReference Include="Flyleaf.FFmpeg.Bindings" Version="7.1.1" />
     <PackageReference Include="SearchPioneer.Lingua" Version="1.0.5" />
@@ -47,7 +47,7 @@
     <PackageReference Include="Vortice.Mathematics" Version="1.9.3" />
     <PackageReference Include="Vortice.MediaFoundation" Version="3.7.6-beta" />
     <PackageReference Include="Vortice.XAudio2" Version="3.7.6-beta" />
-    <PackageReference Include="Whisper.net" Version="1.9.0" />
+    <PackageReference Include="Whisper.net" Version="1.9.1" />
   </ItemGroup>
 
 </Project>

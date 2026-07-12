@@ -43,7 +43,7 @@ public class SettingsSubtitlesASRVM : Bindable
             SelectedLibraries.Add(library);
         }
 
-        foreach (RuntimeLibrary library in Enum.GetValues<RuntimeLibrary>().Where(l => l != RuntimeLibrary.CoreML))
+        foreach (RuntimeLibrary library in Enum.GetValues<RuntimeLibrary>().Where(l => l is not RuntimeLibrary.CoreML and not RuntimeLibrary.Cuda12))
         {
             if (!SelectedLibraries.Contains(library))
             {
