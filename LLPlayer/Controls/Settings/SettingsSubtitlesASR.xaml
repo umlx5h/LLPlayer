@@ -38,7 +38,7 @@
                 FontWeight="Bold"
                 Margin="0 0 0 16" />
 
-            <GroupBox Header="Whisper Common">
+            <GroupBox Header="ASR Common">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
@@ -46,7 +46,7 @@
                             FontWeight="Medium"
                             Width="180">
                             <Hyperlink Style="{StaticResource MyHyperLink}" NavigateUri="https://github.com/umlx5h/LLPlayer/wiki/Whisper-Engine" helpers:HyperlinkHelper.OpenInBrowser="True">
-                                Whisper Engine
+                                ASR Engine
                             </Hyperlink>
                         </TextBlock>
                         <ComboBox
@@ -128,6 +128,16 @@
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding FL.PlayerConfig.Subtitles.ASREngine}" Value="OpenAICompatible">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
                         <TextBlock
                             Width="180">
                             Translate to English
@@ -686,6 +696,79 @@
                                         HorizontalAlignment="Left"
                                         Command="{Binding CmdCopyHelpCommand}"/>
                                 </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+                </TabItem>
+                <TabItem Header="OpenAI-compatible API">
+                    <StackPanel Margin="0 10 0 0">
+                        <GroupBox Header="OpenAI-compatible ASR config">
+                            <StackPanel>
+                                <DockPanel>
+                                    <TextBlock Width="200">
+                                        Base URL
+                                        <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                            <ToolTipService.ToolTip>
+                                                <TextBlock
+                                                    Text="Use a host URL, a URL ending in /v1, or the complete /audio/transcriptions endpoint."
+                                                    TextWrapping="Wrap"
+                                                    MaxWidth="400" />
+                                            </ToolTipService.ToolTip>
+                                            <materialDesign:PackIcon
+                                                Kind="Information"
+                                                Width="16" Height="16"
+                                                Margin="4 0 0 0" />
+                                        </InlineUIContainer>
+                                    </TextBlock>
+                                    <TextBox
+                                        HorizontalContentAlignment="Left"
+                                        Text="{Binding FL.PlayerConfig.Subtitles.OpenAICompatibleASRConfig.BaseUrl, UpdateSourceTrigger=PropertyChanged}" />
+                                </DockPanel>
+
+                                <DockPanel>
+                                    <TextBlock Width="200" Text="Model" />
+                                    <TextBox
+                                        HorizontalContentAlignment="Left"
+                                        Text="{Binding FL.PlayerConfig.Subtitles.OpenAICompatibleASRConfig.Model, UpdateSourceTrigger=PropertyChanged}" />
+                                </DockPanel>
+
+                                <DockPanel>
+                                    <TextBlock Width="200">
+                                        API Key (optional)
+                                        <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                            <ToolTipService.ToolTip>
+                                                <TextBlock
+                                                    Text="Sent only to this ASR provider as a Bearer authorization header."
+                                                    TextWrapping="Wrap"
+                                                    MaxWidth="400" />
+                                            </ToolTipService.ToolTip>
+                                            <materialDesign:PackIcon
+                                                Kind="Information"
+                                                Width="16" Height="16"
+                                                Margin="4 0 0 0" />
+                                        </InlineUIContainer>
+                                    </TextBlock>
+                                    <TextBox
+                                        HorizontalContentAlignment="Left"
+                                        Text="{Binding FL.PlayerConfig.Subtitles.OpenAICompatibleASRConfig.ApiKey, UpdateSourceTrigger=PropertyChanged}" />
+                                </DockPanel>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Width="200" Text="Request Timeout (sec)" />
+                                    <TextBox
+                                        Width="100"
+                                        Text="{Binding FL.PlayerConfig.Subtitles.OpenAICompatibleASRConfig.TimeoutSeconds}"
+                                        helpers:TextBoxHelper.OnlyNumeric="Uint" />
+                                </StackPanel>
+
+                                <TextBlock Margin="5 10 5 0">
+                                    <Hyperlink
+                                        Style="{StaticResource MyHyperLink}"
+                                        NavigateUri="https://github.com/modelscope/FunASR/tree/main/examples/openai_api"
+                                        helpers:HyperlinkHelper.OpenInBrowser="True">
+                                        FunASR OpenAI API reference
+                                    </Hyperlink>
+                                </TextBlock>
                             </StackPanel>
                         </GroupBox>
                     </StackPanel>

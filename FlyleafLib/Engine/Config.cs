@@ -1248,12 +1248,12 @@ public class Config : NotifyPropertyChanged
 
         #region ASR
         /// <summary>
-        /// ASR Engine Type (Currently only supports OpenAI Whisper)
+        /// ASR engine type
         /// </summary>
         public SubASREngineType ASREngine { get; set => Set(ref field, value); } = SubASREngineType.WhisperCpp;
 
         /// <summary>
-        /// ASR OpenAI Whisper common config
+        /// ASR common config
         /// </summary>
         public WhisperConfig WhisperConfig { get; set => Set(ref field, value); } = new();
 
@@ -1266,6 +1266,11 @@ public class Config : NotifyPropertyChanged
         /// ASR Faster-Whisper config
         /// </summary>
         public FasterWhisperConfig FasterWhisperConfig { get; set => Set(ref field, value); } = new();
+
+        /// <summary>
+        /// ASR OpenAI-compatible API config
+        /// </summary>
+        public OpenAICompatibleASRConfig OpenAICompatibleASRConfig { get; set => Set(ref field, value); } = new();
 
         /// <summary>
         /// Chunk size (MB) when processing ASR with audio stream
@@ -1390,6 +1395,8 @@ public class Config : NotifyPropertyChanged
         internal void SetEnabled(bool enabled) => Set(ref _Enabled, enabled, true, nameof(Enabled));
     }
 }
+
+
 
 /// <summary>
 /// Engine's configuration
@@ -1542,4 +1549,3 @@ public class EngineConfig
         File.WriteAllText(path, JsonSerializer.Serialize(this, jsonOptions));
     }
 }
-

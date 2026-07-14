@@ -115,7 +115,9 @@ public enum SubASREngineType
     [Description("whisper.cpp")]
     WhisperCpp,
     [Description("faster-whisper (Recommended)")]
-    FasterWhisper
+    FasterWhisper,
+    [Description("OpenAI-compatible API")]
+    OpenAICompatible
 }
 public enum UIRefreshType
 {

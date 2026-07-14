@@ -102,6 +102,31 @@ public class SubtitlesASR
                 }
             }
         }
+        else if (_config.Subtitles.ASREngine == SubASREngineType.OpenAICompatible)
+        {
+            OpenAICompatibleASRConfig apiConfig = _config.Subtitles.OpenAICompatibleASRConfig;
+            if (string.IsNullOrWhiteSpace(apiConfig.Model))
+            {
+                err = "OpenAI-compatible ASR model is not set.";
+                return false;
+            }
+
+            if (apiConfig.TimeoutSeconds <= 0)
+            {
+                err = "OpenAI-compatible ASR timeout must be greater than zero.";
+                return false;
+            }
+
+            try
+            {
+                OpenAICompatibleASRService.BuildTranscriptionsUri(apiConfig.BaseUrl);
+            }
+            catch (ArgumentException ex)
+            {
+                err = ex.Message;
+                return false;
+            }
+        }
 
         err = "";
 
@@ -461,6 +486,7 @@ public class AudioReader : IDisposable
             {
                 SubASREngineType.WhisperCpp => new WhisperCppASRService(_config),
                 SubASREngineType.FasterWhisper => new FasterWhisperASRService(_config),
+                SubASREngineType.OpenAICompatible => new OpenAICompatibleASRService(_config),
                 _ => throw new InvalidOperationException()
             };
 
