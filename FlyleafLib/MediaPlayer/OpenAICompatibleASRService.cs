@@ -107,9 +107,8 @@ public sealed class OpenAICompatibleASRService : IASRService
 
         using JsonDocument document = ParseResponse(body);
         JsonElement root = document.RootElement;
-        string fullText = ReadRequiredText(root);
+        _ = ReadRequiredText(root);
         string language = ResolveLanguage(root, commonConfig);
-        bool yieldedSegment = false;
         List<(string text, TimeSpan start, TimeSpan end)> parsedSegments = [];
 
         if (root.TryGetProperty("segments", out JsonElement segments) &&
@@ -141,14 +140,8 @@ public sealed class OpenAICompatibleASRService : IASRService
                 continue;
             }
 
-            yieldedSegment = true;
             previousEnd = end;
             yield return (text, normalizedStart, end, language);
-        }
-
-        if (!yieldedSegment && !string.IsNullOrWhiteSpace(fullText))
-        {
-            yield return (fullText.Trim(), TimeSpan.Zero, waveDuration, language);
         }
     }
 

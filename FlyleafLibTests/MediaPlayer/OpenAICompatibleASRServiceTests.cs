@@ -75,7 +75,7 @@ public class OpenAICompatibleASRServiceTests
     }
 
     [Fact]
-    public async Task Do_FallsBackToWaveDurationWhenSegmentsAreMissing()
+    public async Task Do_ReturnsNoSubtitleWhenSegmentsAreMissing()
     {
         CapturedRequest captured = new();
         using HttpClient client = new(new DelegateHandler(async (request, token) =>
@@ -93,8 +93,33 @@ public class OpenAICompatibleASRServiceTests
 
         captured.Authorization.Should().BeNull();
         captured.Parts.Should().NotContainKey("language");
-        results.Should().ContainSingle().Which.Should()
-            .Be(("hello", TimeSpan.Zero, TimeSpan.FromSeconds(1.25), "und"));
+        results.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Do_ReturnsNoSubtitleForLongTextWhenProviderReturnsNoSegments()
+    {
+        const string kennedyText =
+            "i believe that this nation should commit itself to achieving the goal before this decade is out " +
+            "of landing a man on the moon and returning him safely to the earth " +
+            "no single space project in this period will be more impressive to mankind " +
+            "or more important for the long range exploration of space";
+        using HttpClient client = new(new DelegateHandler((_, _) => Task.FromResult(JsonResponse($$"""
+            {
+              "task": "transcribe",
+              "language": "en",
+              "duration": 0,
+              "text": "{{kennedyText}}",
+              "segments": []
+            }
+            """))));
+        Config config = CreateConfig();
+        await using OpenAICompatibleASRService service = new(config, client);
+
+        List<(string text, TimeSpan start, TimeSpan end, string language)> results =
+            await CollectAsync(service.Do(CreateWave(TimeSpan.FromSeconds(21)), CancellationToken.None));
+
+        results.Should().BeEmpty();
     }
 
     [Fact]
