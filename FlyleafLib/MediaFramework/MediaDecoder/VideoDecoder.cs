@@ -1104,6 +1104,14 @@ public unsafe class VideoDecoder : DecoderBase
         return null;
     }
 
+    public VideoFrame GetFrameNext2()
+    {
+        demuxer.Pause();
+        Pause();
+
+        return GetFrameNext();
+    }
+
     /// <summary>
     /// Pushes the decoder to the next available VideoFrame (Decoder/Demuxer must not be running)
     /// </summary>

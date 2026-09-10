@@ -577,12 +577,13 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
                 Initialize();
                 Audio.Dispose();
                 decoder.Dispose();
-                Host?.Player_Disposed();
-                Log.Info("Disposed");
             } catch (Exception e) { Log.Warn($"Disposed ({e.Message})"); }
 
             IsDisposed = true;
         }
+
+        Host?.Player_Disposed();
+        Log.Info("Disposed");
     }
     internal void RefreshMaxVideoFrames()
     {

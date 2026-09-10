@@ -552,6 +552,7 @@ AncestorType={x:Type MenuItem}}}">
                 <MenuItem Header="Vertical Flip" IsCheckable="True" IsChecked="{Binding FL.PlayerConfig.Video.VFlip}"/>
             </MenuItem>
 
+            <MenuItem Header="360 Panoramic" IsCheckable="True" IsChecked="{Binding FL.PlayerConfig.Video.Pano360.Enabled}"/>
             <MenuItem Header="Reverse Playback" IsCheckable="True" IsChecked="{Binding FL.Player.ReversePlayback}"/>
             <MenuItem Header="Loop Playback"    IsCheckable="True" IsChecked="{Binding FL.Player.LoopPlayback}"/>
             <MenuItem Header="{Binding FL.Player.Speed}" HeaderStringFormat="Speed (x{0})">

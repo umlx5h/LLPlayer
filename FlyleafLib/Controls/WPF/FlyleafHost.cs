@@ -143,6 +143,11 @@ public class FlyleafHost : ContentControl, IHostPlayer, IDisposable
     double              curResizeRatio;
     bool                surfaceClosed, surfaceClosing, overlayClosed;
     double              panPrevX, panPrevY;
+    bool                isPano360Rotating;
+    POINT               pano360Prev;
+    double              pano360VelX, pano360VelY;
+    bool                pano360Inertia;
+    DateTimeOffset      pano360PrevTime;
     bool                isMouseBindingsSubscribedSurface;
     bool                isMouseBindingsSubscribedOverlay;
     Window              standAloneOverlay;
@@ -1167,6 +1172,22 @@ public class FlyleafHost : ContentControl, IHostPlayer, IDisposable
             return; // No Capture
         }
 
+        // Pano360 Rotate (direct drag when 360 enabled)
+        else if (Player != null && Player.Config.Video.Pano360._enabled)
+        {
+            isPano360Rotating = true;
+            _ = GetCursorPos(out pMLD);
+            pano360Prev = pMLD;
+            pano360VelX = 0;
+            pano360VelY = 0;
+            pano360PrevTime = DateTimeOffset.Now;
+            if (pano360Inertia)
+            {
+                pano360Inertia = false;
+                CompositionTarget.Rendering -= Pano360Inertia_Tick;
+            }
+        }
+
         // PanMove
         else if (Player != null &&
             (PanMoveOnCtrl == availWindow || PanMoveOnCtrl == AvailableWindows.Both) &&
@@ -1216,10 +1237,23 @@ public class FlyleafHost : ContentControl, IHostPlayer, IDisposable
 
     private void SO_ReleaseCapture(Window window)
     {
-        if (!IsResizing && !IsPanMoving && !IsDragMoving && !IsDragMovingOwner)
+        if (!IsResizing && !IsPanMoving && !IsDragMoving && !IsDragMovingOwner && !isPano360Rotating)
             return;
 
         window.ReleaseMouseCapture();
+
+        if (isPano360Rotating)
+        {
+            isPano360Rotating = false;
+
+            if (Math.Abs(pano360VelX) > 0.0001 || Math.Abs(pano360VelY) > 0.0001)
+            {
+                pano360Inertia = true;
+                pano360PrevTime = DateTimeOffset.Now;
+                CompositionTarget.Rendering += Pano360Inertia_Tick;
+            }
+            return;
+        }
 
         if (IsResizing)
         {
@@ -1253,6 +1287,39 @@ public class FlyleafHost : ContentControl, IHostPlayer, IDisposable
             IsDragMovingOwner = false;
         else
             return;
+    }
+
+    const double friction = 0.965;
+    const double stopThreshold = 0.00005;
+
+    private void Pano360Inertia_Tick(object sender, EventArgs e)
+    {
+        if (!pano360Inertia || Player == null)
+        {
+            pano360Inertia = false;
+            CompositionTarget.Rendering -= Pano360Inertia_Tick;
+            return;
+        }
+
+        var now = DateTimeOffset.Now;
+        var dt = (now - pano360PrevTime).TotalMilliseconds;
+        pano360PrevTime = now;
+        if (dt <= 0) return;
+
+        var decay = Math.Pow(friction, dt / 16.0);
+        pano360VelX *= decay;
+        pano360VelY *= decay;
+
+        if (Math.Abs(pano360VelX) < stopThreshold && Math.Abs(pano360VelY) < stopThreshold)
+        {
+            pano360Inertia = false;
+            CompositionTarget.Rendering -= Pano360Inertia_Tick;
+            return;
+        }
+
+        var pano = Player.Config.Video.Pano360;
+        pano.RotationX += pano360VelX * (dt / 16.0);
+        pano.RotationY -= pano360VelY * (dt / 16.0);
     }
 
     private void Surface_MouseMove(object sender, MouseEventArgs e)
@@ -1310,6 +1377,29 @@ public class FlyleafHost : ContentControl, IHostPlayer, IDisposable
         if (IsSwappingStarted)
             return;
 
+        // 360 Panoramic Rotation (direct drag)
+        if (isPano360Rotating)
+        {
+            var pano = Player.Config.Video.Pano360;
+            double dx = (cur.X - pano360Prev.X) / Surface.ActualWidth;
+            double dy = (cur.Y - pano360Prev.Y) / Surface.ActualHeight;
+
+            var now = DateTimeOffset.Now;
+            var dt = (now - pano360PrevTime).TotalMilliseconds;
+            if (dt > 0.01)
+            {
+                pano360VelX = dx / dt * 16.0;
+                pano360VelY = dy / dt * 16.0;
+            }
+
+            pano360Prev = cur;
+            pano360PrevTime = now;
+
+            pano.RotationX += dx;
+            pano.RotationY -= dy;
+            return;
+        }
+
         // Player's Pan Move (Ctrl + Drag Move)
         if (IsPanMoving)
         {
@@ -1363,6 +1453,17 @@ public class FlyleafHost : ContentControl, IHostPlayer, IDisposable
         if (Player == null || e.Delta == 0 || e.Handled)
             return;
 
+        // 360 Panoramic Zoom (wheel without modifier)
+        if (Player.Config.Video.Pano360._enabled &&
+            !Keyboard.IsKeyDown(Key.LeftCtrl) && !Keyboard.IsKeyDown(Key.RightCtrl) &&
+            !Keyboard.IsKeyDown(Key.LeftShift) && !Keyboard.IsKeyDown(Key.RightShift))
+        {
+            var pano = Player.Config.Video.Pano360;
+            pano.Fov = pano.Fov + (e.Delta > 0 ? -5.0 : 5.0);
+            e.Handled = true;
+            return;
+        }
+
         if      ((Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl)) &&
             (PanZoomOnCtrlWheel == AvailableWindows.Surface || PanZoomOnCtrlWheel == AvailableWindows.Both))
         {
@@ -1395,6 +1496,16 @@ public class FlyleafHost : ContentControl, IHostPlayer, IDisposable
     {
         if (Player == null || e.Delta == 0)
             return;
+
+        // 360 Panoramic Zoom (wheel without modifier)
+        if (Player.Config.Video.Pano360._enabled &&
+            !Keyboard.IsKeyDown(Key.LeftCtrl) && !Keyboard.IsKeyDown(Key.RightCtrl) &&
+            !Keyboard.IsKeyDown(Key.LeftShift) && !Keyboard.IsKeyDown(Key.RightShift))
+        {
+            var pano = Player.Config.Video.Pano360;
+            pano.Fov = pano.Fov + (e.Delta > 0 ? -5.0 : 5.0);
+            return;
+        }
 
         if      ((Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl)) &&
             (PanZoomOnCtrlWheel == AvailableWindows.Overlay || PanZoomOnCtrlWheel == AvailableWindows.Both))

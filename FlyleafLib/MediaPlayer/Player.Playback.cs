@@ -364,28 +364,36 @@ partial class Player
                     }
                     else
                     {
-                        decoder.PauseDecoders();
-                        ret = decoder.Seek(seekData.accurate ? Math.Max(0, seekData.ms - (int) new TimeSpan(Config.Player.SeekAccurateFixMargin).TotalMilliseconds) : seekData.ms, seekData.forward, !seekData.accurate); // 3sec ffmpeg bug for seek accurate when fails to seek backwards (see videodecoder getframe)
-                        if (ret < 0)
+                        int? seekCompletedMs = null;
+
+                        lock (stepSeekLock)
                         {
-                            if (CanWarn) Log.Warn("Seek failed");
-                            SeekCompleted?.Invoke(this, -1);
+                            decoder.PauseDecoders();
+                            ret = decoder.Seek(seekData.accurate ? Math.Max(0, seekData.ms - (int) new TimeSpan(Config.Player.SeekAccurateFixMargin).TotalMilliseconds) : seekData.ms, seekData.forward, !seekData.accurate); // 3sec ffmpeg bug for seek accurate when fails to seek backwards (see videodecoder getframe)
+                            if (ret < 0)
+                            {
+                                if (CanWarn) Log.Warn("Seek failed");
+                                seekCompletedMs = -1;
+                            }
+                            else if (!ReversePlayback && CanPlay)
+                            {
+                                decoder.GetVideoFrame(seekData.accurate ? seekData.ms * (long)10000 : -1);
+                                ResetFrameStats();
+                                ShowOneFrame();
+                                VideoDemuxer.Start();
+                                AudioDemuxer.Start();
+                                //for (int i = 0; i < subNum; i++)
+                                //{
+                                //    SubtitlesDemuxers[i].Start();
+                                //}
+                                DataDemuxer.Start();
+                                decoder.PauseOnQueueFull();
+                                seekCompletedMs = seekData.ms;
+                            }
                         }
-                        else if (!ReversePlayback && CanPlay)
-                        {
-                            decoder.GetVideoFrame(seekData.accurate ? seekData.ms * (long)10000 : -1);
-                            ResetFrameStats();
-                            ShowOneFrame();
-                            VideoDemuxer.Start();
-                            AudioDemuxer.Start();
-                            //for (int i = 0; i < subNum; i++)
-                            //{
-                            //    SubtitlesDemuxers[i].Start();
-                            //}
-                            DataDemuxer.Start();
-                            decoder.PauseOnQueueFull();
-                            SeekCompleted?.Invoke(this, seekData.ms);
-                        }
+
+                        if (seekCompletedMs is int seekCompletedMsValue)
+                            SeekCompleted?.Invoke(this, seekCompletedMsValue);
                     }
 
                     Thread.Sleep(20);

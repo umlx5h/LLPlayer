@@ -633,6 +633,7 @@ public unsafe partial class DecoderContext : PluginHandler
 
         int ret;
         int allowedErrors = Config.Decoder.MaxErrors;
+        bool needsDrain = false;
         AVPacket* packet;
 
         lock (VideoDemuxer.lockFmtCtx)
@@ -647,6 +648,31 @@ public unsafe partial class DecoderContext : PluginHandler
                 if (ret != 0)
                 {
                     av_packet_free(&packet);
+
+                    if (needsDrain)
+                    {
+                        ret = avcodec_send_packet(VideoDecoder.CodecCtx, null);
+                        if (ret != 0)
+                            return;
+                   
+                        while (VideoDemuxer.VideoStream != null && !Interrupt)
+                        {
+                            ret = VideoDecoder.RecvAVFrame();
+                            if (ret != 0)
+                                return;
+
+                            if (timestamp != -1 && !VideoDemuxer.IsLive && (long)(VideoDecoder.frame->pts * VideoStream.Timebase) - VideoDemuxer.StartTime + (VideoStream.FrameDuration / 2) < timestamp)
+                            {
+                                av_frame_unref(VideoDecoder.frame);
+                                continue;
+                            }
+
+                            ret = VideoDecoder.FillEnqueueAVFrame();
+                            if (ret == 0 || ret == -1234)
+                                return;
+                        }
+                    }
+
                     return;
                 }
             }
@@ -711,6 +737,7 @@ public unsafe partial class DecoderContext : PluginHandler
                 case AVMediaType.Video:
 
                     ret = VideoDecoder.SendAVPacket(packet);
+                    needsDrain = true;
                     if (ret != 0)
                     {
                         if (ret == AVERROR_EAGAIN)
@@ -739,13 +766,8 @@ public unsafe partial class DecoderContext : PluginHandler
                         }
 
                         ret = VideoDecoder.FillEnqueueAVFrame();
-                        if (ret == 0)
-                            return; // Success
-
-                        if (ret == -1234)
-                            return; // Critical
-
-                        continue;
+                        if (ret == 0 || ret == -1234)
+                            return;
                     }
 
                     break; // Switch break

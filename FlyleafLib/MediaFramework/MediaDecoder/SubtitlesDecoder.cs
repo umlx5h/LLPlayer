@@ -213,7 +213,7 @@ public unsafe class SubtitlesDecoder : DecoderBase
                 pts += subFrame.sub.start_display_time /*ms*/ * 10000L;
 
                 if (!filledFromCodec) // TODO: CodecChanged? And when findstreaminfo is disabled as it is an external demuxer will not know the main demuxer's start time
-                {
+                {   // should update also the subs renderer (w/h & other?*)
                     filledFromCodec = true;
                     SubtitlesStream.Refresh(this);
                     CodecChanged?.Invoke(this);

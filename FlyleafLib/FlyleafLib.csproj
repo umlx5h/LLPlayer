@@ -6,7 +6,7 @@
     <UseWPF>true</UseWPF>
     <RepositoryUrl></RepositoryUrl>
     <Description>Media Player .NET Library for WinUI 3/WPF/WinForms (based on FFmpeg/DirectX)</Description>
-    <Version>3.10.4</Version>
+    <Version>3.11</Version>
     <Authors>SuRGeoNix</Authors>
     <Copyright>SuRGeoNix © 2026</Copyright>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
@@ -37,16 +37,16 @@
   <ItemGroup>
     <PackageReference Include="CliWrap" Version="3.10.2" />
     <PackageReference Include="DeepL.net" Version="1.21.0" />
-    <PackageReference Include="Flyleaf.FFmpeg.Bindings" Version="7.1.1" />
+    <PackageReference Include="Flyleaf.FFmpeg.Bindings" Version="9.0.0" />
     <PackageReference Include="SearchPioneer.Lingua" Version="1.0.5" />
     <PackageReference Include="TesseractOCR" Version="5.5.2" />
     <PackageReference Include="UTF.Unknown" Version="2.6.0" />
-    <PackageReference Include="Vortice.D3DCompiler" Version="3.7.6-beta" />
-    <PackageReference Include="Vortice.Direct3D11" Version="3.7.6-beta" />
-    <PackageReference Include="Vortice.DirectComposition" Version="3.7.6-beta" />
-    <PackageReference Include="Vortice.Mathematics" Version="1.9.3" />
-    <PackageReference Include="Vortice.MediaFoundation" Version="3.7.6-beta" />
-    <PackageReference Include="Vortice.XAudio2" Version="3.7.6-beta" />
+    <PackageReference Include="Vortice.D3DCompiler" Version="3.8.3" />
+    <PackageReference Include="Vortice.Direct3D11" Version="3.8.3" />
+    <PackageReference Include="Vortice.DirectComposition" Version="3.8.3" />
+    <PackageReference Include="Vortice.Mathematics" Version="2.1.1" />
+    <PackageReference Include="Vortice.MediaFoundation" Version="3.8.3" />
+    <PackageReference Include="Vortice.XAudio2" Version="3.8.3" />
     <PackageReference Include="Whisper.net" Version="1.9.1" />
   </ItemGroup>
 

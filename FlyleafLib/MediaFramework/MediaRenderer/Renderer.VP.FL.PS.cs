@@ -42,6 +42,12 @@ color = float4(
         psId    = "";
         defines = [];
 
+        if (ucfg.Pano360._enabled)
+        {
+            psId += "P";
+            defines.Add("dPano360");
+        }
+
         if (ucfg.hasFLFilters) // TODO: fix vp switch when set filters or unset*
         {
             psId += "-";

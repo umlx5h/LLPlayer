@@ -50,6 +50,41 @@ cbuffer         Config          : register(b0)
 
 SamplerState    Sampler         : register(s0);
 
+#if defined(dPano360)
+cbuffer PanoConfig : register(b1)
+{
+    float4 panoParams;   // rotationX, rotationY, zoom, fov
+    float  aspectRatio;
+};
+
+#define PI_PANO 3.1415926535897932384626433832795
+#define DEG2RAD_PANO 0.01745329251994329576923690768489
+
+inline float3 PanoRotateXY(float3 p, float2 angle)
+{
+    float2 c = cos(angle);
+    float2 s = sin(angle);
+    p = float3(p.x, c.x * p.y + s.x * p.z, -s.x * p.y + c.x * p.z);
+    return float3(c.y * p.x + s.y * p.z, p.y, -s.y * p.x + c.y * p.z);
+}
+
+inline float2 PanoProject(float2 uv)
+{
+    float2 sampleUV = uv - 0.5;
+    float hfovRad = panoParams.w * DEG2RAD_PANO;
+    float vfovRad = 2.0 * atan(tan(hfovRad * 0.5) / aspectRatio);
+    float3 camDir = normalize(float3(
+        -sampleUV.x * tan(hfovRad * 0.5),
+         sampleUV.y * tan(vfovRad * 0.5),
+         panoParams.z));
+    float3 camRot = float3(
+        (panoParams.x - 0.5) * 2.0 * PI_PANO,
+        (panoParams.y - 0.5) * PI_PANO, 0.0);
+    float3 rd = normalize(PanoRotateXY(camDir, camRot.yx));
+    return float2(atan2(rd.z, rd.x) + PI_PANO, acos(-rd.y)) / float2(2.0 * PI_PANO, PI_PANO);
+}
+#endif
+
 inline float3 LinearToSRGB(float3 c)
 {
     float3 srgbLo = c * 12.92;
@@ -275,6 +310,9 @@ struct PSInput
 float4 main(PSInput input) : SV_TARGET
 {
     float4 color;
+#if defined(dPano360)
+    input.Texture = PanoProject(input.Texture);
+#endif
 "u8;
 
     static ReadOnlySpan<byte> PS_FOOTER => @"

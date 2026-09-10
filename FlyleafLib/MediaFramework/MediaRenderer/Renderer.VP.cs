@@ -76,6 +76,10 @@ public unsafe partial class Renderer : IVP
         canFL = VideoDecoder.VideoAccelerated ||
             (!scfg.PixelFormatDesc->flags.HasFlag(PixFmtFlags.Pal) && (!scfg.PixelFormatDesc->flags.HasFlag(PixFmtFlags.Be) || scfg.PixelComp0Depth <= 8));
 
+        // 360 Panoramic mode requires Flyleaf VP (custom pixel shader)
+        if (ucfg.Pano360._enabled && canFL)
+            return VideoProcessors.Flyleaf;
+
         if (ucfg.VideoProcessor == VideoProcessors.D3D11    && canD3)
             return VideoProcessors.D3D11;
 
@@ -191,6 +195,9 @@ public unsafe partial class Renderer : IVP
     }
     void VPConfigHelper(bool request = true)
     {
+        if (scfg == null)
+            return;
+
         vpRequestsIn   &= ~VPRequestType.ReConfigVP;
         var oldVP       = VideoProcessor;
         var vpRequests  = VPRequestType.RotationFlip | VPRequestType.Crop | VPRequestType.UpdatePS; // TBR: we should set them all here as we don't compare with previous states
@@ -411,11 +418,21 @@ enum VPRequestType
     HDRtoSDR        = 1 << 8,   // Flyleaf
     UpdatePS        = 1 << 9,   // Flyleaf
     UpdateVS        = 1 << 10,  // Flyleaf
+    Pano360         = 1 << 11,  // Flyleaf - 360 Panoramic params update
 }
 
 public class VPConfig : NotifyPropertyChanged
 {
-    internal IVP vp;
+    internal IVP vp { get => _vp; set { _vp = value; Pano360.vp = value; } }
+    IVP _vp;
+
+    // === Pano 360 ===
+
+    /// <summary>
+    /// 360 Panoramic video projection settings
+    /// </summary>
+    [JsonIgnore]
+    public Pano360Config Pano360 { get; } = new();
 
     // === VP / Swap Chain ===
 
@@ -602,4 +619,51 @@ internal interface IVP
     void VPRequest(VPRequestType request);
     void UpdateSize(int width, int height);
     void MonitorChanged(GPUOutput monitor);
+}
+
+/// <summary>
+/// Configuration for 360 panoramic (equirectangular) video projection
+/// </summary>
+public class Pano360Config : NotifyPropertyChanged
+{
+    internal IVP vp;
+
+    /// <summary>
+    /// Enables 360 panoramic projection mode (forces Flyleaf VP)
+    /// </summary>
+    public bool Enabled { get => _enabled; set { if (Set(ref _enabled, value)) vp?.VPRequest(VPRequestType.ReConfigVP); } }
+    internal bool _enabled;
+
+    /// <summary>
+    /// Horizontal rotation [0.0, 1.0], 0.5 = front
+    /// </summary>
+    [JsonIgnore]
+    public double RotationX { get => _rotationX; set { if (Set(ref _rotationX, value)) vp?.VPRequest(VPRequestType.Pano360); } }
+    internal double _rotationX = 0.5;
+
+    /// <summary>
+    /// Vertical rotation [0.01, 0.99], 0.5 = horizon
+    /// </summary>
+    [JsonIgnore]
+    public double RotationY { get => _rotationY; set { if (Set(ref _rotationY, Math.Clamp(value, 0.01, 0.99))) vp?.VPRequest(VPRequestType.Pano360); } }
+    internal double _rotationY = 0.5;
+
+    /// <summary>
+    /// Zoom level [0.1, 2.0], default 0.5
+    /// </summary>
+    [JsonIgnore]
+    public double Zoom { get => _zoom; set { if (Set(ref _zoom, Math.Clamp(value, 0.1, 2.0))) vp?.VPRequest(VPRequestType.Pano360); } }
+    internal double _zoom = 0.5;
+
+    /// <summary>
+    /// Field of view in degrees [30, 150], default 90
+    /// </summary>
+    [JsonIgnore]
+    public double Fov { get => _fov; set { if (Set(ref _fov, Math.Clamp(value, 30.0, 150.0))) vp?.VPRequest(VPRequestType.Pano360); } }
+    internal double _fov = 90.0;
+
+    /// <summary>
+    /// Reset all pano parameters to defaults
+    /// </summary>
+    public void Reset() { RotationX = 0.5; RotationY = 0.5; Zoom = 0.5; Fov = 90.0; }
 }

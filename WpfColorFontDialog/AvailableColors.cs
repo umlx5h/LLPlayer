@@ -2,10 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Windows.Media;
+using System.Linq;
 
 namespace WpfColorFontDialog
 {
-	internal class AvailableColors : List<FontColor>
+    internal class AvailableColors : List<FontColor>
 	{
 		public AvailableColors()
 		{
@@ -38,6 +39,16 @@ namespace WpfColorFontDialog
 				}
 				found = brush;
 				break;
+			}
+
+			if (found == null)
+			{
+                found = this.FirstOrDefault(c => Color.AreClose(c.Brush.Color, b.Color));
+			}
+
+			if (found == null)
+			{
+				found = new FontColor("Current", b);
 			}
 			return found;
 		}

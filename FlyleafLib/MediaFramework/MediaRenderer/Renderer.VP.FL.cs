@@ -30,6 +30,9 @@ public unsafe partial class Renderer
     ID3D11Buffer    vsBuffer;
     VSBufferType    vsData    = new();
 
+    ID3D11Buffer    panoBuffer;
+    PanoBufferType  panoData  = new() { PanoParams = new(0.5f, 0.5f, 0.5f, 90f), AspectRatio = 1.778f };
+
     bool            vflip;
 
     static InputElementDescription[] inputElements =
@@ -111,6 +114,7 @@ public unsafe partial class Renderer
     {
         vsBuffer        = device.CreateBuffer(vsDesc);
         psBuffer        = device.CreateBuffer(psDesc);
+        panoBuffer      = device.CreateBuffer(panoDesc);
         vertexBuffer    = device.CreateBuffer<float>(vertexBufferData, vertexBufferDesc);
         inputLayout     = device.CreateInputLayout(inputElements, ShaderCompiler.VSBlob);
         samplerLinear   = device.CreateSamplerState(samplerLinearDesc);
@@ -127,6 +131,7 @@ public unsafe partial class Renderer
         context.IASetInputLayout        (inputLayout);
         context.IASetPrimitiveTopology  (PrimitiveTopology.TriangleList);
         context.PSSetConstantBuffer     (0, psBuffer);
+        context.PSSetConstantBuffer     (1, panoBuffer);
         context.VSSetConstantBuffer     (0, vsBuffer);
         context.VSSetShader             (vsMain);
         context.PSSetSampler            (0, samplerLinear);
@@ -138,6 +143,10 @@ public unsafe partial class Renderer
     {
         SetViewport(ControlWidth, ControlHeight);
         context.RSSetViewport(Viewport);
+
+        // Update pano aspectRatio when viewport changes
+        if (ucfg.Pano360._enabled)
+            vpRequests |= VPRequestType.Pano360;
     }
     void FLSetRotationFlip()
     {
@@ -261,6 +270,9 @@ public unsafe partial class Renderer
             if (vpRequests.HasFlag(VPRequestType.HDRtoSDR))
                 FLSetHDRtoSDR();
 
+            if (vpRequests.HasFlag(VPRequestType.Pano360))
+                FLSetPano360();
+
             if (vpRequests.HasFlag(VPRequestType.UpdateVS))
                 context.UpdateSubresource(vsData, vsBuffer);
 
@@ -312,6 +324,7 @@ public unsafe partial class Renderer
         
         vsBuffer.       Dispose();
         psBuffer.       Dispose();
+        panoBuffer.     Dispose();
         inputLayout.    Dispose();
         vertexBuffer.   Dispose();
         samplerLinear.  Dispose();
@@ -373,5 +386,33 @@ public unsafe partial class Renderer
             Matrix  = Matrix4x4.Identity;
             Crop    = new(0, 0, 1, 1);
         }
+    }
+
+    static BufferDescription panoDesc = new()
+    {
+        Usage           = ResourceUsage.Default,
+        BindFlags       = BindFlags.ConstantBuffer,
+        CPUAccessFlags  = CpuAccessFlags.None,
+        ByteWidth       = (uint)(sizeof(PanoBufferType) + (16 - (sizeof(PanoBufferType) % 16)))
+    };
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct PanoBufferType
+    {
+        public Vector4 PanoParams;  // rotationX, rotationY, zoom, fov
+        public float AspectRatio;
+        float _pad1, _pad2, _pad3;  // 16-byte alignment
+    }
+
+    void FLSetPano360()
+    {
+        var pano = ucfg.Pano360;
+        panoData.PanoParams = new((float)pano._rotationX, (float)pano._rotationY,
+                                 (float)pano._zoom, (float)pano._fov);
+        // aspectRatio based on control (viewport) size, not video source size
+        panoData.AspectRatio = ControlWidth > 0 && ControlHeight > 0
+            ? (float)ControlWidth / ControlHeight : 1.778f;
+        context.UpdateSubresource(panoData, panoBuffer);
+        vpRequests &= ~VPRequestType.Pano360;
     }
 }

@@ -82,6 +82,14 @@ public unsafe partial class Renderer
 
     void SubsScale()
     {
+        if (subsSize.Width < 1 || subsSize.Height < 1)
+        {   // Maybe should be re-filled from decoder (filledFromCodec) when not properly analysed (#688)
+            subsSize = new(player.decoder.SubtitlesDecoders[0].CodecCtx->width, player.decoder.SubtitlesDecoders[0].CodecCtx->height);
+
+            if (subsSize.Width < 1 || subsSize.Height < 1)
+                return;
+        }
+
         AVFrame*    swsFrame;
         SwsContext* swsCtx;
         Viewport    view = Viewport;

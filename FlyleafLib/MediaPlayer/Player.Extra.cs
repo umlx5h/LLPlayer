@@ -10,6 +10,7 @@ namespace FlyleafLib.MediaPlayer;
 unsafe partial class Player
 {
     public bool IsOpenFileDialogOpen    { get; private set; }
+    readonly object stepSeekLock = new();
 
 
     public void SeekBackward()  => SeekBackward_(Config.Player.SeekOffset, Config.Player.SeekOffsetAccurate);
@@ -131,25 +132,27 @@ unsafe partial class Player
         lock (lockActions)
         {
             Pause();
-            dFrame = null;
-            for (int i = 0; i < subNum; i++)
+
+            lock (stepSeekLock)
             {
-                sFrames[i] = null;
-                SubtitleClear(i);
+                dFrame = null;
+                for (int i = 0; i < subNum; i++)
+                {
+                    sFrames[i] = null;
+                    SubtitleClear(i);
+                }
+                decoder.Flush();
+                decoder.RequiresResync = true;
+
+                var vFrame = VideoDecoder.GetFrame(frameIndex);
+                if (vFrame == null) return;
+
+                if (CanDebug) Log.Debug($"SFI: {VideoDecoder.GetFrameNumber(vFrame.Timestamp)}");
+                vFrames.Enqueue(vFrame, true);
+                Renderer.RenderRequest(vFrame);
+                UpdateCurTime(vFrame.Timestamp);
+                reversePlaybackResync = true;
             }
-
-            decoder.Flush();
-            decoder.RequiresResync = true;
-
-            var vFrame = VideoDecoder.GetFrame(frameIndex);
-            if (vFrame == null)
-                return;
-
-            if (CanDebug) Log.Debug($"SFI: {VideoDecoder.GetFrameNumber(vFrame.Timestamp)}");
-            vFrames.Enqueue(vFrame, true);
-            Renderer.RenderRequest(vFrame);
-            UpdateCurTime(vFrame.Timestamp);
-            reversePlaybackResync = true;
         }
     }
 
@@ -171,37 +174,40 @@ unsafe partial class Player
                 UI(() => Status = status);
             }
 
-            shouldFlushPrev = true;
-            decoder.RequiresResync = true;
-
-            if (shouldFlushNext)
+            lock (stepSeekLock)
             {
-                decoder.StopThreads();
-                decoder.Flush();
-                shouldFlushNext = false;
+                shouldFlushPrev = true;
+                decoder.RequiresResync = true;
 
-                VideoDecoder.GetFrame(VideoDecoder.GetFrameNumber(curTime))?.Dispose();
+                if (shouldFlushNext)
+                {
+                    decoder.StopThreads();
+                    decoder.Flush();
+                    shouldFlushNext = false;
+
+                    VideoDecoder.GetFrame(VideoDecoder.GetFrameNumber(curTime))?.Dispose();
+                }
+
+                for (int i = 0; i < subNum; i++)
+                {
+                    sFrames[i] = null;
+                    SubtitleClear(i);
+                }
+
+                if (!vFrames.TryDequeue(out var vFrame))
+                {
+                    Renderer.Frames.PushCurrentToLast();
+                    vFrame = VideoDecoder.GetFrameNext2();
+                    if (vFrame == null) return;
+                    vFrames.Enqueue(vFrame, true);
+                }
+
+                if (CanDebug) Log.Debug($"SFN: {VideoDecoder.GetFrameNumber(vFrame.Timestamp)}");
+
+                Renderer.RenderRequest(vFrame);
+                UpdateCurTime(vFrame.Timestamp);
+                reversePlaybackResync = true;
             }
-
-            for (int i = 0; i < subNum; i++)
-            {
-                sFrames[i] = null;
-                SubtitleClear(i);
-            }
-
-            if (!vFrames.TryDequeue(out var vFrame))
-            {
-                Renderer.Frames.PushCurrentToLast();
-                vFrame = VideoDecoder.GetFrameNext();
-                if (vFrame == null) return;
-                vFrames.Enqueue(vFrame, true);
-            }
-
-            if (CanDebug) Log.Debug($"SFN: {VideoDecoder.GetFrameNumber(vFrame.Timestamp)}");
-
-            Renderer.RenderRequest(vFrame);
-            UpdateCurTime(vFrame.Timestamp);
-            reversePlaybackResync = true;
         }
     }
     public void ShowFramePrev()
@@ -219,35 +225,38 @@ unsafe partial class Player
                 UI(() => Status = status);
             }
 
-            shouldFlushNext = true;
-            decoder.RequiresResync = true;
-
-            if (shouldFlushPrev)
+            lock (stepSeekLock)
             {
-                decoder.StopThreads();
-                decoder.Flush();
-                shouldFlushPrev = false;
+                shouldFlushNext = true;
+                decoder.RequiresResync = true;
+
+                if (shouldFlushPrev)
+                {
+                    decoder.StopThreads();
+                    decoder.Flush();
+                    shouldFlushPrev = false;
+                }
+
+                for (int i = 0; i < subNum; i++)
+                {
+                    sFrames[i] = null;
+                    SubtitleClear(i);
+                }
+
+                if (!vFrames.TryDequeue(out var vFrame))
+                {
+                    reversePlaybackResync = true; // Temp fix for previous timestamps until we seperate GetFrame for Extractor and the Player
+                    Renderer.Frames.PushCurrentToLast();
+                    vFrame = VideoDecoder.GetFrame(VideoDecoder.GetFrameNumber(CurTime) - 1, true);
+                    if (vFrame == null) return;
+                    vFrames.Enqueue(vFrame, true);
+                }
+
+                if (CanDebug) Log.Debug($"SFB: {VideoDecoder.GetFrameNumber(vFrame.Timestamp)}");
+
+                Renderer.RenderRequest(vFrame);
+                UpdateCurTime(vFrame.Timestamp);
             }
-
-            for (int i = 0; i < subNum; i++)
-            {
-                sFrames[i] = null;
-                SubtitleClear(i);
-            }
-
-            if (!vFrames.TryDequeue(out var vFrame))
-            {
-                reversePlaybackResync = true; // Temp fix for previous timestamps until we seperate GetFrame for Extractor and the Player
-                Renderer.Frames.PushCurrentToLast();
-                vFrame = VideoDecoder.GetFrame(VideoDecoder.GetFrameNumber(CurTime) - 1, true);
-                if (vFrame == null) return;
-                vFrames.Enqueue(vFrame, true);
-            }
-
-            if (CanDebug) Log.Debug($"SFB: {VideoDecoder.GetFrameNumber(vFrame.Timestamp)}");
-
-            Renderer.RenderRequest(vFrame);
-            UpdateCurTime(vFrame.Timestamp);
         }
     }
 

@@ -55,9 +55,9 @@ internal static partial class ShaderCompiler
         if (CanDebug)
             LogDebug($"Compiling '{uniqueId}'");
 
-        // PS_HEADER + hlslSample + PS_FOOTER (Max 10KB)
-        Debug.Assert(PS_HEADER.Length + PS_FOOTER.Length + Encoding.UTF8.GetMaxByteCount(hlslSample.Length) < 12_000);
-        byte[] bufferPool   = ArrayPool<byte>.Shared.Rent(12 * 1024);
+        // PS_HEADER + hlslSample + PS_FOOTER (Max 13KB)
+        Debug.Assert(PS_HEADER.Length + PS_FOOTER.Length + Encoding.UTF8.GetMaxByteCount(hlslSample.Length) < 13_000);
+        byte[] bufferPool   = ArrayPool<byte>.Shared.Rent(13 * 1024);
         Span<byte> buffer   = bufferPool;
         PS_HEADER.CopyTo(buffer);
         int offset          = PS_HEADER.Length;
