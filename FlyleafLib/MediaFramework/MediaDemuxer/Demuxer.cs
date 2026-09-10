@@ -1401,7 +1401,7 @@ public unsafe class Demuxer : RunThreadBase
 
         // To demux further for buffering (related to BufferDuration)
         int maxQueueSize = 2;
-        curReverseSeekOffset = av_rescale_q(3 * 1000 * 10000 / 10, Engine.FFmpeg.AV_TIMEBASE_Q, VideoStream.AVStream->time_base);
+        curReverseSeekOffset = av_rescale_q(3 * 1000 * 10000 / 10, TIME_BASE_Q, VideoStream.AVStream->time_base);
 
         do
         {
@@ -1581,7 +1581,7 @@ public unsafe class Demuxer : RunThreadBase
     {
         IsReversePlayback = true;
         Seek(StartTime + timestamp);
-        curReverseStopRequestedPts = av_rescale_q((StartTime + timestamp) / 10, Engine.FFmpeg.AV_TIMEBASE_Q, VideoStream.AVStream->time_base);
+        curReverseStopRequestedPts = av_rescale_q((StartTime + timestamp) / 10, TIME_BASE_Q, VideoStream.AVStream->time_base);
     }
     public void DisableReversePlayback() => IsReversePlayback = false;
     #endregion

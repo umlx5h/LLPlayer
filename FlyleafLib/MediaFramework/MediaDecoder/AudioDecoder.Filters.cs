@@ -1,29 +1,33 @@
 ﻿using System.Runtime.InteropServices;
+using static System.Globalization.CultureInfo;
 
-using FlyleafLib.MediaFramework.MediaStream;
 using FlyleafLib.MediaFramework.MediaFrame;
+using FlyleafLib.MediaFramework.MediaStream;
 
 namespace FlyleafLib.MediaFramework.MediaDecoder;
 
 public unsafe partial class AudioDecoder
-{
-    // TODO: Check locks (lockSpeed) - during seek and speed change (also in xaudio submit samples - we change the data len and we lose sync with submited samples vs played)
+{   // TODO: Check locks (lockSpeed) - during seek and speed change (also in xaudio submit samples - we change the data len and we lose sync with submited samples vs played)
+
+    static AVFilter* ATEMPO     = avfilter_get_by_name("atempo");
+    static AVFilter* ABUFFER    = avfilter_get_by_name("abuffer");
+    static AVFilter* ABUFFERSINK= avfilter_get_by_name("abuffersink");
 
     AVFilterContext*        abufferCtx;
     AVFilterContext*        abufferSinkCtx;
     AVFilterGraph*          filterGraph;
     bool                    abufferDrained;
-    long                    curSamples;
-    double                  missedSamples;
-    long                    filterFirstPts;
-    bool                    setFirstPts;
-    object                  lockSpeed = new();
-    AVRational              sinkTimebase;
+    AVRational              streamSampleRateTimebase;
     AVFrame*                filtframe;
+    object                  lockSpeed = new();
 
-    static AVFilter* ATEMPO     = avfilter_get_by_name("atempo");
-    static AVFilter* ABUFFER    = avfilter_get_by_name("abuffer");
-    static AVFilter* ABUFFERSINK= avfilter_get_by_name("abuffersink");
+    bool                    setFirstPts;                // We start a new continues session
+    long                    firstPts;                   // First valid pts of the new session
+    long                    gapOffsetTb;                // Offset that we create an actual gap-discontinuity
+    long                    decodedSamples;             // Continues decoded amples to calculate expectingPts (based on firstPts)
+    internal long           expectingPts;               // Expected next continues decoded pts
+    long                    filtSamples;                // Continues filtered samples to calculate frame's pts-timestamp
+    double                  filtMissedSamples;          // Fixes rounding issues
 
     private AVFilterContext* CreateFilter(string name, string args, AVFilterContext* prevCtx = null, string id = null)
         => CreateFilter(avfilter_get_by_name(name), args, prevCtx, id ?? name);
@@ -57,6 +61,12 @@ public unsafe partial class AudioDecoder
     }
     private int SetupFilters()
     {
+        /* NOTES
+         * 
+         * We don't use sink's timebase / timestamps. Instead we manually calculated it based on samples.
+         * We pass sample rate as timebase for input (could cause issues with filters that use pts as we don't rescale from original?)
+         * We cannot currently handle planar (we handle single buffer packed/interleaved with dataLen etc.)
+         */
         int ret = -1;
 
         try
@@ -65,7 +75,6 @@ public unsafe partial class AudioDecoder
 
             AVFilterContext* linkCtx;
 
-            sinkTimebase    = new() { Num = 1, Den = codecCtx->sample_rate};
             filtframe       = av_frame_alloc();
             filterGraph     = avfilter_graph_alloc();
             setFirstPts     = true;
@@ -73,7 +82,7 @@ public unsafe partial class AudioDecoder
 
             // IN (abuffersrc)
             linkCtx = abufferCtx = CreateFilter(ABUFFER,
-                $"channel_layout={AudioStream.ChannelLayoutStr}:sample_fmt={AudioStream.SampleFormatStr}:sample_rate={codecCtx->sample_rate}:time_base={sinkTimebase.Num}/{sinkTimebase.Den}");
+                $"channel_layout={AudioStream.ChannelLayoutStr}:sample_fmt={AudioStream.SampleFormatStr}:sample_rate={codecCtx->sample_rate}:time_base=1/{streamSampleRateTimebase.Den}");
 
             // USER DEFINED
             if (Config.Audio.Filters != null)
@@ -88,55 +97,78 @@ public unsafe partial class AudioDecoder
             if (speed != 1)
             {
                 if (speed >= 0.5 && speed <= 2)
-                    linkCtx = CreateFilter(ATEMPO, $"tempo={speed.ToString("0.0000000000", System.Globalization.CultureInfo.InvariantCulture)}", linkCtx);
+                    linkCtx = CreateFilter(ATEMPO, $"tempo={speed.ToString("0.0000000000", InvariantCulture)}", linkCtx);
                 else if ((speed > 2 & speed <= 4) || (speed >= 0.25 && speed < 0.5))
                 {
                     var singleAtempoSpeed = Math.Sqrt(speed);
-                    linkCtx = CreateFilter(ATEMPO, $"tempo={singleAtempoSpeed.ToString("0.0000000000", System.Globalization.CultureInfo.InvariantCulture)}", linkCtx);
-                    linkCtx = CreateFilter(ATEMPO, $"tempo={singleAtempoSpeed.ToString("0.0000000000", System.Globalization.CultureInfo.InvariantCulture)}", linkCtx);
+                    linkCtx = CreateFilter(ATEMPO, $"tempo={singleAtempoSpeed.ToString("0.0000000000", InvariantCulture)}", linkCtx);
+                    linkCtx = CreateFilter(ATEMPO, $"tempo={singleAtempoSpeed.ToString("0.0000000000", InvariantCulture)}", linkCtx);
                 }
                 else if (speed > 4 || speed >= 0.125 && speed < 0.25)
                 {
                     var singleAtempoSpeed = Math.Pow(speed, 1.0 / 3);
-                    linkCtx = CreateFilter(ATEMPO, $"tempo={singleAtempoSpeed.ToString("0.0000000000", System.Globalization.CultureInfo.InvariantCulture)}", linkCtx);
-                    linkCtx = CreateFilter(ATEMPO, $"tempo={singleAtempoSpeed.ToString("0.0000000000", System.Globalization.CultureInfo.InvariantCulture)}", linkCtx);
-                    linkCtx = CreateFilter(ATEMPO, $"tempo={singleAtempoSpeed.ToString("0.0000000000", System.Globalization.CultureInfo.InvariantCulture)}", linkCtx);
+                    linkCtx = CreateFilter(ATEMPO, $"tempo={singleAtempoSpeed.ToString("0.0000000000", InvariantCulture)}", linkCtx);
+                    linkCtx = CreateFilter(ATEMPO, $"tempo={singleAtempoSpeed.ToString("0.0000000000", InvariantCulture)}", linkCtx);
+                    linkCtx = CreateFilter(ATEMPO, $"tempo={singleAtempoSpeed.ToString("0.0000000000", InvariantCulture)}", linkCtx);
                 }
             }
 
             // OUT (abuffersink)
-            if (Engine.FFmpeg.Ver8OrGreater)
-            {
-                abufferSinkCtx = avfilter_graph_alloc_filter(filterGraph, ABUFFERSINK, null);
-                Set(abufferSinkCtx, "sample_formats",  [AOutSampleFormat],         AVOptionType.SampleFmt);
-                Set(abufferSinkCtx, "samplerates",     [AudioStream.SampleRate],   AVOptionType.Int);
-                Set(abufferSinkCtx, "channel_layouts", [AV_CHANNEL_LAYOUT_STEREO], AVOptionType.Chlayout);
-                ret = avfilter_init_dict(abufferSinkCtx, null);
-            }
+            abufferSinkCtx = avfilter_graph_alloc_filter(filterGraph, ABUFFERSINK, null);
+
+            // Xaudio supported formats (Packed/Interleaved)
+            Set(abufferSinkCtx, "sample_formats", [AVSampleFormat.U8, AVSampleFormat.S16, AVSampleFormat.S32, AVSampleFormat.Flt], AVOptionType.SampleFmt);
+
+            // XAudio supported layouts (Native)
+            if (AudioStream.ChannelLayout.order == AVChannelOrder.Native && (AudioStream.ChannelLayout.u.mask & ~0x0003FFFFU) == 0)
+                Set(abufferSinkCtx, "channel_layouts", [AudioStream.ChannelLayout], AVOptionType.Chlayout);
             else
-            {
-                abufferSinkCtx = CreateFilter(ABUFFERSINK, null, null);
-                int tmpSampleRate = AudioStream.SampleRate;
-                fixed (AVSampleFormat* ptr = &AOutSampleFormat)
-                    ret = av_opt_set_bin(abufferSinkCtx , "sample_fmts"         , (byte*)ptr,            sizeof(AVSampleFormat) , OptSearchFlags.Children);
-                ret = av_opt_set_bin(abufferSinkCtx     , "sample_rates"        , (byte*)&tmpSampleRate, sizeof(int)            , OptSearchFlags.Children);
-                ret = av_opt_set_int(abufferSinkCtx     , "all_channel_counts"  , 0                                             , OptSearchFlags.Children);
-                ret = av_opt_set(abufferSinkCtx         , "ch_layouts"          , "stereo"                                      , OptSearchFlags.Children);
-            }
+                Set(abufferSinkCtx, "channel_layouts", [AV_CHANNEL_LAYOUT_STEREO],  AVOptionType.Chlayout);
+
+            ret = avfilter_init_dict(abufferSinkCtx, null);
 
             _ = avfilter_link(linkCtx, 0, abufferSinkCtx, 0);
 
             // GRAPH CONFIG
             ret = avfilter_graph_config(filterGraph, null);
+            if (ret < 0)
+                throw new Exception($"[FilterGraph] {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
 
-            // CRIT TBR:!!!
-            var tb = 1000 * 10000.0 / sinkTimebase.Den; // TBR: DONT CHANGE values will affect Screamer | Ensures we have at least 20-70ms samples to avoid audio crackling and av sync issues
-            ((FilterLink*)abufferSinkCtx->inputs[0])->min_samples = (int) (20 * 10000 / tb);
-            ((FilterLink*)abufferSinkCtx->inputs[0])->max_samples = (int) (70 * 10000 / tb);
+            // SINK CONFIG
+            var input0 = abufferSinkCtx->inputs[0];
 
-            return ret < 0
-                ? throw new Exception($"[FilterGraph] {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})")
-                : 0;
+            bool changed = false;
+            if (input0->format != (int)SampleFormat)
+            {
+                SampleFormat = (AVSampleFormat)input0->format;
+                changed = true;
+            }
+
+            fixed(AVChannelLayout* ptr = &channelLayout)
+                if (av_channel_layout_compare(&input0->ch_layout, ptr) != 0)
+                {
+                    channelLayout = input0->ch_layout;
+                    ChannelLayoutStr = GetChannelLayoutStr(channelLayout);
+                    changed = true;
+                }
+
+            if (input0->sample_rate != SampleRate)
+            {
+                SampleRate = input0->sample_rate;
+                SampleRateTimebase = 1000 * 10000.0 / SampleRate;
+                changed = true;
+            }
+
+            SampleBytes = av_get_bytes_per_sample(SampleFormat) * channelLayout.nb_channels;
+
+            // TBR: DONT CHANGE values will affect Screamer | Ensures we have at least 20-70ms samples to avoid audio crackling and av sync issues
+            ((FilterLink*)input0)->min_samples = SampleRate * 20 / 1000;
+            ((FilterLink*)input0)->max_samples = SampleRate * 70 / 1000;
+
+            if (changed)
+                FormatChanged?.Invoke(this);
+
+            return 0;
         }
         catch (Exception e)
         {
@@ -162,15 +194,13 @@ public unsafe partial class AudioDecoder
             fixed (AVFrame** ptr = &filtframe) av_frame_free(ptr);
             filtframe = null;
         }
-            
-
+        
         abufferCtx      = null;
         abufferSinkCtx  = null;
         filterGraph     = null;
     }
     protected override void OnSpeedChanged(double value)
-    {
-        // Possible Task to avoid locking UI thread as lockAtempo can wait for the Frames queue to be freed (will cause other issues and couldnt reproduce the possible dead lock)
+    {   // Possible Task to avoid locking UI thread as lockAtempo can wait for the Frames queue to be freed (will cause other issues and couldnt reproduce the possible dead lock)
         cBufTimesCur = cBufTimesSize;
         lock (lockSpeed)
         {
@@ -188,11 +218,11 @@ public unsafe partial class AudioDecoder
                 SetupFilters();
         }
     }
-    internal void FixSample(AudioFrame frame, double newSpeed)
+    void FixSample(AudioFrame frame, double newSpeed)
     {
         var oldSpeed    = frame.speed;
         var oldDataLen  = frame.dataLen;
-        frame.dataLen   = Align((int) (oldDataLen * oldSpeed / newSpeed), ASampleBytes);
+        frame.dataLen   = Align((int) (oldDataLen * oldSpeed / newSpeed), SampleBytes);
         frame.speed     = newSpeed;
         fixed (byte* cBufStartPosPtr = &cBuf[0])
         {
@@ -208,59 +238,31 @@ public unsafe partial class AudioDecoder
                 }
 
                 // fill silence
-                for (int p = oldDataLen; p < frame.dataLen; p++)
-                    cBuf[curOffset + p] = 0;
+                if (SampleFormat == AVSampleFormat.U8)
+                    for (int p = oldDataLen; p < frame.dataLen; p++)
+                        cBuf[curOffset + p] = 0x80;
+                else
+                    for (int p = oldDataLen; p < frame.dataLen; p++)
+                        cBuf[curOffset + p] = 0;
             }
         }
     }
-    private int UpdateFilterInternal(string filterId, string key, string value)
+    
+    public int UpdateFilter(string filterId, string key, string value)
     {
-        int ret = avfilter_graph_send_command(filterGraph, filterId, key, value, null, 0, 0);
-        Log.Info($"[{filterId}] {key}={value} {(ret >=0 ? "success" : "failed")}");
-
-        return ret;
-    }
-    internal int SetupFiltersOrSwr()
-    {
-        lock (lockSpeed)
+        lock (lockCodecCtx)
         {
-            int ret = -1;
+            if (filterGraph == null)
+                return -1;
 
-            if (Disposed)
-                return ret;
-
-            if (Config.Audio.FiltersEnabled)
-            {
-                ret = SetupFilters();
-
-                if (ret != 0)
-                {
-                    Log.Error($"Setup filters failed. Fallback to Swr.");
-                    ret = SetupSwr();
-                }
-                else
-                    DisposeSwr();
-            }
-            else
-            {
-                DisposeFilters();
-                ret = SetupSwr();
-            }
+            int ret = avfilter_graph_send_command(filterGraph, filterId, key, value, null, 0, 0);
+            Log.Info($"[{filterId}] {key}={value} {(ret >=0 ? "success" : "failed")}");
 
             return ret;
         }
     }
-
-    public int UpdateFilter(string filterId, string key, string value)
-    {
-        lock (lockCodecCtx)
-            return filterGraph != null ? UpdateFilterInternal(filterId, key, value) : -1;
-    }
     public int ReloadFilters()
     {
-        if (!Config.Audio.FiltersEnabled)
-            return -1;
-
         lock (lockActions)
             lock (lockCodecCtx)
                 return SetupFilters();
@@ -268,27 +270,34 @@ public unsafe partial class AudioDecoder
 
     private void ProcessFilters()
     {
+        /* NOTES
+         * We can't trust pts/duration. Even pts can have a small gap that will be corrected on the next pts (decoder's issue).
+         * So we calculte expecting pts based on samples only and when the gap is large enough we reset.
+         * Filtered frames are always continues timestamps (decoded frames will control the gaps *setFirstPts)
+         */
+
         if (setFirstPts)
         {
-            setFirstPts     = false;
-            filterFirstPts  = frame->pts;
-            curSamples      = 0;
-            missedSamples   = 0;
+            setFirstPts         = false;
+            firstPts            = frame->pts;
+            decodedSamples      = 0;
+            filtSamples         = 0;
+            filtMissedSamples   = 0;
         }
-        else if (Math.Abs(frame->pts - nextPts) > 10 * 10000) // 10ms distance should resync filters (TBR: it should be 0ms however we might get 0 pkt_duration for unknown?)
+        else if (Math.Abs(frame->pts - expectingPts) > gapOffsetTb)
         {
+            Log.Warn($"Resync filters! ({TicksToTime((long)((frame->pts - expectingPts) * AudioStream.Timebase))} distance)");
+
             DrainFilters();
-            Log.Warn($"Resync filters! ({TicksToTime((long)((frame->pts - nextPts) * AudioStream.Timebase))} distance)");
-            //resyncWithVideoRequired = !VideoDecoder.Disposed;
-            DisposeFrames();
-            avcodec_flush_buffers(codecCtx);
-            if (filterGraph != null)
-                SetupFilters();
+            SetupFilters();
+            ProcessFilters(); // Recursion (don't drop the gap frame)
+
             return;
         }
 
-        nextPts = frame->pts + frame->duration;
-
+        decodedSamples += frame->nb_samples;
+        expectingPts    = firstPts + av_rescale_q(decodedSamples, streamSampleRateTimebase, AudioStream.AVStream->time_base);
+        
         int ret;
 
         if ((ret = av_buffersrc_add_frame_flags(abufferCtx, frame, AVBuffersrcFlag.KeepRef | AVBuffersrcFlag.NoCheckFormat)) < 0) // We check format change manually before here
@@ -302,12 +311,6 @@ public unsafe partial class AudioDecoder
         {
             if ((ret = av_buffersink_get_frame_flags(abufferSinkCtx, filtframe, 0)) < 0) // Sometimes we get AccessViolationException while we UpdateFilter (possible related with .NET7 debug only bug)
                 return; // EAGAIN (Some filters will send EAGAIN even if EOF currently we handled cause our Status will be Draining)
-
-            if (filtframe->pts == AV_NOPTS_VALUE) // we might desync here (we dont count frames->nb_samples) ?
-            {
-                av_frame_unref(filtframe);
-                continue;
-            }
 
             ProcessFilter();
 
@@ -351,31 +354,25 @@ public unsafe partial class AudioDecoder
 
         while (true)
         {
-            if ((ret = av_buffersink_get_frame_flags(abufferSinkCtx, filtframe, 0)) < 0)
+            if (av_buffersink_get_frame_flags(abufferSinkCtx, filtframe, 0) < 0)
                 return;
-
-            if (filtframe->pts == AV_NOPTS_VALUE)
-            {
-                av_frame_unref(filtframe);
-                return;
-            }
 
             ProcessFilter();
         }
     }
     private void ProcessFilter()
     {
-        var curLen = filtframe->nb_samples * ASampleBytes;
+        var curLen = filtframe->nb_samples * SampleBytes;
 
         if (filtframe->nb_samples > cBufSamples) // (min 10000)
             AllocateCircularBuffer(filtframe->nb_samples);
         else if (cBufPos + curLen >= cBuf.Length)
             cBufPos = 0;
 
-        long newPts         = filterFirstPts + av_rescale_q((long)(curSamples + missedSamples), sinkTimebase, AudioStream.AVStream->time_base);
+        long newPts         = firstPts + av_rescale_q((long)(filtSamples + filtMissedSamples), streamSampleRateTimebase, AudioStream.AVStream->time_base);
         var samplesSpeed1   = filtframe->nb_samples * speed;
-        missedSamples      += samplesSpeed1 - (int)samplesSpeed1;
-        curSamples         += (int)samplesSpeed1;
+        filtMissedSamples  += samplesSpeed1 - (int)samplesSpeed1;
+        filtSamples        += (int)samplesSpeed1;
 
         AudioFrame mFrame = new()
         {

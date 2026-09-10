@@ -73,9 +73,6 @@ public class Config : NotifyPropertyChanged
         config.Loaded       = true;
         config.LoadedPath   = path;
 
-        if (config.Audio.FiltersEnabled && Engine.Config.FFmpegLoadProfile == LoadProfile.Main)
-            config.Audio.FiltersEnabled = false;
-
         // TODO: L: refactor
         config.Player.config = config;
         config.Demuxer.config = config;
@@ -914,12 +911,6 @@ public class Config : NotifyPropertyChanged
             if (player.Audio.Volume == 0) return;
             player.Audio.Volume = Math.Max(player.Audio.Volume - VolumeOffset, 0);
         }
-
-        /// <summary>
-        /// Uses FFmpeg filters instead of Swr (better speed quality and support for extra filters, requires avfilter-X.dll)
-        /// </summary>
-        public bool             FiltersEnabled      { get => _FiltersEnabled; set { if (Set(ref _FiltersEnabled, value && Engine.Config.FFmpegLoadProfile != LoadProfile.Main)) player?.AudioDecoder.SetupFiltersOrSwr(); } }
-        bool _FiltersEnabled = true;
 
         /// <summary>
         /// List of filters for post processing the audio samples (experimental)<br/>

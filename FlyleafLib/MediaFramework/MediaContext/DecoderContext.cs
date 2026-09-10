@@ -233,7 +233,7 @@ public unsafe partial class DecoderContext : PluginHandler
             {
                 AudioDecoder.Flush();
                 if (ms == 0)
-                    AudioDecoder.nextPts = AudioDecoder.Stream.StartTimePts;
+                    AudioDecoder.expectingPts = AudioDecoder.Stream.StartTimePts;
             }
 
             for (int i = 0; i < subNum; i++)

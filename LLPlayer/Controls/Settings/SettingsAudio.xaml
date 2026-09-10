@@ -33,14 +33,6 @@
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
                             Width="180"
-                            Text="Use Filters" />
-                        <ToggleButton
-                            IsChecked="{Binding FL.PlayerConfig.Audio.FiltersEnabled}" />
-                    </StackPanel>
-
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Width="180"
                             Text="Delay (ms)" />
                         <TextBox
                             Width="100"

@@ -544,6 +544,7 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
         decoder.OpenExternalSubtitlesStreamCompleted   += Decoder_OpenExternalSubtitlesStreamCompleted;
 
         AudioDecoder.CodecChanged   = Decoder_AudioCodecChanged;
+        AudioDecoder.FormatChanged  = Decoder_AudioFormatChanged;
         VideoDecoder.CodecChanged   = Decoder_VideoCodecChanged;
         VideoDecoder.OpeningCodec   = () => { OnOpeningVideoStream(new() { Player = this, VideoStream = VideoDecoder.VideoStream, VideoAcceleration = VideoDecoder.VideoAccelerated }); };
         decoder.RecordingCompleted += (o, e) => { IsRecording = false; };
@@ -572,16 +573,13 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
             if (IsDisposed)
                 return;
 
-            try
-            {
-                Initialize();
-                Audio.Dispose();
-                decoder.Dispose();
-            } catch (Exception e) { Log.Warn($"Disposed ({e.Message})"); }
+            Initialize();
 
             IsDisposed = true;
         }
 
+        Audio.Dispose();
+        decoder.Dispose(); // with lockActions, Deadlock with Pause (from Renderer.Dispose)
         Host?.Player_Disposed();
         Log.Info("Disposed");
     }

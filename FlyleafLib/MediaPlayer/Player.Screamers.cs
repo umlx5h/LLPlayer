@@ -62,7 +62,6 @@ unsafe partial class Player
         if (!vFrames.TryDequeue(out var vFrame))
             return;
 
-        Log.Error($"ShowOneFrame #{vFrame.Id}");
         Renderer.RenderRequest(vFrame);
 
         UpdateCurTime(vFrame.Timestamp);
@@ -208,7 +207,7 @@ unsafe partial class Player
                         break;
 
                     Audio.AddSamples(aFrame);
-                    bufferedDuration += (long) ((aFrame.dataLen / 4) * Audio.Timebase);
+                    bufferedDuration += (long) ((aFrame.dataLen / AudioDecoder.SampleBytes) * AudioDecoder.SampleRateTimebase);
                     UpdateCurTime(aFrame.Timestamp, false);
                 } while (bufferedDuration < 100 * 10000);
 

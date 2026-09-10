@@ -71,7 +71,7 @@ public abstract unsafe class StreamBase : NotifyPropertyChanged
         else
         {
             StartTime   = Demuxer.StartTime;
-            StartTimePts= av_rescale_q(StartTime/10, Engine.FFmpeg.AV_TIMEBASE_Q, AVStream->time_base);
+            StartTimePts= av_rescale_q(StartTime/10, TIME_BASE_Q, AVStream->time_base);
         }
 
         UpdateMetadata();

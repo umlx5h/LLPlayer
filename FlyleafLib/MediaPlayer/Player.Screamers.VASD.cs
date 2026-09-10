@@ -842,7 +842,7 @@ unsafe partial class Player
                 long decodedDuration = 0;
                 for (int i = 0; i < frames.Length; i++)
                 {
-                    decodedDuration += (long)((frames[i].dataLen / 4) * Audio.Timebase);
+                    decodedDuration += (long)((frames[i].dataLen / AudioDecoder.SampleBytes) * AudioDecoder.SampleRateTimebase);
                     if (decodedDuration > MIN_DEC_BUFFER)
                         break;
                 }
@@ -876,12 +876,12 @@ unsafe partial class Player
             void FillBuffer()
             {
                 Audio.AddSamples(aFrame);
-                expectingPts = aFrame.Timestamp + (long)(speed * aFrame.dataLen / 4 * Audio.Timebase);
+                expectingPts = aFrame.Timestamp + (long)(speed * aFrame.dataLen / AudioDecoder.SampleBytes * AudioDecoder.SampleRateTimebase);
                 while (AudioDecoder.Frames.TryDequeue(out aFrame) && aFrame != null && Audio.GetBufferedDuration() < MAX_PLAY_BUFFER)
                 {
                     desyncMs += (aFrame.Timestamp - expectingPts) / 10000;
                     Audio.AddSamples(aFrame);
-                    expectingPts = aFrame.Timestamp + (long)(speed * aFrame.dataLen / 4 * Audio.Timebase);
+                    expectingPts = aFrame.Timestamp + (long)(speed * aFrame.dataLen / AudioDecoder.SampleBytes * AudioDecoder.SampleRateTimebase);
 
                     if (desyncMs > MAX_DESYNC_MS)
                         break;

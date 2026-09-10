@@ -318,9 +318,9 @@ public unsafe class VideoDecoder : DecoderBase
         allowedErrors       = Config.Decoder.MaxErrors;
 
         // Not all codecs fill key frame flag | https://github.com/SuRGeoNix/Flyleaf/issues/638 | Old MOV/MP4 container marking packets loosely as key
-        checkKeyFrame       = codecCtx->codec_id != AVCodecID.Av1 &&
+        checkKeyFrame       = !isIntraOnly && codecCtx->codec_id != AVCodecID.Av1 &&
                              (VideoAccelerated ||
-                              codecCtx->codec_id != AVCodecID.Vp8 && codecCtx->codec_id != AVCodecID.Vp9 && codecCtx->codec_id != AVCodecID.Qtrle);
+                              codecCtx->codec_id != AVCodecID.Vp8 && codecCtx->codec_id != AVCodecID.Vp9);
 
         if (CanDebug) Log.Debug($"Using {CurCodecSpec.Name} {(VideoAccelerated ? "(HW)" : "(SW)")}");
 
@@ -646,8 +646,8 @@ public unsafe class VideoDecoder : DecoderBase
             }
 
             // Create timestamps for h264/hevc raw streams (Needs also to handle this with the remuxer / no recording currently supported!)
-            frame->pts = lastFixedPts + VideoStream.StartTimePts;
-            lastFixedPts += av_rescale_q(VideoStream.FrameDuration / 10, Engine.FFmpeg.AV_TIMEBASE_Q, VideoStream.AVStream->time_base);
+            frame->pts      = lastFixedPts + VideoStream.StartTimePts;
+            lastFixedPts   += av_rescale_q(VideoStream.FrameDuration / 10, TIME_BASE_Q, VideoStream.AVStream->time_base);
         }
 
         if (!filledFromCodec) // Ensures we have a proper frame before filling from codec
@@ -1222,8 +1222,8 @@ public unsafe class VideoDecoder : DecoderBase
                 return DecodeFrameNextInternal();
             }
 
-            frame->pts = lastFixedPts + VideoStream.StartTimePts;
-            lastFixedPts += av_rescale_q(VideoStream.FrameDuration / 10, Engine.FFmpeg.AV_TIMEBASE_Q, VideoStream.AVStream->time_base);
+            frame->pts      = lastFixedPts + VideoStream.StartTimePts;
+            lastFixedPts   += av_rescale_q(VideoStream.FrameDuration / 10, TIME_BASE_Q, VideoStream.AVStream->time_base);
         }
 
         if (StartTime == NoTs)

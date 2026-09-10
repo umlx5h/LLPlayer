@@ -20,7 +20,6 @@ public static partial class Utils
     public static readonly Point        PointEmpty          = new();
     public static readonly CornerRadius CornerRadiusEmpty   = new();
 
-
     // VLC : https://github.com/videolan/vlc/blob/master/modules/gui/qt/dialogs/preferences/simple_preferences.cpp
     // Kodi: https://github.com/xbmc/xbmc/blob/master/xbmc/settings/AdvancedSettings.cpp
 
@@ -227,15 +226,6 @@ public static partial class Utils
             catch { }
         });
     }
-
-    // We can't trust those
-    //public static private bool    IsDesignMode=> (bool) DesignerProperties.IsInDesignModeProperty.GetMetadata(typeof(DependencyObject)).DefaultValue;
-    //public static bool            IsDesignMode    = LicenseManager.UsageMode == LicenseUsageMode.Designtime; // Will not work properly (need to be called from non-static class constructor)
-
-    //public static bool          IsWin11         = Regex.IsMatch(Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "ProductName", "").ToString(), "Windows 11");
-    //public static bool          IsWin10         = Regex.IsMatch(Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "ProductName", "").ToString(), "Windows 10");
-    //public static bool          IsWin8          = Regex.IsMatch(Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "ProductName", "").ToString(), "Windows 8");
-    //public static bool          IsWin7          = Regex.IsMatch(Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "ProductName", "").ToString(), "Windows 7");
 
     public static List<string> GetMoviesSorted(List<string> movies)
     {
@@ -687,6 +677,25 @@ public static partial class Utils
         };
     }
         
+    public static string GetChannelLayoutStr(ulong mask)
+    {
+        AVChannelLayout layout = new()
+        {
+            order   = AVChannelOrder.Native,
+            u       = new() { mask = mask }
+        };
+
+        return GetChannelLayoutStr(layout);
+    }
+    public unsafe static string GetChannelLayoutStr(AVChannelLayout layout)
+    {
+        byte[] buf = new byte[20];
+        fixed (byte* bufPtr = buf)
+        {
+            _ = av_channel_layout_describe(&layout, bufPtr, (nuint)buf.Length);
+            return BytePtrToStringUTF8(bufPtr);
+        }
+    }
 
     public static readonly double SWFREQ_TO_TICKS = 10000000.0 / Stopwatch.Frequency;
     public static string ToHexadecimal(byte[] bytes)

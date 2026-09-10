@@ -64,9 +64,11 @@ unsafe partial class Player
     #region Decoder Events
     private void Decoder_AudioCodecChanged(DecoderBase x)
     {
-        Audio.Refresh(true);
+        Audio.Refresh();
         UIAll();
     }
+    private void Decoder_AudioFormatChanged(AudioDecoder x)
+        => Audio.Initialize(true);
     private void Decoder_VideoCodecChanged(DecoderBase x)
     {
         Video.Refresh();
