@@ -21,9 +21,16 @@ public unsafe partial class Renderer
                     d3CacheEntry.Filters.Add(filter, range);
                 }
 
+            // Check NVidia Super Resolution availability
+            if (gpuAdapter.Vendor == GPUVendor.Nvidia)
+                fixed(uint* ptr = &d3CacheEntry.SuperResNvidiaAvailable)
+                    vc.VideoProcessorGetStreamExtension(vp, 0, GUID_SUPERRES_NVIDIA, sizeof(uint), (nint)ptr);
+
             d3CacheEntry.Failed = false;
             Monitor.Exit(d3CacheEntry);
         }
+
+        superResNvidiaAvailable = d3CacheEntry.SuperResNvidiaAvailable == 1;
 
         if (!ucfg.d3FiltersFilled)
         {
@@ -191,6 +198,7 @@ class D3CacheEntry
                 Filters = [];
 
     public bool Failed  = true;
+    public uint SuperResNvidiaAvailable;
 
     public static D3CacheEntry Get(long luid, out bool needsFillUnlock)
     {

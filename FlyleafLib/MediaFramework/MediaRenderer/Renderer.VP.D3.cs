@@ -322,10 +322,10 @@ color = float4(Texture2.Sample(Sampler, input.Texture).r, Texture3.Sample(Sample
         if (!ucfg.SuperResolution)
             DisableSuperRes();
         else
-        {
-            if (scfg.PixelComp0Depth <= 8 && // Seems it crashes with 10-bit?
-               (((rotation ==  0 || rotation == 180) && view.Width > VisibleWidth  && view.Height > VisibleHeight) ||
-                ((rotation == 90 || rotation == 270) && view.Width > VisibleHeight && view.Height > VisibleWidth)))
+        {   // Seems it crashes with 10-bit | RGB/GRAY?
+            if (scfg.PixelComp0Depth == 8 && scfg.ColorType == ColorType.YUV &&
+               (((rotation ==  0 || rotation == 180) && view.Width > VisibleWidth  || view.Height > VisibleHeight) ||
+                ((rotation == 90 || rotation == 270) && view.Width > VisibleHeight || view.Height > VisibleWidth)))
                 EnableSuperRes();
             else
                 DisableSuperRes();
@@ -476,6 +476,7 @@ color = float4(Texture2.Sample(Sampler, input.Texture).r, Texture3.Sample(Sample
     static readonly SuperResNvidia  SuperResEnabledNvidia   = new(true);
     static readonly SuperResNvidia  SuperResDisabledNvidia  = new(false);
     static readonly Guid            GUID_SUPERRES_NVIDIA    = Guid.Parse("d43ce1b3-1f4b-48ac-baee-c3c25375e6f7");
+    bool superResNvidiaAvailable;
 
     [StructLayout(LayoutKind.Sequential)]
     struct SuperResIntel
@@ -496,14 +497,19 @@ color = float4(Texture2.Sample(Sampler, input.Texture).r, Texture3.Sample(Sample
         if (SuperResolution)
             return;
 
-        SuperResolution = true;
-        RaiseUI(nameof(SuperResolution));
+        if (gpuAdapter.Vendor == GPUVendor.Nvidia)
+        {
+            if (!superResNvidiaAvailable)
+                return;
 
-        if (GPUAdapter.Vendor == GPUVendor.Nvidia)
             fixed (SuperResNvidia* ptr = &SuperResEnabledNvidia)
                 vc.VideoProcessorSetStreamExtension(vp, 0, GUID_SUPERRES_NVIDIA, (uint)sizeof(SuperResNvidia), (nint)ptr);
-        else if (GPUAdapter.Vendor == GPUVendor.Intel)
+        }
+        else if (gpuAdapter.Vendor == GPUVendor.Intel)
             UpdateSuperResIntel(true);
+
+        SuperResolution = true;
+        RaiseUI(nameof(SuperResolution));
     }
 
     void DisableSuperRes()
@@ -639,19 +645,19 @@ color = float4(Texture2.Sample(Sampler, input.Texture).r, Texture3.Sample(Sample
         dump += $"MaxStreamStates           {vpCaps.MaxStreamStates}\r\n";
 
         dump += $"\n[Video Processor Device Caps]\r\n";
-        foreach (VideoProcessorDeviceCaps cap in Enum.GetValues<VideoProcessorDeviceCaps>())
+        foreach (var cap in Enum.GetValues<VideoProcessorDeviceCaps>())
             dump += $"{cap,-25} {((vpCaps.DeviceCaps & cap) != 0 ? "yes" : "no")}\r\n";
 
         dump += $"\n[Video Processor Feature Caps]\r\n";
-        foreach (VideoProcessorFeatureCaps cap in Enum.GetValues<VideoProcessorFeatureCaps>())
+        foreach (var cap in Enum.GetValues<VideoProcessorFeatureCaps>())
             dump += $"{cap,-25} {((vpCaps.FeatureCaps & cap) != 0 ? "yes" : "no")}\r\n";
 
         dump += $"\n[Video Processor Stereo Caps]\r\n";
-        foreach (VideoProcessorStereoCaps cap in Enum.GetValues<VideoProcessorStereoCaps>())
+        foreach (var cap in Enum.GetValues<VideoProcessorStereoCaps>())
             dump += $"{cap,-25} {((vpCaps.StereoCaps & cap) != 0 ? "yes" : "no")}\r\n";
 
         dump += $"\n[Video Processor Input Format Caps]\r\n";
-        foreach (VideoProcessorFormatCaps cap in Enum.GetValues<VideoProcessorFormatCaps>())
+        foreach (var cap in Enum.GetValues<VideoProcessorFormatCaps>())
             dump += $"{cap,-25} {((vpCaps.InputFormatCaps & cap) != 0 ? "yes" : "no")}\r\n";
 
         dump += $"\n[Video Processor Filter Caps]\r\n";
@@ -666,14 +672,13 @@ color = float4(Texture2.Sample(Sampler, input.Texture).r, Texture3.Sample(Sample
                 dump += $"{filter,-25} no\r\n";
 
         dump += $"\n[Video Processor Auto Stream Caps]\r\n";
-        foreach (VideoProcessorAutoStreamCaps cap in Enum.GetValues<VideoProcessorAutoStreamCaps>())
+        foreach (var cap in Enum.GetValues<VideoProcessorAutoStreamCaps>())
             dump += $"{cap,-25} {((vpCaps.AutoStreamCaps & cap) != 0 ? "yes" : "no")}\r\n";
 
-        VideoProcessorRateConversionCaps rcCap = new();
         for (uint i = 0; i < vpCaps.RateConversionCapsCount; i++)
         {
-            ve.GetVideoProcessorRateConversionCaps(i, out rcCap);
-            VideoProcessorProcessorCaps pCaps = (VideoProcessorProcessorCaps) rcCap.ProcessorCaps;
+            ve.GetVideoProcessorRateConversionCaps(i, out var rcCap);
+            var pCaps = (VideoProcessorProcessorCaps) rcCap.ProcessorCaps;
 
             dump += $"\n[Video Processor Rate Conversion Caps #{i}]\r\n";
 
@@ -683,7 +688,7 @@ color = float4(Texture2.Sample(Sampler, input.Texture).r, Texture3.Sample(Sample
                 dump += $"\t{field.Name,-35} {field.GetValue(rcCap)}\r\n";
 
             dump += $"\n\t[Video Processor Processor Caps]\r\n";
-            foreach (VideoProcessorProcessorCaps cap in Enum.GetValues(typeof(VideoProcessorProcessorCaps)))
+            foreach (var cap in Enum.GetValues<VideoProcessorProcessorCaps>())
                 dump += $"\t{cap,-35} {(((VideoProcessorProcessorCaps)rcCap.ProcessorCaps & cap) != 0 ? "yes" : "no")}\r\n";
         }
 

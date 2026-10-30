@@ -28,6 +28,7 @@ Texture2D		Texture1		: register(t0);
 Texture2D		Texture2		: register(t1);
 Texture2D		Texture3		: register(t2);
 Texture2D		Texture4		: register(t3);
+Texture2D       IccLut          : register(t4);
 
 struct ConfigData
 {
@@ -39,8 +40,18 @@ struct ConfigData
     float saturation;
 
     float uvOffset;
-    int tonemap;
-    float hdrtone;
+    float targetPeakScale;
+
+    float splineSrcPivot;
+    float splineDstPivot;
+    float splinePa;
+    float splineSlope;
+    float splineQa;
+    float splineQb;
+
+    float pqScale;
+    float displayMinNits;
+    float displayPeakNits;
 };
 
 cbuffer         Config          : register(b0)
@@ -85,14 +96,38 @@ inline float2 PanoProject(float2 uv)
 }
 #endif
 
-inline float3 LinearToSRGB(float3 c)
-{
-    float3 srgbLo = c * 12.92;
-    float3 srgbHi = 1.055 * pow(c, 1.0 / 2.4) - 0.055;
-    float3 threshold = step(0.0031308, c);
+#if defined(dICC)
+#define ICC_LUT_SIZE 33.0
 
-    return lerp(srgbLo, srgbHi, threshold);
+inline float3 ApplyICC(float3 c)
+{
+    c = saturate(c);
+
+    float b = c.b * (ICC_LUT_SIZE - 1.0);
+
+    float b0 = floor(b);
+    float b1 = min(b0 + 1.0, ICC_LUT_SIZE - 1.0);
+    float bf = b - b0;
+
+    float r = c.r * (ICC_LUT_SIZE - 1.0);
+    float g = c.g * (ICC_LUT_SIZE - 1.0);
+
+    float width = ICC_LUT_SIZE * ICC_LUT_SIZE;
+
+    float2 uv0 = float2(
+        (b0 * ICC_LUT_SIZE + r + 0.5) / width,
+        (g + 0.5) / ICC_LUT_SIZE);
+
+    float2 uv1 = float2(
+        (b1 * ICC_LUT_SIZE + r + 0.5) / width,
+        (g + 0.5) / ICC_LUT_SIZE);
+
+    float3 c0 = IccLut.SampleLevel(Sampler, uv0, 0).rgb;
+    float3 c1 = IccLut.SampleLevel(Sampler, uv1, 0).rgb;
+
+    return lerp(c0, c1, bf);
 }
+#endif
 
 inline float3 SRGBToLinear(float3 c)
 {
@@ -101,17 +136,6 @@ inline float3 SRGBToLinear(float3 c)
     float3 threshold = step(0.04045, c);
     
     return lerp(linearLo, linearHi, threshold);
-}
-
-inline float3 Gamut2020To709(float3 c)
-{
-    static const float3x3 mat = 
-    {
-         1.6605, -0.5876, -0.0728,
-        -0.1246,  1.1329, -0.0083,
-        -0.0182, -0.1006,  1.1187
-    };
-    return mul(mat, c);
 }
 
 #if defined(dYUVLimited)
@@ -139,8 +163,18 @@ static const float3x3 coefs[3] =
 
 inline float3 YUVToRGBLimited(float3 yuv)
 {
-    yuv.x  -= 0.0625;
-    yuv.yz -= 0.5;
+    #if defined(dYUV16)
+        // P010 limited, sampled as R16_UNorm
+        yuv.x  -= 0.0625;
+        yuv.yz -= 0.5;
+        yuv *= 257.0 / 256.0;
+    #else
+        // 8-bit limited, sampled as R8_UNorm
+        yuv.x  -= 16.0 / 255.0;
+        yuv.yz -= 128.0 / 255.0;
+
+    #endif
+
     return mul(coefs[Config.coefsIndex], yuv);
 }
 #elif defined(dYUVFull)
@@ -177,7 +211,73 @@ static const float rgbOffset = 16.0 / 255.0;
 static const float rgbScale = 255.0 / 219.0;
 #endif
 
-#if defined(dPQToLinear) || defined(dHLGToLinear)
+#if defined(dBT1886ToLinear)
+inline float3 BT1886ToLinear(float3 c)
+{
+    return pow(max(c, 0.0), 2.4);
+}
+#endif
+
+#if defined(dBT2020)
+inline float3 Gamut2020To709(float3 c)
+{
+    static const float3x3 mat = 
+    {
+         1.6605, -0.5876, -0.0728,
+        -0.1246,  1.1329, -0.0083,
+        -0.0182, -0.1006,  1.1187
+    };
+    return mul(mat, c);
+}
+
+inline float3 GamutCompress709(float3 c, float knee)
+{
+    static const float3 luma709 =
+        float3(0.2126, 0.7152, 0.0722);
+
+    float y = saturate(dot(c, luma709));
+
+    float lo = min(c.r, min(c.g, c.b));
+    float hi = max(c.r, max(c.g, c.b));
+
+    float limit = 1e20;
+
+    if (hi > y)
+        limit = min(limit, (1.0 - y) / (hi - y));
+
+    if (lo < y)
+        limit = min(limit, y / (y - lo));
+
+    if (limit == 1e20)
+        return c;
+
+    float usage = 1.0 / max(limit, 1e-6);
+
+    if (usage <= knee)
+        return c;
+
+    float k = 1.0 - knee;
+
+    float mappedUsage =
+        1.0 - (k * k) /
+        (usage + 1.0 - 2.0 * knee);
+
+    float scale = mappedUsage / usage;
+
+    return y.xxx + (c - y.xxx) * scale;
+}
+
+inline float3 LinearToSRGB(float3 c)
+{
+    float3 srgbLo = c * 12.92;
+    float3 srgbHi = 1.055 * pow(c, 1.0 / 2.4) - 0.055;
+    float3 threshold = step(0.0031308, c);
+
+    return lerp(srgbLo, srgbHi, threshold);
+}
+#endif
+
+#if defined(dPQ) || defined(dPQSpline)
 static const float ST2084_m1 = 0.1593017578125;
 static const float ST2084_m2 = 78.84375;
 static const float ST2084_c1 = 0.8359375;
@@ -186,79 +286,97 @@ static const float ST2084_c3 = 18.6875;
 
 inline float3 PQToLinear(float3 rgb, float factor)
 {
+    rgb = max(rgb, 0.0);
+
     rgb  = pow(rgb, 1.0 / ST2084_m2);
     rgb  = max(rgb - ST2084_c1, 0.0) / (ST2084_c2 - ST2084_c3 * rgb);
     rgb  = pow(rgb, 1.0 / ST2084_m1);
     rgb *= factor;
     return rgb;
 }
+#endif
 
-inline float3 LinearToPQ(float3 rgb, float divider)
+#if defined(dPQSpline)
+inline float PQToNits(float pq)
 {
-    rgb /= divider;
-    rgb  = pow(rgb, ST2084_m1);
-    rgb  = (ST2084_c1 + ST2084_c2 * rgb) / (1.0f + ST2084_c3 * rgb);
-    rgb  = pow(rgb, ST2084_m2);
-    return rgb;
+    pq = max(pq, 0.0);
+
+    float p = pow(pq, 1.0 / ST2084_m2);
+    p = max(p - ST2084_c1, 0.0) /
+        (ST2084_c2 - ST2084_c3 * p);
+
+    return pow(p, 1.0 / ST2084_m1) * 10000.0;
+}
+
+inline float NitsToPQ(float nits)
+{
+    float x = saturate(nits / 10000.0);
+
+    x = pow(x, ST2084_m1);
+    x = (ST2084_c1 + ST2084_c2 * x) /
+        (1.0 + ST2084_c3 * x);
+
+    return pow(x, ST2084_m2);
+}
+
+inline float ToneSpline(float x)
+{
+    x -= Config.splineSrcPivot;
+
+    if (x > 0.0)
+    {
+        x = ((Config.splineQa * x +
+              Config.splineQb) * x +
+              Config.splineSlope) * x;
+    }
+    else
+    {
+        x = (Config.splinePa * x +
+             Config.splineSlope) * x;
+    }
+
+    return x + Config.splineDstPivot;
 }
 #endif
 
-#if defined(dHLGToLinear)
-inline float3 HLGInverse(float3 rgb)
+#if defined(dHLG)
+inline float3 HLGInverseOETF(float3 c)
 {
     const float A = 0.17883277;
     const float B = 0.28466892;
     const float C = 0.55991073;
 
-    rgb = (rgb <= 0.5)
-        ? rgb * rgb * 4.0
-        : (exp((rgb - C) / A) + B);
+    // Don't saturate upper values; HLG allows headroom > 1
+    c = max(c, 0.0);
 
-    return rgb;
+    float3 lo = c * c / 3.0;
+    float3 hi = (exp((c - C) / A) + B) / 12.0;
+
+    return lerp(lo, hi, step(0.5, c));
 }
 
-inline float3 HLGToLinear(float3 rgb)
+inline float3 HLGToDisplayLinear(float3 c, float displayPeakNits)
 {
-    static const float3 ootf_2020 = float3(0.2627, 0.6780, 0.0593);
+    static const float3 luma2020 = float3(0.2627, 0.6780, 0.0593);
 
-    rgb = HLGInverse(rgb);
-    float ootf_ys = 2000.0f * dot(ootf_2020, rgb);
-    rgb *= pow(ootf_ys, 0.2f);
-    return rgb;
+    c = HLGInverseOETF(c);
+
+    float y = dot(c, luma2020);
+
+    if (y <= 0.0)
+        return 0.0;
+
+    float gamma = 1.2 + 0.42 * log10(displayPeakNits / 1000.0);
+
+    // Normalized display-linear result.
+    // Peak white stays 1.0.
+    c *= pow(y, gamma - 1.0);
+
+    return c;
 }
 #endif
 
-#if defined(dTone)
-inline float3 ToneAces(float3 x)
-{
-    const float A = 2.51;
-    const float B = 0.03;
-    const float C = 2.43;
-    const float D = 0.59;
-    const float E = 0.14;
-
-    return (x * (A * x + B)) / (x * (C * x + D) + E);
-}
-
-inline float3 ToneHable(float3 x)
-{
-    const float A = 0.15f;
-    const float B = 0.5f;
-    const float C = 0.1f;
-    const float D = 0.2f;
-    const float E = 0.02f;
-    const float F = 0.3f;
-
-    return ((x * (A * x + C * B) + D * E) / (x * (A * x + B) + D * F)) - E / F;
-}
-static const float3 HABLE_DEFAULT = ToneHable(11.2);
-
-inline float3 ToneReinhard(float3 x)
-{
-    return x * (1.0 + x / 4.84) / (x + 1.0);
-}
-#endif
-
+#if defined(dFilters)
 #pragma warning( disable: 4000 )
 inline float3 Hue(float3 rgb, float angle)
 {
@@ -299,7 +417,22 @@ inline float3 Saturation(float3 rgb, float saturation)
     float luminance = dot(rgb, kBT709);
     return lerp(luminance.rrr, rgb, saturation);
 }
+inline float Contrast(float y, float contrast)
+{
+    if (contrast == 1.0)
+        return y;
+
+    y = saturate((y - 0.0625) / 0.85546875);
+
+    y = lerp(
+        y,
+        pow(y, 2.0 - contrast),
+        smoothstep(0.0, 1.0, y));
+
+    return 0.0625 + y * 0.85546875;
+}
 #pragma warning( enable: 4000 )
+#endif
 
 struct PSInput
 {
@@ -320,65 +453,49 @@ float4 main(PSInput input) : SV_TARGET
 
 #if defined(dYUVLimited)
     #if defined(dFilters)
-    if (Config.contrast != 1.0)
-        c.x = lerp(c.x, pow(c.x, 2.0 - Config.contrast), smoothstep(0.0, 1.0, c.x));
+    c.x = Contrast(c.x, Config.contrast);
     #endif
 	c = YUVToRGBLimited(c);
 #elif defined(dYUVFull)
     #if defined(dFilters)
-    if (Config.contrast != 1.0)
-        c.x = lerp(c.x, pow(c.x, 2.0 - Config.contrast), smoothstep(0.0, 1.0, c.x));
+    c.x = Contrast(c.x, Config.contrast);
     #endif
 	c = YUVToRGBFull(c);
 #endif
 
-#if defined(dBT2020)
-    c = SRGBToLinear(c); // TODO: transferfunc
-	c = Gamut2020To709(c);
-	c = saturate(c);
-	c = LinearToSRGB(c);
-#else
+#if defined(dICC)
+    c = ApplyICC(c);
+#elif defined(dBT1886ToLinear)
+    c = BT1886ToLinear(c);
+#elif defined(dHLG)
+    float targetPeakNits = Config.displayPeakNits * Config.targetPeakScale;
+    c = HLGToDisplayLinear(c, targetPeakNits);
+    c *= Config.targetPeakScale;
+#elif defined(dPQ)
+    c = PQToLinear(c, Config.pqScale);
+#elif defined(dPQSpline)
+    c = PQToLinear(c, 10000.0);
 
-    #if defined(dPQToLinear)
-	c = PQToLinear(c, Config.hdrtone);
-    #elif defined(dHLGToLinear)
-	c = HLGToLinear(c);
-	c = LinearToPQ(c, 1000.0);
-	c = PQToLinear(c, Config.hdrtone);
-    #endif
+    static const float3 luma2020 = float3(0.2627, 0.6780, 0.0593);
+    float y = dot(c, luma2020);
 
-    #if defined(dTone)
-    [branch]
-	if (Config.tonemap == 2)
-	{
-		c = ToneHable(c) / HABLE_DEFAULT;
-        c = saturate(c);
-		c = Gamut2020To709(c);
-        c = saturate(c);
-		c = LinearToSRGB(c);
-	}
-	else if (Config.tonemap == 3)
-	{
-		c = ToneReinhard(c);
-        c = saturate(c);
-		c = Gamut2020To709(c);
-        c = saturate(c);
-		c = LinearToSRGB(c);
-	}
-	else if (Config.tonemap == 1)
-	{
-		c = ToneAces(c);
-        c = saturate(c);
-		c = Gamut2020To709(c);
-        c = saturate(c);
-		c = pow(c, 0.27);
-	}
-    else
+    if (y > 0.0)
     {
-        c = LinearToSRGB(c);
+        float mappedPQ      = ToneSpline(NitsToPQ(y));
+        float mappedY       = PQToNits(mappedPQ);
+        float normalizedY   = (mappedY - Config.displayMinNits) / (Config.displayPeakNits - Config.displayMinNits);
+        normalizedY         = saturate(normalizedY);
+        c *= normalizedY / y;
     }
-    #endif
+#endif
 
+#if defined(dBT2020)
+    c = Gamut2020To709(c);
+    #if !defined(dBT1886ToLinear)
+        c = GamutCompress709(c, 0.63);
+    #endif
+    c = saturate(c);
+    c = LinearToSRGB(c);
 #endif
 
 #if defined(dFilters)
@@ -389,7 +506,7 @@ float4 main(PSInput input) : SV_TARGET
     c  = Hue(c, Config.hue);
     c  = Saturation(c, Config.saturation);
 #endif
-    
+
     return saturate(float4(c * color.a, color.a));
 }
 "u8;

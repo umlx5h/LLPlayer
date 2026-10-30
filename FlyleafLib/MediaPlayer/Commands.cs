@@ -215,7 +215,6 @@ public class Commands
                 kv.Value.Value = kv.Value.Default;
 
         cfg.SDRDisplayNitsCustom   = 0;
-        cfg.HDRtoSDRMethod         = HDRtoSDRMethod.Hable;
     }
 
     public void SpeedSetAction(object speed)

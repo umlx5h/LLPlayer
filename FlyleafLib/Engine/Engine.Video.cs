@@ -113,7 +113,8 @@ public class VideoEngine
                     Bottom      = outdesc.DesktopCoordinates.Bottom,
                     IsAttached  = outdesc.AttachedToDesktop,
                     Rotation    = outdesc.Rotation,
-                    MaxLuminance= outdesc.MaxLuminance
+                    MaxLuminance= outdesc.MaxLuminance,
+                    MinLuminance= outdesc.MinLuminance
                 };
 
                 output6.Dispose();

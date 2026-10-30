@@ -759,12 +759,6 @@ public class Config : NotifyPropertyChanged
         bool _DoubleRate = true;
 
         /// <summary>
-        /// The HDR to SDR method that will be used by the pixel shader
-        /// </summary>
-        public HDRtoSDRMethod   HDRtoSDRMethod              { get => _HDRtoSDRMethod;   set { if (Set(ref _HDRtoSDRMethod, value))  player?.Renderer?.VPRequest(VPRequestType.HDRtoSDR); } }
-        HDRtoSDRMethod _HDRtoSDRMethod = HDRtoSDRMethod.Hable;
-
-       /// <summary>
         /// SDR Display Peak Luminance - tonemap for HDR to SDR (based on Auto/Custom)
         /// </summary>
         [JsonIgnore]
@@ -780,6 +774,7 @@ public class Config : NotifyPropertyChanged
         [JsonIgnore]
         public float            SDRDisplayNitsAuto          { get => _SDRDisplayNitsAuto;   set { if (Set(ref _SDRDisplayNitsAuto, value) && _SDRDisplayNitsCustom == 0) { player?.Renderer?.VPRequest(VPRequestType.HDRtoSDR); RaiseUI(nameof(SDRDisplayNits)); } } }
         float _SDRDisplayNitsAuto;
+        internal float _sdrDisplayMinNits;
 
         /// <summary>
         /// SDR Display Peak Luminance - tonemap for HDR to SDR (Custom)

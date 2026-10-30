@@ -505,12 +505,6 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
         Data        = new(this);
         Commands    = new(this);
 
-        if (Config.Player.Usage == Usage.Audio)
-        {
-            Config.Video.Enabled = false;
-            Config.Subtitles.Enabled = false;
-        }
-
         decoder = new(Config, PlayerId, true, this);
         Engine.AddPlayer(this);
 
@@ -527,11 +521,19 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
         DataDemuxer      = decoder.DataDemuxer;
         Playlist         = decoder.Playlist;
 
-        // We keep the same instance
-        Renderer        = VideoDecoder.Renderer;
-        vFrames         = Renderer.Frames;
-        vPackets        = VideoDemuxer.VideoPackets;
-
+        if (Config.Player.Usage == Usage.Audio)
+        {
+            Config.Video.Enabled = false;
+            Config.Subtitles.Enabled = false;
+        }
+        else
+        {
+            // We keep the same instance
+            Renderer        = VideoDecoder.Renderer;
+            vFrames         = Renderer.Frames;
+            vPackets        = VideoDemuxer.VideoPackets;
+        }
+        
         UpdateMainDemuxer();
 
         decoder.OpenAudioStreamCompleted               += Decoder_OpenAudioStreamCompleted;

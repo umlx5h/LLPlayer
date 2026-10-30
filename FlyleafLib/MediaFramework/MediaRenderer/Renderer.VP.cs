@@ -36,7 +36,7 @@ public unsafe partial class Renderer : IVP
     bool            canFL, canD3;
     VPRequestType   vpRequestsIn, vpRequests; // In: From User | ProcessRequests Copy
 
-    internal unsafe delegate VideoFrame FillPlanesDelegate(ref AVFrame* frame);
+    internal delegate VideoFrame FillPlanesDelegate(ref AVFrame* frame);
     internal FillPlanesDelegate FillPlanes;
 
     void IVP.VPRequest(VPRequestType request)
@@ -125,7 +125,17 @@ public unsafe partial class Renderer : IVP
     {   // Called from ProcessRequests (RenderLoop) | lockRenderLoops
         bool wasRunning = VideoDecoder.IsRunning;
         if (wasRunning)
-            VideoDecoder.Pause(); // don't call me from lock (Frames) - deadlock with Runinternal
+        {
+            try
+            {
+                Monitor.Enter(lockRenderLoops);
+                VideoDecoder.Pause(); // don't call me from lock (Frames) - deadlock with Runinternal
+            }
+            finally
+            {
+                Monitor.Exit(lockRenderLoops);
+            }
+        }
 
         lock(Frames)
         {
@@ -270,6 +280,7 @@ public unsafe partial class Renderer : IVP
     {
         ucfg.MaxVerticalResolutionAuto  = monitor.Height;
         ucfg.SDRDisplayNitsAuto         = monitor.MaxLuminance;
+        ucfg._sdrDisplayMinNits         = monitor.MinLuminance;
         // currently not used (int accurate instead of double)
         //refreshRateTicks = (int)((1.0 / monitor.RefreshRate) * 1000 * 10000);
     }

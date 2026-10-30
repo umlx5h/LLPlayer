@@ -26,12 +26,6 @@
                 <x:Type TypeName="flyleaf:DeInterlace"/>
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
-
-        <ObjectDataProvider x:Key="HDRtoSDRMethodEnum" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
-            <ObjectDataProvider.MethodParameters>
-                <x:Type TypeName="flyleaf:HDRtoSDRMethod"/>
-            </ObjectDataProvider.MethodParameters>
-        </ObjectDataProvider>
     </UserControl.Resources>
     <ScrollViewer>
         <StackPanel>
@@ -170,16 +164,6 @@
                             Text="Zero Latency" />
                         <ToggleButton
                             IsChecked="{Binding FL.PlayerConfig.Player.ZeroLatency}" />
-                    </StackPanel>
-
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Width="180"
-                            Text="HDR to SDR Method" />
-                        <ComboBox
-                            Width="100"
-                            ItemsSource="{Binding Source={StaticResource HDRtoSDRMethodEnum}}"
-                            SelectedItem="{Binding FL.PlayerConfig.Video.HDRtoSDRMethod}" />
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal">

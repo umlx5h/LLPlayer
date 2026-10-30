@@ -153,6 +153,8 @@ public static class Engine
         if (Application.Current == null)
             _ = new Application();
 
+        uiDispatcher = Application.Current.Dispatcher;
+
         UIInvokeIfRequired(() =>
         {
             lock (lockEngine)

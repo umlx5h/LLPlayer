@@ -2,6 +2,7 @@
 
 using FlyleafLib.MediaFramework.MediaDecoder;
 using FlyleafLib.MediaFramework.MediaDemuxer;
+using FlyleafLib.MediaFramework.MediaRenderer;
 
 namespace FlyleafLib.MediaFramework.MediaStream;
 
@@ -41,6 +42,10 @@ public unsafe class VideoStream : StreamBase
 
     internal uint txtWidth, txtHeight;
     internal CropRect cropStream, Crop; // Stream Crop + Codec Padding + Texture Padding
+    internal byte[] iccData;
+    internal float sourcePeakNits;
+    internal float sourceMinNits;
+    internal float sourceAvgNits;
 
     public VideoStream(Demuxer demuxer, AVStream* st) : base(demuxer, st)
         => Type = MediaType.Video;
@@ -124,6 +129,44 @@ public unsafe class VideoStream : StreamBase
             if (cropStream != CropRect.Empty)
                 Cropping = Cropping.Stream;
         }
+
+        var iccData = av_packet_side_data_get(cp->coded_side_data, cp->nb_coded_side_data, AVPacketSideDataType.IccProfile);
+        if (iccData != null && iccData->data != null && iccData->size > 0)
+            this.iccData = new ReadOnlySpan<byte>(iccData->data, checked((int)iccData->size)).ToArray();
+
+        var doviSide = av_packet_side_data_get(cp->coded_side_data, cp->nb_coded_side_data, AVPacketSideDataType.DoviConf);
+        if (doviSide != null)
+        {
+            var dovi = (Renderer.AVDOVIDecoderConfigurationRecord*) doviSide->data;
+            if (dovi != null)
+            {
+                switch (dovi->dv_profile)
+                {
+                    case 5: // Not supported
+                    case 7:
+                        HDRFormat       = HDRFormat.HDR10;
+                        ColorTransfer   = AVColorTransferCharacteristic.Smpte2084;
+                        ColorSpace      = ColorSpace.Bt2020;
+                        break;
+                    case 8:
+                        switch (dovi->dv_bl_signal_compatibility_id)
+                        {
+                            case 1:
+                                HDRFormat       = HDRFormat.HDR10;
+                                ColorTransfer   = AVColorTransferCharacteristic.Smpte2084;
+                                ColorSpace      = ColorSpace.Bt2020;
+                                break;
+
+                            case 4:
+                                HDRFormat       = HDRFormat.HLG;
+                                ColorTransfer   = AVColorTransferCharacteristic.AribStdB67;
+                                ColorSpace      = ColorSpace.Bt2020;
+                                break;
+                        }
+                        break;
+                }
+            }
+        }
     }
 
     internal override void UpdateDuration()
@@ -153,7 +196,7 @@ public unsafe class VideoStream : StreamBase
 
         if (PixelFormatDesc == null)
             AnalysePixelFormat();
-
+        
         ReUpdate();
 
         if (codecCtx->bit_rate > 0)
@@ -265,22 +308,72 @@ public unsafe class VideoStream : StreamBase
             else if (ColorRange == ColorRange.None)
                 ColorRange = ColorType == ColorType.YUV && !PixelFormatStr.Contains('j') ? ColorRange.Limited : ColorRange.Full; // yuvj family defaults to full
         }
-        
+
         if (ColorTransfer == AVColorTransferCharacteristic.AribStdB67)
-            HDRFormat = HDRFormat.HLG;
-        else if (ColorTransfer == AVColorTransferCharacteristic.Smpte2084)
         {
-            if (av_frame_get_side_data(frame, AVFrameSideDataType.DoviMetadata) != null)
-                HDRFormat = HDRFormat.DolbyVision;
-            else if (av_frame_get_side_data(frame, AVFrameSideDataType.DynamicHdrPlus) != null)
-                HDRFormat = HDRFormat.HDRPlus;
-            else
-                HDRFormat = HDRFormat.HDR;
+            HDRFormat       = HDRFormat.HLG;
+            ColorSpace      = ColorSpace.Bt2020;
+            sourcePeakNits  = 1_000;
+            sourceMinNits   = 0;
+            sourceAvgNits   = 0;
         }
 
-        if (HDRFormat != HDRFormat.None) // Forcing BT.2020 with PQ/HLG transfer?
-            ColorSpace = ColorSpace.Bt2020;
+        else if (ColorTransfer == AVColorTransferCharacteristic.Smpte2084)// || codecCtx->colorspace == AVColorSpace.Bt2020Ncl || frame->colorspace == AVColorSpace.Bt2020Ncl)
+        {
+            HDRFormat       = HDRFormat.HDR10;
+            ColorSpace      = ColorSpace.Bt2020;
+            sourcePeakNits  = 0;
+            sourceMinNits   = 0;
+            sourceAvgNits   = 0;
 
+            var hdrPlusSide = av_frame_get_side_data(frame, AVFrameSideDataType.DynamicHdrPlus);
+            if (hdrPlusSide != null)
+            {
+                var hdrPlus = (AVDynamicHDRPlus*) hdrPlusSide->data;
+                if (hdrPlus != null && hdrPlus->num_windows != 0 && hdrPlus->application_version <= 1)
+                {
+                    HDRFormat = HDRFormat.HDR10Plus;
+                    Renderer.GetHdr10PlusPeak(hdrPlus, out sourcePeakNits, out sourceAvgNits);
+                }
+            }
+
+            if (sourcePeakNits == 0)
+            {
+                var cllSide = av_frame_side_data_get(frame->side_data, frame->nb_side_data, AVFrameSideDataType.ContentLightLevel);
+                if (cllSide != null)
+                {
+                    var cll = (AVContentLightMetadata*) cllSide->data;
+                    if (cll != null && cll->MaxCLL > 0)
+                    {
+                        sourcePeakNits = cll->MaxCLL;
+                        //Engine.Log.Debug($"CLL: {cll->MaxCLL}\t | {cll->MaxFALL}");
+                    }
+                }
+            }
+
+            var mdmSide = av_frame_side_data_get(frame->side_data, frame->nb_side_data, AVFrameSideDataType.MasteringDisplayMetadata);
+            if (mdmSide != null)
+            {
+                var mdm = (AVMasteringDisplayMetadata*) mdmSide->data;
+                if (mdm != null && mdm->has_luminance != 0)
+                {
+                    if (sourcePeakNits == 0)
+                        sourcePeakNits = (float)mdm->max_luminance.ToDouble();
+                    sourceMinNits = (float)mdm->min_luminance.ToDouble();
+                    //Engine.Log.Debug(
+                    //    $"min:{mdm->min_luminance.Num}/{mdm->min_luminance.Den} " + $"({mdm->min_luminance.ToDouble()}) " +
+                    //    $"max:{mdm->max_luminance.Num}/{mdm->max_luminance.Den} " + $"({mdm->max_luminance.ToDouble()})");
+                }
+            }
+            
+            if (sourcePeakNits <= 0)
+                sourcePeakNits = 1000;
+            else if (sourcePeakNits > 10_000)
+                sourcePeakNits = 10000;
+            
+            //Engine.Log.Debug($"Source peak: {sourcePeakNits} nits");
+        }
+        
         if (ColorSpace == ColorSpace.None)
         {
             if (frame->colorspace == AVColorSpace.Bt709)
@@ -322,6 +415,10 @@ public unsafe class VideoStream : StreamBase
             var rotation = -Math.Round(av_display_rotation_get((int*)rotData->data));
             Rotation = (uint)(rotation - (360 * Math.Floor(rotation / 360 + 0.9 / 360)));
         }
+
+        var iccData = av_frame_side_data_get(frame->side_data, frame->nb_side_data, AVFrameSideDataType.IccProfile);
+        if (iccData != null && iccData->data != null && iccData->size > 0)
+            this.iccData = new ReadOnlySpan<byte>(iccData->data, checked((int)iccData->size)).ToArray();
 
         VFlip = frame->linesize[0] < 0;
         

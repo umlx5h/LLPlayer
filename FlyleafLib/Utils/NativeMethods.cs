@@ -5,7 +5,7 @@ namespace FlyleafLib;
 
 public static partial class Utils
 {
-    public static class NativeMethods
+    unsafe public static class NativeMethods
     {
         public static WindowStyles SetWindowLong(nint hWnd, WindowStyles style)
             => (WindowStyles)SetWindowLong(hWnd, (int)WindowLongFlags.GWL_STYLE, (nint)style);
@@ -328,7 +328,195 @@ public static partial class Utils
                     field = value;
             }
         } = 96;
+        #endregion
 
+        #region ICC Profile
+        const uint PROFILE_FILENAME = 1;
+        const uint PROFILE_MEMBUFFER = 2;
+
+        const uint PROFILE_READ = 1;
+
+        const uint FILE_SHARE_READ = 0x00000001;
+        const uint OPEN_EXISTING   = 3;
+
+        const uint LCS_sRGB = 0x73524742; // 'sRGB'
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct PROFILE
+        {
+            public uint  dwType;
+            public void* pProfileData;
+            public uint  cbDataSize;
+        }
+
+        [DllImport("mscms.dll")]
+        public static extern nint OpenColorProfileW(PROFILE* pProfile, uint dwDesiredAccess, uint dwShareMode, uint dwCreationMode);
+
+        [DllImport("mscms.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool CloseColorProfile(nint hProfile);
+
+        [DllImport("mscms.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool GetStandardColorSpaceProfileW(char* pMachineName, uint dwSCS, char* pBuffer, uint* pcbSize);
+
+        public static nint OpenColorProfile(byte[] data)
+        {
+            fixed (byte* ptr = data)
+                return OpenColorProfile(ptr, data.Length);
+        }
+        public static nint OpenColorProfile(void* data, int size)
+        {
+            if (data == null || size <= 0)
+                return 0;
+
+            var profile = new PROFILE
+            {
+                dwType      = PROFILE_MEMBUFFER,
+                pProfileData= data,
+                cbDataSize  = (uint)size
+            };
+
+            return OpenColorProfileW(&profile, PROFILE_READ, 0, 0);
+        }
+        public static nint OpenSRgbProfile()
+        {
+            uint size = 0;
+
+            // First call: get required buffer size in bytes.
+            _ = GetStandardColorSpaceProfileW(null, LCS_sRGB, null, &size);
+
+            if (size == 0)
+                return 0;
+
+            byte* buffer = (byte*)NativeMemory.Alloc(size);
+
+            try
+            {
+                uint actualSize = size;
+
+                if (!GetStandardColorSpaceProfileW(null, LCS_sRGB, (char*)buffer, &actualSize))
+                    return 0;
+
+                PROFILE profile = new()
+                {
+                    dwType       = PROFILE_FILENAME,
+                    pProfileData = buffer,
+                    cbDataSize   = actualSize
+                };
+
+                return OpenColorProfileW(&profile, PROFILE_READ, FILE_SHARE_READ, OPEN_EXISTING);
+            }
+            finally
+            {
+                NativeMemory.Free(buffer);
+            }
+        }
+
+        // HTRANSFORM
+        const uint INTENT_PERCEPTUAL            = 0;
+        //const uint INTENT_RELATIVE_COLORIMETRIC = 1;
+        //const uint INTENT_SATURATION            = 2;
+        //const uint INTENT_ABSOLUTE_COLORIMETRIC = 3;
+        //const uint USE_RELATIVE_COLORIMETRIC = 0x00020000;
+
+        const uint BEST_MODE       = 0x00000003;
+        const uint INDEX_DONT_CARE = 0;
+
+        [DllImport("mscms.dll")]
+        public static extern nint CreateMultiProfileTransform(nint* pahProfiles, uint nProfiles, uint* padwIntent, uint nIntents, uint dwFlags, uint indexPreferredCMM);
+
+        [DllImport("mscms.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool DeleteColorTransform(nint hTransform);
+
+        public static nint CreateTransform(nint sourceProfile, nint destinationProfile)
+        {
+            nint* profiles = stackalloc nint[2]
+            {
+                sourceProfile,
+                destinationProfile
+            };
+
+            uint intent = INTENT_PERCEPTUAL;
+
+            return CreateMultiProfileTransform(profiles, 2, &intent, 1, BEST_MODE, INDEX_DONT_CARE);
+        }
+
+        // LUT
+        const uint BM_16b_RGB = 0x000A;
+
+        [DllImport("mscms.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool TranslateBitmapBits(nint hColorTransform, void* pSrcBits, uint bmInput, uint dwWidth, uint dwHeight, uint dwInputStride, void* pDestBits, uint bmOutput, uint dwOutputStride, nint pfnCallBack, nint ulCallbackData);
+
+        public static ushort[] CreateIccLut(nint transform)
+        {
+            // TranslateBitmapBits/BM_16b_RGB behaves as BGR16 on the
+            // tested Windows ICM implementation, despite BMFORMAT documenting RGB.
+            // Swap R/B on both input and output.
+            //
+            // Do not validate this with an sRGB->sRGB transform alone:
+            // the two R/B swaps cancel and hide the issue.
+
+            const int size = 33;
+
+            int width  = size * size;
+            int height = size;
+            int count  = width * height;
+
+            // 48-bit RGB: ushort R,G,B
+            ushort[] input  = new ushort[count * 3];
+            ushort[] output = new ushort[count * 3];
+
+            int i = 0;
+
+            for (int g = 0; g < size; g++)
+            {
+                ushort gv = (ushort)(g * 65535 / (size - 1));
+
+                for (int b = 0; b < size; b++)
+                {
+                    ushort bv = (ushort)(b * 65535 / (size - 1));
+
+                    for (int r = 0; r < size; r++)
+                    {
+                        // Input to TranslateBitmapBits
+                        input[i++] = bv;
+                        input[i++] = gv;
+                        input[i++] = (ushort)(r * 65535 / (size - 1));
+                    }
+                }
+            }
+
+            uint stride = (uint)(width * 3 * sizeof(ushort));
+
+            fixed (ushort* src = input)
+            fixed (ushort* dst = output)
+            {
+                if (!TranslateBitmapBits(transform, src, BM_16b_RGB, (uint)width, (uint)height, stride, dst, BM_16b_RGB, stride, 0, 0))
+                return [];
+            }
+
+            ushort[] rgba = new ushort[count * 4];
+
+            for (int p = 0; p < count; p++)
+            {
+                int src = p * 3;
+                int dst = p * 4;
+
+                // Output from TranslateBitmapBits -> RGBA texture
+                rgba[dst    ] = output[src + 2]; // R
+                rgba[dst + 1] = output[src + 1]; // G
+                rgba[dst + 2] = output[src    ]; // B
+                rgba[dst + 3] = ushort.MaxValue;
+            }
+
+            return rgba;
+        }
+        #endregion
+
+        #region Monitor / ICC Profiles
         [DllImport("user32.dll")]
         public static extern IntPtr MonitorFromPoint(Point pt, MonitorOptions dwFlags);
 
@@ -358,9 +546,94 @@ public static partial class Utils
             using var g = Graphics.FromHwnd(IntPtr.Zero);
             return (g.DpiX / 96.0, g.DpiY / 96.0);
         }
+
+        //const uint MONITOR_DEFAULTTONEAREST = 2;
+        //const int CCHDEVICENAME = 32;
+
+        //[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        //public unsafe struct MONITORINFOEX
+        //{
+        //    public uint cbSize;
+        //    public RECT rcMonitor;
+        //    public RECT rcWork;
+        //    public uint dwFlags;
+        //    public fixed char szDevice[CCHDEVICENAME];
+        //}
+
+        //[DllImport("user32.dll")]
+        //public static extern nint MonitorFromWindow(
+        //    nint hwnd,
+        //    uint dwFlags);
+
+        //[DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        //[return: MarshalAs(UnmanagedType.Bool)]
+        //public static extern bool GetMonitorInfoW(
+        //    nint hMonitor,
+        //    MONITORINFOEX* lpmi);
+
+        //[DllImport("gdi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        //public static extern nint CreateDCW(
+        //    char* pwszDriver,
+        //    char* pwszDevice,
+        //    char* pszPort,
+        //    void* pdm);
+
+        //[DllImport("gdi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        //[return: MarshalAs(UnmanagedType.Bool)]
+        //public static extern bool GetICMProfileW(
+        //    nint hdc,
+        //    uint* pBufSize,
+        //    char* pszFilename);
+
+        //[DllImport("gdi32.dll")]
+        //[return: MarshalAs(UnmanagedType.Bool)]
+        //public static extern bool DeleteDC(nint hdc);
+        //public static nint OpenMonitorProfile(nint monitor)
+        //{
+        //    if (monitor == 0)
+        //        return 0;
+
+        //    MONITORINFOEX mi = default;
+        //    mi.cbSize = (uint)sizeof(MONITORINFOEX);
+
+        //    if (!GetMonitorInfoW(monitor, &mi))
+        //        return 0;
+
+        //    nint hdc = CreateDCW(mi.szDevice, null, null, null);
+        //    if (hdc == 0)
+        //        return 0;
+
+        //    try
+        //    {
+        //        const int MAX_PATH = 260;
+
+        //        char* path = stackalloc char[MAX_PATH];
+        //        uint chars = MAX_PATH;
+
+        //        if (!GetICMProfileW(hdc, &chars, path))
+        //            return 0;
+
+        //        PROFILE profile = new()
+        //        {
+        //            dwType       = PROFILE_FILENAME,
+        //            pProfileData = path,
+        //            cbDataSize   = chars * sizeof(char)
+        //        };
+
+        //        return OpenColorProfileW(
+        //            &profile,
+        //            PROFILE_READ,
+        //            FILE_SHARE_READ,
+        //            OPEN_EXISTING);
+        //    }
+        //    finally
+        //    {
+        //        DeleteDC(hdc);
+        //    }
+        //}
         #endregion
 
-        // Currently not used (mainly for refresh rate?*)
+        #region Monitor More / Refresh Rate?
         //[StructLayout(LayoutKind.Sequential)]
         //public struct DEVMODE
         //{
@@ -463,5 +736,6 @@ public static partial class Utils
 
         //[DllImport("user32.dll", SetLastError = true)]
         //public static extern int DisplayConfigGetDeviceInfo(ref DISPLAYCONFIG_DEVICE_INFO_HEADER requestPacket);
+        #endregion
     }
 }
