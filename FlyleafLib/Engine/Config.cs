@@ -759,32 +759,6 @@ public class Config : NotifyPropertyChanged
         bool _DoubleRate = true;
 
         /// <summary>
-        /// SDR Display Peak Luminance - tonemap for HDR to SDR (based on Auto/Custom)
-        /// </summary>
-        [JsonIgnore]
-        public float SDRDisplayNits
-        {
-            get => SDRDisplayNitsCustom == 0 ? (SDRDisplayNitsAuto != 0 ? SDRDisplayNitsAuto : 200) : SDRDisplayNitsCustom;
-            set => SDRDisplayNitsCustom = value;
-        }
-
-        /// <summary>
-        /// SDR Display Peak Luminance - tonemap for HDR to SDR (Recommended)
-        /// </summary>
-        [JsonIgnore]
-        public float            SDRDisplayNitsAuto          { get => _SDRDisplayNitsAuto;   set { if (Set(ref _SDRDisplayNitsAuto, value) && _SDRDisplayNitsCustom == 0) { player?.Renderer?.VPRequest(VPRequestType.HDRtoSDR); RaiseUI(nameof(SDRDisplayNits)); } } }
-        float _SDRDisplayNitsAuto;
-        internal float _sdrDisplayMinNits;
-
-        /// <summary>
-        /// SDR Display Peak Luminance - tonemap for HDR to SDR (Custom)
-        /// </summary>
-        public float            SDRDisplayNitsCustom        { get => _SDRDisplayNitsCustom; set { if (Set(ref _SDRDisplayNitsCustom, value)) { player?.Renderer?.VPRequest(VPRequestType.HDRtoSDR); } } }
-        float _SDRDisplayNitsCustom;
-
-        //public SwapChainFormat  SwapChainFormat             { get; set; } = SwapChainFormat.BGRA;
-
-        /// <summary>
         /// Enables custom Direct2D drawing over playback frames
         /// </summary>
         public bool             Use2DGraphics               { get; set; }
@@ -793,6 +767,12 @@ public class Config : NotifyPropertyChanged
         /// Scaling quality used for bitmap subtitle rendering.
         /// </summary>
         public SwsFlags         BitmapSubsScaleQuality      { get; set; } = SwsFlags.Bilinear | SwsFlags.Bitexact;
+
+        /// <summary>
+        /// HDR Brightness [-100 to 100]
+        /// </summary>
+        public int              HDRBrightness               { get => _HDRBrightness; set { if (Set(ref _HDRBrightness, value)) player?.Renderer.FLSetHDRBrightness(); } }
+        int _HDRBrightness;
 
         public event EventHandler<ID2D1DeviceContext> D2DInitialized;
         public event EventHandler<ID2D1DeviceContext> D2DDisposing;

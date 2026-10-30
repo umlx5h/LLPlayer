@@ -112,19 +112,21 @@ public unsafe partial class Renderer
     {
         public int CoeffsIndex;
 
+        public float HDRBrightness; // 0.25  to 4.0     (0.0 default) | 2^(-2) -> 2^2
         public float Brightness;    // -0.5  to 0.5     (0.0 default)
         public float Contrast;      //  0.0  to 2.0     (1.0 default)
         public float Hue;           // -3.14 to 3.14    (0.0 default)
         public float Saturation;    //  0.0  to 2.0     (1.0 default)
 
         public float UVOffset;
-        public float TargetPeakScale;
 
         public ToneSplineParams Spline;
 
         public float PQScale;
-        public float DisplayMinNits;
-        public float DisplayPeakNits;
+        public float SourceMinNits;
+        public float SourcePeakNits;
+        public float TargetMinNits;
+        public float TargetPeakNits;
 
         public PSBufferType()
         {
@@ -134,7 +136,7 @@ public unsafe partial class Renderer
             Saturation = 1;
 
             Spline = new ToneSplineParams { Slope = 1 };
-            DisplayPeakNits = 100;
+            TargetPeakNits = 100;
         }
     }
 
@@ -311,26 +313,37 @@ public unsafe partial class Renderer
         vpRequests &= ~VPRequestType.Crop;
         vpRequests |=  VPRequestType.Viewport | VPRequestType.UpdateVS;
     }
+    internal void FLSetHDRBrightness(bool request = true)
+    {
+        psData.HDRBrightness = MathF.Pow(2f, Scale(ucfg.HDRBrightness, -100, 100, -2, 2));
+        if (request)
+            VPRequest(VPRequestType.UpdatePS);
+    }
     void FLSetHDRtoSDR()
     {
         if (scfg == null || scfg.HDRFormat == HDRFormat.None) // TBR scfg?
             return;
 
-        psData.DisplayMinNits   = ucfg._sdrDisplayMinNits;
-        psData.DisplayPeakNits  = ucfg.SDRDisplayNitsAuto;
-        psData.TargetPeakScale  = ucfg.SDRDisplayNits / ucfg.SDRDisplayNitsAuto;
+        var targetMinNits  = SwapChain.Monitor.MinLuminance;
+        var targetPeakNits = SwapChain.Monitor.MaxLuminance;
+        if (targetPeakNits == 0)
+            targetPeakNits = 203;
+
+        psData.SourceMinNits    = scfg.sourceMinNits;
+        psData.SourcePeakNits   = scfg.sourcePeakNits;
+        psData.TargetMinNits    = targetMinNits;
+        psData.TargetPeakNits   = targetPeakNits;;
 
         if (scfg.HDRFormat == HDRFormat.HLG) { }
-        else if (scfg.sourcePeakNits <= ucfg.SDRDisplayNitsAuto)
-            psData.PQScale = 10_000f / scfg.sourcePeakNits * psData.TargetPeakScale;
+        else if (scfg.sourcePeakNits <= targetPeakNits)
+            psData.PQScale = 10_000f / targetPeakNits;
         else
             psData.Spline = GetSplineParams(
                 sourceMinNits:  scfg.sourceMinNits,
                 sourcePeakNits: scfg.sourcePeakNits,
                 sourceAvgNits:  scfg.sourceAvgNits,
-                targetMinNits:  ucfg._sdrDisplayMinNits,
-                targetPeakNits: ucfg.SDRDisplayNits,
-                contrast: 0.5);
+                targetMinNits:  targetMinNits,
+                targetPeakNits: targetPeakNits);
         
         vpRequests &= ~VPRequestType.HDRtoSDR;
         vpRequests |=  VPRequestType.UpdatePS;

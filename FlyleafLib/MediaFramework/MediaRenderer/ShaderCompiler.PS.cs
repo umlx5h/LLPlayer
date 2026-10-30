@@ -1,11 +1,4 @@
 ﻿/*
-LinearToSRGB | SRGBToLinear:
-    Simplified version (slightly better performance and on dark colors, but not accurate enough) | possible expose to config
-    c = pow(c, 1.0 / 2.2); | c = pow(c, 2.2);
-
-HABLE_DEFAULT
-    TBR: whitepoint, if should be 4.8 and possible expose to config
-
 Chroma Location / Sampling
     Small improvement but not performance penalty
 
@@ -34,13 +27,13 @@ struct ConfigData
 {
     int coefsIndex;
 
+    float hdrBrightness;
     float brightness;
     float contrast;
     float hue;
     float saturation;
 
     float uvOffset;
-    float targetPeakScale;
 
     float splineSrcPivot;
     float splineDstPivot;
@@ -50,8 +43,10 @@ struct ConfigData
     float splineQb;
 
     float pqScale;
-    float displayMinNits;
-    float displayPeakNits;
+    float sourceMinNits;
+    float sourcePeakNits;
+    float targetMinNits;
+    float targetPeakNits;
 };
 
 cbuffer         Config          : register(b0)
@@ -128,15 +123,6 @@ inline float3 ApplyICC(float3 c)
     return lerp(c0, c1, bf);
 }
 #endif
-
-inline float3 SRGBToLinear(float3 c)
-{
-    float3 linearLo = c / 12.92;
-    float3 linearHi = pow((c + 0.055) / 1.055, 2.4);
-    float3 threshold = step(0.04045, c);
-    
-    return lerp(linearLo, linearHi, threshold);
-}
 
 #if defined(dYUVLimited)
 static const float3x3 coefs[3] =
@@ -266,15 +252,6 @@ inline float3 GamutCompress709(float3 c, float knee)
 
     return y.xxx + (c - y.xxx) * scale;
 }
-
-inline float3 LinearToSRGB(float3 c)
-{
-    float3 srgbLo = c * 12.92;
-    float3 srgbHi = 1.055 * pow(c, 1.0 / 2.4) - 0.055;
-    float3 threshold = step(0.0031308, c);
-
-    return lerp(srgbLo, srgbHi, threshold);
-}
 #endif
 
 #if defined(dPQ) || defined(dPQSpline)
@@ -286,8 +263,7 @@ static const float ST2084_c3 = 18.6875;
 
 inline float3 PQToLinear(float3 rgb, float factor)
 {
-    rgb = max(rgb, 0.0);
-
+    rgb  = max(rgb, 0.0);
     rgb  = pow(rgb, 1.0 / ST2084_m2);
     rgb  = max(rgb - ST2084_c1, 0.0) / (ST2084_c2 - ST2084_c3 * rgb);
     rgb  = pow(rgb, 1.0 / ST2084_m1);
@@ -355,7 +331,7 @@ inline float3 HLGInverseOETF(float3 c)
     return lerp(lo, hi, step(0.5, c));
 }
 
-inline float3 HLGToDisplayLinear(float3 c, float displayPeakNits)
+inline float3 HLGToDisplayLinear(float3 c, float targetPeakNits)
 {
     static const float3 luma2020 = float3(0.2627, 0.6780, 0.0593);
 
@@ -366,7 +342,7 @@ inline float3 HLGToDisplayLinear(float3 c, float displayPeakNits)
     if (y <= 0.0)
         return 0.0;
 
-    float gamma = 1.2 + 0.42 * log10(displayPeakNits / 1000.0);
+    float gamma = 1.2 + 0.42 * log10(targetPeakNits / 1000.0);
 
     // Normalized display-linear result.
     // Peak white stays 1.0.
@@ -453,12 +429,12 @@ float4 main(PSInput input) : SV_TARGET
 
 #if defined(dYUVLimited)
     #if defined(dFilters)
-    c.x = Contrast(c.x, Config.contrast);
+        c.x = Contrast(c.x, Config.contrast);
     #endif
 	c = YUVToRGBLimited(c);
 #elif defined(dYUVFull)
     #if defined(dFilters)
-    c.x = Contrast(c.x, Config.contrast);
+        c.x = Contrast(c.x, Config.contrast);
     #endif
 	c = YUVToRGBFull(c);
 #endif
@@ -468,9 +444,7 @@ float4 main(PSInput input) : SV_TARGET
 #elif defined(dBT1886ToLinear)
     c = BT1886ToLinear(c);
 #elif defined(dHLG)
-    float targetPeakNits = Config.displayPeakNits * Config.targetPeakScale;
-    c = HLGToDisplayLinear(c, targetPeakNits);
-    c *= Config.targetPeakScale;
+    c = HLGToDisplayLinear(c, Config.targetPeakNits);
 #elif defined(dPQ)
     c = PQToLinear(c, Config.pqScale);
 #elif defined(dPQSpline)
@@ -481,26 +455,37 @@ float4 main(PSInput input) : SV_TARGET
 
     if (y > 0.0)
     {
-        float mappedPQ      = ToneSpline(NitsToPQ(y));
-        float mappedY       = PQToNits(mappedPQ);
-        float normalizedY   = (mappedY - Config.displayMinNits) / (Config.displayPeakNits - Config.displayMinNits);
-        normalizedY         = saturate(normalizedY);
-        c *= normalizedY / y;
+        float toneY     = clamp(y, Config.sourceMinNits, Config.sourcePeakNits);
+        float mappedPQ  = saturate(ToneSpline(NitsToPQ(toneY)));
+        float mappedY   = PQToNits(mappedPQ);
+        float u         = saturate((mappedY - Config.targetMinNits) / (Config.targetPeakNits - Config.targetMinNits));
+        c *= u / y;
     }
 #endif
 
 #if defined(dBT2020)
+    float hdrY = dot(c, float3(0.2627, 0.6780, 0.0593));
+
+    if (hdrY > 0.0)
+    {
+        float u         = saturate(hdrY);
+        float gain      = Config.hdrBrightness;
+        float adjustedY = (gain * u) / (1.0 + (gain - 1.0) * u);
+        c *= adjustedY / hdrY;
+    }
+
     c = Gamut2020To709(c);
     #if !defined(dBT1886ToLinear)
-        c = GamutCompress709(c, 0.63);
+        c /= max(max(c.r, max(c.g, c.b)), 1.0); // HDR Brightness could cause this
+        c = GamutCompress709(c, 1.0);
     #endif
     c = saturate(c);
-    c = LinearToSRGB(c);
+    c = pow(c, 1.0 / 2.2);
 #endif
 
 #if defined(dFilters)
     #if !defined(dYUVLimited) && !defined(dYUVFull)
-    c = (c - 0.5) * (2.0 - Config.contrast) + 0.5;
+        c = (c - 0.5) * (2.0 - Config.contrast) + 0.5;
     #endif
     c += Config.brightness;
     c  = Hue(c, Config.hue);

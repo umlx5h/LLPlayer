@@ -85,8 +85,13 @@ color = float4(
 
         if (scfg.ColorSpace == ColorSpace.Bt2020 && !iccApplied)
         {
+            FLSetHDRBrightness(false);
             vpRequestsIn |= VPRequestType.HDRtoSDR;
             defines.Add(dBT2020);
+
+            float targetPeakNits = SwapChain.Monitor.MaxLuminance;
+            if (targetPeakNits == 0)
+                targetPeakNits = 203;
 
             if (scfg.HDRFormat == HDRFormat.None)
             {
@@ -98,7 +103,7 @@ color = float4(
                 psId += "g";
                 defines.Add(dHLG);
             }
-            else if (scfg.sourcePeakNits <= ucfg.SDRDisplayNitsAuto)
+            else if (scfg.sourcePeakNits <= targetPeakNits)
             {
                 psId += "p";
                 defines.Add(dPQ);

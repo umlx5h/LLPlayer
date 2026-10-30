@@ -169,12 +169,12 @@
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
                             Width="180"
-                            Text="SDR Display Nits" />
+                            Text="Brightness (HDR)" />
                         <Slider
                             Width="200"
-                            Value="{Binding FL.PlayerConfig.Video.SDRDisplayNits}"
-                            Minimum="25"
-                            Maximum="400"
+                            Value="{Binding FL.PlayerConfig.Video.HDRBrightness}"
+                            Minimum="-100"
+                            Maximum="100"
                             Style="{StaticResource MaterialDesignDiscreteSlider}"
                             materialDesign:SliderAssist.OnlyShowFocusVisualWhileDragging="True"
                             VerticalAlignment="Center"
@@ -182,7 +182,7 @@
                         <TextBox
                             Width="30"
                             Margin="4 0 0 0"
-                            Text="{Binding FL.PlayerConfig.Video.SDRDisplayNits}"
+                            Text="{Binding FL.PlayerConfig.Video.HDRBrightness}"
                             helpers:TextBoxHelper.OnlyNumeric="Int" />
                     </StackPanel>
                 </StackPanel>

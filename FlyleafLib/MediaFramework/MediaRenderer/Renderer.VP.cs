@@ -279,8 +279,6 @@ public unsafe partial class Renderer : IVP
     void IVP.MonitorChanged(GPUOutput monitor)
     {
         ucfg.MaxVerticalResolutionAuto  = monitor.Height;
-        ucfg.SDRDisplayNitsAuto         = monitor.MaxLuminance;
-        ucfg._sdrDisplayMinNits         = monitor.MinLuminance;
         // currently not used (int accurate instead of double)
         //refreshRateTicks = (int)((1.0 / monitor.RefreshRate) * 1000 * 10000);
     }

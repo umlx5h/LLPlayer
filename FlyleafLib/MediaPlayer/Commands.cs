@@ -214,7 +214,7 @@ public class Commands
             foreach (var kv in cfg.FLFilters)
                 kv.Value.Value = kv.Value.Default;
 
-        cfg.SDRDisplayNitsCustom   = 0;
+        cfg.HDRBrightness = 0;
     }
 
     public void SpeedSetAction(object speed)
