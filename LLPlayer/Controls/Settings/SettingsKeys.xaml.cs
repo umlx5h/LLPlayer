@@ -195,7 +195,7 @@ public class SettingsKeysVM : Bindable
             }
             else
             {
-                k.SetAction(FL.PlayerConfig.Player.KeyBindings.GetKeyBindingAction(k.Action), k.IsKeyUp);
+                k.SetAction(FL.Player.GetKeyBindingAction(k.Action), k.IsKeyUp);
             }
         }
 

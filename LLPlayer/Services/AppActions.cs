@@ -857,6 +857,8 @@ public static class KeyBindingActionExtensions
             case KeyBindingAction.OpenFromClipboard:
             case KeyBindingAction.OpenFromClipboardSafe:
             case KeyBindingAction.OpenFromFileDialog:
+            case KeyBindingAction.OpenNextItem:
+            case KeyBindingAction.OpenPrevItem:
                 return KeyBindingActionGroup.Player; // TODO: L: ?
 
             case KeyBindingAction.Stop:

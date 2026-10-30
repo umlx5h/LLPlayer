@@ -740,6 +740,35 @@ unsafe partial class Player
         return session;
     }
 
+    public void OpenNextItem()
+        => OpenNextPrevItem(Playlist.NextItem);
+
+    public void OpenPrevItem()
+        => OpenNextPrevItem(Playlist.PrevItem);
+
+    internal void OpenNextPrevItem(PlaylistItem item)
+    {
+        if (item == null)
+            return;
+
+        if (item.OpenedCounter > 0)
+        {
+            var session = GetSession(item);
+            session.isReopen = true;
+            session.CurTime = 0;
+
+            // TBR: in case of disabled audio/video/subs it will save the session with them to be disabled
+
+            // TBR: This can cause issues and it might not useful either
+            //if (session.CurTime < 60 * (long)1000 * 10000)
+            //    session.CurTime = 0;
+
+            OpenAsync(session);
+        }
+        else
+            OpenAsync(item);
+    }
+
     internal void ReSync(StreamBase stream, int syncMs = -1, bool accurate = false)
     {
         /* TODO
@@ -799,7 +828,7 @@ unsafe partial class Player
                 StopScreamerVASDAudio();
 
                 isAudioSwitch = true;
-                decoder.SeekAudio();
+                decoder.SeekAudio((!VideoDemuxer.Disposed && VideoDemuxer.hlsCtx != null) ? VideoDemuxer.CurPackets.FirstTimestamp / 10000 : -1);
                 isAudioSwitch = false;
 
                 if (status == Status.Playing && !requiresBuffering && shouldStartAudioScreamerForVideo)

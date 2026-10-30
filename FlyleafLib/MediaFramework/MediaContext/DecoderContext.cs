@@ -389,10 +389,24 @@ public unsafe partial class DecoderContext : PluginHandler
     public long GetCurTime()    => !VideoDemuxer.Disposed ? VideoDemuxer.CurTime : !AudioDemuxer.Disposed ? AudioDemuxer.CurTime : 0;
     public int GetCurTimeMs()   => !VideoDemuxer.Disposed ? (int)(VideoDemuxer.CurTime / 10000) : (!AudioDemuxer.Disposed ? (int)(AudioDemuxer.CurTime / 10000) : 0);
 
-    private long CalcSeekTimestamp(Demuxer demuxer, long ms, ref bool forward)
+    long CalcSeekTimestamp(Demuxer demuxer, long ms, ref bool forward)
     {
-        long startTime = demuxer.hlsCtx == null ? demuxer.StartTime : demuxer.hlsCtx->first_timestamp * 10;
-        long ticks = (ms * 10000) + startTime;
+        long startTime;
+        long ticks = (ms * 10000);
+
+        if (demuxer.hlsCtx == null)
+        {
+            startTime = demuxer.StartTime;
+            ticks += startTime;
+        }
+        else
+        {
+            startTime = demuxer.hlsCtx->first_timestamp * 10;
+
+            // Live External Demuxers will use video timestamps directly*
+            if (demuxer.Type == MediaType.Video || VideoDemuxer.Disposed)
+                ticks += startTime;
+        }
 
         if (demuxer.Type == MediaType.Audio) ticks -= Config.Audio.Delay;
         //if (demuxer.Type == MediaType.Subs)
@@ -403,13 +417,19 @@ public unsafe partial class DecoderContext : PluginHandler
 
         if (ticks < startTime)
         {
-            ticks = startTime;
             forward = true;
+            return startTime;
         }
-        else if (ticks > startTime + (!VideoDemuxer.Disposed ? VideoDemuxer.Duration : AudioDemuxer.Duration) - (50 * 10000) && demuxer.Duration > 0) // demuxer.Duration > 0 (allow blindly when duration 0)
+
+        // Don't limit "end" seek for live streams (duration=0)
+        if (demuxer.Duration > 0)
         {
-            ticks = Math.Max(startTime, startTime + demuxer.Duration - (50 * 10000));
-            forward = false;
+            var duration = (!VideoDemuxer.Disposed ? VideoDemuxer.Duration : AudioDemuxer.Duration) - (50 * 10000);
+            if (ticks > startTime + duration)
+            {
+                forward = false;
+                return Math.Max(startTime, startTime + demuxer.Duration - (50 * 10000));
+            }
         }
 
         return ticks;

@@ -21,8 +21,7 @@ public unsafe partial class AudioDecoder
     AVFrame*                filtframe;
     object                  lockSpeed = new();
 
-    bool                    setFirstPts;                // We start a new continues session
-    long                    firstPts;                   // First valid pts of the new session
+    long                    firstPts;                   // First valid pts of the current continues session
     long                    gapOffsetTb;                // Offset that we create an actual gap-discontinuity
     long                    decodedSamples;             // Continues decoded amples to calculate expectingPts (based on firstPts)
     internal long           expectingPts;               // Expected next continues decoded pts
@@ -77,7 +76,7 @@ public unsafe partial class AudioDecoder
 
             filtframe       = av_frame_alloc();
             filterGraph     = avfilter_graph_alloc();
-            setFirstPts     = true;
+            firstPts        = NoTs;
             abufferDrained  = false;
 
             // IN (abuffersrc)
@@ -276,9 +275,8 @@ public unsafe partial class AudioDecoder
          * Filtered frames are always continues timestamps (decoded frames will control the gaps *setFirstPts)
          */
 
-        if (setFirstPts)
+        if (firstPts == NoTs)
         {
-            setFirstPts         = false;
             firstPts            = frame->pts;
             decodedSamples      = 0;
             filtSamples         = 0;

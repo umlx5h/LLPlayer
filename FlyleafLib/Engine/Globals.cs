@@ -31,18 +31,18 @@ public enum MediaType
 }
 public enum InputType
 {
-    File    = 0,
-    UNC     = 1,
-    Torrent = 2,
-    Web     = 3,
-    Unknown = 4
+    File,
+    UNC,
+    Torrent,
+    Web,
+    Unknown
 }
-public enum HDRtoSDRMethod : int
+public enum HDRtoSDRMethod // Must match pixel shader
 {
-    None        = 0,
-    Aces        = 1,
-    Hable       = 2,
-    Reinhard    = 3
+    None,
+    Aces,
+    Hable,
+    Reinhard
 }
 
 public enum DeInterlace // Must match with VideoFrameFormat
@@ -75,18 +75,18 @@ public enum Cropping
     Codec   = 1 << 1,
     Texture = 1 << 2
 }
-public enum ColorSpace : int
+public enum ColorSpace
 {
-    None        = 0,
-    Bt601       = 1,
-    Bt709       = 2,
-    Bt2020      = 3
+    None,
+    Bt601,
+    Bt709,
+    Bt2020
 }
-public enum ColorRange : int
+public enum ColorRange
 {
-    None        = 0,
-    Full        = 1,
-    Limited     = 2
+    None,
+    Full,
+    Limited
 }
 public enum ColorType
 {
@@ -94,14 +94,13 @@ public enum ColorType
     RGB,
     Gray
 }
-public enum HDRFormat : int
+public enum HDRFormat
 {
-    None        = 0,
-    DolbyVision = 1,
-    HDR         = 2,
-    HDRPlus     = 3,
-    HLG         = 4,
-
+    None,
+    DolbyVision,
+    HDR,
+    HDRPlus,
+    HLG
 }
 
 public enum SubOCREngineType
@@ -148,8 +147,8 @@ public class GPUOutput
     public int              Top             { get; internal set; }
     public int              Right           { get; internal set; }
     public int              Bottom          { get; internal set; }
-    public int              Width           => Right- Left;
-    public int              Height          => Bottom- Top;
+    public int              Width           => Right - Left;
+    public int              Height          => Bottom - Top;
     public bool             IsAttached      { get; internal set; }
     public ModeRotation     Rotation        { get; internal set; }
     public float            MaxLuminance    { get; internal set; }
@@ -189,7 +188,7 @@ public enum GPUVendor : uint
     Nvidia      = 0x10DE,
     Qualcomm    = 0x4D4F4351,
     S3Graphics  = 0x5333,
-    VIA         = 0x1106,
+    VIA         = 0x1106
 }
 
 public struct AspectRatio : IEquatable<AspectRatio>
@@ -208,7 +207,7 @@ public struct AspectRatio : IEquatable<AspectRatio>
         new(4,      3),
         new(16,     9),
         new(16,     10),
-        new(2.35f,  1),
+        new(2.35f,  1)
     ];
 
     public static implicit operator AspectRatio(string value) => new(value);

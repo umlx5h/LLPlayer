@@ -143,9 +143,9 @@ public class Config : NotifyPropertyChanged
         if (!parsed || loadedVer <= System.Version.Parse("0.2.1"))
         {
             // for FlyleafLib v3.8.3, Ensure extension_picky is set
-            Demuxer.FormatOpt = DemuxerConfig.DefaultVideoFormatOpt();
-            Demuxer.AudioFormatOpt = DemuxerConfig.DefaultVideoFormatOpt();
-            Demuxer.SubtitlesFormatOpt = DemuxerConfig.DefaultVideoFormatOpt();
+            Demuxer.FormatOpt = DemuxerConfig.DefaultFormatOpt();
+            Demuxer.AudioFormatOpt = DemuxerConfig.DefaultFormatOpt();
+            Demuxer.SubtitlesFormatOpt = DemuxerConfig.DefaultFormatOpt();
 
 
             // for subtitles search #91
@@ -535,44 +535,21 @@ public class Config : NotifyPropertyChanged
         /// FFmpeg's format options for demuxer
         /// </summary>
         public Dictionary<string, string>
-                                FormatOpt           { get; set; } = DefaultVideoFormatOpt();
+                                FormatOpt           { get; set; } = DefaultFormatOpt();
         public Dictionary<string, string>
-                                AudioFormatOpt      { get; set; } = DefaultVideoFormatOpt();
+                                AudioFormatOpt      { get; set; } = DefaultFormatOpt();
 
         public Dictionary<string, string>
-                                SubtitlesFormatOpt  { get; set; } = DefaultVideoFormatOpt();
+                                SubtitlesFormatOpt  { get; set; } = DefaultFormatOpt();
 
-        public static Dictionary<string, string> DefaultVideoFormatOpt()
+        public static Dictionary<string, string> DefaultFormatOpt() => new()
         {
-            // TODO: Those should be set based on the demuxer format/protocol (to avoid false warnings about invalid options and best fit for the input, eg. live stream)
+            // HTTP
+            ["user_agent"]      = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36",
 
-            Dictionary<string, string> defaults = new()
-            {
-                // General
-                { "probesize",          (50 * (long)1024 * 1024).ToString() },      // (Bytes) Default 5MB | Higher for weird formats (such as .ts?) and 4K/Hevc
-                { "analyzeduration",    (10 * (long)1000 * 1000).ToString() },      // (Microseconds) Default 5 seconds | Higher for network streams
-
-                // HTTP
-                { "reconnect",          "1" },                                       // auto reconnect after disconnect before EOF
-                { "reconnect_streamed", "1" },                                       // auto reconnect streamed / non seekable streams (this can cause issues with HLS ts segments - disable this or http_persistent)
-                { "reconnect_delay_max","7" },                                       // max reconnect delay in seconds after which to give up
-                { "user_agent",         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36" },
-
-                { "extension_picky",    "0" },                                       // Added in ffmpeg v7.1.1 and causes issues when enabled with allowed extentions #577
-
-                // HLS
-                { "http_persistent",    "0" },                                       // Disables keep alive for HLS - mainly when use reconnect_streamed and non-live HLS streams
-
-                // RTSP
-                { "rtsp_transport",     "tcp" },                                     // Seems UDP causing issues
-            };
-
-            //defaults.Add("live_start_index",   "-1");
-            //defaults.Add("timeout",           (2 * (long)1000 * 1000).ToString());      // (Bytes) Default 5MB | Higher for weird formats (such as .ts?)
-            //defaults.Add("rw_timeout",     (2 * (long)1000 * 1000).ToString());      // (Microseconds) Default 5 seconds | Higher for network streams
-
-            return defaults;
-        }
+            // HLS
+            ["http_persistent"] = "0", // TBR: Currently hls.c bug with AVERROR_EXIT (from our interrupts)
+        };
 
         public Dictionary<string, string> GetFormatOptPtr(MediaType type)
             => type == MediaType.Video ? FormatOpt : type == MediaType.Audio ? AudioFormatOpt : SubtitlesFormatOpt;

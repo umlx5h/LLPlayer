@@ -377,26 +377,5 @@ public class Commands
     }
 
     public void ReopenAction(object playlistItem)
-    {
-        if (playlistItem == null)
-            return;
-
-        PlaylistItem item = (PlaylistItem)playlistItem;
-        if (item.OpenedCounter > 0)
-        {
-            var session = player.GetSession(item);
-            session.isReopen = true;
-            session.CurTime = 0;
-
-            // TBR: in case of disabled audio/video/subs it will save the session with them to be disabled
-
-            // TBR: This can cause issues and it might not useful either
-            //if (session.CurTime < 60 * (long)1000 * 10000)
-            //    session.CurTime = 0;
-
-            player.OpenAsync(session);
-        }
-        else
-            player.OpenAsync(item);
-    }
+        => player.OpenNextPrevItem((PlaylistItem)playlistItem);
 }

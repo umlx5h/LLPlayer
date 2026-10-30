@@ -5,7 +5,6 @@ using SharpGen.Runtime;
 using SharpGen.Runtime.Win32;
 
 using Vortice.MediaFoundation;
-using static Vortice.XAudio2.XAudio2;
 
 using FlyleafLib.MediaFramework.MediaDevice;
 
@@ -14,14 +13,13 @@ namespace FlyleafLib;
 public class AudioEngine : CallbackBase, IMMNotificationClient, INotifyPropertyChanged
 {
     #region Properties (Public)
-
     public AudioEndpoint DefaultDevice      { get; private set; } = new() { Id = "0", Name = "Default" };
     public AudioEndpoint CurrentDevice      { get; private set; } = new();
 
     /// <summary>
     /// Whether no audio devices were found or audio failed to initialize
     /// </summary>
-    public bool         Failed              { get; private set; }
+    public bool         Failed              { get; internal set; }
 
     /// <summary>
     /// List of Audio Capture Devices
@@ -67,8 +65,13 @@ public class AudioEngine : CallbackBase, IMMNotificationClient, INotifyPropertyC
             Engine.Audio.CapDevices.Clear();
 
             var devices = MediaFactory.MFEnumAudioDeviceSources();
-                foreach (var device in devices)
-                    try { Engine.Audio.CapDevices.Add(new(device.FriendlyName, device.SymbolicLink)); } catch(Exception) { }
+            foreach (var device in devices)
+            {
+                Engine.Audio.CapDevices.Add(new(device.FriendlyName, device.SymbolicLink));
+                device.Dispose();
+            }
+
+            devices.Dispose();
         }
     }
 
@@ -76,41 +79,36 @@ public class AudioEngine : CallbackBase, IMMNotificationClient, INotifyPropertyC
     {
         try
         {
-            deviceEnum = new IMMDeviceEnumerator();
+            deviceEnum = new();
 
             var defaultDevice = deviceEnum.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
             if (defaultDevice == null)
-            {
+            {   // TBR: New devices can be connected later on
                 Failed = true;
                 return;
             }
 
             lock (lockDevices)
             {
+                string dump = "";
                 Devices.Clear();
                 Devices.Add(DefaultDevice);
-                foreach (var device in deviceEnum.EnumAudioEndpoints(DataFlow.Render, DeviceStates.Active))
+                var devices = deviceEnum.EnumAudioEndpoints(DataFlow.Render, DeviceStates.Active);
+                foreach (var device in devices)
+                {
+                    if (CanInfo)
+                        dump += $"{device.Id} | {device.FriendlyName} {(defaultDevice.Id == device.Id ? "*" : "")}\r\n";
+
                     Devices.Add(new() { Id = device.Id, Name = device.FriendlyName });
+                    device.Dispose();
+                }
+
+                Engine.Log.Info($"Audio Devices\r\n{dump}");
             }
 
             CurrentDevice.Id    = defaultDevice.Id;
             CurrentDevice.Name  = defaultDevice.FriendlyName;
-
-            if (CanInfo)
-            {
-                string dump = "";
-                foreach (var device in deviceEnum.EnumAudioEndpoints(DataFlow.Render, DeviceStates.Active))
-                    dump += $"{device.Id} | {device.FriendlyName} {(defaultDevice.Id == device.Id ? "*" : "")}\r\n";
-                Engine.Log.Info($"Audio Devices\r\n{dump}");
-            }
-
-            var xaudio2 = XAudio2Create();
-
-            if (xaudio2 == null)
-                Failed = true;
-            else
-                xaudio2.Dispose();
-
+            defaultDevice.Dispose();
             deviceEnum.RegisterEndpointNotificationCallback(this);
 
         } catch { Failed = true; }
@@ -126,9 +124,13 @@ public class AudioEngine : CallbackBase, IMMNotificationClient, INotifyPropertyC
 
                 lock (lockDevices)
                 {
-                    foreach(var device in deviceEnum.EnumAudioEndpoints(DataFlow.Render, DeviceStates.Active))
+                    var devices = deviceEnum.EnumAudioEndpoints(DataFlow.Render, DeviceStates.Active);
+                    foreach(var device in devices)
+                    {
                         curs.Add(new () { Id = device.Id, Name = device.FriendlyName });
-
+                        device.Dispose();
+                    }
+                    
                     foreach(var cur in curs)
                     {
                         bool exists = false;
@@ -165,11 +167,16 @@ public class AudioEngine : CallbackBase, IMMNotificationClient, INotifyPropertyC
                 }
 
                 var defaultDevice =  deviceEnum.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
-                if (defaultDevice != null && CurrentDevice.Id != defaultDevice.Id)
+                if (defaultDevice != null)
                 {
-                    CurrentDevice.Id    = defaultDevice.Id;
-                    CurrentDevice.Name  = defaultDevice.FriendlyName;
-                    PropertyChanged?.Invoke(this, new(nameof(CurrentDevice)));
+                    if (CurrentDevice.Id != defaultDevice.Id)
+                    {
+                        CurrentDevice.Id    = defaultDevice.Id;
+                        CurrentDevice.Name  = defaultDevice.FriendlyName;
+                        PropertyChanged?.Invoke(this, new(nameof(CurrentDevice)));
+                    }
+                    
+                    defaultDevice.Dispose();
                 }
 
                 // Fall back to DefaultDevice *Non-UI thread otherwise will freeze (not sure where and why) during xaudio.Dispose()

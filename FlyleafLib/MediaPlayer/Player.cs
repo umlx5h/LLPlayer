@@ -558,6 +558,7 @@ public unsafe partial class Player : NotifyPropertyChanged, IDisposable
         status = Status.Stopped;
         Reset();
 
+        InitializeKeyBindingActions();
         Config.SetPlayer(this);
         Log.Debug("Created");
     }

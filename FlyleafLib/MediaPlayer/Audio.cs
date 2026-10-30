@@ -227,6 +227,11 @@ public class Audio : NotifyPropertyChanged
             try
             {
                 xaudio2 = XAudio2Create();
+                if (xaudio2 == null)
+                {
+                    Engine.Audio.Failed = true;
+                    return;
+                }
 
                 try
                 {

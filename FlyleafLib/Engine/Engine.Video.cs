@@ -44,8 +44,13 @@ public class VideoEngine
             Engine.Video.CapDevices.Clear();
 
             var devices = MediaFactory.MFEnumVideoDeviceSources();
-                foreach (var device in devices)
-                try { Engine.Video.CapDevices.Add(new(device.FriendlyName, device.SymbolicLink)); } catch(Exception) { }
+            foreach (var device in devices)
+            {
+                Engine.Video.CapDevices.Add(new(device.FriendlyName, device.SymbolicLink));
+                device.Dispose();
+            }
+
+            devices.Dispose();
         }
     }
 

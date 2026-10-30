@@ -383,8 +383,14 @@ public unsafe class VideoDecoder : DecoderBase
             }
 
             // While Packets Queue Empty (Drain | Quit if Demuxer stopped | Wait until we get packets)
-            if (vPackets.IsEmpty && !isDraining)
+            if (vPackets.IsEmpty)
             {
+                if (isDraining)
+                {
+                    Status = Status.Ended;
+                    break;
+                }
+
                 CriticalArea = true;
 
                 lock (lockStatus)
@@ -492,6 +498,12 @@ public unsafe class VideoDecoder : DecoderBase
                 ret = SendAVPacket(packet);
                 if (ret != 0)
                 {
+                    if (isDraining)
+                    {
+                        Status = Status.Ended;
+                        break;
+                    }
+
                     if (ret == AVERROR_EAGAIN)
                     {   // Fast retry => Legitimate decoding errors | Waiting for key packet
                         while (Status == Status.Running && ret == AVERROR_EAGAIN && (packet = vPackets.Dequeue()) != null)
@@ -536,7 +548,6 @@ public unsafe class VideoDecoder : DecoderBase
                 if (CanDebug) Log.Debug("Ignoring non-key packet");
                 av_packet_free(&packet);
                 return AVERROR_EAGAIN;
-                
             }
 
             keyFrameRequired  = checkKeyFrame && packet->pts != startPts;
@@ -1036,12 +1047,14 @@ public unsafe class VideoDecoder : DecoderBase
         {
             demuxer.Pause();
             Pause();
+            if (demuxer.FormatContext->pb != null && demuxer.FormatContext->pb->error == AVERROR_EXIT)
+                demuxer.FormatContext->pb->error = 0;
             demuxer.Interrupter.SeekRequest();
-            int ret = av_seek_frame(demuxer.FormatContext, -1, curSeekMcs - curFixSeekDelta, SeekFlags.Frame | SeekFlags.Backward);
+            int ret = av_seek_frame(demuxer.FormatContext, -1, curSeekMcs - curFixSeekDelta, SeekFlags.Backward);
 
             if (ret < 0)
-                ret = av_seek_frame(demuxer.FormatContext, -1, Math.Max((curSeekMcs - (long)TimeSpan.FromSeconds(1).TotalMicroseconds) - curFixSeekDelta, demuxer.StartTime / 10), SeekFlags.Frame);
-
+                ret = av_seek_frame(demuxer.FormatContext, -1, Math.Max((curSeekMcs - (long)TimeSpan.FromSeconds(1).TotalMicroseconds) - curFixSeekDelta, demuxer.StartTime / 10), SeekFlags.None);
+            
             demuxer.DisposePackets();
 
             if (demuxer.Status == Status.Ended)
