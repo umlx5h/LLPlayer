@@ -383,14 +383,8 @@ public unsafe class VideoDecoder : DecoderBase
             }
 
             // While Packets Queue Empty (Drain | Quit if Demuxer stopped | Wait until we get packets)
-            if (vPackets.IsEmpty)
+            if (vPackets.IsEmpty && !isDraining)
             {
-                if (isDraining)
-                {
-                    Status = Status.Ended;
-                    break;
-                }
-
                 CriticalArea = true;
 
                 lock (lockStatus)
