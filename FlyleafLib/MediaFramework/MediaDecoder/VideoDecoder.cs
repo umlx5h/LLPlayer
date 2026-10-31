@@ -40,6 +40,7 @@ public unsafe class VideoDecoder : DecoderBase
 
     bool                    checkExtraFrames; // DecodeFrameNext
     int                     curFrameWidth, curFrameHeight; // To catch 'codec changed'
+    AVPixelFormat           curFrameFormat = AVPixelFormat.None; // Pixel format can change mid-stream too (e.g. MJPEG 4:2:2 -> 4:2:0)
 
     // Hot paths / Same instance
     VideoCache              Frames;
@@ -73,10 +74,10 @@ public unsafe class VideoDecoder : DecoderBase
 
     #region Video Acceleration (Should be disposed seperately)
     public CodecSpec CurCodecSpec;
-    AVCodecContext_get_format getHWformat;
+    AVCodecContext.GetFormat getHWformat;
 
-    internal const AVPixelFormat    HW_PIX_FMT  = AVPixelFormat.D3d11;
-    internal const AVHWDeviceType   HW_DEVICE   = AVHWDeviceType.D3d11va;
+    internal const AVPixelFormat    HW_PIX_FMT  = AVPixelFormat.D3D11;
+    internal const AVHWDeviceType   HW_DEVICE   = AVHWDeviceType.D3D11VA;
 
     public class CodecSpec
     {
@@ -105,7 +106,7 @@ public unsafe class VideoDecoder : DecoderBase
             int i = 0;
             AVCodecHWConfig* config;
             while((config = avcodec_get_hw_config(codec, i++)) != null)
-                if (config->pix_fmt == HW_PIX_FMT && config->methods.HasFlag(AVCodecHwConfigMethod.HwDeviceCtx))
+                if (config->pix_fmt == HW_PIX_FMT && config->methods.HasFlag(AVCodecHWConfigMethod.HWDeviceCtx))
                 {
                     spec = new() { Codec = codec, Name = BytePtrToStringUTF8(codec->name), IsHW = true};
                     hwSpecs[codec->id] = spec;
@@ -142,7 +143,7 @@ public unsafe class VideoDecoder : DecoderBase
         int i = 0;
         AVCodecHWConfig* config;
         while((config = avcodec_get_hw_config(codec, i++)) != null)
-            if (config->pix_fmt == HW_PIX_FMT && config->methods.HasFlag(AVCodecHwConfigMethod.HwDeviceCtx))
+            if (config->pix_fmt == HW_PIX_FMT && config->methods.HasFlag(AVCodecHWConfigMethod.HWDeviceCtx))
             {
                 isHW = true;
                 break;
@@ -157,7 +158,7 @@ public unsafe class VideoDecoder : DecoderBase
     {
         if (CanDebug)
         {
-            Log.Debug($"Codec profile '{avcodec_profile_name(codecCtx->codec_id, codecCtx->profile)}'");
+            Log.Debug($"Codec profile '{avcodec_profile_name_str(codecCtx->codec_id, codecCtx->profile)}'");
 
             if (CanTrace)
             {
@@ -267,7 +268,7 @@ public unsafe class VideoDecoder : DecoderBase
         var codecOpts = Config.Decoder.VideoCodecOpt;
         AVDictionary* avopt = null;
         foreach(var optKV in codecOpts)
-            _ = av_dict_set(&avopt, optKV.Key, optKV.Value, 0);
+            _ = av_dict_set(ref avopt, optKV.Key, optKV.Value, 0);
 
         VideoAccelerated = VideoAccelerated && CurCodecSpec.IsHW;
 
@@ -631,10 +632,11 @@ public unsafe class VideoDecoder : DecoderBase
             keyFrameRequired = false;
         }
 
-        if ((frame->height != curFrameHeight || frame->width != curFrameWidth) && filledFromCodec)
-        {
+        if ((frame->height != curFrameHeight || frame->width != curFrameWidth || (AVPixelFormat)frame->format != curFrameFormat) && filledFromCodec)
+        {   // A pixel format change needs the same renderer reconfiguration as a size change, otherwise
+            // the textures keep the old plane layout and FLSWFillPlanes reads past the new planes
             filledFromCodec = false;
-            Log.Warn($"Codec changed {VideoStream.CodecID} {curFrameWidth}x{curFrameHeight} => {codecCtx->codec_id} {frame->width}x{frame->height}");
+            Log.Warn($"Codec changed {VideoStream.CodecID} {curFrameWidth}x{curFrameHeight} {curFrameFormat} => {codecCtx->codec_id} {frame->width}x{frame->height} {(AVPixelFormat)frame->format}");
         }
 
         if (frame->best_effort_timestamp != AV_NOPTS_VALUE)
@@ -740,6 +742,7 @@ public unsafe class VideoDecoder : DecoderBase
         curFixSeekDelta = 0;
         curFrameWidth   = frame->width;
         curFrameHeight  = frame->height;
+        curFrameFormat  = (AVPixelFormat)frame->format;
 
         VideoStream.Refresh(this, frame);
         startPts        = VideoStream.StartTimePts;

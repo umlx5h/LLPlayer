@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:LLPlayer.Controls.Settings"
-             xmlns:ffmpeg="clr-namespace:Flyleaf.FFmpeg;assembly=Flyleaf.FFmpeg.Bindings"
+             xmlns:ffmpeg="clr-namespace:Flyleaf.FFmpeg;assembly=Flyleaf.FFmpeg.ABI"
              xmlns:flyleaf="clr-namespace:FlyleafLib;assembly=FlyleafLib"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
              xmlns:vm="clr-namespace:LLPlayer.ViewModels"

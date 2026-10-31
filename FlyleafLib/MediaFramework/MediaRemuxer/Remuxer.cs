@@ -28,8 +28,7 @@ public unsafe class Remuxer
         int ret;
         Filename = filename;
 
-        fixed (AVFormatContext** ptr = &fmtCtx)
-            ret = avformat_alloc_output_context2(ptr, null, null, Filename);
+        ret = avformat_alloc_output_context2(ref fmtCtx, null, null, Filename);
 
         if (ret < 0) return ret;
 
@@ -62,8 +61,8 @@ public unsafe class Remuxer
             b = av_dict_get(in_stream->metadata, "", b, DictReadFlags.IgnoreSuffix);
             if (b == null) break;
 
-            if (BytePtrToStringUTF8(b->key).ToLower() == "language" || BytePtrToStringUTF8(b->key).ToLower() == "lang")
-                _ = av_dict_set(&out_stream->metadata, BytePtrToStringUTF8(b->key), BytePtrToStringUTF8(b->value), 0);
+            if (BytePtrToStringUTF8(b->key).Equals("language", StringComparison.CurrentCultureIgnoreCase) || BytePtrToStringUTF8(b->key).Equals("lang", StringComparison.CurrentCultureIgnoreCase))
+                _ = av_dict_set(&out_stream->metadata, b->key, b->value, 0);
         }
 
         out_stream->codecpar->codec_tag = 0;
@@ -97,7 +96,7 @@ public unsafe class Remuxer
 
         int ret;
 
-        ret = avio_open(&fmtCtx->pb, Filename, IOFlags.Write);
+        ret = avio_open(ref fmtCtx->pb, Filename, IOFlags.Write);
         if (ret < 0) { Dispose(); return ret; }
 
         ret = avformat_write_header(fmtCtx, null);

@@ -11,7 +11,7 @@ public unsafe class Interrupter
 
     Demuxer demuxer;
     Stopwatch sw = new();
-    internal AVIOInterruptCB_callback interruptClbk;
+    internal AVIOInterruptCB.Callback interruptClbk;
     long curTimeoutMs;
 
     internal int ShouldInterrupt(void* opaque)

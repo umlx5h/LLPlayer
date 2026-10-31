@@ -142,15 +142,6 @@ public static partial class Utils
         return mod == 0 ? num : num + (align - mod);
     }
 
-    /// <summary>
-    /// Works only for power of 2
-    /// </summary>
-    /// <param name="num"></param>
-    /// <param name="align"></param>
-    /// <returns></returns>
-    public static int FFALIGN(int num, int align)
-        => (num + align - 1) & ~(align - 1);
-
     public static float Scale(float value, float inMin, float inMax, float outMin, float outMax)
         => ((value - inMin) * (outMax - outMin) / (inMax - inMin)) + outMin;
 

@@ -49,7 +49,7 @@ public unsafe partial class Renderer
         }
 
         swsFrame = av_frame_alloc();
-        swsFrame->format= (int)AVPixelFormat.Rgba;
+        swsFrame->format= (int)AVPixelFormat.RGBA;
         swsFrame->width = width;
         swsFrame->height= height;
 
@@ -61,7 +61,7 @@ public unsafe partial class Renderer
             return false;
         }
 
-        swsCtx = sws_getContext(width, height, format, width, height, AVPixelFormat.Rgba, SwsFlags.None, null, null, null);
+        swsCtx = sws_getContext(width, height, format, width, height, AVPixelFormat.RGBA, SwsFlags.None, null, null, null);
         
         if (swsCtx == null)
         {

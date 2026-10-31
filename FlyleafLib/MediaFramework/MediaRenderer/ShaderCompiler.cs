@@ -1,5 +1,7 @@
 ﻿using System.Buffers;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Text.RegularExpressions;
 
 using Vortice.D3DCompiler;
 using Vortice.Direct3D;
@@ -60,18 +62,44 @@ internal static partial class ShaderCompiler
                 if (CanDebug)
                     LogDebug($"Compiling '{uniqueId}'");
 
-                Debug.Assert(PS_HEADER.Length + PS_FOOTER.Length + Encoding.UTF8.GetMaxByteCount(hlslSample.Length) < BUFFER_SIZE);
+                Debug.Assert(PS_HEADER.Length + PS_BT2020.Length + PS_DOVI.Length + PS_MAIN.Length + PS_FOOTER.Length + Encoding.UTF8.GetMaxByteCount(hlslSample.Length) < BUFFER_SIZE);
+
                 byte[] bufferPool = ArrayPool<byte>.Shared.Rent(BUFFER_SIZE);
 
                 try
                 {
                     Span<byte> buffer = bufferPool;
-                    PS_HEADER.CopyTo(buffer);
-                    int offset  = PS_HEADER.Length;
-                    offset     += Encoding.UTF8.GetBytes(hlslSample, buffer[offset..]);
+                    int offset = 0;
+
+                    PS_HEADER.CopyTo(buffer[offset..]);
+                    offset += PS_HEADER.Length;
+                    
+                    if (defines != null)
+                        if (defines.Contains(Renderer.dBT2020))
+                        {
+                            PS_BT2020.CopyTo(buffer[offset..]);
+                            offset += PS_BT2020.Length;
+
+                            if (defines.Contains(Renderer.dPQSpline))
+                            {
+                                PS_PQSpline.CopyTo(buffer[offset..]);
+                                offset += PS_PQSpline.Length;
+
+                                if (defines.Contains(Renderer.dDovi))
+                                {
+                                    PS_DOVI.CopyTo(buffer[offset..]);
+                                    offset += PS_DOVI.Length;
+                                }
+                            }
+                        }
+
+                    PS_MAIN.CopyTo(buffer[offset..]);
+                    offset += PS_MAIN.Length;
+                    offset += Encoding.UTF8.GetBytes(hlslSample, buffer[offset..]);
                     PS_FOOTER.CopyTo(buffer[offset..]);
-                    offset     += PS_FOOTER.Length;
-                    bw.blob     = Compile(buffer[..offset], true, defines);
+                    offset += PS_FOOTER.Length;
+
+                    bw.blob = Compile(buffer[..offset], true, defines);
                 }
                 finally
                 {
@@ -102,7 +130,7 @@ internal static partial class ShaderCompiler
         //fixed (byte* hlslPtr = bytes)
         //{
         //    Compiler.Preprocess((nint)hlslPtr, new((uint)bytes.Length), null, definesMacro, null, out var debugBlob, out var debugError);
-        //    Engine.Log.Error(debugBlob.AsString());
+        //    Engine.Log.Error(CleanHLSL(debugBlob.AsString()));
         //}
 
         // NOTE: Optimization could actually cause issues (mainly with literals) | Use SkipOptimization instead when debugging HLSL
@@ -126,6 +154,22 @@ internal static partial class ShaderCompiler
         }
 
         return shaderBlob;
+    }
+
+    [SuppressMessage("Performance", "SYSLIB1045:Convert to 'GeneratedRegexAttribute'.", Justification = "DebugOnly")]
+    static string CleanHLSL(string text)
+    {
+        text = Regex.Replace(text, @"\s*\[\s*", "[");
+        text = Regex.Replace(text, @"\s*\]\s*", "]");
+        text = Regex.Replace(text, @"(?m)^\s*#line.*(?:\r?\n)?", "");
+        text = Regex.Replace(text, @"\s*\.\s*", ".");
+        text = Regex.Replace(text, @"\s+([,;)])", "$1");
+        text = Regex.Replace(text, @"\(\s+", "(");
+        text = Regex.Replace(text, @"(\w)\s+\(", "$1(");
+        text = Regex.Replace(text, @"(?m)^[ \t]+$", "");
+        text = Regex.Replace(text, @"(\r?\n){3,}", "$1$1");
+
+        return text.Trim();
     }
 
     static void LogError(string msg) => Engine.Log.Error($"{LOG_PREFIX}{msg}");

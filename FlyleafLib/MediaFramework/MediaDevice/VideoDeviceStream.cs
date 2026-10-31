@@ -44,12 +44,12 @@ public class VideoDeviceStream : DeviceStreamBase
         switch (subType)
         {
             case "MJPG":
-                var descriptorPtr = avcodec_descriptor_get(AVCodecID.Mjpeg);
+                var descriptorPtr = avcodec_descriptor_get(AVCodecID.MJPEG);
                 return $"vcodec={BytePtrToStringUTF8(descriptorPtr->name)}";
             case "YUY2":
-                return $"pixel_format={av_get_pix_fmt_name(AVPixelFormat.Yuyv422)}";
+                return $"pixel_format={av_get_pix_fmt_name_str(AVPixelFormat.Yuyv422)}";
             case "NV12":
-                return $"pixel_format={av_get_pix_fmt_name(AVPixelFormat.Nv12)}";
+                return $"pixel_format={av_get_pix_fmt_name_str(AVPixelFormat.NV12)}";
             default:
                 return "";
         }

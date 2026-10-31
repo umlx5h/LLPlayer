@@ -14,19 +14,19 @@ public unsafe partial class Renderer
 {
     static string[] pixelOffsets = ["r", "g", "b", "a"];
 
-    const string dYUVLimited    = "dYUVLimited";
-    const string dYUVFull       = "dYUVFull";
-    const string dYUV16         = "dYUV16";
+    internal const string dYUVLimited       = "dYUVLimited";
+    internal const string dYUVFull          = "dYUVFull";
+    internal const string dYUV16            = "dYUV16";
 
-    const string dBT1886ToLinear= "dBT1886ToLinear";
-    const string dBT2020        = "dBT2020";
-    const string dHLG           = "dHLG";
-    const string dPQSpline      = "dPQSpline";
-    const string dDovi          = "dDovi";
+    internal const string dBT1886ToLinear   = "dBT1886ToLinear";
+    internal const string dBT2020           = "dBT2020";
+    internal const string dHLG              = "dHLG";
+    internal const string dPQSpline         = "dPQSpline";
+    internal const string dDovi             = "dDovi";
 
-    const string dFilters       = "dFilters";
-    const string dPano360       = "dPano360";
-    const string dICC           = "dICC";
+    internal const string dFilters          = "dFilters";
+    internal const string dPano360          = "dPano360";
+    internal const string dICC              = "dICC";
 
     List<string> defines = [];
 
@@ -534,17 +534,17 @@ SampleSplitFrameAlpha("input.Texture.x", "0.5 + (input.Texture.y / 2)");
         // [RGB0]32 | [RGBA]32 | [RGBA]64
         if (scfg.PixelPlanes == 1 && ( // Possible Alpha
             scfg.PixelFormat == AVPixelFormat._0RGB  ||
-            scfg.PixelFormat == AVPixelFormat.Rgb0   ||
+            scfg.PixelFormat == AVPixelFormat.RGB0   ||
             scfg.PixelFormat == AVPixelFormat._0BGR  ||
-            scfg.PixelFormat == AVPixelFormat.Bgr0   ||
+            scfg.PixelFormat == AVPixelFormat.BGR0   ||
 
-            scfg.PixelFormat == AVPixelFormat.Argb   ||
-            scfg.PixelFormat == AVPixelFormat.Rgba   ||
-            scfg.PixelFormat == AVPixelFormat.Abgr   ||
-            scfg.PixelFormat == AVPixelFormat.Bgra   ||
+            scfg.PixelFormat == AVPixelFormat.ARGB   ||
+            scfg.PixelFormat == AVPixelFormat.RGBA   ||
+            scfg.PixelFormat == AVPixelFormat.ABGR   ||
+            scfg.PixelFormat == AVPixelFormat.BGRA   ||
 
-            scfg.PixelFormat == AVPixelFormat.Rgba64le||
-            scfg.PixelFormat == AVPixelFormat.Bgra64le))
+            scfg.PixelFormat == AVPixelFormat.RGBA64LE||
+            scfg.PixelFormat == AVPixelFormat.BGRA64LE))
         {
             psCase  = PSCase.RGBPacked;
             psId   += ((int)psCase).ToString();
@@ -595,8 +595,8 @@ color.rgb = (color.rgb - rgbOffset) * rgbScale;
 
         // [BGR/RGB]16
         else if (scfg.PixelPlanes == 1 && (
-            scfg.PixelFormat == AVPixelFormat.Rgb444le||
-            scfg.PixelFormat == AVPixelFormat.Bgr444le))
+            scfg.PixelFormat == AVPixelFormat.RGB444LE||
+            scfg.PixelFormat == AVPixelFormat.BGR444LE))
         {
             psCase  = PSCase.RGBPacked2;
             psId   += ((int)psCase).ToString();
@@ -606,7 +606,7 @@ color.rgb = (color.rgb - rgbOffset) * rgbScale;
             txtDesc[0].Format   = srvDesc[0].Format = Format.B4G4R4A4_UNorm;
 
             string shader;
-            if (scfg.PixelFormat == AVPixelFormat.Rgb444le)
+            if (scfg.PixelFormat == AVPixelFormat.RGB444LE)
             {
                 psId += "a";
                 shader = @"

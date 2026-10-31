@@ -104,7 +104,7 @@ public unsafe partial class Renderer
         subsViewport        = new(view.X + subsRect.X * subsRatioX, view.Y + subsRect.Y * subsRatioY, subsTxtDesc.Width, subsTxtDesc.Height);
 
         swsFrame = av_frame_alloc();
-        swsFrame->format= (int)AVPixelFormat.Rgba;
+        swsFrame->format= (int)AVPixelFormat.RGBA;
         swsFrame->width = (int)subsTxtDesc.Width;
         swsFrame->height= (int)subsTxtDesc.Height;
         _ = av_frame_get_buffer(swsFrame, 0);
@@ -115,7 +115,7 @@ public unsafe partial class Renderer
             AVPixelFormat.Pal8,
             (int)subsTxtDesc.Width,
             (int)subsTxtDesc.Height,
-            AVPixelFormat.Rgba, ucfg.BitmapSubsScaleQuality, null, null, null);
+            AVPixelFormat.RGBA, ucfg.BitmapSubsScaleQuality, null, null, null);
 
         int ret = sws_scale(swsCtx,
             (byte**)&rect->data,

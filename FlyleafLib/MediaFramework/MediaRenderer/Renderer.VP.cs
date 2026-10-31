@@ -104,7 +104,7 @@ public unsafe partial class Renderer
 
         bool requiresFL =
             // Alpha | Split Frame Alpha | HV Flip | BT.2020/HDR
-            FLDoviSupported() || !canD3 || scfg.ColorSpace == ColorSpace.Bt2020 || ucfg.hflip || ucfg.vflip || ucfg.SplitFrameAlphaPosition != SplitFrameAlphaPosition.None || scfg.PixelFormatDesc->flags.HasFlag(PixFmtFlags.Alpha) ||
+            FLDoviSupported() || !canD3 || scfg.ColorSpace == ColorSpace.Bt2020 || scfg.iccData != null || ucfg.hflip || ucfg.vflip || ucfg.SplitFrameAlphaPosition != SplitFrameAlphaPosition.None || scfg.PixelFormatDesc->flags.HasFlag(PixFmtFlags.Alpha) ||
             // SW w/o Deinterlace | Super Resolution
             (!VideoDecoder.VideoAccelerated && fieldType == VideoFrameFormat.Progressive && !ucfg.SuperResolution);
 

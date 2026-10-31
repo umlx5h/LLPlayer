@@ -29,10 +29,10 @@ public unsafe partial class Renderer
         var device_ctx          = (AVHWDeviceContext*)                  ffDevice->data;
         var hwCtx               = (AVD3D11VADeviceContext*)             device_ctx->hwctx;
 
-        hwCtx->device           = (Flyleaf.FFmpeg.ID3D11Device*)        device. NativePointer;
-        hwCtx->device_context   = (Flyleaf.FFmpeg.ID3D11DeviceContext*) context.NativePointer;
-        hwCtx->video_device     = (Flyleaf.FFmpeg.ID3D11VideoDevice*)   vd.     NativePointer;
-        hwCtx->video_context    = (Flyleaf.FFmpeg.ID3D11VideoContext*)  vc.     NativePointer;
+        hwCtx->device           = (FF.ID3D11Device*)        device. NativePointer;
+        hwCtx->device_context   = (FF.ID3D11DeviceContext*) context.NativePointer;
+        hwCtx->video_device     = (FF.ID3D11VideoDevice*)   vd.     NativePointer;
+        hwCtx->video_context    = (FF.ID3D11VideoContext*)  vc.     NativePointer;
 
         int ret = av_hwdevice_ctx_init(ffDevice);
         if (ret == 0)

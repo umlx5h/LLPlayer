@@ -8,6 +8,7 @@ global using System.Threading;
 global using System.Threading.Tasks;
 
 global using Flyleaf.FFmpeg;
+global using FF = Flyleaf.FFmpeg;
 
 global using static Flyleaf.FFmpeg.Raw;
 global using static FlyleafLib.Logger;

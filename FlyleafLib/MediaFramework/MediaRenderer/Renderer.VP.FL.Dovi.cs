@@ -80,6 +80,9 @@ public unsafe partial class Renderer
 
         return scfg.DoviProfile switch
         {
+            // Unknown profile; DOVI metadata confirmed on decoded frame
+            -1 => true,
+
             // Profile 5 has no standards-compatible BL and therefore requires
             // Dolby reconstruction for correct playback. Compatibility ID must be 0.
             5 => scfg.DoviCompatibility == 0,
@@ -116,7 +119,7 @@ public unsafe partial class Renderer
 
     DoviFrameData FLDoviPrepare(AVFrame* frame)
     {
-        var side = av_frame_side_data_get(frame->side_data, frame->nb_side_data, AVFrameSideDataType.DoviMetadata);
+        var side = av_frame_side_data_get(frame->side_data, frame->nb_side_data, AVFrameSideDataType.DOVIMetadata);
 
         if (side == null || side->data == null)
             return null;
@@ -468,7 +471,7 @@ public unsafe partial class Renderer
         if (frame == null)
             return null;
 
-        var side = av_frame_side_data_get(frame->side_data, frame->nb_side_data, AVFrameSideDataType.DoviMetadata);
+        var side = av_frame_side_data_get(frame->side_data, frame->nb_side_data, AVFrameSideDataType.DOVIMetadata);
 
         if (side == null || side->data == null)
             return null;

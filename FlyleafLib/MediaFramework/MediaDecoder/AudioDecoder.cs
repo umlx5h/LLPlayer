@@ -64,7 +64,7 @@ public unsafe partial class AudioDecoder : DecoderBase
             return false;
         }
 
-        if (CanDebug) Log.Debug($"Using {avcodec_get_name(codec->id)} codec");
+        if (CanDebug) Log.Debug($"Using {avcodec_get_name_str(codec->id)} codec");
 
         codecCtx = avcodec_alloc_context3(codec); // Pass codec to use default settings
         if (codecCtx == null)
@@ -86,7 +86,7 @@ public unsafe partial class AudioDecoder : DecoderBase
         var codecOpts = Config.Decoder.AudioCodecOpt;
         AVDictionary* avopt = null;
         foreach(var optKV in codecOpts)
-            _ = av_dict_set(&avopt, optKV.Key, optKV.Value, 0);
+            _ = av_dict_set(ref avopt, optKV.Key, optKV.Value, 0);
 
         ret = avcodec_open2(codecCtx, null, avopt == null ? null : &avopt);
         if (ret < 0)

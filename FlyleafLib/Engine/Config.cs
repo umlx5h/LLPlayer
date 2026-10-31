@@ -1394,9 +1394,9 @@ public class EngineConfig
     /// <summary>
     /// Sets FFmpeg logger's level
     /// </summary>
-    public Flyleaf.FFmpeg.LogLevel
+    public FF.LogLevel
                     FFmpegLogLevel          { get => _FFmpegLogLevel; set { _FFmpegLogLevel = value; if (Engine.IsLoaded) FFmpegEngine.SetLogLevel(); } }
-    Flyleaf.FFmpeg.LogLevel _FFmpegLogLevel = Flyleaf.FFmpeg.LogLevel.Quiet;
+    FF.LogLevel _FFmpegLogLevel = FF.LogLevel.Quiet;
 
     /// <summary>
     /// Whether configuration has been loaded from file

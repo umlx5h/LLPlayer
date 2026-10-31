@@ -28,15 +28,15 @@ public class FFmpegEngine
 
     internal static void SetLogLevel()
     {
-        if (Engine.Config.FFmpegLogLevel != Flyleaf.FFmpeg.LogLevel.Quiet)
+        if (Engine.Config.FFmpegLogLevel != FF.LogLevel.Quiet)
         {
             av_log_set_level(Engine.Config.FFmpegLogLevel);
             av_log_set_callback(LogFFmpeg);
         }
         else
         {
-            av_log_set_level(Flyleaf.FFmpeg.LogLevel.Quiet);
-            av_log_set_callback(null);
+            av_log_set_level(FF.LogLevel.Quiet);
+            av_log_set_callback((av_log_set_callback_callback)null);
         }
     }
 

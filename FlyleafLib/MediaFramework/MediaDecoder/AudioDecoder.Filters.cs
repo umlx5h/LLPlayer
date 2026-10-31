@@ -34,12 +34,12 @@ public unsafe partial class AudioDecoder
     private AVFilterContext* CreateFilter(AVFilter* filter, string args, AVFilterContext* prevCtx = null, string id = null)
     {
         int ret;
-        AVFilterContext*    filterCtx;
+        AVFilterContext* filterCtx = null;
 
         if (filter == null)
             throw new Exception($"[Filter {BytePtrToStringUTF8(filter->name)}] not found");
         
-        ret = avfilter_graph_create_filter(&filterCtx, filter, id, args, null, filterGraph);
+        ret = avfilter_graph_create_filter(ref filterCtx, filter, id, args, null, filterGraph);
         if (ret < 0)
             throw new Exception($"[Filter {BytePtrToStringUTF8(filter->name)}] avfilter_graph_create_filter failed ({FFmpegEngine.ErrorCodeToMsg(ret)})");
 
@@ -113,7 +113,7 @@ public unsafe partial class AudioDecoder
             }
 
             // OUT (abuffersink)
-            abufferSinkCtx = avfilter_graph_alloc_filter(filterGraph, ABUFFERSINK, null);
+            abufferSinkCtx = avfilter_graph_alloc_filter(filterGraph, ABUFFERSINK, (byte*)null);
 
             // Xaudio supported formats (Packed/Interleaved)
             Set(abufferSinkCtx, "sample_formats", [AVSampleFormat.U8, AVSampleFormat.S16, AVSampleFormat.S32, AVSampleFormat.Flt], AVOptionType.SampleFmt);
@@ -298,7 +298,7 @@ public unsafe partial class AudioDecoder
         
         int ret;
 
-        if ((ret = av_buffersrc_add_frame_flags(abufferCtx, frame, AVBuffersrcFlag.KeepRef | AVBuffersrcFlag.NoCheckFormat)) < 0) // We check format change manually before here
+        if ((ret = av_buffersrc_add_frame_flags(abufferCtx, frame, AVBuffersrcFlags.KeepRef | AVBuffersrcFlags.NoCheckFormat)) < 0) // We check format change manually before here
         {
             Log.Warn($"[buffersrc] {FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
             Status = Status.Stopping;

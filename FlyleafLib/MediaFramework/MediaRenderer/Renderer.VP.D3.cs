@@ -69,6 +69,7 @@ public unsafe partial class Renderer
     };
     RenderTargetViewDescription[]   d3rtvDesc   = new RenderTargetViewDescription[2];
     FillPlanesDelegate              D3FillPlanesStage;
+    VideoProcessorRotation          d3Rotation  = VideoProcessorRotation.Identity;
 
     bool                            d3CanPresent; // Don't render / present during out of bounds viewport
 
@@ -171,7 +172,7 @@ public unsafe partial class Renderer
     }
     bool D3SWConfig(AVFrame* frame)
     {
-        if (scfg.ColorType == ColorType.RGB && scfg.PixelFormat != AVPixelFormat.Rgba)
+        if (scfg.ColorType == ColorType.RGB && scfg.PixelFormat != AVPixelFormat.RGBA)
         {   // TBR: re-ordered RGB offsets?* extra pass*
             SwsConfig(frame);
             canFL = false;
@@ -357,7 +358,7 @@ color = float4(Texture2.Sample(Sampler, input.Texture).r, Texture3.Sample(Sample
         int     srcLeft,    srcTop,     srcRight,   srcBottom;
         double  scaleX,     scaleY,     scaleXRot,  scaleYRot;
 
-        if (rotation == 0)
+        if (d3Rotation == VideoProcessorRotation.Identity)
         {
             cropLeft    = view.X < 0 ? (int)(-view.X) : 0;
             cropTop     = view.Y < 0 ? (int)(-view.Y) : 0;
@@ -370,7 +371,7 @@ color = float4(Texture2.Sample(Sampler, input.Texture).r, Texture3.Sample(Sample
             srcRight    = srcLeft + (int)(dstWidth  * scaleX);
             srcBottom   = srcTop  + (int)(dstHeight * scaleY);
         }
-        else if (rotation == 180)
+        else if (d3Rotation == VideoProcessorRotation.Rotation180)
         {
             cropRight   = right  > width  ? right  - width  : 0;
             cropBottom  = bottom > height ? bottom - height : 0;
@@ -383,7 +384,7 @@ color = float4(Texture2.Sample(Sampler, input.Texture).r, Texture3.Sample(Sample
             srcRight    = srcLeft + (int)(dstWidth  * scaleX);
             srcBottom   = srcTop  + (int)(dstHeight * scaleY);
         }
-        else if (rotation == 90)
+        else if (d3Rotation == VideoProcessorRotation.Rotation90)
         {
             cropTop     = view.Y < 0 ? (int)(-view.Y) : 0;
             cropRight   = right > width ? right - width : 0;
@@ -396,7 +397,7 @@ color = float4(Texture2.Sample(Sampler, input.Texture).r, Texture3.Sample(Sample
             srcRight    = srcLeft + (int)(dstHeight * scaleXRot);
             srcBottom   = srcTop  + (int)(dstWidth  * scaleYRot);
         }
-        else if (rotation == 270)
+        else if (d3Rotation == VideoProcessorRotation.Rotation270)
         {
             cropLeft    = view.X < 0 ? (int)(-view.X) : 0;
             cropBottom  = bottom > height ? bottom - height : 0;
@@ -431,11 +432,12 @@ color = float4(Texture2.Sample(Sampler, input.Texture).r, Texture3.Sample(Sample
     void D3SetRotationFlip()
     {
         SetRotation();
-        vc.VideoProcessorSetStreamRotation(vp, 0, true, ToD3Rotation());
+        d3Rotation = ToD3Rotation();
+        vc.VideoProcessorSetStreamRotation(vp, 0, true, d3Rotation);
 
         VideoProcessorRotation ToD3Rotation()
         {
-            if (rotation < 45 || rotation == 360)
+            if (rotation < 45 || rotation > 315)
                 return VideoProcessorRotation.Identity;
 
             if (rotation < 135)

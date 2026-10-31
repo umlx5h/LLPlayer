@@ -20,7 +20,7 @@ public unsafe class CustomIOContext
         ioseek = IOSeek;
         avioCtx = avio_alloc_context((byte*)av_malloc((nuint)demuxer.Config.IOStreamBufferSize), demuxer.Config.IOStreamBufferSize, 0, null, ioread, null, ioseek);
         demuxer.FormatContext->pb     = avioCtx;
-        demuxer.FormatContext->flags |= FmtFlags2.CustomIo;
+        demuxer.FormatContext->flags |= FmtFlags2.CustomIO;
     }
 
     public void Dispose()

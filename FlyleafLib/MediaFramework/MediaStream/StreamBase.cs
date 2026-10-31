@@ -9,7 +9,7 @@ public abstract unsafe class StreamBase : NotifyPropertyChanged
 
     public Demuxer                      Demuxer             { get; internal set; }
     public AVStream*                    AVStream            { get; internal set; }
-    internal playlist*                  HLSPlaylist         { get; set; }
+    internal HLSPlaylist*               HLSPlaylist         { get; set; }
     public int                          StreamIndex         { get; internal set; } = -1;
     public double                       Timebase            { get; internal set; }
 
@@ -59,7 +59,7 @@ public abstract unsafe class StreamBase : NotifyPropertyChanged
         cp          = st->codecpar;
         BitRate     = cp->bit_rate;
         CodecID     = cp->codec_id;
-        Codec       = avcodec_get_name(cp->codec_id);
+        Codec       = avcodec_get_name_str(cp->codec_id);
         StreamIndex = AVStream->index;
         Timebase    = av_q2d(AVStream->time_base) * 10000.0 * 1000.0;
 
@@ -109,7 +109,7 @@ public abstract unsafe class StreamBase : NotifyPropertyChanged
 
         for (int i = 0; i < Demuxer.hlsCtx->n_playlists; i++)
         {
-            playlist** playlists = Demuxer.hlsCtx->playlists;
+            var playlists = Demuxer.hlsCtx->playlists;
             for (int l=0; l<playlists[i]->n_main_streams; l++)
                 if (playlists[i]->main_streams[l]->index == StreamIndex)
                 {
@@ -164,8 +164,8 @@ public abstract unsafe class StreamBase : NotifyPropertyChanged
         string profile = null;
         var codecDescriptor = avcodec_descriptor_get(CodecID);
         if (codecDescriptor != null)
-            profile = avcodec_profile_name(CodecID, cp->profile);
-        dump += $"\r\n\t[Codec   ] {Codec}{(profile != null ? " | " + avcodec_profile_name(CodecID, cp->profile) : "")}";
+            profile = avcodec_profile_name_str(CodecID, cp->profile);
+        dump += $"\r\n\t[Codec   ] {Codec}{(profile != null ? " | " + avcodec_profile_name_str(CodecID, cp->profile) : "")}";
 
         if (cp->codec_tag != 0)
             dump += $" ({GetFourCCString(cp->codec_tag)} / 0x{cp->codec_tag:X4})";
