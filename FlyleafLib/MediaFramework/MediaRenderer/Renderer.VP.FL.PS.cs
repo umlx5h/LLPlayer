@@ -1,4 +1,4 @@
-using Vortice.Direct3D;
+﻿using Vortice.Direct3D;
 using Vortice.Direct3D11;
 using Vortice.DXGI;
 
@@ -26,6 +26,7 @@ public unsafe partial class Renderer
     internal const string dHLG              = "dHLG";
     internal const string dPQSpline         = "dPQSpline";
     internal const string dDovi             = "dDovi";
+    internal const string dDoviMSDetail     = "dDoviMSDetail";
 
     internal const string dFilters          = "dFilters";
     internal const string dPano360          = "dPano360";
@@ -105,7 +106,7 @@ color = float4(
             defines.Add(dPQSpline);
             isPQSpline = true;
             FLHDRDetectReset();
-            FLDoviReset();
+            FLDoviReset(frame);
             if (CanTrace)
                 Log.Trace(FLDoviDump(frame));
 
@@ -208,6 +209,12 @@ color = float4(
         switch (ucfg._SplitFrameAlphaPosition)
         {
             case SplitFrameAlphaPosition.None:
+                // Spatial tone-detail sampling currently exists only on the unsplit HW Y/UV path.
+                if (isDovi)
+                {
+                    defines.Add(dDoviMSDetail);
+                    psId += "m";
+                }
                 SetPS(HWSAMPLE, defines);
                 break;
 

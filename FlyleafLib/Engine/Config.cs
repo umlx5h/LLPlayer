@@ -473,8 +473,8 @@ public class Config : NotifyPropertyChanged
         /// avformat_close_input timeout (ticks) for protocols that support interrupts
         /// </summary>
         public long             CloseTimeout        { get => closeTimeout; set { closeTimeout = value; closeTimeoutMs = value / 10000; } }
-        private long closeTimeout = 1 * 1000 * 10000;
-        internal long closeTimeoutMs = 1 * 1000;
+        private long closeTimeout = 10 * 1000 * 10000;
+        internal long closeTimeoutMs = 10 * 1000;
 
         /// <summary>
         /// avformat_open_input + avformat_find_stream_info timeout (ticks) for protocols that support interrupts (should be related to probesize/analyzeduration)
@@ -487,22 +487,22 @@ public class Config : NotifyPropertyChanged
         /// av_read_frame timeout (ticks) for protocols that support interrupts
         /// </summary>
         public long             ReadTimeout         { get => readTimeout; set { readTimeout = value; readTimeoutMs = value / 10000; } }
-        private long readTimeout = 10 * 1000 * 10000;
-        internal long readTimeoutMs = 10 * 1000;
+        private long readTimeout = 30 * 1000 * 10000;
+        internal long readTimeoutMs = 30 * 1000;
 
         /// <summary>
         /// av_read_frame timeout (ticks) for protocols that support interrupts (for Live streams)
         /// </summary>
         public long             ReadLiveTimeout     { get => readLiveTimeout; set { readLiveTimeout = value; readLiveTimeoutMs = value / 10000; } }
-        private long readLiveTimeout = 20 * 1000 * 10000;
-        internal long readLiveTimeoutMs = 20 * 1000;
+        private long readLiveTimeout = 60 * 1000 * 10000;
+        internal long readLiveTimeoutMs = 60 * 1000;
 
         /// <summary>
         /// av_seek_frame timeout (ticks) for protocols that support interrupts
         /// </summary>
         public long             SeekTimeout         { get => seekTimeout; set { seekTimeout = value; seekTimeoutMs = value / 10000; } }
-        private long seekTimeout = 8 * 1000 * 10000;
-        internal long seekTimeoutMs = 8 * 1000;
+        private long seekTimeout = 30 * 1000 * 10000;
+        internal long seekTimeoutMs = 30 * 1000;
 
         /// <summary>
         /// Forces Input Format
@@ -568,12 +568,16 @@ public class Config : NotifyPropertyChanged
             opts["extension_picky"]     = "0";
             opts["rtsp_transport"]      = "tcp";
 
-            // HTTP | Bounded requests (YT throttling)
-            opts["multiple_requests"]   = "1";
-            opts["request_size"]        = "8388608";
+            // HTTP | Bounded requests (YT throttling) | Update: This seems to be resolved properly with deno.exe
+            //opts["multiple_requests"]   = "1";
+            //opts["request_size"]        = "2097152";
+            //opts["request_size"]        = "8388608";
 
             // HTTP | Recover premature disconnections (YT external audio)
             opts["reconnect"]           = "1";
+            //opts["reconnect_on_network_error"] = "1";
+            //opts["reconnect_on_http_error"]    = "500,502,503,504";
+            //opts["reconnect_delay_max"]        = "5";
 
             return opts;
         }

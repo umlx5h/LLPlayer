@@ -18,10 +18,13 @@ public unsafe partial class Renderer
     /// Whether to use Dolby L1 metadata or Flyleaf's histogram for tone mapping
     /// </summary>
     public bool DoviUseHDRDetect;
+    bool doviNeedsHDRDetect;
+    bool? doviIsCM4;
 
-    bool doviNeedsHDRDetect; 
-
-    const int doviVectors             = 187;
+    const int doviVectors             = 190; // 187 reconstruction + 3 L2 trim vectors
+    const int doviTrimInfo            = 187;
+    const int doviTrimPrimary         = 188;
+    const int doviTrimSecondary       = 189;
     const int doviComponentVectors    = 59;
     const int doviComponentBase       = 10;
     const int doviMmrVectors          = 48;
@@ -31,7 +34,10 @@ public unsafe partial class Renderer
     // Dovi[1..3]   : affine YCC -> nonlinear RGB rows
     // Dovi[4..6]   : linear DOVI RGB -> BT.2020 rows, BT.2020 luma coefficients in .w
     // Dovi[7..9]   : linear DOVI RGB -> BT.709 rows
-    // Dovi[10..]   : three reshape components, 59 float4s each
+    // Dovi[10..186]: three reshape components, 59 float4s each
+    // Dovi[187]    : L2 present (0/2), authored reference peak, 0, 0
+    // Dovi[188]    : slope, offset, power, chroma weight
+    // Dovi[189]    : saturation gain, tone detail factor, 0, 0
     static BufferDescription doviDesc = new()
     {
         Usage          = ResourceUsage.Default,
@@ -46,24 +52,24 @@ public unsafe partial class Renderer
         public fixed float Data[doviVectors * 4];
     }
 
+    internal readonly record struct DoviTrimSnapshot(
+        int Level, float TargetNits,
+        float Slope, float Offset, float Power,
+        float ChromaWeight, float SaturationGain, float MsWeight);
+
     internal sealed class DoviFrameData
     {
         public DoviBufferType Buffer;
+        internal DoviTrimSnapshot Trim;
     }
 
-    // Prepare-side cache: consecutive frames commonly repeat the same RPU mapping.
-    // Reuse the immutable DoviFrameData instead of allocating one object per frame.
-    DoviFrameData doviPreparedData;
+    DoviFrameData doviPreparedData; // Prepare-side cache for repeated RPUs.
     (float Min, float Avg, float Max)? doviL1Nits;
 
-    // Render-side cache: if consecutive frames share the prepared state, don't upload b2 again.
-    DoviFrameData doviAppliedData;
+    DoviFrameData doviAppliedData;  // Render-side cache
     bool doviAppliedEmpty;
 
-    // Prepare-side source cache. FFmpeg attaches a fresh AVDOVIMetadata copy to
-    // every frame, so pointer identity cannot be used. Keep only the metadata
-    // that actually affects our shader and compare it before rebuilding the
-    // 187-vector GPU buffer.
+    // FFmpeg reattaches fresh side data every frame; compare actual metadata.
     bool                    doviSourceCached;
     byte                    doviCachedBlBitDepth;
     byte                    doviCachedCoefLog2Denom;
@@ -118,7 +124,7 @@ public unsafe partial class Renderer
         };
     }
 
-    void FLDoviReset()
+    void FLDoviReset(AVFrame* frame)
     {
         doviL1Nits          = null;
         doviPreparedData    = null;
@@ -129,7 +135,29 @@ public unsafe partial class Renderer
         doviCachedCurve0    = default;
         doviCachedCurve1    = default;
         doviCachedCurve2    = default;
-        doviNeedsHDRDetect  = DoviUseHDRDetect;
+        doviIsCM4           = FLDoviIsCM4(frame);
+        doviNeedsHDRDetect  = DoviUseHDRDetect || doviIsCM4 != false;
+    }
+
+    static bool? FLDoviIsCM4(AVFrame* frame)
+    {
+        if (frame == null)
+            return null;
+
+        var side = av_frame_side_data_get(frame->side_data, frame->nb_side_data, AVFrameSideDataType.DOVIMetadata);
+        if (side == null || side->data == null)
+            return null;
+
+        var dovi = (AVDOVIMetadata*)side->data;
+        for (int i = 0; i < dovi->num_ext_blocks; i++)
+        {
+            var dm = (AVDOVIDmData*)((byte*)dovi + dovi->ext_block_offset +
+                dovi->ext_block_size * (nuint)i);
+            if (dm->level is 3 or 8 or 254)
+                return true;
+        }
+
+        return false;
     }
 
     (DoviFrameData, (float Min, float Avg, float Max)?) FLDoviPrepare(AVFrame* frame)
@@ -144,20 +172,27 @@ public unsafe partial class Renderer
         var mapping = (AVDOVIDataMapping*)  ((byte*)dovi + dovi->mapping_offset);
         var color   = (AVDOVIColorMetadata*)((byte*)dovi + dovi->color_offset);
 
-        // FFmpeg's valid coefficient denominator range is [13, 32]. Validate it
-        // before ScaleB/bit shifts below so malformed side data cannot produce
-        // invalid math or an oversized shift.
+        // Guard malformed coefficient ranges
         if (header->coef_log2_denom < 13 || header->coef_log2_denom > 32)
             return (null, null);
 
-        // Fast path for the overwhelmingly common case where consecutive frames
-        // reuse the same reshape/matrix state. The side-data allocation itself is
-        // new every frame, so compare the source metadata rather than pointers.
+        // Apply L2 only for CM 2.9; CM 4.x uses HDRDetect until L8 is supported.
+        var trim = doviIsCM4 == false ? FLDoviSelectTrim(dovi) : default;
+
+        // Reuse cached reconstruction state when only per-frame trim values change.
         if (doviPreparedData != null && DoviSourceEquals(header, mapping, color))
-            return (doviPreparedData, FLDoviL1L3Nits(dovi));
+        {
+            if (doviPreparedData.Trim != trim)
+            {
+                // Keep queued frames immutable when only trims change.
+                DoviBufferType nextBuffer = doviPreparedData.Buffer;
+                DoviWriteTrim(ref nextBuffer, trim);
+                doviPreparedData = new() { Buffer = nextBuffer, Trim = trim };
+            }
+            return (doviPreparedData, FLDoviL1Nits(dovi));
+        }
         
-        // FFmpeg defines BL depth as [8, 16]. Keep malformed/unsupported metadata
-        // out of the shader rather than coercing it into a seemingly valid mapping.
+        // Guard malformed BL depth
         if (header->bl_bit_depth < 8 || header->bl_bit_depth > 16)
             return (null, null);
 
@@ -356,48 +391,132 @@ public unsafe partial class Renderer
         }
 
         DoviSet(ref buffer, 0, new(sampleScale, identityReshape ? 1.0f : 0.0f, 0, 0));
+        DoviWriteTrim(ref buffer, trim);
 
         DoviCacheSource(header, mapping, color);
-        doviPreparedData = new() { Buffer = buffer };
-        return (doviPreparedData, FLDoviL1L3Nits(dovi));
+        doviPreparedData = new() { Buffer = buffer, Trim = trim };
+        return (doviPreparedData, FLDoviL1Nits(dovi));
     }
 
-    (float Min, float Avg, float Max)? FLDoviL1L3Nits(AVDOVIMetadata* dovi)
+    (float Min, float Avg, float Max)? FLDoviL1Nits(AVDOVIMetadata* dovi)
     {
         if (doviNeedsHDRDetect)
             return null;
 
-        AVDOVIDmData* l1 = null;
-        AVDOVIDmData* l3 = null;
+        for (int i = 0; i < dovi->num_ext_blocks; i++)
+        {
+            var dm = (AVDOVIDmData*)((byte*)dovi + dovi->ext_block_offset +
+                dovi->ext_block_size * (nuint)i);
+            if (dm->level != 1)
+                continue;
+
+            var l1 = dm->union0.l1;
+            return (PQToNitsDovi(l1.min_pq),
+                    PQToNitsDovi(l1.avg_pq),
+                    PQToNitsDovi(l1.max_pq));
+        }
+
+        return null;
+    }
+
+    static float DoviTrimSigned(ushort code) => code / 4096f - 0.5f;
+    static float DoviTrimUnit(ushort code)   => code / 4096f + 0.5f;
+
+    static float DoviTrimLerp(float a, float b, float t) => a + (b - a) * t;
+
+    static DoviTrimSnapshot DoviInterpolateTrim(DoviTrimSnapshot low, DoviTrimSnapshot high, float targetNits, float t)
+        => new(
+            2, targetNits,
+            DoviTrimLerp(low.Slope, high.Slope, t),
+            DoviTrimLerp(low.Offset, high.Offset, t),
+            DoviTrimLerp(low.Power, high.Power, t),
+            DoviTrimLerp(low.ChromaWeight, high.ChromaWeight, t),
+            DoviTrimLerp(low.SaturationGain, high.SaturationGain, t),
+            DoviTrimLerp(low.MsWeight, high.MsWeight, t));
+
+    DoviTrimSnapshot FLDoviSelectTrim(AVDOVIMetadata* dovi)
+    {
+        float targetNits = hdrData.TargetPeakNits;
+        if (!float.IsFinite(targetNits) || targetNits <= 0)
+            return default;
+
+        // Interpolate in PQ space, not linear nits. Use the closest endpoint
+        // without extrapolating if the target falls outside authored references.
+        float targetPQ = NitsToPQ(targetNits);
+        float lowPQ = -1f, highPQ = 2f;
+        float exactDistance = float.MaxValue;
+        DoviTrimSnapshot low = default, high = default, exact = default;
 
         for (int i = 0; i < dovi->num_ext_blocks; i++)
         {
-            var dm = (AVDOVIDmData*)((byte*)dovi + dovi->ext_block_offset + dovi->ext_block_size * (nuint)i);
+            var dm = (AVDOVIDmData*)((byte*)dovi + dovi->ext_block_offset +
+                dovi->ext_block_size * (nuint)i);
+            if (dm->level != 2)
+                continue;
 
-            if (dm->level == 1)
-                l1 = dm;
-            else if (dm->level == 3)
-                l3 = dm;
+            var l2 = dm->union0.l2;
+            if (l2.target_max_pq is 0 or > 4095)
+                continue;
 
-            if (l1 != null && l3 != null)
-                break;
+            float pq = l2.target_max_pq / 4095f;
+            bool takeLow = pq <= targetPQ && pq > lowPQ;
+            bool takeHigh = pq >= targetPQ && pq < highPQ;
+            float distance = MathF.Abs(pq - targetPQ);
+            bool takeExact = distance <= 0.5f / 4095f && distance < exactDistance;
+            if (!takeLow && !takeHigh && !takeExact)
+                continue;
+
+            float referenceNits = PQToNitsDovi(l2.target_max_pq);
+            int ms = l2.ms_weight;
+            // The 100-nit Rec.709 reference does not use Tone Detail.
+            float msFactor = MathF.Abs(referenceNits - 100f) <= 2f || ms is < 0 or > 4095
+                ? 0f : ms / 4096f;
+
+            var trim = new DoviTrimSnapshot(
+                2, referenceNits,
+                DoviTrimUnit(l2.trim_slope),
+                DoviTrimSigned(l2.trim_offset),
+                DoviTrimUnit(l2.trim_power),
+                DoviTrimSigned(l2.trim_chroma_weight),
+                DoviTrimSigned(l2.trim_saturation_gain),
+                msFactor);
+
+            if (takeLow)   { lowPQ = pq; low = trim; }
+            if (takeHigh)  { highPQ = pq; high = trim; }
+            if (takeExact) { exactDistance = distance; exact = trim; }
         }
 
-        if (l1 == null)
-            return null;
+        if (exact.Level != 0)
+            return hdrData.NativeOutput != 0 ? exact : exact with { MsWeight = 0f };
 
-        var a = l1->union0.l1;
+        if (low.Level == 0 && high.Level == 0)
+            return default;
 
-        if (l3 == null)
-            return (PQToNitsDovi(a.min_pq),
-                    PQToNitsDovi(a.avg_pq),
-                    PQToNitsDovi(a.max_pq));
+        DoviTrimSnapshot selected;
+        if (low.Level == 0)
+            selected = high;
+        else if (high.Level == 0)
+            selected = low;
+        else if (highPQ - lowPQ <= 1f / 4095f)
+            selected = low;
+        else
+        {
+            float t = Math.Clamp((targetPQ - lowPQ) / (highPQ - lowPQ), 0f, 1f);
+            selected = DoviInterpolateTrim(low, high, targetNits, t);
+        }
 
-        var b = l3->union0.l3;
+        // This renderer doesn't apply spatial Tone Detail on SDR output.
+        return hdrData.NativeOutput != 0 ? selected : selected with { MsWeight = 0f };
+    }
 
-        return (L1L3ToNitsDovi(a.min_pq, b.min_pq_offset),
-                L1L3ToNitsDovi(a.avg_pq, b.avg_pq_offset),
-                L1L3ToNitsDovi(a.max_pq, b.max_pq_offset));
+    static void DoviWriteTrim(ref DoviBufferType buffer, DoviTrimSnapshot trim)
+    {
+        DoviSet(ref buffer, doviTrimInfo,
+            new(trim.Level, trim.TargetNits, 0, 0));
+        DoviSet(ref buffer, doviTrimPrimary,
+            new(trim.Slope, trim.Offset, trim.Power, trim.ChromaWeight));
+        DoviSet(ref buffer, doviTrimSecondary,
+            new(trim.SaturationGain, trim.MsWeight, 0, 0));
     }
 
     void FLDoviApply(VideoFrame frame)

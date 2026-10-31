@@ -40,21 +40,11 @@ inline float NitsToPQ(float nits)
 
 inline float ToneSpline(float x)
 {
-	x -= HDR.splineSrcPivot;
+    x -= HDR.splineSrcPivot;
 
-	if (x > 0.0)
-	{
-		x = ((HDR.splineQa * x +
-				HDR.splineQb) * x +
-				HDR.splineSlope) * x;
-	}
-	else
-	{
-		x = (HDR.splinePa * x +
-			    HDR.splineSlope) * x;
-	}
+    float k = x > 0.0 ? HDR.splineQa : HDR.splinePa;
 
-	return x + HDR.splineDstPivot;
+    return HDR.splineDstPivot + HDR.splineSlope * x / (1.0 + k * x);
 }
 	
 inline float3 Absolute2020ToIPTPQ(float3 c)
@@ -69,50 +59,52 @@ inline float3 IPTPQToAbsolute2020(float3 c)
 	return mul(GamutLmsTo2020, lms) * 10000.0;
 }
 
-inline float3 IPTPQToLinear2020(float3 c)
-{   // Output is target-peak-relative linear BT.2020
-	return IPTPQToAbsolute2020(c) / max(HDR.targetPeakNits, 1e-6);
-}
-	
-inline float GamutToneHull(float i)
+// Cone-channel tone mapping with the existing PQ spline
+static const float TONE_FILM_STRENGTH = 0.30;
+
+inline float ToneSplineNits(float nits)
 {
-	return ((i - 6.0) * i + 9.0) * i;
+    float mappedPQ = ToneSpline(NitsToPQ(max(nits, 0.0)));
+    return PQToNits(clamp(mappedPQ, NitsToPQ(HDR.targetMinNits), NitsToPQ(HDR.targetPeakNits)));
 }
 
-inline float3 ToneMapAbsolute2020ToIPTPQ(float3 c)
-{   // Input is absolute linear BT.2020 in nits; output is tone-mapped IPTPQc4
+inline float3 ToneMapCone2020Absolute(float3 rgb)
+{
+    float3 lms      = max(mul(Gamut2020ToLms, rgb), 0.0);
+    float peakRGB   = max(max(rgb.r, rgb.g), rgb.b);
+    float flare     = max(HDR.targetMinNits, 0.0);
 
-	float3 ipt = Absolute2020ToIPTPQ(c);
-	float sourceI = ipt.x;
+    if (peakRGB <= 1e-7)
+        return float3(flare, flare, flare);
 
-	// ToneSpline is itself a PQ-domain mapping, so apply it directly to I
-	float targetI = saturate(ToneSpline(sourceI));
-	ipt.x = targetI;
+    float mappedPeak = ToneSplineNits(peakRGB);
+    float gain       = max(mappedPeak - flare, 0.0) / peakRGB;
+    float3 preserved = lms * gain;
 
-	if (sourceI > 1e-7 && targetI > 1e-7)
-	{
-		float sourceHull = GamutToneHull(sourceI);
-		float targetHull = GamutToneHull(targetI);
-		float scaleI     = sourceI / targetI;
-		float scaleHull  = sourceHull > 1e-7 ? targetHull / sourceHull : scaleI;
+    float3 film = float3(ToneSplineNits(lms.r),
+                         ToneSplineNits(lms.g),
+                         ToneSplineNits(lms.b));
+    film = max(film - float3(flare, flare, flare), 0.0);
 
-		// Scale P/T once for the new intensity while preserving IPT hue
-		ipt.yz *= max(min(scaleI, scaleHull), 0.0);
-	}
-	else
-	    ipt.yz = 0.0;
+    float kneeNits = PQToNits(HDR.splineSrcPivot);
+    float kneeMapped = ToneSplineNits(kneeNits);
+    float kneeGain = max(kneeMapped - flare, 1e-9) / max(kneeNits, 1e-9);
 
-	return ipt;
+    float shoulder = peakRGB > kneeNits
+        ? saturate(1.0 - gain / max(kneeGain, 1e-9))
+        : 0.0;
+    shoulder *= shoulder;
+
+    float3 coneRatio    = saturate(lms / max(max(lms.r, lms.g), max(lms.b, 1e-9)));
+    float3 filmWeight   = TONE_FILM_STRENGTH * lerp(coneRatio, float3(1.0, 1.0, 1.0), shoulder);
+    float3 mappedLms    = float3(flare, flare, flare) + lerp(preserved, film, filmWeight);
+
+    return mul(GamutLmsTo2020, mappedLms);
 }
 
-inline float3 ToneMapIPTPQ2020Absolute(float3 c)
-{   // Absolute linear BT.2020 nits -> absolute linear BT.2020 nits
-	return IPTPQToAbsolute2020(ToneMapAbsolute2020ToIPTPQ(c));
-}
-
-inline float3 ToneMapIPTPQ2020(float3 c)
+inline float3 ToneMapCone2020(float3 c)
 {   // Absolute linear BT.2020 nits -> target-peak-relative linear BT.2020
-	return IPTPQToLinear2020(ToneMapAbsolute2020ToIPTPQ(c));
+    return ToneMapCone2020Absolute(c) / max(HDR.targetPeakNits, 1e-6);
 }
 
 inline float3 ToneMapLuma2020Absolute(float3 c)

@@ -85,7 +85,7 @@
 
             <StackPanel>
                 <!-- Player -->
-                <StackPanel Style="{StaticResource FlowTable}" Height="310">
+                <StackPanel Style="{StaticResource FlowTable}" Height="330">
                     <TextBlock Style="{StaticResource TextHeader}" Text="Player"/>
 
                     <StackPanel Orientation="Horizontal">
@@ -229,7 +229,7 @@
 
             <StackPanel Grid.Column="1">
                 <!-- Video -->
-                <StackPanel Style="{StaticResource FlowTable}" Height="310">
+                <StackPanel Style="{StaticResource FlowTable}" Height="330">
                     <TextBlock Style="{StaticResource TextHeader}" Text="Video"/>
 
                     <StackPanel Orientation="Horizontal">
