@@ -138,16 +138,5 @@ public static class FlyleafLoader
         },
     };
 
-    static readonly Dictionary<string, string> defaultFormatOpt = DefaultFormatOpt();
-    static Dictionary<string, string> DefaultFormatOpt()
-    {
-        var opts = Config.DemuxerConfig.DefaultFormatOpt();
-
-        opts["probesize"]       = $"{50L * 1024 * 1024}";
-        opts["analyzeduration"] = $"{TimeSpan.FromSeconds(10).TotalMicroseconds}";
-        opts["extension_picky"] = "0";
-        opts["rtsp_transport"]  = "tcp";
-
-        return opts;
-    }
+    static readonly Dictionary<string, string> defaultFormatOpt = Config.DemuxerConfig.DefaultAppFormatOpt();
 }

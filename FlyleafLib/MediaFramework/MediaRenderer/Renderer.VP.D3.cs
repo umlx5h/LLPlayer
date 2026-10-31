@@ -154,7 +154,7 @@ public unsafe partial class Renderer
             d3ColorIn.Nominal_Range = 1;
         }
 
-        d3ColorIn.YCbCr_Matrix = scfg.ColorSpace != ColorSpace.Bt601? 1u : 0u;
+        d3ColorIn.YCbCr_Matrix = scfg.ColorSpace != ColorSpace.BT601 ? 1u : 0u;
 
         vc.VideoProcessorSetStreamColorSpace(vp, 0, d3ColorIn);
 

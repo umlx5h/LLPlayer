@@ -212,7 +212,7 @@
                                         <Setter Property="Content" Value="{materialDesign:PackIcon Kind=QualityHigh}"/>
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding FL.Player.Video.Height, Converter={StaticResource QualityToLevelsConv}}" Value="_4K">
-                                        <Setter Property="Content" Value="{materialDesign:PackIcon Kind=Video4kBox}"/>
+                                        <Setter Property="Content" Value="{materialDesign:PackIcon Kind=Video_4kBox}"/>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>

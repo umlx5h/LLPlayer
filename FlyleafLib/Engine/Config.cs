@@ -143,9 +143,9 @@ public class Config : NotifyPropertyChanged
         if (!parsed || loadedVer <= System.Version.Parse("0.2.1"))
         {
             // for FlyleafLib v3.8.3, Ensure extension_picky is set
-            Demuxer.FormatOpt = DemuxerConfig.DefaultFormatOpt();
-            Demuxer.AudioFormatOpt = DemuxerConfig.DefaultFormatOpt();
-            Demuxer.SubtitlesFormatOpt = DemuxerConfig.DefaultFormatOpt();
+            Demuxer.FormatOpt = DemuxerConfig.DefaultAppFormatOpt();
+            Demuxer.AudioFormatOpt = DemuxerConfig.DefaultAppFormatOpt();
+            Demuxer.SubtitlesFormatOpt = DemuxerConfig.DefaultAppFormatOpt();
 
 
             // for subtitles search #91
@@ -177,6 +177,14 @@ public class Config : NotifyPropertyChanged
             {
                 Player.KeyBindings.Keys.Add(new KeyBinding { Ctrl = true, Key = System.Windows.Input.Key.A, IsKeyUp = true, Action = KeyBindingAction.Custom, ActionName = "ToggleSubsAutoTextCopy" });
             }
+        }
+
+        if (parsed && loadedVer <= System.Version.Parse("0.3.0"))
+        {
+            // for FlyleafLib v3.11.3
+            Demuxer.FormatOpt = DemuxerConfig.DefaultAppFormatOpt();
+            Demuxer.AudioFormatOpt = DemuxerConfig.DefaultAppFormatOpt();
+            Demuxer.SubtitlesFormatOpt = DemuxerConfig.DefaultAppFormatOpt();
         }
     }
 
@@ -439,7 +447,7 @@ public class Config : NotifyPropertyChanged
                    config.Player.MinBufferDuration = value;
             }
         }
-        long _BufferDuration = 30 * (long)1000 * 10000;
+        long _BufferDuration = 3 * (long)1000 * 10000; // At least 3 sec. required for weird/delayed interleaved audio with video
 
         /// <summary>
         /// Maximuim allowed packets for buffering (as an extra check along with BufferDuration)
@@ -551,6 +559,25 @@ public class Config : NotifyPropertyChanged
             ["http_persistent"] = "0", // TBR: Currently hls.c bug with AVERROR_EXIT (from our interrupts)
         };
 
+        public static Dictionary<string, string> DefaultAppFormatOpt()
+        {
+            var opts = DefaultFormatOpt();
+
+            opts["probesize"]           = $"{50L * 1024 * 1024}";
+            opts["analyzeduration"]     = $"{TimeSpan.FromSeconds(10).TotalMicroseconds}";
+            opts["extension_picky"]     = "0";
+            opts["rtsp_transport"]      = "tcp";
+
+            // HTTP | Bounded requests (YT throttling)
+            opts["multiple_requests"]   = "1";
+            opts["request_size"]        = "8388608";
+
+            // HTTP | Recover premature disconnections (YT external audio)
+            opts["reconnect"]           = "1";
+
+            return opts;
+        }
+
         public Dictionary<string, string> GetFormatOptPtr(MediaType type)
             => type == MediaType.Video ? FormatOpt : type == MediaType.Audio ? AudioFormatOpt : SubtitlesFormatOpt;
     }
@@ -575,7 +602,7 @@ public class Config : NotifyPropertyChanged
         /// Maximum video frames to be decoded and processed for rendering
         /// </summary>
         public int              MaxVideoFrames      { get => _MaxVideoFrames;   set { if (Set(ref _MaxVideoFrames, value)) { player?.RefreshMaxVideoFrames(); } } }
-        int _MaxVideoFrames = 4;
+        int _MaxVideoFrames = 4; // At least 4 required for smooth playback (can cause audio crackling)
         internal void SetMaxVideoFrames(int maxVideoFrames) { _MaxVideoFrames = maxVideoFrames; RaiseUI(nameof(MaxVideoFrames)); } // can be updated by video decoder if fails to allocate them
 
         /// <summary>

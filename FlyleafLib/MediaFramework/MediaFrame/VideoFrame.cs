@@ -13,6 +13,7 @@ public unsafe class VideoFrame : FrameBase
     public ID3D11VideoProcessorInputView    VPIV;       // Views (D3D11VP)
     public AVFrame*                         AVFrame;    // HW Decoded only - to keep the extra ref alive
     internal Renderer.DoviFrameData         Dovi;
+    internal  (float Min, float Avg, float Max)? DoviL1Nits;
 
     public VideoFrame Prev, Next;
     public long Id;

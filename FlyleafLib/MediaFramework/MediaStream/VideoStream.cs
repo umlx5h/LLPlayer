@@ -100,11 +100,11 @@ public unsafe class VideoStream : StreamBase
             ColorRange = ColorRange.Full;
 
         if (cp->color_space == AVColorSpace.BT709)
-            ColorSpace = ColorSpace.Bt709;
+            ColorSpace = ColorSpace.BT709;
         else if (cp->color_space == AVColorSpace.BT470BG)
-            ColorSpace = ColorSpace.Bt601;
+            ColorSpace = ColorSpace.BT601;
         else if (cp->color_space == AVColorSpace.BT2020Ncl || cp->color_space == AVColorSpace.BT2020Cl)
-            ColorSpace = ColorSpace.Bt2020;
+            ColorSpace = ColorSpace.BT2020;
 
         if (cp->nb_coded_side_data == 0)
             return;
@@ -174,7 +174,7 @@ public unsafe class VideoStream : StreamBase
                     case 7:
                         // Dual-layer Dolby Vision with HDR10-compatible BL.
                         ColorTransfer = AVColorTransferCharacteristic.SMPTE2084;
-                        ColorSpace    = ColorSpace.Bt2020;
+                        ColorSpace    = ColorSpace.BT2020;
                         HDRFormat     = HDRFormat.HDR10;
                         break;
 
@@ -187,7 +187,7 @@ public unsafe class VideoStream : StreamBase
                                 // HDR10-compatible.
                                 
                                 ColorTransfer = AVColorTransferCharacteristic.SMPTE2084;
-                                ColorSpace    = ColorSpace.Bt2020;
+                                ColorSpace    = ColorSpace.BT2020;
                                 HDRFormat     = HDRFormat.HDR10;
                                 break;
 
@@ -197,7 +197,7 @@ public unsafe class VideoStream : StreamBase
                                 // FFmpeg can also derive compatibility ID 2 for AV1/P10 from BT.709 stream signalling.
 
                                 ColorTransfer = AVColorTransferCharacteristic.BT709;
-                                ColorSpace    = ColorSpace.Bt709;
+                                ColorSpace    = ColorSpace.BT709;
                                 HDRFormat     = HDRFormat.None;
                                 break;
 
@@ -206,14 +206,14 @@ public unsafe class VideoStream : StreamBase
                                 // HLG-compatible.
                                 
                                 ColorTransfer = AVColorTransferCharacteristic.ARIBStdB67;
-                                ColorSpace    = ColorSpace.Bt2020;
+                                ColorSpace    = ColorSpace.BT2020;
                                 HDRFormat     = HDRFormat.HLG;
                                 break;
 
                             case 6 when dovi->dv_profile == 8:
                                 // UHD Blu-ray / HDR10-compatible BL.
                                 ColorTransfer = AVColorTransferCharacteristic.SMPTE2084;
-                                ColorSpace    = ColorSpace.Bt2020;
+                                ColorSpace    = ColorSpace.BT2020;
                                 HDRFormat     = HDRFormat.HDR10;
                                 break;
 
@@ -385,31 +385,31 @@ public unsafe class VideoStream : StreamBase
         if (ColorTransfer == AVColorTransferCharacteristic.ARIBStdB67)
         {
             HDRFormat   = HDRFormat.HLG;
-            ColorSpace  = ColorSpace.Bt2020;
+            ColorSpace  = ColorSpace.BT2020;
         }
 
         else if (ColorTransfer == AVColorTransferCharacteristic.SMPTE2084)// || codecCtx->colorspace == AVColorSpace.Bt2020Ncl || frame->colorspace == AVColorSpace.Bt2020Ncl)
         {
             HDRFormat   = HDRFormat.HDR10;
-            ColorSpace  = ColorSpace.Bt2020;
+            ColorSpace  = ColorSpace.BT2020;
         }
         
         if (ColorSpace == ColorSpace.None)
         {
             if (frame->colorspace == AVColorSpace.BT709)
-                ColorSpace = ColorSpace.Bt709;
+                ColorSpace = ColorSpace.BT709;
             else if (frame->colorspace == AVColorSpace.BT470BG)
-                ColorSpace = ColorSpace.Bt601;
+                ColorSpace = ColorSpace.BT601;
             else if (frame->colorspace == AVColorSpace.BT2020Ncl || frame->colorspace == AVColorSpace.BT2020Cl)
-                ColorSpace = ColorSpace.Bt2020;
+                ColorSpace = ColorSpace.BT2020;
             else if (codecCtx->colorspace == AVColorSpace.BT709)
-                ColorSpace = ColorSpace.Bt709;
+                ColorSpace = ColorSpace.BT709;
             else if (codecCtx->colorspace == AVColorSpace.BT470BG)
-                ColorSpace = ColorSpace.Bt601;
+                ColorSpace = ColorSpace.BT601;
             else if (codecCtx->colorspace == AVColorSpace.BT2020Ncl || codecCtx->colorspace == AVColorSpace.BT2020Cl)
-                ColorSpace = ColorSpace.Bt2020;
+                ColorSpace = ColorSpace.BT2020;
             else if (ColorSpace == ColorSpace.None)
-                ColorSpace = Height > 576 ? ColorSpace.Bt709 : ColorSpace.Bt601;
+                ColorSpace = Height > 576 ? ColorSpace.BT709 : ColorSpace.BT601;
         }
         
         if (FPS == 0)
@@ -452,7 +452,7 @@ public unsafe class VideoStream : StreamBase
 
     void AnalysePixelFormat()
     {
-        PixelFormatStr  = LowerCaseFirstChar(PixelFormat.ToString());
+        PixelFormatStr  = PixelFormat.ToString();
         PixelFormatDesc = av_pix_fmt_desc_get(PixelFormat);
         PixelComps      = PixelFormatDesc->comp;
         ColorType       = PixelComps.Length == 1 ? ColorType.Gray : ((PixelFormatDesc->flags & PixFmtFlags.RGB) != 0 ? ColorType.RGB : ColorType.YUV);

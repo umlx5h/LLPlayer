@@ -79,9 +79,9 @@ public enum Cropping
 public enum ColorSpace
 {
     None,
-    Bt601,
-    Bt709,
-    Bt2020
+    BT601,
+    BT709,
+    BT2020
 }
 public enum ColorRange
 {

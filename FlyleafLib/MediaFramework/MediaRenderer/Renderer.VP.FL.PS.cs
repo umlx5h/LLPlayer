@@ -12,6 +12,9 @@ namespace FlyleafLib.MediaFramework.MediaRenderer;
 
 public unsafe partial class Renderer
 {
+    public string           DynamicRange        { get; private set; }
+    public string           TargetDynamicRange  { get; private set; }
+
     static string[] pixelOffsets = ["r", "g", "b", "a"];
 
     internal const string dYUVLimited       = "dYUVLimited";
@@ -105,8 +108,10 @@ color = float4(
             FLDoviReset();
             if (CanTrace)
                 Log.Trace(FLDoviDump(frame));
+
+            DynamicRange = $"DοVi{(scfg.DoviProfile != -1 ? $" {scfg.DoviProfile}.{scfg.DoviCompatibility}" : "")}";
         }
-        else if (scfg.ColorSpace == ColorSpace.Bt2020 && !iccApplied)
+        else if (scfg.ColorSpace == ColorSpace.BT2020 && !iccApplied)
         {
             defines.Add(dBT2020);
 
@@ -119,6 +124,7 @@ color = float4(
             {
                 psId += "g";
                 defines.Add(dHLG);
+                DynamicRange = "HLG";
             }
             else // HDR10 / HDR10+
             {
@@ -126,6 +132,7 @@ color = float4(
                 defines.Add(dPQSpline);
                 isPQSpline = true;
                 FLHDRDetectReset();
+                DynamicRange = "HDR10";
             }
         }
 
@@ -176,9 +183,9 @@ color = float4(
             defines.Add(dYUVFull);
         }
 
-        if (scfg.ColorSpace == ColorSpace.Bt709)
+        if (scfg.ColorSpace == ColorSpace.BT709)
             psData.CoeffsIndex = 1;
-        else if (scfg.ColorSpace == ColorSpace.Bt2020)
+        else if (scfg.ColorSpace == ColorSpace.BT2020)
             psData.CoeffsIndex = 0;
         else
             psData.CoeffsIndex = 2;
@@ -271,9 +278,9 @@ SampleSplitFrameAlpha("input.Texture.x", "0.5 + (input.Texture.y / 2)"), defines
             defines.Add(dYUVFull);
         }
 
-        if (scfg.ColorSpace == ColorSpace.Bt709)
+        if (scfg.ColorSpace == ColorSpace.BT709)
             psData.CoeffsIndex = 1;
-        else if (scfg.ColorSpace == ColorSpace.Bt2020)
+        else if (scfg.ColorSpace == ColorSpace.BT2020)
             psData.CoeffsIndex = 0;
         else
             psData.CoeffsIndex = 2;
@@ -777,7 +784,7 @@ color.a = YUVToRGBFull(float3(Texture1.Sample(Sampler, float2({x}, {y})).r, floa
         };
 
         if (isDovi)
-            mFrame.Dovi = FLDoviPrepare(frame);
+            (mFrame.Dovi, mFrame.DoviL1Nits) = FLDoviPrepare(frame);
 
         frame = av_frame_alloc();
         return mFrame;
@@ -792,7 +799,7 @@ color.a = YUVToRGBFull(float3(Texture1.Sample(Sampler, float2({x}, {y})).r, floa
         };
 
         if (isDovi)
-            mFrame.Dovi = FLDoviPrepare(frame);
+            (mFrame.Dovi, mFrame.DoviL1Nits) = FLDoviPrepare(frame);
 
         for (int i = 0; i < scfg.PixelPlanes; i++)
         {
@@ -823,7 +830,7 @@ color.a = YUVToRGBFull(float3(Texture1.Sample(Sampler, float2({x}, {y})).r, floa
         };
 
         if (isDovi)
-            mFrame.Dovi = FLDoviPrepare(frame);
+            (mFrame.Dovi, mFrame.DoviL1Nits) = FLDoviPrepare(frame);
 
         for (int i = 0; i < scfg.PixelPlanes; i++)
         {

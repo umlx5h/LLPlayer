@@ -382,10 +382,7 @@ public unsafe partial class Renderer
     {
         float sourceMinNits     = (float)PQToNits(hdrStats.MinPQ);
         float sourcePeakNits    = (float)PQToNits(hdrStats.PeakPQ);
-        float sourceAvgNits     = Math.Clamp(
-            (float)PQToNits(hdrStats.AvgPQ),
-            sourceMinNits,
-            MathF.Max(sourcePeakNits, sourceMinNits));
+        float sourceAvgNits     = Math.Clamp((float)PQToNits(hdrStats.AvgPQ), sourceMinNits, MathF.Max(sourcePeakNits, sourceMinNits));
 
         hdrData.SourceMinNits   = sourceMinNits;
         hdrData.SourcePeakNits  = sourcePeakNits;
@@ -393,8 +390,8 @@ public unsafe partial class Renderer
 
         hdrData.Spline = GetSplineParams(
             sourceMinNits:  sourceMinNits,
-            sourcePeakNits: splinePeakNits,
             sourceAvgNits:  Math.Clamp(sourceAvgNits, sourceMinNits, splinePeakNits),
+            sourcePeakNits: splinePeakNits,
             targetMinNits:  hdrData.TargetMinNits,
             targetPeakNits: hdrData.TargetPeakNits);
 
@@ -440,56 +437,74 @@ public unsafe partial class Renderer
         psHdr = null;
     }
 
-    const double m1 = 0.1593017578125;
-    const double m2 = 78.84375;
-    const double c1 = 0.8359375;
-    const double c2 = 18.8515625;
-    const double c3 = 18.6875;
+    // SMPTE ST 2084 (PQ)
+    const double pqM1 = 0.1593017578125;
+    const double pqM2 = 78.84375;
+    const double pqC1 = 0.8359375;
+    const double pqC2 = 18.8515625;
+    const double pqC3 = 18.6875;
 
-    const float m1f = 0.1593017578125f;
-    const float m2f = 78.84375f;
-    const float c1f = 0.8359375f;
-    const float c2f = 18.8515625f;
-    const float c3f = 18.6875f;
+    const float pqM1f = (float)pqM1;
+    const float pqM2f = (float)pqM2;
+    const float pqC1f = (float)pqC1;
+    const float pqC2f = (float)pqC2;
+    const float pqC3f = (float)pqC3;
 
+    const float pqMaxNits = 10_000f;
+
+    // Normalized linear luminance [0,1] -> PQ [0,1]
     static float PQOetf(float x)
     {
-        x = MathF.Pow(MathF.Max(x, 0.0f), m1f);
-        x = (c1f + c2f * x) / (1.0f + c3f * x);
+        x = MathF.Pow(MathF.Max(x, 0f), pqM1f);
+        x = (pqC1f + pqC2f * x) / (1f + pqC3f * x);
 
-        return MathF.Pow(x, m2f);
+        return MathF.Pow(x, pqM2f);
     }
 
+    static double PQOetf(double x)
+    {
+        x = Math.Pow(Math.Max(x, 0d), pqM1);
+        x = (pqC1 + pqC2 * x) / (1d + pqC3 * x);
+
+        return Math.Pow(x, pqM2);
+    }
+
+    // PQ [0,1] -> Normalized linear luminance [0,1]
     static float PQEotf(float x)
     {
-        x = Math.Clamp(x, 0.0f, 1.0f);
-        x = MathF.Pow(x, 1.0f / m2f);
-        x = MathF.Max(x - c1f, 0.0f) / (c2f - c3f * x);
+        x = MathF.Pow(Math.Clamp(x, 0f, 1f), 1f / pqM2f);
+        x = MathF.Max(x - pqC1f, 0f) / (pqC2f - pqC3f * x);
 
-        return MathF.Pow(x, 1.0f / m1f);
+        return MathF.Pow(x, 1f / pqM1f);
     }
 
+    static double PQEotf(double x)
+    {
+        x = Math.Pow(Math.Clamp(x, 0d, 1d), 1d / pqM2);
+        x = Math.Max(x - pqC1, 0d) / (pqC2 - pqC3 * x);
+
+        return Math.Pow(x, 1d / pqM1);
+    }
+
+    // Nits <-> PQ
     static float NitsToPQ(float nits)
-        => nits <= 0.0f ? 0.0f : PQOetf(Math.Clamp(nits / 10000.0f, 0.0f, 1.0f));
+        => PQOetf(Math.Clamp(nits / pqMaxNits, 0f, 1f));
 
     static double NitsToPQ(double nits)
-    {
-        double x = Math.Clamp(nits / 10_000.0, 0.0, 1.0);
+        => PQOetf(Math.Clamp(nits / pqMaxNits, 0d, 1d));
 
-        x = Math.Pow(x, m1);
-        x = (c1 + c2 * x) / (1.0 + c3 * x);
+    static float PQToNits(float pq)
+        => PQEotf(pq) * pqMaxNits;
 
-        return Math.Pow(x, m2);
-    }
     static double PQToNits(double pq)
-    {
-        double x = Math.Clamp(pq, 0.0, 1.0);
+        => PQEotf(pq) * pqMaxNits;
 
-        x = Math.Pow(x, 1.0 / m2);
-        x = Math.Max(x - c1, 0.0) / (c2 - c3 * x);
+    // Dolby Vision L1: 12-bit PQ code -> nits
+    static float PQToNitsDovi(ushort pq)
+        => PQToNits(pq / 4095f);
 
-        return Math.Pow(x, 1.0 / m1) * 10_000.0;
-    }
+    static float L1L3ToNitsDovi(ushort l1, ushort l3)
+        => (float) PQToNits(Math.Clamp(l1 / 4095.0 + l3 / 2048.0 - 1.0, 0.0, 1.0));
     
     static ToneSplineParams GetSplineParams(
         double sourceMinNits,

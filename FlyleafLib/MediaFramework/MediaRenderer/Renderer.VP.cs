@@ -104,7 +104,7 @@ public unsafe partial class Renderer
 
         bool requiresFL =
             // Alpha | Split Frame Alpha | HV Flip | BT.2020/HDR
-            FLDoviSupported() || !canD3 || scfg.ColorSpace == ColorSpace.Bt2020 || scfg.iccData != null || ucfg.hflip || ucfg.vflip || ucfg.SplitFrameAlphaPosition != SplitFrameAlphaPosition.None || scfg.PixelFormatDesc->flags.HasFlag(PixFmtFlags.Alpha) ||
+            FLDoviSupported() || !canD3 || scfg.ColorSpace == ColorSpace.BT2020 || scfg.iccData != null || ucfg.hflip || ucfg.vflip || ucfg.SplitFrameAlphaPosition != SplitFrameAlphaPosition.None || scfg.PixelFormatDesc->flags.HasFlag(PixFmtFlags.Alpha) ||
             // SW w/o Deinterlace | Super Resolution
             (!VideoDecoder.VideoAccelerated && fieldType == VideoFrameFormat.Progressive && !ucfg.SuperResolution);
 
@@ -232,7 +232,8 @@ public unsafe partial class Renderer
         VideoProcessor  = VPSelection();
         isPQSpline      = false;
         isDovi          = false;
-
+        DynamicRange    = "SDR";
+        
         if (CanTrace) Log.Trace($"Preparing planes for {scfg.PixelFormatStr} with {VideoProcessor}");
 
         if (VideoProcessor == VideoProcessors.D3D11)
@@ -277,6 +278,8 @@ public unsafe partial class Renderer
 
         if (player != null)
         {
+            RaiseUI(nameof(DynamicRange));
+
             if (request)
                 VPRequest(vpRequests);
             else

@@ -82,8 +82,8 @@ public unsafe partial class Renderer
 
         int swsColorSpace = scfg.ColorSpace switch
         {
-            ColorSpace.Bt2020 => SWS_CS_BT2020,
-            ColorSpace.Bt709  => SWS_CS_ITU709,
+            ColorSpace.BT2020 => SWS_CS_BT2020,
+            ColorSpace.BT709  => SWS_CS_ITU709,
             _                 => SWS_CS_ITU601,
         };
 

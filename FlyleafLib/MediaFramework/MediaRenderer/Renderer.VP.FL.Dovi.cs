@@ -9,6 +9,18 @@ namespace FlyleafLib.MediaFramework.MediaRenderer;
 
 public unsafe partial class Renderer
 {
+    /// <summary>
+    /// Whether to use Dolby Vision reconstruction or the compatible base layer
+    /// </summary>
+    public bool DoviPreferBaseLayer;
+
+    /// <summary>
+    /// Whether to use Dolby L1 metadata or Flyleaf's histogram for tone mapping
+    /// </summary>
+    public bool DoviUseHDRDetect;
+
+    bool doviNeedsHDRDetect; 
+
     const int doviVectors             = 187;
     const int doviComponentVectors    = 59;
     const int doviComponentBase       = 10;
@@ -42,6 +54,7 @@ public unsafe partial class Renderer
     // Prepare-side cache: consecutive frames commonly repeat the same RPU mapping.
     // Reuse the immutable DoviFrameData instead of allocating one object per frame.
     DoviFrameData doviPreparedData;
+    (float Min, float Avg, float Max)? doviL1Nits;
 
     // Render-side cache: if consecutive frames share the prepared state, don't upload b2 again.
     DoviFrameData doviAppliedData;
@@ -75,9 +88,9 @@ public unsafe partial class Renderer
 
     bool FLDoviSupported()
     {
-        if (scfg == null || !scfg.DoviRpuPresent || !scfg.DoviBlPresent)
+        if (scfg == null || !scfg.DoviRpuPresent || !scfg.DoviBlPresent || (DoviPreferBaseLayer && scfg.HDRFormat != HDRFormat.None))
             return false;
-
+        
         return scfg.DoviProfile switch
         {
             // Unknown profile; DOVI metadata confirmed on decoded frame
@@ -107,22 +120,24 @@ public unsafe partial class Renderer
 
     void FLDoviReset()
     {
-        doviPreparedData      = null;
-        doviAppliedData       = null;
-        doviAppliedEmpty      = false;
-        doviSourceCached      = false;
-        doviCachedColor       = default;
-        doviCachedCurve0      = default;
-        doviCachedCurve1      = default;
-        doviCachedCurve2      = default;
+        doviL1Nits          = null;
+        doviPreparedData    = null;
+        doviAppliedData     = null;
+        doviAppliedEmpty    = false;
+        doviSourceCached    = false;
+        doviCachedColor     = default;
+        doviCachedCurve0    = default;
+        doviCachedCurve1    = default;
+        doviCachedCurve2    = default;
+        doviNeedsHDRDetect  = DoviUseHDRDetect;
     }
 
-    DoviFrameData FLDoviPrepare(AVFrame* frame)
+    (DoviFrameData, (float Min, float Avg, float Max)?) FLDoviPrepare(AVFrame* frame)
     {
         var side = av_frame_side_data_get(frame->side_data, frame->nb_side_data, AVFrameSideDataType.DOVIMetadata);
 
         if (side == null || side->data == null)
-            return null;
+            return (null, null);
 
         var dovi    = (AVDOVIMetadata*)side->data;
         var header  = (AVDOVIRpuDataHeader*)((byte*)dovi + dovi->header_offset);
@@ -133,22 +148,22 @@ public unsafe partial class Renderer
         // before ScaleB/bit shifts below so malformed side data cannot produce
         // invalid math or an oversized shift.
         if (header->coef_log2_denom < 13 || header->coef_log2_denom > 32)
-            return null;
+            return (null, null);
 
         // Fast path for the overwhelmingly common case where consecutive frames
         // reuse the same reshape/matrix state. The side-data allocation itself is
         // new every frame, so compare the source metadata rather than pointers.
         if (doviPreparedData != null && DoviSourceEquals(header, mapping, color))
-            return doviPreparedData;
-
+            return (doviPreparedData, FLDoviL1L3Nits(dovi));
+        
         // FFmpeg defines BL depth as [8, 16]. Keep malformed/unsupported metadata
         // out of the shader rather than coercing it into a seemingly valid mapping.
         if (header->bl_bit_depth < 8 || header->bl_bit_depth > 16)
-            return null;
+            return (null, null);
 
         int sampleBits = scfg.PixelComp0Depth > 8 ? 16 : 8;
         if (header->bl_bit_depth > sampleBits)
-            return null;
+            return (null, null);
 
         uint sampleMax = (1u << sampleBits) - 1u;
         uint blMax     = (1u << header->bl_bit_depth) - 1u;
@@ -159,7 +174,7 @@ public unsafe partial class Renderer
         float pivotScale  = 1.0f / blMax;
 
         if (!float.IsFinite(sampleScale) || !float.IsFinite(coefScale))
-            return null;
+            return (null, null);
 
         DoviBufferType buffer = default;
 
@@ -175,13 +190,13 @@ public unsafe partial class Renderer
         for (int r = 0; r < 3; r++)
         {
             if (!DoviTryFloat(color->ycc_to_rgb_offset[r], out offset[r]))
-                return null;
+                return (null, null);
 
             for (int c = 0; c < 3; c++)
             {
                 if (!DoviTryFloat(color->ycc_to_rgb_matrix[r * 3 + c], out ycc[r * 3 + c]) ||
                     !DoviTryFloat(color->rgb_to_lms_matrix[r * 3 + c], out rgbToLms[r * 3 + c]))
-                    return null;
+                    return (null, null);
             }
         }
 
@@ -208,7 +223,7 @@ public unsafe partial class Renderer
             Vector4 row709  = new(doviTo709[i],  doviTo709[i + 1],  doviTo709[i + 2],  0);
 
             if (!DoviFinite(row2020) || !DoviFinite(row709))
-                return null;
+                return (null, null);
 
             DoviSet(ref buffer, 4 + r, row2020);
             DoviSet(ref buffer, 7 + r, row709);
@@ -226,17 +241,17 @@ public unsafe partial class Renderer
 
             // FFmpeg contract: [2, 9], strictly sorted ascending.
             if (numPivots < 2 || numPivots > 9)
-                return null;
+                return (null, null);
 
             ushort previous = curve.pivots[0];
             if (previous > blMax)
-                return null;
+                return (null, null);
 
             for (int i = 1; i < numPivots; i++)
             {
                 ushort current = curve.pivots[i];
                 if (current <= previous || current > blMax)
-                    return null;
+                    return (null, null);
                 previous = current;
             }
 
@@ -277,14 +292,14 @@ public unsafe partial class Renderer
                     {
                         int order = curve.poly_order[p];
                         if (order < 1 || order > 2)
-                            return null;
+                            return (null, null);
 
                         float c0 = curve.poly_coef[p][0] * coefScale;
                         float c1 = curve.poly_coef[p][1] * coefScale;
                         float c2 = order == 2 ? curve.poly_coef[p][2] * coefScale : 0;
 
                         if (!float.IsFinite(c0) || !float.IsFinite(c1) || !float.IsFinite(c2))
-                            return null;
+                            return (null, null);
 
                         DoviSet(ref buffer, componentBase + 3 + p, new(c0, c1, c2, 0));
                         break;
@@ -294,15 +309,15 @@ public unsafe partial class Renderer
                     {
                         int order = curve.mmr_order[p];
                         if (order < 1 || order > 3)
-                            return null;
+                            return (null, null);
 
                         int vectors = order * 2;
                         if (mmrIndex + vectors > doviMmrVectors)
-                            return null;
+                            return (null, null);
 
                         float constant = curve.mmr_constant[p] * coefScale;
                         if (!float.IsFinite(constant))
-                            return null;
+                            return (null, null);
 
                         DoviSet(ref buffer, componentBase + 3 + p,
                             new(constant, mmrIndex, 0, order));
@@ -324,7 +339,7 @@ public unsafe partial class Renderer
                                 curve.mmr_coef[p][o][6] * coefScale);
 
                             if (!DoviFinite(a) || !DoviFinite(b))
-                                return null;
+                                return (null, null);
 
                             DoviSet(ref buffer, mmrBase,     a);
                             DoviSet(ref buffer, mmrBase + 1, b);
@@ -335,7 +350,7 @@ public unsafe partial class Renderer
                     }
 
                     default:
-                        return null;
+                        return (null, null);
                 }
             }
         }
@@ -344,7 +359,45 @@ public unsafe partial class Renderer
 
         DoviCacheSource(header, mapping, color);
         doviPreparedData = new() { Buffer = buffer };
-        return doviPreparedData;
+        return (doviPreparedData, FLDoviL1L3Nits(dovi));
+    }
+
+    (float Min, float Avg, float Max)? FLDoviL1L3Nits(AVDOVIMetadata* dovi)
+    {
+        if (doviNeedsHDRDetect)
+            return null;
+
+        AVDOVIDmData* l1 = null;
+        AVDOVIDmData* l3 = null;
+
+        for (int i = 0; i < dovi->num_ext_blocks; i++)
+        {
+            var dm = (AVDOVIDmData*)((byte*)dovi + dovi->ext_block_offset + dovi->ext_block_size * (nuint)i);
+
+            if (dm->level == 1)
+                l1 = dm;
+            else if (dm->level == 3)
+                l3 = dm;
+
+            if (l1 != null && l3 != null)
+                break;
+        }
+
+        if (l1 == null)
+            return null;
+
+        var a = l1->union0.l1;
+
+        if (l3 == null)
+            return (PQToNitsDovi(a.min_pq),
+                    PQToNitsDovi(a.avg_pq),
+                    PQToNitsDovi(a.max_pq));
+
+        var b = l3->union0.l3;
+
+        return (L1L3ToNitsDovi(a.min_pq, b.min_pq_offset),
+                L1L3ToNitsDovi(a.avg_pq, b.avg_pq_offset),
+                L1L3ToNitsDovi(a.max_pq, b.max_pq_offset));
     }
 
     void FLDoviApply(VideoFrame frame)
@@ -353,6 +406,31 @@ public unsafe partial class Renderer
 
         if (data != null)
         {
+            if (doviNeedsHDRDetect)
+                FLHDRDetect();
+            else if (frame.DoviL1Nits is { } l1 && doviL1Nits != l1)
+            {
+                doviL1Nits = l1;
+
+                hdrData.SourceMinNits   = l1.Min;
+                hdrData.SourcePeakNits  = l1.Max;
+                float splinePeakNits    = MathF.Max(l1.Max, hdrData.TargetPeakNits);
+
+                hdrData.Spline = GetSplineParams(
+                    sourceMinNits:  l1.Min,
+                    sourceAvgNits:  l1.Avg,
+                    sourcePeakNits: splinePeakNits,
+                    targetMinNits:  hdrData.TargetMinNits,
+                    targetPeakNits: hdrData.TargetPeakNits);
+
+                context.UpdateSubresource(hdrData, hdrBuffer);
+            }
+            else if (doviL1Nits == null)
+            {   // RPU without L1 (HDR Detect fallback)
+                doviNeedsHDRDetect = true;
+                FLHDRDetect();
+            }
+
             if (ReferenceEquals(data, doviAppliedData))
                 return;
 
@@ -701,7 +779,7 @@ public unsafe partial class Renderer
             switch (dm->level)
             {
                 case 1:
-                {
+                {   // Min / Mid / Max brightness
                     var l = dm->union0.l1;
 
                     sb.AppendLine($"    min_pq  = {l.min_pq}");
@@ -711,7 +789,7 @@ public unsafe partial class Renderer
                 }
 
                 case 2:
-                {
+                {   // CM 2.9 creative trims per target display
                     var l = dm->union0.l2;
 
                     sb.AppendLine($"    target_max_pq        = {l.target_max_pq}");
@@ -725,7 +803,7 @@ public unsafe partial class Renderer
                 }
 
                 case 3:
-                {
+                {   // Corrections to L1 statistics
                     var l = dm->union0.l3;
 
                     sb.AppendLine($"    min_pq_offset = {l.min_pq_offset}");
@@ -735,7 +813,7 @@ public unsafe partial class Renderer
                 }
 
                 case 4:
-                {
+                {   // Anchor PQ / power metadata
                     var l = dm->union0.l4;
 
                     sb.AppendLine($"    anchor_pq    = {l.anchor_pq}");
@@ -744,7 +822,7 @@ public unsafe partial class Renderer
                 }
 
                 case 5:
-                {
+                {   // Active picture area / black-bar boundaries
                     var l = dm->union0.l5;
 
                     sb.AppendLine($"    left_offset   = {l.left_offset}");
@@ -755,7 +833,7 @@ public unsafe partial class Renderer
                 }
 
                 case 6:
-                {
+                {   // Static HDR10 mastering and content metadata
                     var l = dm->union0.l6;
 
                     sb.AppendLine($"    max_luminance = {l.max_luminance}");
@@ -766,7 +844,7 @@ public unsafe partial class Renderer
                 }
 
                 case 8:
-                {
+                {   // CM 4.0 extended creative trims
                     var l = dm->union0.l8;
 
                     sb.AppendLine($"    target_display_index = {l.target_display_index}");
@@ -802,7 +880,7 @@ public unsafe partial class Renderer
                 }
 
                 case 9:
-                {
+                {   // Source mastering-display primaries
                     var l = dm->union0.l9;
 
                     sb.AppendLine($"    source_primary_index = {l.source_primary_index}");
@@ -813,7 +891,7 @@ public unsafe partial class Renderer
                 }
 
                 case 10:
-                {
+                {   // Target-display characteristics
                     var l = dm->union0.l10;
 
                     sb.AppendLine($"    target_display_index = {l.target_display_index}");
@@ -827,7 +905,7 @@ public unsafe partial class Renderer
                 }
 
                 case 11:
-                {
+                {   // Content type / white-point intent (APO)
                     var l = dm->union0.l11;
 
                     sb.AppendLine($"    content_type        = {l.content_type}");
@@ -837,7 +915,7 @@ public unsafe partial class Renderer
                 }
 
                 case 254:
-                {
+                {   // Content-mapping version information
                     var l = dm->union0.l254;
 
                     sb.AppendLine($"    dm_mode          = {l.dm_mode}");
@@ -846,7 +924,7 @@ public unsafe partial class Renderer
                 }
 
                 case 255:
-                {
+                {   // Debug metadata
                     var l = dm->union0.l255;
 
                     sb.AppendLine($"    dm_run_mode    = {l.dm_run_mode}");

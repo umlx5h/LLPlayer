@@ -77,9 +77,6 @@ public class Video : NotifyPropertyChanged
                                         { get => videoAcceleration; internal set => Set(ref _VideoAcceleration, value); }
     internal bool   _VideoAcceleration, videoAcceleration;
 
-    public HDRFormat    HDRFormat       { get => hdrFormat;         internal set => Set(ref _HDRFormat, value); }
-    internal HDRFormat _HDRFormat, hdrFormat;
-
     public string       ColorFormat     { get => colorFormat;       internal set => Set(ref _ColorFormat, value); }
     string          _ColorFormat, colorFormat;
 
@@ -108,7 +105,6 @@ public class Video : NotifyPropertyChanged
             FPS                 = fps;
             PixelFormat         = pixelFormat;
             VideoAcceleration   = videoAcceleration;
-            HDRFormat           = hdrFormat;
             ColorFormat         = colorFormat;
         };
     }
@@ -122,7 +118,6 @@ public class Video : NotifyPropertyChanged
         framesTotal         = 0;
         videoAcceleration   = false;
         isOpened            = false;
-        hdrFormat           = HDRFormat.None;
         colorFormat         = "";
 
         bitRate             = 0;
@@ -147,7 +142,6 @@ public class Video : NotifyPropertyChanged
         framesTotal = decoder.VideoStream.TotalFrames;
         videoAcceleration
                     = player.VideoDecoder.VideoAccelerated;
-        hdrFormat   = decoder.VideoStream.HDRFormat;
         colorFormat = $"{decoder.VideoStream.ColorSpace}\r\n{decoder.VideoStream.ColorTransfer}\r\n{decoder.VideoStream.ColorRange}";
         isOpened    =!player.VideoDecoder.Disposed;
 
