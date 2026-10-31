@@ -22,7 +22,8 @@ public unsafe partial class Renderer
 
             if (frame != null || forceClear)
             {
-                FLHDRDetectReset();
+                if (isPQSpline)
+                    FLHDRDetectReset();
                 Frames.SetRendererFrame(frame);
             }
 

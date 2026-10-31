@@ -7,6 +7,7 @@ public static partial class Utils
 {
     unsafe public static class NativeMethods
     {
+        #region Common
         public static WindowStyles SetWindowLong(nint hWnd, WindowStyles style)
             => (WindowStyles)SetWindowLong(hWnd, (int)WindowLongFlags.GWL_STYLE, (nint)style);
 
@@ -282,6 +283,7 @@ public static partial class Utils
         public static int SignedLOWORD(nint n) => SignedLOWORD(unchecked((int)(long)n));
         public static int SignedHIWORD(int n) => (short)((n >> 16) & 0xffff);
         public static int SignedLOWORD(int n) => (short)(n & 0xFFFF);
+        #endregion
 
         #region DPI
         public static double DpiX
@@ -546,196 +548,319 @@ public static partial class Utils
             using var g = Graphics.FromHwnd(IntPtr.Zero);
             return (g.DpiX / 96.0, g.DpiY / 96.0);
         }
-
-        //const uint MONITOR_DEFAULTTONEAREST = 2;
-        //const int CCHDEVICENAME = 32;
-
-        //[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-        //public unsafe struct MONITORINFOEX
-        //{
-        //    public uint cbSize;
-        //    public RECT rcMonitor;
-        //    public RECT rcWork;
-        //    public uint dwFlags;
-        //    public fixed char szDevice[CCHDEVICENAME];
-        //}
-
-        //[DllImport("user32.dll")]
-        //public static extern nint MonitorFromWindow(
-        //    nint hwnd,
-        //    uint dwFlags);
-
-        //[DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-        //[return: MarshalAs(UnmanagedType.Bool)]
-        //public static extern bool GetMonitorInfoW(
-        //    nint hMonitor,
-        //    MONITORINFOEX* lpmi);
-
-        //[DllImport("gdi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-        //public static extern nint CreateDCW(
-        //    char* pwszDriver,
-        //    char* pwszDevice,
-        //    char* pszPort,
-        //    void* pdm);
-
-        //[DllImport("gdi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-        //[return: MarshalAs(UnmanagedType.Bool)]
-        //public static extern bool GetICMProfileW(
-        //    nint hdc,
-        //    uint* pBufSize,
-        //    char* pszFilename);
-
-        //[DllImport("gdi32.dll")]
-        //[return: MarshalAs(UnmanagedType.Bool)]
-        //public static extern bool DeleteDC(nint hdc);
-        //public static nint OpenMonitorProfile(nint monitor)
-        //{
-        //    if (monitor == 0)
-        //        return 0;
-
-        //    MONITORINFOEX mi = default;
-        //    mi.cbSize = (uint)sizeof(MONITORINFOEX);
-
-        //    if (!GetMonitorInfoW(monitor, &mi))
-        //        return 0;
-
-        //    nint hdc = CreateDCW(mi.szDevice, null, null, null);
-        //    if (hdc == 0)
-        //        return 0;
-
-        //    try
-        //    {
-        //        const int MAX_PATH = 260;
-
-        //        char* path = stackalloc char[MAX_PATH];
-        //        uint chars = MAX_PATH;
-
-        //        if (!GetICMProfileW(hdc, &chars, path))
-        //            return 0;
-
-        //        PROFILE profile = new()
-        //        {
-        //            dwType       = PROFILE_FILENAME,
-        //            pProfileData = path,
-        //            cbDataSize   = chars * sizeof(char)
-        //        };
-
-        //        return OpenColorProfileW(
-        //            &profile,
-        //            PROFILE_READ,
-        //            FILE_SHARE_READ,
-        //            OPEN_EXISTING);
-        //    }
-        //    finally
-        //    {
-        //        DeleteDC(hdc);
-        //    }
-        //}
         #endregion
 
-        #region Monitor More / Refresh Rate?
-        //[StructLayout(LayoutKind.Sequential)]
-        //public struct DEVMODE
-        //{
-        //    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-        //    public string dmDeviceName;
-        //    public ushort dmSpecVersion;
-        //    public ushort dmDriverVersion;
-        //    public ushort dmSize;
-        //    public ushort dmDriverExtra;
-        //    public int dmFields;
-        //    public int dmPositionX;
-        //    public int dmPositionY;
-        //    public int dmDisplayOrientation;
-        //    public int dmDisplayFixedOutput;
-        //    public short dmColor;
-        //    public short dmDuplex;
-        //    public short dmYResolution;
-        //    public short dmTTOption;
-        //    public short dmCollate;
-        //    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-        //    public string dmFormName;
-        //    public ushort dmLogPixels;
-        //    public int dmBitsPerPel;
-        //    public int dmPelsWidth;
-        //    public int dmPelsHeight;
-        //    public int dmDisplayFlags;
-        //    public int dmDisplayFrequency; // not accurate should be ratio / float (e.g. 59.95 will be 59)
-        //    public int dmICMMethod;
-        //    public int dmICMIntent;
-        //    public int dmMediaType;
-        //    public int dmDitherType;
-        //    public int dmReserved1;
-        //    public int dmReserved2;
-        //    public int dmPanningWidth;
-        //    public int dmPanningHeight;
+        #region Display Config
+        public static class DisplayConfig
+        {
+            const uint QDC_ONLY_ACTIVE_PATHS    = 0x00000002;
+            const int ERROR_SUCCESS             = 0;
+            const int ERROR_INSUFFICIENT_BUFFER = 122;
 
-        //    public static DEVMODE Get(string deviceName)
-        //    {
-        //        DEVMODE dev = new();
-        //        dev.dmSize = (ushort)Marshal.SizeOf(dev);
-        //        EnumDisplaySettings(deviceName, ENUM_CURRENT_SETTINGS, ref dev);
-        //        return dev;
-        //    }
-        //}
+            public readonly record struct DisplayHDRInfo(bool Supported, bool Enabled, float? SDRWhiteNits);
 
-        //[DllImport("user32.dll", CharSet = CharSet.Ansi)]
-        //private static extern bool EnumDisplaySettings(string deviceName, int modeNum, ref DEVMODE devMode);
+            public static bool TryGetHDRInfo(string deviceName, out DisplayHDRInfo info)
+            {
+                info = default;
 
-        //private const int ENUM_CURRENT_SETTINGS = -1;
+                while (true)
+                {
+                    int result = GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, out uint pathCount, out uint modeCount);
+
+                    if (result != ERROR_SUCCESS)
+                        return false;
+
+                    var paths = new PathInfo[pathCount];
+                    var modes = new ModeInfo[modeCount];
+
+                    result = QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, ref pathCount, paths, ref modeCount, modes, IntPtr.Zero);
+
+                    if (result == ERROR_INSUFFICIENT_BUFFER)
+                        continue;
+
+                    if (result != ERROR_SUCCESS)
+                        return false;
+
+                    for (int i = 0; i < pathCount; i++)
+                    {
+                        ref var path = ref paths[i];
+
+                        var source = new SourceDeviceName
+                        {
+                            header = CreateHeader(DeviceInfoType.GetSourceName, path.sourceInfo.adapterId, path.sourceInfo.id)
+                        };
+
+                        if (DisplayConfigGetDeviceInfo(ref source) != ERROR_SUCCESS)
+                            continue;
+
+                        if (!string.Equals( source.viewGdiDeviceName, deviceName, StringComparison.OrdinalIgnoreCase))
+                            continue;
+
+                        return TryGetHDRInfo(path.targetInfo.adapterId, path.targetInfo.id, out info);
+                    }
+
+                    return false;
+                }
+            }
+
+            static bool TryGetHDRInfo(LUID adapterId, uint targetId, out DisplayHDRInfo info)
+            {
+                info = default;
+
+                bool supported;
+                bool enabled;
+
+                if (OperatingSystem.IsWindowsVersionAtLeast(10, 0, 26100))
+                {   // Windows 11 24H2 (build 26100)+.
+                    var color = new GetAdvancedColorInfo2
+                    {
+                        header = CreateHeader(DeviceInfoType.GetAdvancedColorInfo2, adapterId, targetId)
+                    };
+
+                    if (DisplayConfigGetDeviceInfo(ref color) == ERROR_SUCCESS)
+                    {
+                        supported   = color.flags.HasFlag(AdvancedColorMode2.HighDynamicRangeSupported);
+                        enabled     = color.activeColorMode == AdvancedColorMode.HDR;
+
+                        return FinishHDRInfo(adapterId, targetId, supported, enabled, out info);
+                    }
+
+                    // Unexpected failure of the new API: try legacy one.
+                }
+
+                var legacy = new GetAdvancedColorInfo
+                {
+                    header = CreateHeader(DeviceInfoType.GetAdvancedColorInfo, adapterId, targetId)
+                };
+
+                if (DisplayConfigGetDeviceInfo(ref legacy) != ERROR_SUCCESS)
+                    return false;
+
+                // Pre-24H2:
+                //
+                // HDR display:
+                //   AdvancedColorSupported = true
+                //   WideColorEnforced      = false
+                //
+                // Advanced-Color SDR display (Win11 22H2+):
+                //   AdvancedColorSupported = true
+                //   WideColorEnforced      = true
+                //
+                supported =
+                     legacy.flags.HasFlag(AdvancedColorFlags.AdvancedColorSupported) &&
+                    !legacy.flags.HasFlag(AdvancedColorFlags.WideColorEnforced);
+
+                enabled =
+                    supported &&
+                    legacy.flags.HasFlag(AdvancedColorFlags.AdvancedColorEnabled);
+
+                return FinishHDRInfo(adapterId, targetId, supported, enabled, out info);
+            }
+
+            static bool FinishHDRInfo(LUID adapterId, uint targetId, bool supported, bool enabled, out DisplayHDRInfo info)
+            {
+                float? sdrWhiteNits = null;
+
+                if (enabled)
+                {
+                    var white = new SDRWhiteLevel
+                    {
+                        header = CreateHeader(DeviceInfoType.GetSDRWhiteLevel, adapterId, targetId)
+                    };
+
+                    if (DisplayConfigGetDeviceInfo(ref white) == ERROR_SUCCESS)
+                        sdrWhiteNits = white.Level * (80.0f / 1000.0f);
+                }
+
+                info = new DisplayHDRInfo(supported, enabled, sdrWhiteNits);
+
+                return true;
+            }
+
+            static DeviceInfoHeader CreateHeader(DeviceInfoType type, LUID adapterId, uint id) => new()
+                {
+                    type      = type,
+                    size      = type switch
+                    {
+                        DeviceInfoType.GetSourceName            => (uint)Marshal.SizeOf<SourceDeviceName>(),
+                        DeviceInfoType.GetAdvancedColorInfo     => (uint)Marshal.SizeOf<GetAdvancedColorInfo>(),
+                        DeviceInfoType.GetAdvancedColorInfo2    => (uint)Marshal.SizeOf<GetAdvancedColorInfo2>(),
+                        DeviceInfoType.GetSDRWhiteLevel         => (uint)Marshal.SizeOf<SDRWhiteLevel>(),
+                        _ => (uint)Marshal.SizeOf<DeviceInfoHeader>()
+                    },
+                    adapterId = adapterId,
+                    id        = id
+                };
 
 
-        //[DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        //public static extern bool GetMonitorInfoW(IntPtr hMonitor, ref MONITORINFOEXW lpmi);
+            public enum DeviceInfoType : uint
+            {
+                GetSourceName           = 1,
+                GetAdvancedColorInfo    = 9,
+                GetSDRWhiteLevel        = 11,
+                GetAdvancedColorInfo2   = 15,
+            }
 
-        //[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-        //public struct MONITORINFOEXW
-        //{
-        //    public uint cbSize;
-        //    public RECT rcMonitor;
-        //    public RECT rcWork;
-        //    public MonitorInfoFlags dwFlags;
+            public enum ColorEncoding : uint
+            {
+                RGB       = 0,
+                YCbCr444  = 1,
+                YCbCr422  = 2,
+                YCbCr420  = 3,
+                Intensity = 4,
+            }
 
-        //    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-        //    public string szDevice;
+            [Flags]
+            public enum AdvancedColorFlags : uint
+            {
+                None                       = 0,
+                AdvancedColorSupported     = 1 << 0,
+                AdvancedColorEnabled       = 1 << 1,
+                WideColorEnforced          = 1 << 2,
+                AdvancedColorForceDisabled = 1 << 3,
+            }
 
-        //    public static MONITORINFOEXW Create()
-        //        => new() { cbSize = (uint)Marshal.SizeOf(typeof(MONITORINFOEXW)), szDevice = string.Empty };
-        //}
+            [Flags]
+            public enum AdvancedColorMode2 : uint
+            {
+                None                         = 0,
+                AdvancedColorSupported       = 1 << 0,
+                AdvancedColorActive          = 1 << 1,
+                AdvancedColorLimitedByPolicy = 1 << 3,
+                HighDynamicRangeSupported    = 1 << 4,
+                HighDynamicRangeUserEnabled  = 1 << 5,
+                WideColorSupported           = 1 << 6,
+                WideColorUserEnabled         = 1 << 7,
+            }
 
-        //[Flags]
-        //public enum MonitorInfoFlags : uint
-        //{
-        //    MONITORINFOF_PRIMARY = 0x00000001
-        //}
+            public enum AdvancedColorMode : int
+            {
+                SDR = 0,
+                WCG = 1,
+                HDR = 2,
+            }
 
-        //[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-        //public struct DISPLAY_DEVICE
-        //{
-        //    public int cb;
-        //    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-        //    public string DeviceName;
-        //    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
-        //    public string DeviceString;
-        //    public int StateFlags;
-        //    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
-        //    public string DeviceID;
-        //    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
-        //    public string DeviceKey;
+            [StructLayout(LayoutKind.Sequential)]
+            public struct LUID
+            {
+                public uint LowPart;
+                public int HighPart;
+            }
 
-        //    public static DISPLAY_DEVICE Create()
-        //    {
-        //        var display = new DISPLAY_DEVICE();
-        //        display.cb = Marshal.SizeOf(display);
-        //        return display;
-        //    }
-        //}
+            [StructLayout(LayoutKind.Sequential)]
+            public struct Rational
+            {
+                public uint Numerator;
+                public uint Denominator;
+            }
 
-        //[DllImport("user32.dll", CharSet = CharSet.Ansi)]
-        //public static extern bool EnumDisplayDevices(string lpDevice, uint iDevNum, ref DISPLAY_DEVICE lpDisplayDevice, uint dwFlags);
+            [StructLayout(LayoutKind.Sequential)]
+            public struct PathSourceInfo
+            {
+                public LUID adapterId;
+                public uint id;
+                public uint modeInfoIdx;
+                public uint statusFlags;
+            }
 
-        //[DllImport("user32.dll", SetLastError = true)]
-        //public static extern int DisplayConfigGetDeviceInfo(ref DISPLAYCONFIG_DEVICE_INFO_HEADER requestPacket);
+            [StructLayout(LayoutKind.Sequential)]
+            public struct PathTargetInfo
+            {
+                public LUID adapterId;
+                public uint id;
+                public uint modeInfoIdx;
+
+                public uint outputTechnology;
+                public uint rotation;
+                public uint scaling;
+
+                public Rational refreshRate;
+
+                public uint scanLineOrdering;
+                public int targetAvailable; // BOOL
+                public uint statusFlags;
+            }
+
+            [StructLayout(LayoutKind.Sequential)]
+            public struct PathInfo
+            {
+                public PathSourceInfo sourceInfo;
+                public PathTargetInfo targetInfo;
+                public uint flags;
+            }
+
+            // We only need correctly-sized storage for QueryDisplayConfig().
+            [StructLayout(LayoutKind.Explicit, Size = 64)]
+            public struct ModeInfo { }
+
+            [StructLayout(LayoutKind.Sequential)]
+            public struct DeviceInfoHeader
+            {
+                public DeviceInfoType type;
+                public uint size;
+                public LUID adapterId;
+                public uint id;
+            }
+
+            [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+            public struct SourceDeviceName
+            {
+                public DeviceInfoHeader header;
+
+                [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+                public string viewGdiDeviceName;
+            }
+
+            [StructLayout(LayoutKind.Sequential)]
+            public struct GetAdvancedColorInfo
+            {
+                public DeviceInfoHeader header;
+                public AdvancedColorFlags flags;
+                public ColorEncoding colorEncoding;
+                public uint bitsPerColorChannel;
+            }
+
+            [StructLayout(LayoutKind.Sequential)]
+            public struct GetAdvancedColorInfo2
+            {
+                public DeviceInfoHeader header;
+                public AdvancedColorMode2 flags;
+                public ColorEncoding colorEncoding;
+                public uint bitsPerColorChannel;
+                public AdvancedColorMode activeColorMode;
+            }
+
+            [StructLayout(LayoutKind.Sequential)]
+            public struct SDRWhiteLevel
+            {
+                public DeviceInfoHeader header;
+                public uint Level;
+            }
+
+            [DllImport("user32.dll", ExactSpelling = true)]
+            public static extern int GetDisplayConfigBufferSizes(uint flags, out uint numPathArrayElements, out uint numModeInfoArrayElements);
+
+            [DllImport("user32.dll", ExactSpelling = true)]
+            public static extern int QueryDisplayConfig(
+                uint flags,
+                ref uint numPathArrayElements,
+                [Out] PathInfo[] pathArray,
+                ref uint numModeInfoArrayElements,
+                [Out] ModeInfo[] modeInfoArray,
+                IntPtr currentTopologyId);
+
+            [DllImport("user32.dll", ExactSpelling = true)]
+            public static extern int DisplayConfigGetDeviceInfo(ref SourceDeviceName request);
+
+            [DllImport("user32.dll", ExactSpelling = true)]
+            public static extern int DisplayConfigGetDeviceInfo(ref GetAdvancedColorInfo request);
+
+            [DllImport("user32.dll", ExactSpelling = true)]
+            public static extern int DisplayConfigGetDeviceInfo(ref GetAdvancedColorInfo2 request);
+
+            [DllImport("user32.dll", ExactSpelling = true)]
+            public static extern int DisplayConfigGetDeviceInfo(ref SDRWhiteLevel request);
+        }
         #endregion
     }
 }

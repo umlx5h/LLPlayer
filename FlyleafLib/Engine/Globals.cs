@@ -173,7 +173,7 @@ public class GPUAdapter
 
     internal IDXGIAdapter   dxgiAdapter;
 
-    public List<GPUOutput>  GetGPUOutputs()    => Engine.Video.GetGPUOutputs(dxgiAdapter);
+    public List<GPUOutput>  GetGPUOutputs() => VideoEngine.GetGPUOutputs(dxgiAdapter);
 
     public override string  ToString()
         => (Vendor + " " + Description).PadRight(40) + $"[ID: {Id,-6}, LUID: {Luid,-6}, DVM: {GetBytesReadable(VideoMemory),-8}, DSM: {GetBytesReadable(SystemMemory),-8}, SSM: {GetBytesReadable(SharedMemory)}]";

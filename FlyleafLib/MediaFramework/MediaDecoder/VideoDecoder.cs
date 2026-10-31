@@ -97,7 +97,7 @@ public unsafe class VideoDecoder : DecoderBase
 
         AVCodec* codec, found = null;
         void* opaque = null;
-        while ((codec = av_codec_iterate(ref opaque)) != null)
+        while ((codec = av_codec_iterate(&opaque)) != null)
         {
             if (codec->id != id || av_codec_is_decoder(codec) == 0)
                 continue;

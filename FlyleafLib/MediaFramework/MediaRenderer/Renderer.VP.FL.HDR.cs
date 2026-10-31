@@ -1,4 +1,4 @@
-﻿using Vortice.Direct3D11;
+using Vortice.Direct3D11;
 using Vortice.DXGI;
 
 using ID3D11Texture2D   = Vortice.Direct3D11.ID3D11Texture2D;
@@ -22,22 +22,24 @@ public unsafe partial class Renderer
     const float hdrSceneThresholdLow= 0.01f;  // PQ 1%
     const float hdrSceneThresholdHigh=0.03f;  // PQ 3%
 
-    ID3D11PixelShader         psHdr;
-    ID3D11Texture2D           txtHdr;
-    ID3D11RenderTargetView    rtvHdr;
-    ID3D11Texture2D[]         txtStageHdr   = new ID3D11Texture2D[hdrBuffers];
-    ID3D11Query[]             queryHdr      = new ID3D11Query[hdrBuffers];
-    bool[]                    hdrPending    = new bool[hdrBuffers];
-    int[]                     hdrPendingGen = new int[hdrBuffers];
-    uint[]                    hdrHistogram  = new uint[hdrHistogramBins];
+    ID3D11PixelShader       psHdr;
+    ID3D11Texture2D         txtHdr;
+    ID3D11RenderTargetView  rtvHdr;
+    ID3D11Texture2D[]       txtStageHdr         = new ID3D11Texture2D[hdrBuffers];
+    ID3D11Query[]           queryHdr            = new ID3D11Query[hdrBuffers];
+    bool[]                  hdrPending          = new bool[hdrBuffers];
+    int[]                   hdrPendingGen       = new int[hdrBuffers];
+    uint[]                  hdrHistogram        = new uint[hdrHistogramBins];
 
-    int                       hdrWidth;
-    int                       hdrHeight;
-    int                       hdrWriteIndex;
-    int                       hdrReadIndex;
-    int                       hdrGeneration;
-    bool                      hdrHasStats;
-    bool                      hdrSyncNext;
+    int                     hdrWidth;
+    int                     hdrHeight;
+    int                     hdrSourceWidth;
+    int                     hdrSourceHeight;
+    int                     hdrWriteIndex;
+    int                     hdrReadIndex;
+    int                     hdrGeneration;
+    bool                    hdrHasStats;
+    bool                    hdrSyncNext;
 
     internal HDRLumiStats   hdrFrameStats;
     internal HDRLumiStats   hdrStats;
@@ -72,9 +74,18 @@ public unsafe partial class Renderer
         }
     }
 
+    internal void FLHDRDetectReset()
+    {
+        hdrGeneration++;
+        hdrHasStats     = false;
+        hdrSyncNext     = true;
+        hdrFrameStats   = default;
+        hdrStats        = default;
+    }
+
     void FLHDRDetect()
     {
-        if (!isHdr || psHdr == null)
+        if (psHdr == null)
             return;
 
         FLHDRSetup();
@@ -169,22 +180,19 @@ public unsafe partial class Renderer
         hdrReadIndex  = 0;
     }
 
-    internal void FLHDRDetectReset()
-    {
-        if (!isHdr)
-            return;
-
-        hdrGeneration++;
-        hdrHasStats     = false;
-        hdrSyncNext     = true;
-        hdrFrameStats   = default;
-        hdrStats        = default;
-    }
-
     void FLHDRSetup()
     {
-        int sourceWidth  = (int) scfg.txtWidth;
-        int sourceHeight = (int) scfg.txtHeight;
+        int sourceWidth  = (int)scfg.txtWidth;
+        int sourceHeight = (int)scfg.txtHeight;
+
+        // Source dimensions are stable for the configured stream. Avoid the
+        // sqrt/scale calculation on every rendered HDR frame.
+        if (txtHdr != null &&
+            hdrSourceWidth == sourceWidth && hdrSourceHeight == sourceHeight)
+            return;
+
+        if (sourceWidth < 1 || sourceHeight < 1)
+            return;
 
         double scale = Math.Min(1.0,
             Math.Sqrt(hdrMaxPixels / ((double)sourceWidth * sourceHeight)));
@@ -192,13 +200,12 @@ public unsafe partial class Renderer
         int width  = Math.Max(1, (int)Math.Round(sourceWidth  * scale));
         int height = Math.Max(1, (int)Math.Round(sourceHeight * scale));
 
-        if (txtHdr != null && hdrWidth == width && hdrHeight == height)
-            return;
-
         FLHDRDisposeResources();
 
-        hdrWidth  = width;
-        hdrHeight = height;
+        hdrSourceWidth  = sourceWidth;
+        hdrSourceHeight = sourceHeight;
+        hdrWidth        = width;
+        hdrHeight       = height;
 
         Texture2DDescription desc = new()
         {
@@ -226,11 +233,16 @@ public unsafe partial class Renderer
             queryHdr[i] = device.CreateQuery(QueryType.Event);
         }
 
-        FLHDRDetectReset();
+        hdrSyncNext = true; // "1st" frame always synced
     }
 
     void FLHDRRead()
     {
+        // Latest-wins: when more than one asynchronous readback completed, only
+        // scan the newest one. Older histograms are stale and would just add CPU
+        // work plus extra latency to the dynamic mapper.
+        int newest = -1;
+
         while (hdrPending[hdrReadIndex])
         {
             int index = hdrReadIndex;
@@ -239,15 +251,18 @@ public unsafe partial class Renderer
                 break;
 
             if (hdrPendingGen[index] == hdrGeneration)
-            {
-                var db = context.Map(txtStageHdr[index], 0, MapMode.Read, MapFlags.None);
-                FLHDRRead(db);
-                context.Unmap(txtStageHdr[index], 0);
-            }
+                newest = index;
 
             hdrPending[index] = false;
             hdrReadIndex      = (hdrReadIndex + 1) % hdrBuffers;
         }
+
+        if (newest < 0)
+            return;
+
+        var db = context.Map(txtStageHdr[newest], 0, MapMode.Read, MapFlags.None);
+        FLHDRRead(db);
+        context.Unmap(txtStageHdr[newest], 0);
     }
 
     void FLHDRRead(MappedSubresource db)
@@ -365,20 +380,26 @@ public unsafe partial class Renderer
 
     void FLHDRApply()
     {
-        float sourceMinNits     = (float)PQToNits(hdrStats.MinPQ);
-        float sourcePeakNits    = MathF.Max((float)PQToNits(hdrStats.PeakPQ), psData.TargetPeakNits);
-        float sourceAvgNits     = Math.Clamp((float)PQToNits(hdrStats.AvgPQ), sourceMinNits, sourcePeakNits);
+        float sourceMinNits  = (float)PQToNits(hdrStats.MinPQ);
+        float detectedPeak   = (float)PQToNits(hdrStats.PeakPQ);
+        float sourcePeakNits = hdrSwapchain ? detectedPeak : MathF.Max(detectedPeak, hdrData.TargetPeakNits);
+        float sourceAvgNits  = Math.Clamp((float)PQToNits(hdrStats.AvgPQ), sourceMinNits, MathF.Max(sourcePeakNits, sourceMinNits));
 
-        psData.SourceMinNits    = sourceMinNits;
-        psData.SourcePeakNits   = sourcePeakNits;
-        psData.Spline = GetSplineParams(
+        hdrData.SourceMinNits  = sourceMinNits;
+        hdrData.SourcePeakNits = sourcePeakNits;
+
+        // Native HDR passes content through while it fits the display. The
+        // spline is only consumed when sourcePeak > targetPeak. Keep valid
+        // parameters anyway so a target/display change needs no shader rebuild.
+        float splinePeak = MathF.Max(sourcePeakNits, hdrData.TargetPeakNits);
+        hdrData.Spline = GetSplineParams(
             sourceMinNits:  sourceMinNits,
-            sourcePeakNits: sourcePeakNits,
-            sourceAvgNits:  sourceAvgNits,
-            targetMinNits:  psData.TargetMinNits,
-            targetPeakNits: psData.TargetPeakNits);
+            sourcePeakNits: splinePeak,
+            sourceAvgNits:  Math.Clamp(sourceAvgNits, sourceMinNits, splinePeak),
+            targetMinNits:  hdrData.TargetMinNits,
+            targetPeakNits: hdrData.TargetPeakNits);
 
-        context.UpdateSubresource(psData, psBuffer);
+        context.UpdateSubresource(hdrData, hdrBuffer);
     }
 
     void FLHDRDisposeResources()
@@ -403,6 +424,8 @@ public unsafe partial class Renderer
 
         hdrWidth        = 0;
         hdrHeight       = 0;
+        hdrSourceWidth  = 0;
+        hdrSourceHeight = 0;
         hdrWriteIndex   = 0;
         hdrReadIndex    = 0;
         hdrGeneration   = 0;
@@ -473,71 +496,45 @@ public unsafe partial class Renderer
 
         // ---- Choose source pivot ---------------------------------------
 
-        double srcKneeMin =
-            srcMin + (srcMax - srcMin) * kneeMinimum;
-
-        double srcKneeMax =
-            srcMin + (srcMax - srcMin) * kneeMaximum;
+        double srcKneeMin = srcMin + (srcMax - srcMin) * kneeMinimum;
+        double srcKneeMax = srcMin + (srcMax - srcMin) * kneeMaximum;
 
         double srcPivot;
 
         if (sourceAvgNits > 0)
-        {
             srcPivot = NitsToPQ(sourceAvgNits);
-        }
         else
-        {
-            srcPivot =
-                srcMin + (srcMax - srcMin) * kneeDefault;
-        }
+            srcPivot = srcMin + (srcMax - srcMin) * kneeDefault;
 
         srcPivot = Math.Clamp(srcPivot, srcKneeMin, srcKneeMax);
 
         // ---- Choose destination pivot --------------------------------
 
-        double target =
-            (srcPivot - srcMin) / (srcMax - srcMin);
-
-        double adapted =
-            dstMin + (dstMax - dstMin) * target;
-
-        double dstKneeMin =
-            dstMin + (dstMax - dstMin) * kneeMinimum;
-
-        double dstKneeMax =
-            dstMin + (dstMax - dstMin) * kneeMaximum;
+        double target       = (srcPivot - srcMin) / (srcMax - srcMin);
+        double adapted      = dstMin + (dstMax - dstMin) * target;
+        double dstKneeMin   = dstMin + (dstMax - dstMin) * kneeMinimum;
+        double dstKneeMax   = dstMin + (dstMax - dstMin) * kneeMaximum;
 
         double tuning =
             1.0 -
             SmoothStep(kneeMaximum, kneeDefault, target) *
             SmoothStep(kneeMinimum, kneeDefault, target);
 
-        double adaptation =
-            kneeAdaptation +
-            (1.0 - kneeAdaptation) * tuning;
+        double adaptation = kneeAdaptation + (1.0 - kneeAdaptation) * tuning;
 
-        double dstPivot =
-            srcPivot + (adapted - srcPivot) * adaptation;
+        double dstPivot = srcPivot + (adapted - srcPivot) * adaptation;
 
         dstPivot = Math.Clamp(dstPivot, dstKneeMin, dstKneeMax);
 
         // ---- Slope at pivot ------------------------------------------
 
-        double slope =
-            (dstPivot - dstMin) /
-            (srcPivot - srcMin);
+        double slope = (dstPivot - dstMin) / (srcPivot - srcMin);
 
-        double ratio =
-            srcMax / dstMax - 1.0;
+        double ratio = srcMax / dstMax - 1.0;
 
-        ratio = Math.Clamp(
-            slopeTuning * ratio,
-            slopeOffset,
-            1.0 + slopeOffset);
+        ratio = Math.Clamp(slopeTuning * ratio, slopeOffset, 1.0 + slopeOffset);
 
-        slope = Math.Pow(
-            slope,
-            (1.0 - contrast) * ratio);
+        slope = Math.Pow(slope, (1.0 - contrast) * ratio);
 
         // ---- Polynomial coefficients --------------------------------
 

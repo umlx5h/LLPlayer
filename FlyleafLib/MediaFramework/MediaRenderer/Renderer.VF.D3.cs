@@ -56,9 +56,9 @@ public unsafe partial class Renderer
         }
         else
         {   // Initializes Existing Supported Filters in Config and Sets non-default Values
+            ucfg.hasD3Filters = false;
             foreach(var userFilter in ucfg.D3Filters.Values)
             {
-                ucfg.hasD3Filters = false;
                 userFilter.Initialize(this);
                 if (userFilter.Value != userFilter.Default)
                     { ucfg.hasD3Filters = true; vc.VideoProcessorSetStreamFilter(vp, 0, userFilter.Filter, true, userFilter.Value); }

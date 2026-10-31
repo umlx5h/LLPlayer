@@ -165,26 +165,6 @@
                         <ToggleButton
                             IsChecked="{Binding FL.PlayerConfig.Player.ZeroLatency}" />
                     </StackPanel>
-
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Width="180"
-                            Text="Monitor Peak (Nits)" />
-                        <Slider
-                            Width="200"
-                            Value="{Binding FL.PlayerConfig.Video.TargetMaxNits}"
-                            Minimum="0"
-                            Maximum="800"
-                            Style="{StaticResource MaterialDesignDiscreteSlider}"
-                            materialDesign:SliderAssist.OnlyShowFocusVisualWhileDragging="True"
-                            VerticalAlignment="Center"
-                            IsSnapToTickEnabled="True" />
-                        <TextBox
-                            Width="30"
-                            Margin="4 0 0 0"
-                            Text="{Binding FL.PlayerConfig.Video.TargetMaxNits}"
-                            helpers:TextBoxHelper.OnlyNumeric="Int" />
-                    </StackPanel>
                 </StackPanel>
             </GroupBox>
 
@@ -248,6 +228,76 @@
                         HorizontalAlignment="Left"
                         Content="Reset all"
                         Command="{Binding FL.Player.Commands.ResetFilters}" />
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="HDR">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="SDR Peak (nits)" />
+                        <Slider
+                            Width="200"
+                            Value="{Binding FL.PlayerConfig.Video.TargetSDRPeakNits}"
+                            Minimum="-1"
+                            Maximum="500"
+                            ToolTip="-1: Auto"
+                            Style="{StaticResource MaterialDesignDiscreteSlider}"
+                            materialDesign:SliderAssist.OnlyShowFocusVisualWhileDragging="True"
+                            VerticalAlignment="Center"
+                            IsSnapToTickEnabled="True" />
+                        <TextBox
+                            Width="60"
+                            Margin="4 0 0 0"
+                            ToolTip="-1: Auto"
+                            Text="{Binding FL.PlayerConfig.Video.TargetSDRPeakNits}"
+                            helpers:TextBoxHelper.OnlyNumeric="Double" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="SDR Min (nits)" />
+                        <TextBox
+                            Width="100"
+                            ToolTip="-1: Auto"
+                            Text="{Binding FL.PlayerConfig.Video.TargetSDRMinNits}"
+                            helpers:TextBoxHelper.OnlyNumeric="Double" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="HDR Peak (nits)" />
+                        <Slider
+                            Width="200"
+                            Value="{Binding FL.PlayerConfig.Video.TargetHDRPeakNits}"
+                            Minimum="-1"
+                            Maximum="4000"
+                            ToolTip="-1: Auto"
+                            Style="{StaticResource MaterialDesignDiscreteSlider}"
+                            materialDesign:SliderAssist.OnlyShowFocusVisualWhileDragging="True"
+                            VerticalAlignment="Center"
+                            IsSnapToTickEnabled="True" />
+                        <TextBox
+                            Width="60"
+                            Margin="4 0 0 0"
+                            ToolTip="-1: Auto"
+                            Text="{Binding FL.PlayerConfig.Video.TargetHDRPeakNits}"
+                            helpers:TextBoxHelper.OnlyNumeric="Double" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="HDR Min (nits)" />
+                        <TextBox
+                            Width="100"
+                            ToolTip="-1: Auto"
+                            Text="{Binding FL.PlayerConfig.Video.TargetHDRMinNits}"
+                            helpers:TextBoxHelper.OnlyNumeric="Double" />
+                    </StackPanel>
                 </StackPanel>
             </GroupBox>
         </StackPanel>

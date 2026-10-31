@@ -54,7 +54,7 @@ public unsafe partial class Renderer
                 }
                 else
                 {
-                    FLRender(rFrame.SRV, snapshot.rtv, snapshot.view);
+                    FLRender(rFrame, snapshot.rtv, snapshot.view);
                     context.RSSetViewport(Viewport);
                 }
             }
@@ -132,7 +132,7 @@ public unsafe partial class Renderer
         if (VideoProcessor == VideoProcessors.D3D11)
             D3Render(frame.VPIV, snapshot.d3rtv, snapshot.d3view);
         else
-            FLRender(frame.SRV, snapshot.rtv, snapshot.view);
+            FLRender(frame, snapshot.rtv, snapshot.view);
             
         context.CopyResource(snapshot.txtStage, snapshot.txt);
 

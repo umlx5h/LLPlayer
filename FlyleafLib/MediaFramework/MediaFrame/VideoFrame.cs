@@ -2,6 +2,8 @@
 
 using ID3D11Texture2D = Vortice.Direct3D11.ID3D11Texture2D;
 
+using FlyleafLib.MediaFramework.MediaRenderer;
+
 namespace FlyleafLib.MediaFramework.MediaFrame;
 
 public unsafe class VideoFrame : FrameBase
@@ -9,7 +11,8 @@ public unsafe class VideoFrame : FrameBase
     public ID3D11Texture2D[]                Texture;    // Planes (we just keep them alive for SRVs - not used anywhere*)
     public ID3D11ShaderResourceView[]       SRV;        // Views (FlyleafVP)
     public ID3D11VideoProcessorInputView    VPIV;       // Views (D3D11VP)
-    public AVFrame* AVFrame;                            // HW Decoded only - to keep the extra ref alive
+    public AVFrame*                         AVFrame;    // HW Decoded only - to keep the extra ref alive
+    internal Renderer.DoviFrameData         Dovi;
 
     public VideoFrame Prev, Next;
     public long Id;

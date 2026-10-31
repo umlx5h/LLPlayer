@@ -1,4 +1,4 @@
-﻿using Vortice.Direct3D11;
+using Vortice.Direct3D11;
 
 using FlyleafLib.MediaFramework.MediaDecoder;
 using FlyleafLib.MediaFramework.MediaDemuxer;
@@ -23,13 +23,18 @@ public unsafe class VideoStream : StreamBase
     public uint                         Rotation            { get; set; }
     public bool                         VFlip               { get; set; }
     public double                       FPS                 { get; set; }
-    public long                         FrameDuration       { get ;set; }
+    public long                         FrameDuration       { get; set; }
     public double                       FPS2                { get; set; } // interlace
-    public long                         FrameDuration2      { get ;set; } // interlace
+    public long                         FrameDuration2      { get; set; } // interlace
     public uint                         Height              { get; set; }
     public HDRFormat                    HDRFormat           { get; set; }
+    public int                          DoviProfile         { get; set; }
+    public int                          DoviCompatibility   { get; set; }
+    public bool                         DoviRpuPresent      { get; set; }
+    public bool                         DoviBlPresent       { get; set; }
+    public bool                         DoviElPresent       { get; set; }
 
-    public AVComponentDescriptor[]      PixelComps          { get; set; }
+    public Array4<AVComponentDescriptor>PixelComps          { get; set; }
     public int                          PixelComp0Depth     { get; set; }
     public AVPixelFormat                PixelFormat         { get; set; }
     public AVPixFmtDescriptor*          PixelFormatDesc     { get; set; }
@@ -136,33 +141,83 @@ public unsafe class VideoStream : StreamBase
             var dovi = (AVDOVIDecoderConfigurationRecord*) doviSide->data;
             if (dovi != null)
             {
+                /* [DOVI profile / BL fallback]
+                P5      Native DOVI                 -> None
+                P7      HDR10-compatible            -> HDR10
+                P8.0    Native / no standard BL     -> None
+                P8.1    HDR10-compatible            -> HDR10
+                P8.2    SDR/BT709-compatible        -> SDR
+                P8.4    HLG-compatible              -> HLG
+                P8.6    UHD-BD/HDR10-compatible     -> HDR10
+                P10.0   Native DOVI / AV1           -> None
+                P10.1   HDR10-compatible / AV1      -> HDR10
+                P10.2   SDR/BT709-compatible / AV1  -> SDR
+                P10.4   HLG-compatible / AV1        -> HLG
+                */
+
+                DoviProfile       = dovi->dv_profile;
+                DoviCompatibility = dovi->dv_bl_signal_compatibility_id;
+                DoviRpuPresent    = dovi->rpu_present_flag != 0;
+                DoviBlPresent     = dovi->bl_present_flag  != 0;
+                DoviElPresent     = dovi->el_present_flag  != 0;
+
                 switch (dovi->dv_profile)
                 {
-                    case 5: // Not supported
-                    case 7:
-                        ColorTransfer   = AVColorTransferCharacteristic.Smpte2084;
-                        ColorSpace      = ColorSpace.Bt2020;
-                        HDRFormat       = HDRFormat.HDR10;
+                    case 5:
+                        // Native Dolby Vision. No standards-compatible BL fallback.
+                        break;
 
+                    case 7:
+                        // Dual-layer Dolby Vision with HDR10-compatible BL.
+                        ColorTransfer = AVColorTransferCharacteristic.Smpte2084;
+                        ColorSpace    = ColorSpace.Bt2020;
+                        HDRFormat     = HDRFormat.HDR10;
                         break;
 
                     case 8:
+                    case 10:
                         switch (dovi->dv_bl_signal_compatibility_id)
                         {
                             case 1:
-                                ColorTransfer   = AVColorTransferCharacteristic.Smpte2084;
-                                ColorSpace      = ColorSpace.Bt2020;
-                                HDRFormat       = HDRFormat.HDR10;
+                                // P8.1 / P10.1
+                                // HDR10-compatible.
+                                
+                                ColorTransfer = AVColorTransferCharacteristic.Smpte2084;
+                                ColorSpace    = ColorSpace.Bt2020;
+                                HDRFormat     = HDRFormat.HDR10;
+                                break;
 
+                            case 2:
+                                // P8.2 (Standard)
+                                // BT.709 / SDR-compatible BL.
+                                // FFmpeg can also derive compatibility ID 2 for AV1/P10 from BT.709 stream signalling.
+
+                                ColorTransfer = AVColorTransferCharacteristic.Bt709;
+                                ColorSpace    = ColorSpace.Bt709;
+                                HDRFormat     = HDRFormat.None;
                                 break;
 
                             case 4:
-                                ColorTransfer   = AVColorTransferCharacteristic.AribStdB67;
-                                ColorSpace      = ColorSpace.Bt2020;
-                                HDRFormat       = HDRFormat.HLG;
+                                // P8.4 / P10.4
+                                // HLG-compatible.
+                                
+                                ColorTransfer = AVColorTransferCharacteristic.AribStdB67;
+                                ColorSpace    = ColorSpace.Bt2020;
+                                HDRFormat     = HDRFormat.HLG;
+                                break;
 
+                            case 6 when dovi->dv_profile == 8:
+                                // UHD Blu-ray / HDR10-compatible BL.
+                                ColorTransfer = AVColorTransferCharacteristic.Smpte2084;
+                                ColorSpace    = ColorSpace.Bt2020;
+                                HDRFormat     = HDRFormat.HDR10;
+                                break;
+
+                            case 0:
+                                // Native Dolby Vision. No standards-compatible BL fallback.
                                 break;
                         }
+
                         break;
                 }
             }
@@ -377,7 +432,7 @@ public unsafe class VideoStream : StreamBase
     {
         PixelFormatStr  = LowerCaseFirstChar(PixelFormat.ToString());
         PixelFormatDesc = av_pix_fmt_desc_get(PixelFormat);
-        PixelComps      = PixelFormatDesc->comp.ToArray();
+        PixelComps      = PixelFormatDesc->comp;
         ColorType       = PixelComps.Length == 1 ? ColorType.Gray : ((PixelFormatDesc->flags & PixFmtFlags.Rgb) != 0 ? ColorType.RGB : ColorType.YUV);
         PixelPlanes     = 0;
         
@@ -397,18 +452,5 @@ public unsafe class VideoStream : StreamBase
         int x, y;
         _ = av_reduce(&x, &y, Width * SAR.Num, Height * SAR.Den, 1024 * 1024);
         return new(x, y);
-    }
-
-    struct AVDOVIDecoderConfigurationRecord
-    {   // TODO from bindings
-        public byte dv_version_major;
-        public byte dv_version_minor;
-        public byte dv_profile;
-        public byte dv_level;
-        public byte rpu_present_flag;
-        public byte el_present_flag;
-        public byte bl_present_flag;
-        public byte dv_bl_signal_compatibility_id;
-        public byte dv_md_compression;
     }
 }

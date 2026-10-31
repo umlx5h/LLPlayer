@@ -133,12 +133,12 @@ public unsafe partial class Renderer
         FFmpegSetup();
     }
 
-    bool D3Config()
+    bool D3Config(AVFrame* frame)
     {
         if (VideoDecoder.VideoAccelerated)
             D3HWConfig();
         else
-            D3SWConfig();
+            D3SWConfig(frame);
 
         D3Deinterlace(); // TBR: maybe request instead?
 
@@ -169,15 +169,15 @@ public unsafe partial class Renderer
 
         return true;
     }
-    bool D3SWConfig()
+    bool D3SWConfig(AVFrame* frame)
     {
         if (scfg.ColorType == ColorType.RGB && scfg.PixelFormat != AVPixelFormat.Rgba)
         {   // TBR: re-ordered RGB offsets?* extra pass*
-            SwsConfig();
+            SwsConfig(frame);
             canFL = false;
         }
         else
-            FLSwsConfig();
+            FLSwsConfig(frame);
 
         context.VSSetShader(vsSimple);
         vpivd.Texture2D.ArraySlice = 0;
@@ -455,7 +455,6 @@ color = float4(Texture2.Sample(Sampler, input.Texture).r, Texture3.Sample(Sample
 
         SetVisibleSizeAndRatioHelper();
 
-        vpRequests &= ~VPRequestType.Crop;
         vpRequests |=  VPRequestType.Viewport;
     }
     void D3Deinterlace()
@@ -565,6 +564,9 @@ color = float4(Texture2.Sample(Sampler, input.Texture).r, Texture3.Sample(Sample
 
             if (vpRequests.HasFlag(VPRequestType.BackColor))
                 SetBackColor();
+
+            if (vpRequests.HasFlag(VPRequestType.UpdateSwapChain))
+                UpdateHDRSwapchain();
 
             if (vpRequests.HasFlag(VPRequestType.RotationFlip))
                 D3SetRotationFlip();

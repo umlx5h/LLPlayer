@@ -14,13 +14,13 @@ using static FlyleafLib.Utils.NativeMethods;
 
 namespace FlyleafLib.MediaFramework.MediaRenderer;
 
-public unsafe class SwapChain
+public class SwapChain
 {
     public Renderer                 Renderer        { get; private set; }
     public bool                     Disposed        { get; private set; } = true;
-    public GPUOutput                Monitor         { get; private set; }
     public nint                     ControlHwnd     { get; private set; }
     public bool                     CanPresent      { get; internal set; } // Don't render / present during minimize (or invalid size)
+    public bool                     HDR             { get; private set; }
 
     public ID3D11VideoProcessorOutputView
                                     VPOV            { get; internal set; }
@@ -44,30 +44,30 @@ public unsafe class SwapChain
     };
 
     int                 controlWidth, controlHeight; // TBR: Updates earlier and waits Resize to update ControlWidth/ControlHeight
+    nint                currentMonitor;
     Action<IDXGISwapChain2>
                         WinUIClbk;
     bool                isCornerRadiusEmpty = true;
-    IVP                 vp;
     LogHandler          Log;
     VPConfig            ucfg;
     object              lockDispose = new();
 
-    internal SwapChain(Renderer renderer, IVP vp = null)
+    internal SwapChain(Renderer renderer)
     {
         Renderer    = renderer;
-        this.vp     = vp ?? renderer;
-
         Log         = renderer.Log;
         ucfg        = renderer.ucfg;
-
+        
         wndProcDelegate     = new(WndProc);
         wndProcDelegatePtr  = Marshal.GetFunctionPointerForDelegate(wndProcDelegate);
     }
 
+    Format OutputFormat => HDR ? Format.R16G16B16A16_Float : (Format)ucfg.SwapChainFormat;
+
     SwapChainDescription1 Desc() => new()
     {
             BufferUsage         = Usage.RenderTargetOutput,
-            Format              = (Format)ucfg.SwapChainFormat,
+            Format              = OutputFormat,
             Width               = 2,
             Height              = 2,
             AlphaMode           = AlphaMode.Premultiplied,  // TBR
@@ -112,7 +112,7 @@ public unsafe class SwapChain
     {
         try
         {
-            if (CanDebug) Log.Debug($"SC Initializing [Hwnd: {ControlHwnd}, Fmt: {ucfg.SwapChainFormat}]");
+            if (CanDebug) Log.Debug($"SC Initializing [Hwnd: {ControlHwnd}, Fmt: {OutputFormat}]");
 
             Disposed        = false;
             RECT rect       = new();
@@ -141,11 +141,11 @@ public unsafe class SwapChain
 
             SetupLocalHelper();
 
-            if (CanInfo) Log.Info($"SC Initialized [Hwnd: {ControlHwnd}, Fmt: {ucfg.SwapChainFormat}]");
+            if (CanInfo) Log.Info($"SC Initialized [Hwnd: {ControlHwnd}, Fmt: {OutputFormat}]");
         }
         catch (Exception e) // Should handle device lost etc..
         {
-            Log.Error($"SC Initialization failed [Hwnd: {ControlHwnd}, Fmt: {ucfg.SwapChainFormat}] ({e.Message})");
+            Log.Error($"SC Initialization failed [Hwnd: {ControlHwnd}, Fmt: {OutputFormat}] ({e.Message})");
             DisposeLocal();
         }
     }
@@ -177,7 +177,7 @@ public unsafe class SwapChain
     {
         try
         {
-            if (CanDebug) Log.Debug($"SC Initializing [Fmt: {ucfg.SwapChainFormat}]");
+            if (CanDebug) Log.Debug($"SC Initializing [Fmt: {OutputFormat}]");
 
             Disposed = false;
 
@@ -189,7 +189,7 @@ public unsafe class SwapChain
         }
         catch (Exception e)
         {
-            Log.Error($"SC Initialization failed [Fmt: {ucfg.SwapChainFormat}] ({e.Message})");
+            Log.Error($"SC Initialization failed [Fmt: {OutputFormat}] ({e.Message})");
             DisposeLocal();
             return;
         }
@@ -198,18 +198,24 @@ public unsafe class SwapChain
     {
         context2d   = Renderer.context2d;
 
-        // Only to avoid nulls on resize
-        bb          = sc.GetBuffer<ID3D11Texture2D>(0);
-        bbRtv       = Renderer.Device.CreateRenderTargetView(bb);
+        ApplyColorSpace(requireSupport: false);
 
-        UpdateDisplay(true); // don't force if we let WndProc run without our swapchain
+        // Only to avoid nulls on resize
+        AcquireBackBuffer();
+        UpdateDisplay();
+
+        // Re-evaluate output mode after every swapchain creation/recreation.
+        // The monitor HDR state may be unchanged while the new swapchain has returned to its default SDR format.
+        VPRequestType requests = VPRequestType.UpdateSwapChain;
 
         // Ensures that it will run ResizeBuffers initially
         if (controlWidth > 0 && controlHeight > 0)
         {
             CanPresent = true;
-            vp.VPRequest(VPRequestType.Resize);
+            requests |= VPRequestType.Resize;
         }
+
+        Renderer.VPRequest(requests);
     }
 
     public void Dispose(bool rendererFrame = true)
@@ -263,7 +269,7 @@ public unsafe class SwapChain
                 dcVisual = null;
             }
 
-            DisposeHelper();
+            ReleaseBackBuffer();
 
             if (sc != null)
             {
@@ -277,6 +283,9 @@ public unsafe class SwapChain
                 dcDevice = null;
             }
 
+            HDR = false;
+            currentMonitor = 0;
+
             if (CanInfo)
                 Log.Info($"SC Disposed [Hwnd: {ControlHwnd}]");
         }
@@ -287,7 +296,7 @@ public unsafe class SwapChain
 
         WinUIClbk.Invoke(null);
 
-        DisposeHelper();
+        ReleaseBackBuffer();
 
         if (sc != null)
         {
@@ -296,16 +305,139 @@ public unsafe class SwapChain
             sc = null;
         }
 
+        HDR = false;
+        currentMonitor = 0;
+
         if (CanInfo) Log.Info($"SC Disposed [Hwnd: {ControlHwnd}]");
     }
-    void DisposeHelper()
+
+    public void Resize(int width, int height)
+    {   // Externally used when a WndProc hook is not available (e.g. WinUI)
+        controlWidth    = width;
+        controlHeight   = height;
+
+        CanPresent = controlWidth > 0 && controlHeight > 0;
+        if (controlWidth != Renderer.ControlWidth || controlHeight != Renderer.ControlHeight) // TBR: It will not refresh on restore from minimize (same sizes)
+            Renderer.VPRequest(VPRequestType.Resize);
+    }
+
+    public Result Present()
+        => sc.Present(ucfg.VSync, PresentFlags.None);
+
+    public Result Present(uint syncInterval, PresentFlags flags)
+        => sc.Present(syncInterval, flags);
+
+    internal void SetSize()
     {
+        // TBR lock with Resize*
+        Renderer.UpdateSize(controlWidth, controlHeight);
+
+        if (!isCornerRadiusEmpty)
+        {
+            dcClip.SetRight (Renderer.ControlWidth);
+            dcClip.SetBottom(Renderer.ControlHeight);
+            dcDevice.Commit().CheckError();
+        }
+
+        ReleaseBackBuffer();
+        sc.ResizeBuffers(0, (uint)Renderer.ControlWidth, (uint)Renderer.ControlHeight, OutputFormat, SwapChainFlags.None).CheckError();
+        AcquireBackBuffer();
+    }
+
+    internal bool SetHDR(bool enabled)
+    {
+        if (HDR == enabled)
+            return true;
+
+        // Keep the desired mode so a later Setup() creates the correct format.
+        if (Disposed || sc == null)
+        {
+            HDR = enabled;
+            return true;
+        }
+
+        bool previous = HDR;
+
+        try
+        {
+            HDR = enabled;
+
+            ReleaseBackBuffer();
+
+            uint width  = (uint)Math.Max(Renderer.ControlWidth,  2);
+            uint height = (uint)Math.Max(Renderer.ControlHeight, 2);
+
+            sc.ResizeBuffers(0, width, height, OutputFormat, SwapChainFlags.None).CheckError();
+
+            if (!ApplyColorSpace(requireSupport: enabled))
+                throw new InvalidOperationException("scRGB color space is not supported for presentation");
+
+            AcquireBackBuffer();
+
+            if (CanInfo)
+                Log.Info($"SC Output {(HDR ? "HDR/scRGB" : "SDR")} [Fmt: {OutputFormat}]");
+
+            return true;
+        }
+        catch (Exception e)
+        {
+            Log.Warn($"SC Failed to switch {(enabled ? "HDR/scRGB" : "SDR")} output ({e.Message})");
+
+            // Best effort restore of the previous output mode.
+            try
+            {
+                HDR = previous;
+                ReleaseBackBuffer();
+
+                uint width  = (uint)Math.Max(Renderer.ControlWidth,  2);
+                uint height = (uint)Math.Max(Renderer.ControlHeight, 2);
+
+                sc.ResizeBuffers(0, width, height, OutputFormat, SwapChainFlags.None).CheckError();
+                ApplyColorSpace(requireSupport: false);
+                AcquireBackBuffer();
+            }
+            catch { }
+
+            return false;
+        }
+    }
+
+    bool ApplyColorSpace(bool requireSupport)
+    {
+        using var sc3 = sc?.QueryInterfaceOrNull<IDXGISwapChain3>();
+        if (sc3 == null)
+            return !requireSupport;
+
+        ColorSpaceType colorSpace = HDR
+            ? ColorSpaceType.RgbFullG10NoneP709
+            : ColorSpaceType.RgbFullG22NoneP709;
+
+        var support = sc3.CheckColorSpaceSupport(colorSpace);
+        bool present = support.HasFlag(SwapChainColorSpaceSupportFlags.Present);
+
+        if (requireSupport && !present)
+            return false;
+
+        // Setting it explicitly also makes SDR restoration deterministic.
+        if (present || !requireSupport)
+            sc3.SetColorSpace1(colorSpace);
+
+        return true;
+    }
+
+    void ReleaseBackBuffer()
+    {
+        Renderer.UnsetRenderTargets();
+
         if (bitmap2d != null)
         {
+            if (context2d != null)
+                context2d.Target = null;
+
             bitmap2d.Dispose();
             bitmap2d = null;
         }
-        
+
         if (VPOV != null)
         {
             VPOV.Dispose();
@@ -325,45 +457,10 @@ public unsafe class SwapChain
         }
     }
 
-    public void Resize(int width, int height)
-    {   // Externally used when a WndProc hook is not available (e.g. WinUI)
-        controlWidth    = width;
-        controlHeight   = height;
-
-        CanPresent = controlWidth > 0 && controlHeight > 0;
-        if (controlWidth != vp.ControlWidth || controlHeight != vp.ControlHeight) // TBR: It will not refresh on restore from minimize (same sizes)
-            vp.VPRequest(VPRequestType.Resize);
-    }
-
-    public Result Present()
-        => sc.Present(ucfg.VSync, PresentFlags.None);
-
-    public Result Present(uint syncInterval, PresentFlags flags)
-        => sc.Present(syncInterval, flags);
-
-    internal void SetSize()
+    void AcquireBackBuffer()
     {
-        // TBR lock with Resize*
-        vp.UpdateSize(controlWidth, controlHeight);
-
-        if (!isCornerRadiusEmpty)
-        {
-            dcClip.SetRight (vp.ControlWidth);
-            dcClip.SetBottom(vp.ControlHeight);
-            dcDevice.Commit().CheckError();
-        }
-
-        if (bitmap2d != null)
-        {
-            context2d.Target = null;
-            bitmap2d.Dispose();
-        }
-
-        bbRtv.  Dispose();
-        bb.     Dispose();
-        sc.     ResizeBuffers(0, (uint)vp.ControlWidth, (uint)vp.ControlHeight, Format.Unknown, SwapChainFlags.None);
-        bb      = sc.GetBuffer<ID3D11Texture2D>(0);
-        bbRtv   = Renderer.Device.CreateRenderTargetView(bb);
+        bb    = sc.GetBuffer<ID3D11Texture2D>(0);
+        bbRtv = Renderer.Device.CreateRenderTargetView(bb);
 
         if (context2d != null)
         {
@@ -446,28 +543,21 @@ public unsafe class SwapChain
         }
     }
 
-    #region Display | GPUOutput | Monitor
-    nint displayHwnd;
-    void UpdateDisplay(bool force = false)
+    void UpdateDisplay(bool force = true)
     {
-        nint newDisplayHwnd = MonitorFromWindow(ControlHwnd, MonitorOptions.MONITOR_DEFAULTTONEAREST);
-        if (displayHwnd == newDisplayHwnd && !force)
-            return;
-
-        displayHwnd = newDisplayHwnd;
-
-        var displays = Engine.Video.GetGPUOutputs(Renderer.DXGIAdapter);
-        foreach(var display in displays)
-            if (displayHwnd == display.Hwnd)
-            {
-                Monitor = display;
-                vp.MonitorChanged(Monitor);
-                if (CanDebug) Log.Debug($"{display}");
-
+        if (!force && ControlHwnd != 0)
+        {
+            nint monitor = MonitorFromWindow(ControlHwnd, MonitorOptions.MONITOR_DEFAULTTONEAREST);
+            if (monitor == currentMonitor)
                 return;
-            }
+
+            currentMonitor = monitor;
+        }
+        else if (ControlHwnd != 0)
+            currentMonitor = MonitorFromWindow(ControlHwnd, MonitorOptions.MONITOR_DEFAULTTONEAREST);
+
+        Renderer.UpdateDisplay();
     }
-    #endregion
 
     #region WndProc
     SubclassWndProc wndProcDelegate;
@@ -507,13 +597,13 @@ public unsafe class SwapChain
                     Dispose();
                 break;
 
-            // TODO: currently disabled for performance (we only change recommeded resolution/sdrnits) | when more added (Dpi/HDR native etc.)
-            //case WndProcMessages.WM_MOVE:
-            //    UpdateDisplay();
-            //    break;
+            // Native HDR output depends on the monitor containing the window.
+            case WndProcMessages.WM_MOVE:
+                UpdateDisplay(force: false);
+                break;
 
             case WndProcMessages.WM_DISPLAYCHANGE: // top-level window only (any display) - should refresh all and check if current changed
-                UpdateDisplay(true);
+                UpdateDisplay();
                 break;
 
             case WndProcMessages.WM_SIZE:

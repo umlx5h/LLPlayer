@@ -1,4 +1,4 @@
-﻿/*
+/*
 Chroma Location / Sampling
     Small improvement but not performance penalty
 
@@ -33,7 +33,15 @@ struct ConfigData
     float saturation;
 
     float uvOffset;
+};
 
+cbuffer Config : register(b0)
+{
+    ConfigData Config;
+};
+
+struct HDRData
+{
     float splineSrcPivot;
     float splineDstPivot;
     float splinePa;
@@ -45,20 +53,45 @@ struct ConfigData
     float sourcePeakNits;
     float targetMinNits;
     float targetPeakNits;
+
+    int   nativeOutput;
+    float hlgGamma;
+    float bt1886BlackRoot;
+    float bt1886InvRange;
 };
 
-cbuffer         Config          : register(b0)
+cbuffer HDRConfig : register(b1)
 {
-    ConfigData Config;
+    HDRData HDR;
 };
+
+#if defined(dDovi)
+cbuffer DoviConfig : register(b2)
+{
+    float4 Dovi[184];
+};
+
+#define DOVI_SAMPLE_SCALE       Dovi[0].x
+#define DOVI_IDENTITY_RESHAPE   Dovi[0].y
+#define DOVI_YCC_BASE           1
+#define DOVI_LINEAR_709_BASE    4
+#define DOVI_COMPONENT_BASE     7
+#define DOVI_COMPONENT_VECTORS  59
+#define DOVI_MMR_BASE           11
+#endif
 
 SamplerState    Sampler         : register(s0);
 
 #if defined(dPano360)
-cbuffer PanoConfig : register(b1)
+struct PanoData
 {
     float4 panoParams;   // rotationX, rotationY, zoom, fov
     float  aspectRatio;
+};
+
+cbuffer PanoConfig : register(b3)
+{
+    PanoData Pano;
 };
 
 #define PI_PANO 3.1415926535897932384626433832795
@@ -75,15 +108,15 @@ inline float3 PanoRotateXY(float3 p, float2 angle)
 inline float2 PanoProject(float2 uv)
 {
     float2 sampleUV = uv - 0.5;
-    float hfovRad = panoParams.w * DEG2RAD_PANO;
-    float vfovRad = 2.0 * atan(tan(hfovRad * 0.5) / aspectRatio);
+    float hfovRad = Pano.panoParams.w * DEG2RAD_PANO;
+    float vfovRad = 2.0 * atan(tan(hfovRad * 0.5) / Pano.aspectRatio);
     float3 camDir = normalize(float3(
         -sampleUV.x * tan(hfovRad * 0.5),
          sampleUV.y * tan(vfovRad * 0.5),
-         panoParams.z));
+         Pano.panoParams.z));
     float3 camRot = float3(
-        (panoParams.x - 0.5) * 2.0 * PI_PANO,
-        (panoParams.y - 0.5) * PI_PANO, 0.0);
+        (Pano.panoParams.x - 0.5) * 2.0 * PI_PANO,
+        (Pano.panoParams.y - 0.5) * PI_PANO, 0.0);
     float3 rd = normalize(PanoRotateXY(camDir, camRot.yx));
     return float2(atan2(rd.z, rd.x) + PI_PANO, acos(-rd.y)) / float2(2.0 * PI_PANO, PI_PANO);
 }
@@ -148,16 +181,12 @@ static const float3x3 coefs[3] =
 inline float3 YUVToRGBLimited(float3 yuv)
 {
     #if defined(dYUV16)
-        // P010 limited, sampled as R16_UNorm
-        yuv.x  -= 0.0625;
-        yuv.yz -= 0.5;
+        // P010 limited, sampled as R16_UNorm. Convert 10-bit MSB-aligned UNorm to the equivalent 8-bit-normalized code domain.
         yuv *= 257.0 / 256.0;
-    #else
-        // 8-bit limited, sampled as R8_UNorm
-        yuv.x  -= 16.0 / 255.0;
-        yuv.yz -= 128.0 / 255.0;
-
     #endif
+    
+    yuv.x  -= 16.0 / 255.0;
+    yuv.yz -= 128.0 / 255.0;
 
     return mul(coefs[Config.coefsIndex], yuv);
 }
@@ -214,45 +243,58 @@ inline float3 Gamut2020To709(float3 c)
     return mul(mat, c);
 }
 
-inline float3 GamutCompress709(float3 c, float knee)
+inline float3 LinearToBT1886(float3 c)
+{
+    c = pow(max(c, 0.0), 1.0 / 2.4);
+    return saturate((c - HDR.bt1886BlackRoot) * HDR.bt1886InvRange);
+}
+
+inline float3 GamutMap709(float3 c)
 {
     static const float3 luma709 =
         float3(0.2126, 0.7152, 0.0722);
 
+    if (all(c >= 0.0) && all(c <= 1.0))
+        return c;
+
     float y = saturate(dot(c, luma709));
+    float3 d = c - y.xxx;
 
-    float lo = min(c.r, min(c.g, c.b));
-    float hi = max(c.r, max(c.g, c.b));
+    // Maximum scale along the line from neutral gray (same luminance)
+    // toward the original color while remaining inside the BT.709 cube.
+    float scale = 1.0;
 
-    float limit = 1e20;
+    if (d.r > 0.0) scale = min(scale, (1.0 - y) / d.r);
+    if (d.g > 0.0) scale = min(scale, (1.0 - y) / d.g);
+    if (d.b > 0.0) scale = min(scale, (1.0 - y) / d.b);
 
-    if (hi > y)
-        limit = min(limit, (1.0 - y) / (hi - y));
+    if (d.r < 0.0) scale = min(scale, -y / d.r);
+    if (d.g < 0.0) scale = min(scale, -y / d.g);
+    if (d.b < 0.0) scale = min(scale, -y / d.b);
 
-    if (lo < y)
-        limit = min(limit, y / (y - lo));
+    scale = saturate(scale);
 
-    if (limit == 1e20)
-        return c;
+    return saturate(y.xxx + d * scale);
+}
 
-    float usage = 1.0 / max(limit, 1e-6);
+inline float3 NormalizeDisplayBlack(float3 c)
+{
+    float black =
+        saturate(HDR.targetMinNits / HDR.targetPeakNits);
 
-    if (usage <= knee)
-        return c;
+    return (c - black.xxx) / (1.0 - black);
+}
 
-    float k = 1.0 - knee;
+inline float3 RestoreDisplayBlack(float3 c)
+{
+    float black =
+        saturate(HDR.targetMinNits / HDR.targetPeakNits);
 
-    float mappedUsage =
-        1.0 - (k * k) /
-        (usage + 1.0 - 2.0 * knee);
-
-    float scale = mappedUsage / usage;
-
-    return y.xxx + (c - y.xxx) * scale;
+    return black.xxx + c * (1.0 - black);
 }
 #endif
 
-#if defined(dPQSpline) || defined(dHDRDetect)
+#if defined(dPQSpline)
 static const float ST2084_m1 = 0.1593017578125;
 static const float ST2084_m2 = 78.84375;
 static const float ST2084_c1 = 0.8359375;
@@ -268,9 +310,7 @@ inline float3 PQToLinear(float3 rgb, float factor)
     rgb *= factor;
     return rgb;
 }
-#endif
 
-#if defined(dPQSpline) || defined(dHDRDetect)
 inline float PQToNits(float pq)
 {
     pq = max(pq, 0.0);
@@ -284,6 +324,9 @@ inline float PQToNits(float pq)
 
 inline float NitsToPQ(float nits)
 {
+    if (nits <= 0.0)
+        return 0.0;
+
     float x = saturate(nits / 10000.0);
 
     x = pow(x, ST2084_m1);
@@ -295,21 +338,21 @@ inline float NitsToPQ(float nits)
 
 inline float ToneSpline(float x)
 {
-    x -= Config.splineSrcPivot;
+    x -= HDR.splineSrcPivot;
 
     if (x > 0.0)
     {
-        x = ((Config.splineQa * x +
-              Config.splineQb) * x +
-              Config.splineSlope) * x;
+        x = ((HDR.splineQa * x +
+              HDR.splineQb) * x +
+              HDR.splineSlope) * x;
     }
     else
     {
-        x = (Config.splinePa * x +
-             Config.splineSlope) * x;
+        x = (HDR.splinePa * x +
+             HDR.splineSlope) * x;
     }
 
-    return x + Config.splineDstPivot;
+    return x + HDR.splineDstPivot;
 }
 #endif
 
@@ -329,7 +372,7 @@ inline float3 HLGInverseOETF(float3 c)
     return lerp(lo, hi, step(0.5, c));
 }
 
-inline float3 HLGToDisplayLinear(float3 c, float targetPeakNits)
+inline float3 HLGToDisplayLinear(float3 c)
 {
     static const float3 luma2020 = float3(0.2627, 0.6780, 0.0593);
 
@@ -340,13 +383,104 @@ inline float3 HLGToDisplayLinear(float3 c, float targetPeakNits)
     if (y <= 0.0)
         return 0.0;
 
-    float gamma = 1.2 + 0.42 * log10(targetPeakNits / 1000.0);
-
-    // Normalized display-linear result.
-    // Peak white stays 1.0.
-    c *= pow(y, gamma - 1.0);
+    c *= pow(y, HDR.hlgGamma - 1.0); // Normalized display-linear result. Peak white stays 1.0.
 
     return c;
+}
+#endif
+
+#if defined(dDovi)
+inline float DoviReshapeComponent(float3 sig, int component)
+{
+    int b = DOVI_COMPONENT_BASE + component * DOVI_COMPONENT_VECTORS;
+    float s = sig[component];
+
+    float4 p0 = Dovi[b + 1];
+    float4 p1 = Dovi[b + 2];
+
+    int piece = 0;
+    piece += s >= p0.x ? 1 : 0;
+    piece += s >= p0.y ? 1 : 0;
+    piece += s >= p0.z ? 1 : 0;
+    piece += s >= p0.w ? 1 : 0;
+    piece += s >= p1.x ? 1 : 0;
+    piece += s >= p1.y ? 1 : 0;
+    piece += s >= p1.z ? 1 : 0;
+
+    float4 coeffs = Dovi[b + 3 + piece];
+
+    if (coeffs.w == 0.0)
+    {
+        s = (coeffs.z * s + coeffs.y) * s + coeffs.x;
+    }
+    else
+    {
+        int mmr = b + DOVI_MMR_BASE + (int)coeffs.y;
+        int order = (int)coeffs.w;
+
+        float4 sigX;
+        sigX.xyz = sig.xxy * sig.yzz;
+        sigX.w = sigX.x * sig.z;
+
+        s = coeffs.x;
+        s += dot(Dovi[mmr + 0].xyz, sig);
+        s += dot(Dovi[mmr + 1], sigX);
+
+        if (order >= 2)
+        {
+            float3 sig2 = sig * sig;
+            float4 sigX2 = sigX * sigX;
+
+            s += dot(Dovi[mmr + 2].xyz, sig2);
+            s += dot(Dovi[mmr + 3], sigX2);
+
+            if (order >= 3)
+            {
+                s += dot(Dovi[mmr + 4].xyz, sig2 * sig);
+                s += dot(Dovi[mmr + 5], sigX2 * sigX);
+            }
+        }
+    }
+
+    return clamp(s, Dovi[b].x, Dovi[b].y);
+}
+
+inline float3 DoviDecodeYCC(float3 c)
+{
+    float3 sig = saturate(c * DOVI_SAMPLE_SCALE);
+    float3 reshaped = sig;
+
+    if (DOVI_IDENTITY_RESHAPE == 0.0)
+    {   // Common Profile 7 streams carry an exact identity reshape. Skip all pivot/polynomial work in that case.
+        reshaped = float3(
+            DoviReshapeComponent(sig, 0),
+            DoviReshapeComponent(sig, 1),
+            DoviReshapeComponent(sig, 2));
+    }
+
+    float4 v = float4(reshaped, 1.0);
+
+    return float3(
+        dot(Dovi[DOVI_YCC_BASE + 0], v),
+        dot(Dovi[DOVI_YCC_BASE + 1], v),
+        dot(Dovi[DOVI_YCC_BASE + 2], v));
+}
+
+inline float DoviLuma(float3 linearRgb)
+{
+    float3 luma = float3(
+        Dovi[DOVI_LINEAR_709_BASE + 0].w,
+        Dovi[DOVI_LINEAR_709_BASE + 1].w,
+        Dovi[DOVI_LINEAR_709_BASE + 2].w);
+    return dot(luma, linearRgb);
+}
+
+inline float3 DoviTo709(float3 linearRgb)
+{
+    return float3(
+        dot(Dovi[DOVI_LINEAR_709_BASE + 0].xyz, linearRgb),
+        dot(Dovi[DOVI_LINEAR_709_BASE + 1].xyz, linearRgb),
+        dot(Dovi[DOVI_LINEAR_709_BASE + 2].xyz, linearRgb));
 }
 #endif
 
@@ -425,63 +559,126 @@ float4 main(PSInput input) : SV_TARGET
     static ReadOnlySpan<byte> PS_FOOTER => @"
     float3 c = color.rgb;
 
-#if defined(dYUVLimited)
+#if defined(dDovi)
+    c = DoviDecodeYCC(c);
+#elif defined(dYUVLimited)
     #if defined(dFilters) && !defined(dHDRDetect)
         c.x = Contrast(c.x, Config.contrast);
     #endif
-	c = YUVToRGBLimited(c);
+    c = YUVToRGBLimited(c);
 #elif defined(dYUVFull)
     #if defined(dFilters) && !defined(dHDRDetect)
         c.x = Contrast(c.x, Config.contrast);
     #endif
-	c = YUVToRGBFull(c);
+    c = YUVToRGBFull(c);
 #endif
 
 #if defined(dHDRDetect)
     c = PQToLinear(c, 10000.0);
 
-    static const float3 luma2020 = float3(0.2627, 0.6780, 0.0593);
-    float y = dot(c, luma2020);
+    #if defined(dDovi)
+        float y = DoviLuma(c);
+    #else
+        static const float3 luma2020 = float3(0.2627, 0.6780, 0.0593);
+        float y = dot(c, luma2020);
+    #endif
 
-    return float4(NitsToPQ(max(y, 0.0)), 0.0, 0.0, 1.0);
+    return float4(NitsToPQ(y), 0.0, 0.0, 1.0);
+
 #elif defined(dICC)
     c = ApplyICC(c);
+
 #elif defined(dBT1886ToLinear)
     c = BT1886ToLinear(c);
+
 #elif defined(dHLG)
-    c = HLGToDisplayLinear(c, Config.targetPeakNits);
+    c = HLGToDisplayLinear(c);
+
+    if (HDR.nativeOutput != 0)
+        c *= HDR.targetPeakNits;
+
 #elif defined(dPQSpline)
     c = PQToLinear(c, 10000.0);
 
-    static const float3 luma2020 = float3(0.2627, 0.6780, 0.0593);
-    float y = dot(c, luma2020);
+    #if defined(dDovi)
+        float y = DoviLuma(c);
+    #else
+        static const float3 luma2020 = float3(0.2627, 0.6780, 0.0593);
+        float y = dot(c, luma2020);
+    #endif
 
     if (y > 0.0)
     {
-        float toneY     = clamp(y, Config.sourceMinNits, Config.sourcePeakNits);
-        float mappedPQ  = saturate(ToneSpline(NitsToPQ(toneY)));
-        float mappedY   = PQToNits(mappedPQ);
-        float u         = saturate((mappedY - Config.targetMinNits) / (Config.targetPeakNits - Config.targetMinNits));
-        c *= u / y;
+        float scale = 1.0;
+
+        if (HDR.nativeOutput != 0)
+        {
+            if (HDR.sourcePeakNits > HDR.targetPeakNits || HDR.sourceMinNits < HDR.targetMinNits)
+            {   // Preserve HDR luminance when it fits the display.
+                float toneY     = clamp(y, HDR.sourceMinNits, HDR.sourcePeakNits);
+                float mappedPQ  = saturate(ToneSpline(NitsToPQ(toneY)));
+                float mappedY   = PQToNits(mappedPQ);
+                scale           = mappedY / y;
+            }
+        }
+        else
+        {
+            float toneY     = clamp(y, HDR.sourceMinNits, HDR.sourcePeakNits);
+            float mappedPQ  = saturate(ToneSpline(NitsToPQ(toneY)));
+            float mappedY   = PQToNits(mappedPQ);
+            float u         = saturate(mappedY / HDR.targetPeakNits);
+            scale           = u / y;
+        }
+
+        c *= scale;
     }
+
+    #if defined(dDovi)
+        c = DoviTo709(c);
+    #endif
 #endif
 
 #if defined(dBT2020)
-    c = Gamut2020To709(c);
-    #if !defined(dBT1886ToLinear)
-        c = GamutCompress709(c, 1.00);
-    #endif
-    c = saturate(c);
-    c = pow(c, 1.0 / 2.2);
+    if (HDR.nativeOutput != 0)
+    {
+        #if !defined(dDovi)
+            c = Gamut2020To709(c);
+        #endif
+
+        // scRGB is linear BT.709 and 1.0 = 80 nits.
+        c /= 80.0;
+    }
+    else
+    {
+        #if !defined(dDovi)
+            c = Gamut2020To709(c);
+        #endif
+
+        #if defined(dPQSpline)
+            c = NormalizeDisplayBlack(c);
+        #endif
+
+        //#if !defined(dBT1886ToLinear) // TBR: related to colorspace/primaries
+        c = GamutMap709(c);
+        //#endif
+
+        c = RestoreDisplayBlack(c);
+        c = LinearToBT1886(c);
+    }
 #endif
 
 #if defined(dFilters)
-    #if !defined(dYUVLimited) && !defined(dYUVFull)
+    #if defined(dDovi) || (!defined(dYUVLimited) && !defined(dYUVFull))
         c = (c - 0.5) * (2.0 - Config.contrast) + 0.5;
     #endif
     c += Config.brightness;
     c  = Hue(c, Config.hue);
     c  = Saturation(c, Config.saturation);
+#endif
+
+#if defined(dBT2020)
+    if (HDR.nativeOutput != 0)
+        return float4(c * color.a, color.a);
 #endif
 
     return saturate(float4(c * color.a, color.a));

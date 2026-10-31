@@ -722,16 +722,28 @@ public class Config : NotifyPropertyChanged
         public int              MaxVerticalResolution       => MaxVerticalResolutionCustom == 0 ? (MaxVerticalResolutionAuto != 0 ? MaxVerticalResolutionAuto : 1080) : MaxVerticalResolutionCustom;
 
         /// <summary>
-        /// Monitor's Minimum Nits (for HDRtoSDR)
+        /// Monitor's SDR Minimum Nits (Auto: -1)
         /// </summary>
-        public float            TargetMinNits               { get => _targetMinNits;    set {  if (Set(ref _targetMinNits, value)) player?.Renderer?.FLUpdateTargetNits(); } }
-        float _targetMinNits;
+        public float            TargetSDRMinNits            { get => _targetSDRMinNits;    set {  if (Set(ref _targetSDRMinNits, value)) player?.Renderer?.FLUpdateTargetNitsConfig(false); } }
+        float _targetSDRMinNits = -1;
 
         /// <summary>
-        /// Monitor's Maximum Nits (for HDRtoSDR)
+        /// Monitor's SDR Maximum Nits (Auto: -1)
         /// </summary>
-        public float            TargetMaxNits               { get => _targetMaxNits;    set {  if (Set(ref _targetMaxNits, value)) player?.Renderer?.FLUpdateTargetNits(); } }
-        float _targetMaxNits;
+        public float            TargetSDRPeakNits           { get => _targetSDRPeakNits;    set {  if (Set(ref _targetSDRPeakNits, value)) player?.Renderer?.FLUpdateTargetNitsConfig(false); } }
+        float _targetSDRPeakNits = -1;
+
+        /// <summary>
+        /// Monitor's HDR Minimum Nits (Auto: -1)
+        /// </summary>
+        public float            TargetHDRMinNits            { get => _targetHDRMinNits;    set {  if (Set(ref _targetHDRMinNits, value)) player?.Renderer?.FLUpdateTargetNitsConfig(true); } }
+        float _targetHDRMinNits = -1;
+
+        /// <summary>
+        /// Monitor's HDR Maximum Nits (Auto: -1)
+        /// </summary>
+        public float            TargetHDRPeakNits           { get => _targetHDRPeakNits;    set {  if (Set(ref _targetHDRPeakNits, value)) player?.Renderer?.FLUpdateTargetNitsConfig(true); } }
+        float _targetHDRPeakNits = -1;
 
         /// <summary>
         /// Sets Super Resolution (Nvidia / Intel - D3D11VP only)
