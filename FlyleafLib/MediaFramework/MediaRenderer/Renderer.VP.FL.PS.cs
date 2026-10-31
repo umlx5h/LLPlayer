@@ -130,10 +130,7 @@ color = float4(
         }
 
         if (checkHDRConfig && UsesDisplayMapping)
-        {
-            checkHDRConfig = false;
             FLUpdateTargetNits();
-        }
 
         if (canFL && VideoProcessor != VideoProcessors.SwsScale)
         {

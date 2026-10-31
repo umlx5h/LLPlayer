@@ -544,5 +544,6 @@ public unsafe partial class Renderer
         iccSrv.         Dispose();
         iccTxt.         Dispose();
         FLGamutDispose();
+        checkHDRConfig = true;
     }
 }
