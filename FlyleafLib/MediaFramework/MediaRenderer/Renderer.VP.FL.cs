@@ -154,7 +154,8 @@ public unsafe partial class Renderer
 
         public float BT1886BlackRoot;
         public float BT1886InvRange;
-        Vector2 pad;
+        public float GamutMinPQ;
+        public float GamutInvRangePQ;
 
         public HDRBufferType()
         {
@@ -390,6 +391,9 @@ public unsafe partial class Renderer
         hdrData.BT1886BlackRoot= MathF.Pow(hdrData.TargetMinNits / hdrData.TargetPeakNits, 1.0f / 2.4f);
         hdrData.BT1886InvRange = 1.0f / (1.0f - hdrData.BT1886BlackRoot);
 
+        if (hdrData.NativeOutput == 0)
+            FLGamutUpdateTarget();
+
         hdrData.HLGGamma = hdrData.TargetPeakNits >= 400.0f && hdrData.TargetPeakNits <= 2000.0f ?
             1.2f + 0.42f * MathF.Log10(hdrData.TargetPeakNits / 1000.0f) :          // BT.2100-3
             1.2f * MathF.Pow(1.111f, MathF.Log2(hdrData.TargetPeakNits / 1000.0f)); // BT.2100-3 extended range
@@ -539,5 +543,6 @@ public unsafe partial class Renderer
         blendStateAlpha.Dispose();
         iccSrv.         Dispose();
         iccTxt.         Dispose();
+        FLGamutDispose();
     }
 }

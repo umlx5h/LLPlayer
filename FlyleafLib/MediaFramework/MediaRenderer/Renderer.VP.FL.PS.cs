@@ -103,6 +103,8 @@ color = float4(
             isPQSpline = true;
             FLHDRDetectReset();
             FLDoviReset();
+            if (CanTrace)
+                Log.Trace(FLDoviDump(frame));
         }
         else if (scfg.ColorSpace == ColorSpace.Bt2020 && !iccApplied)
         {

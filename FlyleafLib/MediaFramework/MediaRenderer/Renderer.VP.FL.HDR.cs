@@ -112,7 +112,7 @@ public unsafe partial class Renderer
     {
         context.OMSetRenderTargets(rtvHdr);
         context.RSSetViewport(0, 0, hdrWidth, hdrHeight);
-        context.VSSetShader(vsSimple);
+        context.VSSetShader(vsMain);
         context.PSSetShader(psHdr);
         context.Draw(6, 0);
 
@@ -127,7 +127,7 @@ public unsafe partial class Renderer
     {
         context.OMSetRenderTargets(SwapChain.BackBufferRtv);
         context.RSSetViewport(Viewport);
-        context.VSSetShader(vsMain);
+        //context.VSSetShader(vsMain);
         context.PSSetShader(psShader[psIdPrev]);
     }
 
@@ -380,22 +380,21 @@ public unsafe partial class Renderer
 
     void FLHDRApply()
     {
-        float sourceMinNits  = (float)PQToNits(hdrStats.MinPQ);
-        float detectedPeak   = (float)PQToNits(hdrStats.PeakPQ);
-        float sourcePeakNits = hdrSwapchain ? detectedPeak : MathF.Max(detectedPeak, hdrData.TargetPeakNits);
-        float sourceAvgNits  = Math.Clamp((float)PQToNits(hdrStats.AvgPQ), sourceMinNits, MathF.Max(sourcePeakNits, sourceMinNits));
+        float sourceMinNits     = (float)PQToNits(hdrStats.MinPQ);
+        float sourcePeakNits    = (float)PQToNits(hdrStats.PeakPQ);
+        float sourceAvgNits     = Math.Clamp(
+            (float)PQToNits(hdrStats.AvgPQ),
+            sourceMinNits,
+            MathF.Max(sourcePeakNits, sourceMinNits));
 
-        hdrData.SourceMinNits  = sourceMinNits;
-        hdrData.SourcePeakNits = sourcePeakNits;
+        hdrData.SourceMinNits   = sourceMinNits;
+        hdrData.SourcePeakNits  = sourcePeakNits;
+        float splinePeakNits    = MathF.Max(sourcePeakNits, hdrData.TargetPeakNits);
 
-        // Native HDR passes content through while it fits the display. The
-        // spline is only consumed when sourcePeak > targetPeak. Keep valid
-        // parameters anyway so a target/display change needs no shader rebuild.
-        float splinePeak = MathF.Max(sourcePeakNits, hdrData.TargetPeakNits);
         hdrData.Spline = GetSplineParams(
             sourceMinNits:  sourceMinNits,
-            sourcePeakNits: splinePeak,
-            sourceAvgNits:  Math.Clamp(sourceAvgNits, sourceMinNits, splinePeak),
+            sourcePeakNits: splinePeakNits,
+            sourceAvgNits:  Math.Clamp(sourceAvgNits, sourceMinNits, splinePeakNits),
             targetMinNits:  hdrData.TargetMinNits,
             targetPeakNits: hdrData.TargetPeakNits);
 
@@ -441,14 +440,40 @@ public unsafe partial class Renderer
         psHdr = null;
     }
 
+    const double m1 = 0.1593017578125;
+    const double m2 = 78.84375;
+    const double c1 = 0.8359375;
+    const double c2 = 18.8515625;
+    const double c3 = 18.6875;
+
+    const float m1f = 0.1593017578125f;
+    const float m2f = 78.84375f;
+    const float c1f = 0.8359375f;
+    const float c2f = 18.8515625f;
+    const float c3f = 18.6875f;
+
+    static float PQOetf(float x)
+    {
+        x = MathF.Pow(MathF.Max(x, 0.0f), m1f);
+        x = (c1f + c2f * x) / (1.0f + c3f * x);
+
+        return MathF.Pow(x, m2f);
+    }
+
+    static float PQEotf(float x)
+    {
+        x = Math.Clamp(x, 0.0f, 1.0f);
+        x = MathF.Pow(x, 1.0f / m2f);
+        x = MathF.Max(x - c1f, 0.0f) / (c2f - c3f * x);
+
+        return MathF.Pow(x, 1.0f / m1f);
+    }
+
+    static float NitsToPQ(float nits)
+        => nits <= 0.0f ? 0.0f : PQOetf(Math.Clamp(nits / 10000.0f, 0.0f, 1.0f));
+
     static double NitsToPQ(double nits)
     {
-        const double m1 = 0.1593017578125;
-        const double m2 = 78.84375;
-        const double c1 = 0.8359375;
-        const double c2 = 18.8515625;
-        const double c3 = 18.6875;
-
         double x = Math.Clamp(nits / 10_000.0, 0.0, 1.0);
 
         x = Math.Pow(x, m1);
@@ -458,12 +483,6 @@ public unsafe partial class Renderer
     }
     static double PQToNits(double pq)
     {
-        const double m1 = 0.1593017578125;
-        const double m2 = 78.84375;
-        const double c1 = 0.8359375;
-        const double c2 = 18.8515625;
-        const double c3 = 18.6875;
-
         double x = Math.Clamp(pq, 0.0, 1.0);
 
         x = Math.Pow(x, 1.0 / m2);
