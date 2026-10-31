@@ -212,6 +212,7 @@ public unsafe partial class Renderer : IVP
         var oldVP       = VideoProcessor;
         var vpRequests  = VPRequestType.RotationFlip | VPRequestType.Crop | VPRequestType.UpdatePS; // TBR: we should set them all here as we don't compare with previous states
         VideoProcessor  = VPSelection();
+        isHdr           = false;
 
         if (CanTrace) Log.Trace($"Preparing planes for {scfg.PixelFormatStr} with {VideoProcessor}");
 
@@ -279,6 +280,8 @@ public unsafe partial class Renderer : IVP
     void IVP.MonitorChanged(GPUOutput monitor)
     {
         ucfg.MaxVerticalResolutionAuto  = monitor.Height;
+        FLUpdateTargetNits();
+
         // currently not used (int accurate instead of double)
         //refreshRateTicks = (int)((1.0 / monitor.RefreshRate) * 1000 * 10000);
     }
@@ -424,10 +427,9 @@ enum VPRequestType
     Viewport        = 1 << 6,
 
     Deinterlace     = 1 << 7,   // D3D11
-    HDRtoSDR        = 1 << 8,   // Flyleaf
-    UpdatePS        = 1 << 9,   // Flyleaf
-    UpdateVS        = 1 << 10,  // Flyleaf
-    Pano360         = 1 << 11,  // Flyleaf - 360 Panoramic params update
+    UpdatePS        = 1 << 8,   // Flyleaf
+    UpdateVS        = 1 << 9,  // Flyleaf
+    Pano360         = 1 << 10,  // Flyleaf - 360 Panoramic params update
 }
 
 public class VPConfig : NotifyPropertyChanged

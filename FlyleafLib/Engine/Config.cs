@@ -722,6 +722,18 @@ public class Config : NotifyPropertyChanged
         public int              MaxVerticalResolution       => MaxVerticalResolutionCustom == 0 ? (MaxVerticalResolutionAuto != 0 ? MaxVerticalResolutionAuto : 1080) : MaxVerticalResolutionCustom;
 
         /// <summary>
+        /// Monitor's Minimum Nits (for HDRtoSDR)
+        /// </summary>
+        public float            TargetMinNits               { get => _targetMinNits;    set {  if (Set(ref _targetMinNits, value)) player?.Renderer?.FLUpdateTargetNits(); } }
+        float _targetMinNits;
+
+        /// <summary>
+        /// Monitor's Maximum Nits (for HDRtoSDR)
+        /// </summary>
+        public float            TargetMaxNits               { get => _targetMaxNits;    set {  if (Set(ref _targetMaxNits, value)) player?.Renderer?.FLUpdateTargetNits(); } }
+        float _targetMaxNits;
+
+        /// <summary>
         /// Sets Super Resolution (Nvidia / Intel - D3D11VP only)
         /// </summary>
         public bool             SuperResolution             { get => _SuperResolution;  set { if (Set(ref _SuperResolution, value)) player?.Renderer?.VPRequest(VPRequestType.Viewport); } }
@@ -767,12 +779,6 @@ public class Config : NotifyPropertyChanged
         /// Scaling quality used for bitmap subtitle rendering.
         /// </summary>
         public SwsFlags         BitmapSubsScaleQuality      { get; set; } = SwsFlags.Bilinear | SwsFlags.Bitexact;
-
-        /// <summary>
-        /// HDR Brightness [-100 to 100]
-        /// </summary>
-        public int              HDRBrightness               { get => _HDRBrightness; set { if (Set(ref _HDRBrightness, value)) player?.Renderer.FLSetHDRBrightness(); } }
-        int _HDRBrightness;
 
         public event EventHandler<ID2D1DeviceContext> D2DInitialized;
         public event EventHandler<ID2D1DeviceContext> D2DDisposing;

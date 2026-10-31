@@ -27,7 +27,6 @@ struct ConfigData
 {
     int coefsIndex;
 
-    float hdrBrightness;
     float brightness;
     float contrast;
     float hue;
@@ -42,7 +41,6 @@ struct ConfigData
     float splineQa;
     float splineQb;
 
-    float pqScale;
     float sourceMinNits;
     float sourcePeakNits;
     float targetMinNits;
@@ -254,7 +252,7 @@ inline float3 GamutCompress709(float3 c, float knee)
 }
 #endif
 
-#if defined(dPQ) || defined(dPQSpline)
+#if defined(dPQSpline) || defined(dHDRDetect)
 static const float ST2084_m1 = 0.1593017578125;
 static const float ST2084_m2 = 78.84375;
 static const float ST2084_c1 = 0.8359375;
@@ -272,7 +270,7 @@ inline float3 PQToLinear(float3 rgb, float factor)
 }
 #endif
 
-#if defined(dPQSpline)
+#if defined(dPQSpline) || defined(dHDRDetect)
 inline float PQToNits(float pq)
 {
     pq = max(pq, 0.0);
@@ -428,25 +426,30 @@ float4 main(PSInput input) : SV_TARGET
     float3 c = color.rgb;
 
 #if defined(dYUVLimited)
-    #if defined(dFilters)
+    #if defined(dFilters) && !defined(dHDRDetect)
         c.x = Contrast(c.x, Config.contrast);
     #endif
 	c = YUVToRGBLimited(c);
 #elif defined(dYUVFull)
-    #if defined(dFilters)
+    #if defined(dFilters) && !defined(dHDRDetect)
         c.x = Contrast(c.x, Config.contrast);
     #endif
 	c = YUVToRGBFull(c);
 #endif
 
-#if defined(dICC)
+#if defined(dHDRDetect)
+    c = PQToLinear(c, 10000.0);
+
+    static const float3 luma2020 = float3(0.2627, 0.6780, 0.0593);
+    float y = dot(c, luma2020);
+
+    return float4(NitsToPQ(max(y, 0.0)), 0.0, 0.0, 1.0);
+#elif defined(dICC)
     c = ApplyICC(c);
 #elif defined(dBT1886ToLinear)
     c = BT1886ToLinear(c);
 #elif defined(dHLG)
     c = HLGToDisplayLinear(c, Config.targetPeakNits);
-#elif defined(dPQ)
-    c = PQToLinear(c, Config.pqScale);
 #elif defined(dPQSpline)
     c = PQToLinear(c, 10000.0);
 
@@ -464,20 +467,9 @@ float4 main(PSInput input) : SV_TARGET
 #endif
 
 #if defined(dBT2020)
-    float hdrY = dot(c, float3(0.2627, 0.6780, 0.0593));
-
-    if (hdrY > 0.0)
-    {
-        float u         = saturate(hdrY);
-        float gain      = Config.hdrBrightness;
-        float adjustedY = (gain * u) / (1.0 + (gain - 1.0) * u);
-        c *= adjustedY / hdrY;
-    }
-
     c = Gamut2020To709(c);
     #if !defined(dBT1886ToLinear)
-        c /= max(max(c.r, max(c.g, c.b)), 1.0); // HDR Brightness could cause this
-        c = GamutCompress709(c, 1.0);
+        c = GamutCompress709(c, 1.00);
     #endif
     c = saturate(c);
     c = pow(c, 1.0 / 2.2);

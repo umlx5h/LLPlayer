@@ -110,9 +110,8 @@ public unsafe partial class Renderer
     [StructLayout(LayoutKind.Sequential)]
     struct PSBufferType
     {
-        public int CoeffsIndex;
+        public int   CoeffsIndex;
 
-        public float HDRBrightness; // 0.25  to 4.0     (0.0 default) | 2^(-2) -> 2^2
         public float Brightness;    // -0.5  to 0.5     (0.0 default)
         public float Contrast;      //  0.0  to 2.0     (1.0 default)
         public float Hue;           // -3.14 to 3.14    (0.0 default)
@@ -122,7 +121,6 @@ public unsafe partial class Renderer
 
         public ToneSplineParams Spline;
 
-        public float PQScale;
         public float SourceMinNits;
         public float SourcePeakNits;
         public float TargetMinNits;
@@ -134,9 +132,6 @@ public unsafe partial class Renderer
             Contrast   = 1;
             Hue        = 0;
             Saturation = 1;
-
-            Spline = new ToneSplineParams { Slope = 1 };
-            TargetPeakNits = 100;
         }
     }
 
@@ -313,40 +308,29 @@ public unsafe partial class Renderer
         vpRequests &= ~VPRequestType.Crop;
         vpRequests |=  VPRequestType.Viewport | VPRequestType.UpdateVS;
     }
-    internal void FLSetHDRBrightness(bool request = true)
+    internal void FLUpdateTargetNits(bool request = true)
     {
-        psData.HDRBrightness = MathF.Pow(2f, Scale(ucfg.HDRBrightness, -100, 100, -2, 2));
+        if (scfg == null || scfg.HDRFormat == HDRFormat.None || SwapChain.Monitor == null)
+            return;
+
+        FLHDRDetectReset();
+
+        psData.TargetPeakNits   = GetMonitorPeakNits();
+        psData.TargetMinNits    = ucfg.TargetMinNits > 0 ? ucfg.TargetMinNits : SwapChain.Monitor.MinLuminance;
+
         if (request)
             VPRequest(VPRequestType.UpdatePS);
     }
-    void FLSetHDRtoSDR()
+    float GetMonitorPeakNits()
     {
-        if (scfg == null || scfg.HDRFormat == HDRFormat.None) // TBR scfg?
-            return;
+        if (ucfg.TargetMaxNits > 0)
+            return ucfg.TargetMaxNits;
 
-        var targetMinNits  = SwapChain.Monitor.MinLuminance;
-        var targetPeakNits = SwapChain.Monitor.MaxLuminance;
-        if (targetPeakNits == 0)
-            targetPeakNits = 203;
+        var maxLum = SwapChain.Monitor.MaxLuminance;
+        if (maxLum > 0)
+            return maxLum;
 
-        psData.SourceMinNits    = scfg.sourceMinNits;
-        psData.SourcePeakNits   = scfg.sourcePeakNits;
-        psData.TargetMinNits    = targetMinNits;
-        psData.TargetPeakNits   = targetPeakNits;;
-
-        if (scfg.HDRFormat == HDRFormat.HLG) { }
-        else if (scfg.sourcePeakNits <= targetPeakNits)
-            psData.PQScale = 10_000f / targetPeakNits;
-        else
-            psData.Spline = GetSplineParams(
-                sourceMinNits:  scfg.sourceMinNits,
-                sourcePeakNits: scfg.sourcePeakNits,
-                sourceAvgNits:  scfg.sourceAvgNits,
-                targetMinNits:  targetMinNits,
-                targetPeakNits: targetPeakNits);
-        
-        vpRequests &= ~VPRequestType.HDRtoSDR;
-        vpRequests |=  VPRequestType.UpdatePS;
+        return 203;
     }
     void FLSetPano360()
     {
@@ -393,9 +377,6 @@ public unsafe partial class Renderer
             if (vpRequests.HasFlag(VPRequestType.Viewport))
                 FLSetViewport();
 
-            if (vpRequests.HasFlag(VPRequestType.HDRtoSDR))
-                FLSetHDRtoSDR();
-
             if (vpRequests.HasFlag(VPRequestType.Pano360))
                 FLSetPano360();
 
@@ -404,7 +385,6 @@ public unsafe partial class Renderer
 
             if (vpRequests.HasFlag(VPRequestType.UpdatePS))
                 context.UpdateSubresource(psData, psBuffer);
-                
         }
     }
     void FLRender(VideoFrame frame)
@@ -415,6 +395,7 @@ public unsafe partial class Renderer
         context.OMSetRenderTargets(SwapChain.BackBufferRtv);
         context.ClearRenderTargetView(SwapChain.BackBufferRtv, ucfg.flBackColor);
         context.PSSetShaderResources(0, frame.SRV);
+        FLHDRDetect();
         context.Draw(6, 0);
 
         if (context2d != null)
@@ -424,9 +405,11 @@ public unsafe partial class Renderer
     }
     void FLRender(ID3D11ShaderResourceView[] srvs, ID3D11RenderTargetView rtv, Viewport view)
     {
+        context.PSSetShaderResources(0, srvs);
+        FLHDRDetectReset();
+        FLHDRDetect();
         context.OMSetRenderTargets(rtv);
         context.RSSetViewport(view);
-        context.PSSetShaderResources(0, srvs);
         context.Draw(6, 0);
     }
 
@@ -436,6 +419,7 @@ public unsafe partial class Renderer
         // TODO: Dispose filters?*
         SwsDispose();
         SubsDispose();
+        FLHDRDispose();
 
         if (snapshot != null)
         {
@@ -462,236 +446,4 @@ public unsafe partial class Renderer
         iccSrv.         Dispose();
         iccTxt.         Dispose();
     }
-
-    #region HDR -> SDR
-    internal static bool GetHdr10PlusPeak(AVDynamicHDRPlus* hdr, out float peakNits, out float avgNits)
-    {
-        ref var p = ref hdr->@params._0;
-
-        double r = p.maxscl[0].ToDouble();
-        double g = p.maxscl[1].ToDouble();
-        double b = p.maxscl[2].ToDouble();
-
-        double maxRgb = Math.Max(r, Math.Max(g, b));
-
-        if (maxRgb > 0)
-        {
-            double peak =
-                0.2627 * r +
-                0.6780 * g +
-                0.0593 * b;
-
-            double avg =
-                p.average_maxrgb.ToDouble() *
-                peak / maxRgb;
-
-            peakNits = (float)(peak * 10000.0);
-            avgNits  = (float)(avg  * 10000.0);
-
-            return float.IsFinite(peakNits) && peakNits > 0;
-        }
-
-        double max = 0;
-
-        for (int i = 0; i < p.num_distribution_maxrgb_percentiles; i++)
-            max = Math.Max(
-                max,
-                p.distribution_maxrgb[i].percentile.ToDouble());
-
-        if (max <= 0)
-        {
-            peakNits = 0;
-            avgNits  = 0;
-            return false;
-        }
-
-        peakNits = (float)(max * 10000.0);
-        avgNits  = (float)(p.average_maxrgb.ToDouble() * 10000.0);
-
-        return true;
-    }
-
-    internal struct AVDOVIDecoderConfigurationRecord
-    {
-        public byte dv_version_major;
-        public byte dv_version_minor;
-        public byte dv_profile;
-        public byte dv_level;
-        public byte rpu_present_flag;
-        public byte el_present_flag;
-        public byte bl_present_flag;
-        public byte dv_bl_signal_compatibility_id;
-        public byte dv_md_compression;
-    }
-    static double NitsToPQ(double nits)
-    {
-        const double m1 = 0.1593017578125;
-        const double m2 = 78.84375;
-        const double c1 = 0.8359375;
-        const double c2 = 18.8515625;
-        const double c3 = 18.6875;
-
-        double x = Math.Clamp(nits / 10_000.0, 0.0, 1.0);
-
-        x = Math.Pow(x, m1);
-        x = (c1 + c2 * x) / (1.0 + c3 * x);
-
-        return Math.Pow(x, m2);
-    }
-    static double SmoothStep(double edge0, double edge1, double x)
-    {
-        x = Math.Clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
-        return x * x * (3.0 - 2.0 * x);
-    }
-
-    static ToneSplineParams GetSplineParams(
-        double sourceMinNits,
-        double sourcePeakNits,
-        double sourceAvgNits,
-        double targetMinNits,
-        double targetPeakNits,
-        double contrast = 0.5)
-    {
-        const double kneeAdaptation = 0.4;
-        const double kneeMinimum    = 0.1;
-        const double kneeMaximum    = 0.8;
-        const double kneeDefault    = 0.4;
-
-        const double slopeTuning = 1.5;
-        const double slopeOffset = 0.2;
-
-        double srcMin = NitsToPQ(sourceMinNits);
-        double srcMax = NitsToPQ(sourcePeakNits);
-
-        double dstMin = NitsToPQ(targetMinNits);
-        double dstMax = NitsToPQ(targetPeakNits);
-
-        // ---- Choose source pivot ---------------------------------------
-
-        double srcKneeMin =
-            srcMin + (srcMax - srcMin) * kneeMinimum;
-
-        double srcKneeMax =
-            srcMin + (srcMax - srcMin) * kneeMaximum;
-
-        double srcPivot;
-
-        if (sourceAvgNits > 0)
-        {
-            srcPivot = NitsToPQ(sourceAvgNits);
-        }
-        else
-        {
-            srcPivot =
-                srcMin + (srcMax - srcMin) * kneeDefault;
-        }
-
-        srcPivot = Math.Clamp(srcPivot, srcKneeMin, srcKneeMax);
-
-        // ---- Choose destination pivot --------------------------------
-
-        double target =
-            (srcPivot - srcMin) / (srcMax - srcMin);
-
-        double adapted =
-            dstMin + (dstMax - dstMin) * target;
-
-        double dstKneeMin =
-            dstMin + (dstMax - dstMin) * kneeMinimum;
-
-        double dstKneeMax =
-            dstMin + (dstMax - dstMin) * kneeMaximum;
-
-        double tuning =
-            1.0 -
-            SmoothStep(kneeMaximum, kneeDefault, target) *
-            SmoothStep(kneeMinimum, kneeDefault, target);
-
-        double adaptation =
-            kneeAdaptation +
-            (1.0 - kneeAdaptation) * tuning;
-
-        double dstPivot =
-            srcPivot + (adapted - srcPivot) * adaptation;
-
-        dstPivot = Math.Clamp(dstPivot, dstKneeMin, dstKneeMax);
-
-        // ---- Slope at pivot ------------------------------------------
-
-        double slope =
-            (dstPivot - dstMin) /
-            (srcPivot - srcMin);
-
-        double ratio =
-            srcMax / dstMax - 1.0;
-
-        ratio = Math.Clamp(
-            slopeTuning * ratio,
-            slopeOffset,
-            1.0 + slopeOffset);
-
-        slope = Math.Pow(
-            slope,
-            (1.0 - contrast) * ratio);
-
-        // ---- Polynomial coefficients --------------------------------
-
-        double inMin  = srcMin - srcPivot;
-        double inMax  = srcMax - srcPivot;
-
-        double outMin = dstMin - dstPivot;
-        double outMax = dstMax - dstPivot;
-
-        // Lower side: quadratic
-        double pa =
-            (outMin - slope * inMin) /
-            (inMin * inMin);
-
-        // Upper side: cubic
-        double t = 2.0 * inMax * inMax;
-
-        double qa =
-            (slope * inMax - outMax) /
-            (inMax * t);
-
-        double qb =
-            -3.0 * (slope * inMax - outMax) / t;
-
-        return new()
-        {
-            SrcPivot = (float)srcPivot,
-            DstPivot = (float)dstPivot,
-            Pa       = (float)pa,
-            Slope    = (float)slope,
-            Qa       = (float)qa,
-            Qb       = (float)qb,
-        };
-    }
-
-    /* TODO: HDR10Plus during FLRender (Spline will not work as-is, it flashes frame by frame)
-        if (scfg.HDRFormat == HDRFormat.HDRPlus)
-        {
-            var hdrPlusSide = av_frame_get_side_data(frame.AVFrame, AVFrameSideDataType.DynamicHdrPlus);
-            if (hdrPlusSide != null)
-            {
-                var hdrPlus = (AVDynamicHDRPlus*) hdrPlusSide->data;
-                if (hdrPlus != null && hdrPlus->num_windows != 0 && hdrPlus->application_version <= 1)
-                {
-                    if (!MediaStream.VideoStream.GetHdr10PlusPeak(hdrPlus, out var peak, out var avg))
-                        Log.Error("========================================================");
-
-                    if (peak != scfg.sourcePeakNits || avg != scfg.sourceAvgNits)
-                    {
-                        Log.Debug($"{peak} ({avg})");
-                        scfg.sourcePeakNits = peak;
-                        scfg.sourceAvgNits  = avg;
-                        FLSetHDRtoSDR();
-                        context.UpdateSubresource(psData, psBuffer);
-                        vpRequests &= ~VPRequestType.UpdatePS;
-                    }
-                }
-            }
-        }
-        */
-    #endregion
 }

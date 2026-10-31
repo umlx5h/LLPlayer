@@ -160,6 +160,18 @@ public static partial class Utils
         return Math.Abs(value - nearest) < epsilon ? nearest : value;
     }
 
+    public static double SmoothStep(double edge0, double edge1, double x)
+    {
+        x = Math.Clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
+        return x * x * (3.0 - 2.0 * x);
+    }
+
+    public static float SmoothStep(float edge0, float edge1, float x)
+    {
+        x = Math.Clamp((x - edge0) / (edge1 - edge0), 0, 1);
+        return x * x * (3.0f - 2.0f * x);
+    }
+
     /// <summary>
     /// Adds a windows firewall rule if not already exists for the specified program path
     /// </summary>

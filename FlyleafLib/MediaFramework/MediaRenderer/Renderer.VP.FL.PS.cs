@@ -20,7 +20,6 @@ public unsafe partial class Renderer
     const string dBT1886ToLinear= "dBT1886ToLinear";
     const string dBT2020        = "dBT2020";
     const string dHLG           = "dHLG";
-    const string dPQ            = "dPQ";
     const string dPQSpline      = "dPQSpline";
     const string dFilters       = "dFilters";
     const string dPano360       = "dPano360";
@@ -40,6 +39,7 @@ color = float4(
     PSCase  psCase;
     string  psId, psIdPrev;
     nint    iccSrc;
+    bool    isHdr;
 
     bool FLSwsConfig()
     {
@@ -85,33 +85,30 @@ color = float4(
 
         if (scfg.ColorSpace == ColorSpace.Bt2020 && !iccApplied)
         {
-            FLSetHDRBrightness(false);
-            vpRequestsIn |= VPRequestType.HDRtoSDR;
             defines.Add(dBT2020);
-
-            float targetPeakNits = SwapChain.Monitor.MaxLuminance;
-            if (targetPeakNits == 0)
-                targetPeakNits = 203;
 
             if (scfg.HDRFormat == HDRFormat.None)
             {
                 psId += "b";
                 defines.Add(dBT1886ToLinear);
             }
-            else if (scfg.HDRFormat == HDRFormat.HLG)
+
+            else
             {
-                psId += "g";
-                defines.Add(dHLG);
-            }
-            else if (scfg.sourcePeakNits <= targetPeakNits)
-            {
-                psId += "p";
-                defines.Add(dPQ);
-            }
-            else // if (scfg.HDRFormat >= HDRFormat.HDR)
-            {
-                psId += "s";
-                defines.Add(dPQSpline);
+                FLUpdateTargetNits(false);
+
+                if (scfg.HDRFormat == HDRFormat.HLG)
+                {
+                    psId += "g";
+                    defines.Add(dHLG);
+                }
+
+                else // HDR10 / HDR10+ / Dolby Vision
+                {
+                    psId += "p";
+                    defines.Add(dPQSpline);
+                    isHdr = true;
+                }
             }
         }
 
@@ -122,6 +119,7 @@ color = float4(
             else
             {
                 FLSWConfig();
+
                 if (psCase == PSCase.None)
                 {
                     // TBR: Fallback (recursion for psId/defines mainly*?) | TBR: if enabled (maybe only for Y210? old GPUs?)
@@ -183,12 +181,12 @@ color = float4(
         switch (ucfg._SplitFrameAlphaPosition)
         {
             case SplitFrameAlphaPosition.None:
-                SetPS(psId, HWSAMPLE, defines);
+                SetPS(HWSAMPLE, defines);
                 break;
 
             case SplitFrameAlphaPosition.Left:
                 psId += "l";
-                SetPS(psId, @"
+                SetPS(@"
 color.rgb = float3(
 Texture1.Sample(Sampler, float2(0.5 + (input.Texture.x / 2), input.Texture.y)).r,
 Texture2.Sample(Sampler, float2(0.5 + (input.Texture.x / 2), input.Texture.y)).rg);" +
@@ -197,7 +195,7 @@ SampleSplitFrameAlpha("input.Texture.x / 2", "input.Texture.y"), defines);
 
                 case SplitFrameAlphaPosition.Right:
                 psId += "r";
-                SetPS(psId, @"
+                SetPS(@"
 color.rgb = float3(
 Texture1.Sample(Sampler, float2(input.Texture.x / 2, input.Texture.y)).r,
 Texture2.Sample(Sampler, float2(input.Texture.x / 2, input.Texture.y)).rg);" +
@@ -206,7 +204,7 @@ SampleSplitFrameAlpha("0.5 + (input.Texture.x / 2)", "input.Texture.y"), defines
 
                 case SplitFrameAlphaPosition.Top:
                 psId += "t";
-                SetPS(psId, @"
+                SetPS(@"
 color.rgb = float3(
 Texture1.Sample(Sampler, float2(input.Texture.x, 0.5 + (input.Texture.y / 2))).r,
 Texture2.Sample(Sampler, float2(input.Texture.x, 0.5 + (input.Texture.y / 2))).rg);" +
@@ -215,7 +213,7 @@ SampleSplitFrameAlpha("input.Texture.x", "input.Texture.y / 2"), defines);
 
                 case SplitFrameAlphaPosition.Bottom:
                 psId += "b";
-                SetPS(psId, @"
+                SetPS(@"
 color.rgb = float3(
 Texture1.Sample(Sampler, float2(input.Texture.x, input.Texture.y / 2)).r,
 Texture2.Sample(Sampler, float2(input.Texture.x, input.Texture.y / 2)).rg);" +
@@ -299,7 +297,7 @@ float4 c2 = Texture1.Sample(Sampler, float2(pos2, input.Texture.y));
             {
                 psId += "a";
 
-                SetPS(psId, header + @"
+                SetPS(header + @"
 float  leftY    = lerp(c1.r, c1.b, fx * 2);
 float  rightY   = lerp(c1.b, c2.r, fx * 2 - 1);
 float2 outUV    = lerp(c1.ga, c2.ga, fx);
@@ -311,7 +309,7 @@ color = float4(outY, outUV, 1.0f);
             {
                 psId += "b";
 
-                SetPS(psId, header + @"
+                SetPS(header + @"
 float  leftY    = lerp(c1.r, c1.b, fx * 2);
 float  rightY   = lerp(c1.b, c2.r, fx * 2 - 1);
 float2 outUV    = lerp(c1.ag, c2.ag, fx);
@@ -323,7 +321,7 @@ color = float4(outY, outUV, 1.0f);
             {
                 psId += "c";
 
-                SetPS(psId, header + @"
+                SetPS(header + @"
 float  leftY    = lerp(c1.g, c1.a, fx * 2);
 float  rightY   = lerp(c1.a, c2.g, fx * 2 - 1);
 float2 outUV    = lerp(c1.rb, c2.rb, fx);
@@ -364,7 +362,7 @@ color = float4(outY, outUV, 1.0f);
             switch (ucfg._SplitFrameAlphaPosition)
             {
                 case SplitFrameAlphaPosition.None:
-                    SetPS(psId, @"
+                    SetPS(@"
 color = float4(
 Texture1.Sample(Sampler, input.Texture).r,
 Texture2.Sample(Sampler, input.Texture)." + offsets + @",
@@ -373,7 +371,7 @@ Texture2.Sample(Sampler, input.Texture)." + offsets + @",
                     break;
                 case SplitFrameAlphaPosition.Left:
                     psId += "l";
-                    SetPS(psId, @"
+                    SetPS(@"
 color.rgb = float3(
 Texture1.Sample(Sampler, float2(0.5 + (input.Texture.x / 2), input.Texture.y)).r,
 Texture2.Sample(Sampler, float2(0.5 + (input.Texture.x / 2), input.Texture.y))." + offsets +
@@ -381,7 +379,7 @@ SampleSplitFrameAlpha("input.Texture.x / 2", "input.Texture.y"), defines);
                     break;
                 case SplitFrameAlphaPosition.Right:
                     psId += "r";
-                    SetPS(psId, @"
+                    SetPS(@"
 color.rgb = float3(
 Texture1.Sample(Sampler, float2(input.Texture.x / 2, input.Texture.y)).r,
 Texture2.Sample(Sampler, float2(input.Texture.x / 2, input.Texture.y))." + offsets +
@@ -389,7 +387,7 @@ SampleSplitFrameAlpha("0.5 + (input.Texture.x / 2)", "input.Texture.y"), defines
                     break;
                 case SplitFrameAlphaPosition.Top:
                     psId += "t";
-                    SetPS(psId, @"
+                    SetPS(@"
 color.rgb = float3(
 Texture1.Sample(Sampler, float2(input.Texture.x, 0.5 + (input.Texture.y / 2))).r,
 Texture2.Sample(Sampler, float2(input.Texture.x, 0.5 + (input.Texture.y / 2)))." + offsets +
@@ -397,7 +395,7 @@ SampleSplitFrameAlpha("input.Texture.x", "input.Texture.y / 2"), defines);
                     break;
                 case SplitFrameAlphaPosition.Bottom:
                     psId += "b";
-                    SetPS(psId, @"
+                    SetPS(@"
 color.rgb = float3(
 Texture1.Sample(Sampler, float2(input.Texture.x, input.Texture.y / 2)).r,
 Texture2.Sample(Sampler, float2(input.Texture.x, input.Texture.y / 2))." + offsets +
@@ -506,7 +504,7 @@ SampleSplitFrameAlpha("input.Texture.x", "0.5 + (input.Texture.y / 2)");
                         break;
                 }
 
-            SetPS(psId, shader, defines);
+            SetPS(shader, defines);
         }
 
         return true;
@@ -572,7 +570,7 @@ color.rgb = (color.rgb - rgbOffset) * rgbScale;
 ";
             }
 
-            SetPS(psId, shader, defines);
+            SetPS(shader, defines);
         }
 
         // [BGR/RGB]16
@@ -608,7 +606,7 @@ color.rgb = (color.rgb - rgbOffset) * rgbScale;
 ";
             }
 
-            SetPS(psId, shader, defines);
+            SetPS(shader, defines);
         }
 
         // GBR(A)
@@ -681,7 +679,7 @@ color.rgb = (color.rgb - rgbOffset) * rgbScale;
                 shader += @"
 color.a = 1.0f;
 ";
-            SetPS(psId, shader, defines);
+            SetPS(shader, defines);
         }
 
         return true;
@@ -725,7 +723,7 @@ color.rgb = (color.rgb - rgbOffset) * rgbScale;
 ";
         }
 
-        SetPS(psId, shader, defines);
+        SetPS(shader, defines);
 
         return true;
     }
@@ -818,7 +816,7 @@ color.a = YUVToRGBFull(float3(Texture1.Sample(Sampler, float2({x}, {y})).r, floa
         return mFrame;
     }
 
-    void SetPS(string uniqueId, ReadOnlySpan<char> sampleHLSL, List<string> defines = null)
+    void SetPS(ReadOnlySpan<char> sampleHLSL, List<string> defines = null)
     {
         // Already set with PSSetShader
         if (VideoProcessor == VideoProcessors.D3D11 || psId == psIdPrev)
@@ -827,13 +825,15 @@ color.a = YUVToRGBFull(float3(Texture1.Sample(Sampler, float2({x}, {y})).r, floa
         // Check local cache (TBR: might up limit?)
         if (!psShader.TryGetValue(psId, out var shader))
         {   // Check global/static cache for Blob
-            shader = ShaderCompiler.CompilePS(device, uniqueId, sampleHLSL, defines);
+            shader = ShaderCompiler.CompilePS(device, psId, sampleHLSL, defines);
             psShader[psId] = shader;
         }
 
         // Save CurShader so we can set it back again if we switch temporary?*
         context.PSSetShader(shader);
         psIdPrev = psId;
+
+        FLHDRSetPS(sampleHLSL, defines);
     }
 }
 

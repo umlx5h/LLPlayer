@@ -169,12 +169,12 @@
                     <StackPanel Orientation="Horizontal">
                         <TextBlock
                             Width="180"
-                            Text="Brightness (HDR)" />
+                            Text="Monitor Peak (Nits)" />
                         <Slider
                             Width="200"
-                            Value="{Binding FL.PlayerConfig.Video.HDRBrightness}"
-                            Minimum="-100"
-                            Maximum="100"
+                            Value="{Binding FL.PlayerConfig.Video.TargetMaxNits}"
+                            Minimum="0"
+                            Maximum="800"
                             Style="{StaticResource MaterialDesignDiscreteSlider}"
                             materialDesign:SliderAssist.OnlyShowFocusVisualWhileDragging="True"
                             VerticalAlignment="Center"
@@ -182,7 +182,7 @@
                         <TextBox
                             Width="30"
                             Margin="4 0 0 0"
-                            Text="{Binding FL.PlayerConfig.Video.HDRBrightness}"
+                            Text="{Binding FL.PlayerConfig.Video.TargetMaxNits}"
                             helpers:TextBoxHelper.OnlyNumeric="Int" />
                     </StackPanel>
                 </StackPanel>
