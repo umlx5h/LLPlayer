@@ -7,7 +7,11 @@ inputs:
   yt-dlp-version:
     description: 'yt-dlp version to download'
     required: false
-    default: '2025.08.20'
+    default: '2026.10.26'
+  deno-version:
+    description: 'Deno version to download'
+    required: false
+    default: 'v2.9.8'
 runs:
   using: "composite"
   steps:
@@ -88,6 +92,17 @@ runs:
         $outDir = "$pub\Plugins\YoutubeDL"
         New-Item -Path "$outDir\yt-dlp.exe_here" -ItemType File
         Invoke-WebRequest -Uri "$url" -OutFile "$outDir\yt-dlp.exe"
+
+    - name: Download deno.exe
+      shell: pwsh
+      run: |
+        $pub = "${{ runner.temp }}\publish"
+        $ver = "${{ inputs.deno-version }}"
+        $url = "https://github.com/denoland/deno/releases/download/$ver/deno-x86_64-pc-windows-msvc.zip"
+        $archive = "${{ runner.temp }}\deno.zip"
+        $outDir = "$pub\Plugins\YoutubeDL"
+        Invoke-WebRequest -Uri "$url" -OutFile "$archive"
+        Expand-Archive -LiteralPath "$archive" -DestinationPath "$outDir" -Force
 
     - name: Archive with 7-Zip
       id: archive
