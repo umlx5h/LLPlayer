@@ -105,6 +105,13 @@ public abstract class MicrosoftTranslateSettings : NotifyPropertyChanged, ITrans
         get;
         set
         {
+            // For compatibility, upgrade the former built-in Bing endpoint in saved configs.
+            if (this is BingTranslateSettings &&
+                value == "https://api-edge.cognitive.microsofttranslator.com")
+            {
+                value = DefaultEndpoint;
+            }
+
             if (Set(ref field, value))
             {
                 CmdSetDefaultEndpoint.OnCanExecuteChanged();
@@ -120,7 +127,7 @@ public abstract class MicrosoftTranslateSettings : NotifyPropertyChanged, ITrans
 
     public int TimeoutMs { get; set => Set(ref field, value); } = 10000;
 
-    public Dictionary<string, string> Regions { get; set; } = new(MicrosoftTranslateServiceBase.DefaultRegions);
+    public Dictionary<string, string> Regions { get; set; } = new(AzureTranslateService.DefaultRegions);
 
     /// <summary>
     /// for Settings
@@ -153,7 +160,7 @@ public abstract class MicrosoftTranslateSettings : NotifyPropertyChanged, ITrans
 
     private ObservableCollection<LanguageRegions> LoadLanguageRegions()
     {
-        List<LanguageRegions> preferences = MicrosoftTranslateServiceBase.Regions;
+        List<LanguageRegions> preferences = AzureTranslateService.Regions;
 
         foreach (LanguageRegions p in preferences)
         {
@@ -175,7 +182,7 @@ public abstract class MicrosoftTranslateSettings : NotifyPropertyChanged, ITrans
 
 public class BingTranslateSettings : MicrosoftTranslateSettings
 {
-    private const string DefaultEndpointValue = "https://api-edge.cognitive.microsofttranslator.com";
+    private const string DefaultEndpointValue = "https://edge.microsoft.com";
 
     public BingTranslateSettings() : base(DefaultEndpointValue) { }
 
