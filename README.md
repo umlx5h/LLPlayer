@@ -297,15 +297,10 @@ https://github.com/umlx5h/LLPlayer/wiki/Browser-Extensions-Integration
 
 #### Q: How do I update yt-dlp.exe?
 
-`yt-dlp.exe` is located in the following path.
+Close LLPlayer, then run `Download-YTDLP.bat` in the same folder as `LLPlayer.exe`.
+The script automatically downloads the latest stable versions of both `yt-dlp.exe` and `deno.exe` and installs them in `Plugins/YoutubeDL`.
 
-`Plugins/YoutubeDL/yt-dlp.exe`
-
-You can download latest version executable from the following.
-
-https://github.com/yt-dlp/yt-dlp/releases/
-
-If you want to update, please download and copy it to the specified path.
+Wait until the script displays `[OK] Installed versions:`, then restart LLPlayer.
 
 #### Q: What is the difference between VLC and LLPlayer?
 

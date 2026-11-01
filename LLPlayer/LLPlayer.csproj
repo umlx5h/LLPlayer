@@ -55,4 +55,10 @@
     <Resource Include="Resources\Images\play.png" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Download-YTDLP.bat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
