@@ -10,13 +10,16 @@ public unsafe class VideoFrame : FrameBase
 {
     public ID3D11Texture2D[]                Texture;    // Planes (we just keep them alive for SRVs - not used anywhere*)
     public ID3D11ShaderResourceView[]       SRV;        // Views (FlyleafVP)
+    public ID3D11ShaderResourceView[]       SRVFEL;     // Enhancement-layer Y/UV views (lazy, owned)
     public ID3D11VideoProcessorInputView    VPIV;       // Views (D3D11VP)
     public AVFrame*                         AVFrame;    // HW Decoded only - to keep the extra ref alive
+    public AVFrame*                         AVFrameFEL;
     internal Renderer.DoviFrameData         Dovi;
     internal  (float Min, float Avg, float Max)? DoviL1Nits;
 
     public VideoFrame Prev, Next;
     public long Id;
+    internal bool isReady = true;
 
     public void Dispose()
     {   // Manually dipose only when not in VC
@@ -29,7 +32,12 @@ public unsafe class VideoFrame : FrameBase
             fixed(AVFrame** ptr = &AVFrame) av_frame_free(ptr);
             AVFrame = null;
         }
-            
+
+        if (AVFrameFEL != null)
+        {
+            fixed(AVFrame** ptr = &AVFrameFEL) av_frame_free(ptr);
+            AVFrameFEL = null;
+        }
     }
 
     public void DisposeTexture()
@@ -48,6 +56,14 @@ public unsafe class VideoFrame : FrameBase
                 SRV[i].Dispose();
 
             SRV = null;
+        }
+
+        if (SRVFEL != null)
+        {
+            for (int i = 0; i < SRVFEL.Length; i++)
+                SRVFEL[i].Dispose();
+
+            SRVFEL = null;
         }
 
         if (VPIV != null)

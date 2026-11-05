@@ -27,6 +27,7 @@ public unsafe partial class Renderer
     internal const string dPQSpline         = "dPQSpline";
     internal const string dDovi             = "dDovi";
     internal const string dDoviMSDetail     = "dDoviMSDetail";
+    internal const string dDoviFEL          = "dDoviFEL";
 
     internal const string dFilters          = "dFilters";
     internal const string dPano360          = "dPano360";
@@ -48,7 +49,8 @@ color = float4(
     string  psId, psIdPrev;
     nint    iccSrc;
     bool    isPQSpline;
-    bool    isDovi;
+    internal bool isDovi;
+    bool    felShaderEnabled;
 
     bool    UsesDisplayMapping => defines.Contains(dBT2020);
     bool    UsesNits           => isPQSpline || defines.Contains(dHLG);
@@ -59,6 +61,13 @@ color = float4(
         psCase  = PSCase.None;
         psId    = "";
         defines = [];
+
+        if (felShaderEnabled)
+        {   // Release the previous EL surfaces when leaving the P7 shader.
+            context.PSSetShaderResource(2, null);
+            context.PSSetShaderResource(3, null);
+            felShaderEnabled = false;
+        }
 
         if (ucfg.Pano360._enabled)
         {
@@ -212,6 +221,12 @@ color = float4(
                 // Spatial tone-detail sampling currently exists only on the unsplit HW Y/UV path.
                 if (isDovi)
                 {
+                    if (scfg.DoviProfile == 7)
+                    {
+                        felShaderEnabled = true;
+                        defines.Add(dDoviFEL);
+                        psId += "e";
+                    }
                     defines.Add(dDoviMSDetail);
                     psId += "m";
                 }
@@ -859,6 +874,86 @@ color.a = YUVToRGBFull(float3(Texture1.Sample(Sampler, float2({x}, {y})).r, floa
 
         av_frame_unref(frame);
         return mFrame;
+    }
+
+    // EL SRVs are lazy: the decoded EL arrives after the BL is cached.
+    // Called under the render/device lock; the AVFrame owns the surface.
+    bool FLBindFEL(VideoFrame frame)
+    {
+        bool ready = false;
+
+        if (frame.Dovi is { HasFEL: true } dovi && frame.AVFrame != null &&
+            frame.AVFrameFEL != null && ffTextureFEL != null &&
+            frame.AVFrameFEL->data[0] == ffTextureFEL.NativePointer &&
+            frame.AVFrameFEL->width > 0 && frame.AVFrameFEL->height > 0 &&
+            frame.AVFrame->width > 0 && frame.AVFrame->height > 0)
+        {
+            // The surface format determines the normalized -> integer-code scale.
+            // Unsupported layouts deliberately fall back to BL-only reconstruction.
+            float scale = ffTextureDescFEL.Format switch
+            {
+                Format.P010 when dovi.ELBitDepth == 10 => 65535.0f / 64.0f,
+                Format.P016 when dovi.ELBitDepth == 16 => 65535.0f,
+                Format.NV12 when dovi.ELBitDepth == 8  => 255.0f,
+                _ => 0.0f
+            };
+
+            if (scale > 0.0f && ffTextureDescFEL.Width > 0 && ffTextureDescFEL.Height > 0 &&
+                ffTextureDesc.Width > 0 && ffTextureDesc.Height > 0)
+            {
+                if (frame.SRVFEL == null)
+                {
+                    uint slice = (uint)frame.AVFrameFEL->data[1];
+                    if (slice >= ffTextureDescFEL.ArraySize)
+                    {
+                        Log.Warn("Invalid EL decoder surface index");
+                    }
+                    else
+                    {
+                        var descY = srvDesc[0];
+                        var descUV = srvDesc[1];
+                        descY.Format = dovi.ELBitDepth > 8 ? Format.R16_UNorm : Format.R8_UNorm;
+                        descUV.Format = dovi.ELBitDepth > 8 ? Format.R16G16_UNorm : Format.R8G8_UNorm;
+                        descY.Texture2DArray.FirstArraySlice = slice;
+                        descUV.Texture2DArray.FirstArraySlice = slice;
+
+                        // No partially created SRV pair escapes on failure.
+                        ID3D11ShaderResourceView y = null;
+                        try
+                        {
+                            y = device.CreateShaderResourceView(ffTextureFEL, descY);
+                            var uv = device.CreateShaderResourceView(ffTextureFEL, descUV);
+                            frame.SRVFEL = [y, uv];
+                        }
+                        catch (Exception ex)
+                        {
+                            y?.Dispose();
+                            Log.Warn($"Failed to create EL SRVs ({ex.Message})");
+                        }
+                    }
+                }
+
+                if (frame.SRVFEL != null)
+                {
+                    felInfo = new(1.0f, scale,
+                        ffTextureDesc.Width * (float)frame.AVFrameFEL->width /
+                            (frame.AVFrame->width * (float)ffTextureDescFEL.Width),
+                        ffTextureDesc.Height * (float)frame.AVFrameFEL->height /
+                            (frame.AVFrame->height * (float)ffTextureDescFEL.Height));
+                    context.PSSetShaderResources(2, frame.SRVFEL);
+                    ready = true;
+                }
+            }
+        }
+
+        if (!ready)
+        {
+            // A previous frame may have bound t2/t3. Never sample stale EL.
+            context.PSSetShaderResource(2, null);
+            context.PSSetShaderResource(3, null);
+        }
+
+        return ready;
     }
 
     void SetPS(ReadOnlySpan<char> sampleHLSL, List<string> defines = null)

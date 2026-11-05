@@ -1,4 +1,4 @@
-using Vortice.Direct3D11;
+﻿using Vortice.Direct3D11;
 using Vortice.DXGI;
 
 using ID3D11Texture2D   = Vortice.Direct3D11.ID3D11Texture2D;
@@ -117,6 +117,8 @@ public unsafe partial class Renderer
     void FLHDRSubmit(int index)
     {
         context.OMSetRenderTargets(rtvHdr);
+        if (doviAppliedL5Bounds != default)
+            context.ClearRenderTargetView(rtvHdr, default);
         context.RSSetViewport(0, 0, hdrWidth, hdrHeight);
         context.VSSetShader(vsMain);
         context.PSSetShader(psHdr);

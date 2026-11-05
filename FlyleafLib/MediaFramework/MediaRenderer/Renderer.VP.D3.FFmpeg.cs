@@ -8,9 +8,9 @@ namespace FlyleafLib.MediaFramework.MediaRenderer;
 
 public unsafe partial class Renderer
 {
-    internal AVBufferRef*           ffDevice, ffFrames;
-    internal ID3D11Texture2D        ffTexture; // required from videostream?
-    internal Texture2DDescription   ffTextureDesc;
+    internal AVBufferRef*           ffDevice, ffFrames, ffFramesFEL;
+    internal ID3D11Texture2D        ffTexture, ffTextureFEL; // required from videostream?
+    internal Texture2DDescription   ffTextureDesc, ffTextureDescFEL;
     internal FFFramesInfo           ffFramesInfo = new();
     internal class FFFramesInfo { public AVCodecID CodecId; public int CodedWidth; public int CodedHeight; }
 
@@ -121,6 +121,39 @@ public unsafe partial class Renderer
         return true;
     }
 
+    internal void ConfigFELHWFrames(AVCodecContext* codecCtx)
+    {
+        if (ffFramesFEL != null)
+            av_buffer_unref(ref ffFramesFEL);
+        ffFramesFEL = null;
+        ffTextureFEL?.Dispose();
+        ffTextureFEL = null;
+
+        int ret;
+        fixed(AVBufferRef** ptr = &ffFramesFEL)
+            if ((ret = avcodec_get_hw_frames_parameters(codecCtx, ffDevice, VideoDecoder.HW_PIX_FMT, ptr)) != 0)
+            {
+                Log.Error($"{FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
+                return;
+            }
+            
+        var framesCtx       = (AVHWFramesContext*)ffFramesFEL->data;
+        var hwCtx           = (AVD3D11VAFramesContext *)framesCtx->hwctx;
+        hwCtx->BindFlags   |= (uint)BindFlags.Decoder | (uint)BindFlags.ShaderResource;
+
+        if ((ret = av_hwframe_ctx_init(ffFramesFEL)) != 0)
+        {
+            Log.Error($"{FFmpegEngine.ErrorCodeToMsg(ret)} ({ret})");
+            av_buffer_unref(ref ffFramesFEL);
+            ffFramesFEL = null;
+            return;
+        }
+
+        ffTextureFEL = new((nint) hwCtx->texture);
+        ffTextureFEL.AddRef(); // FFmpeg ref
+        ffTextureDescFEL = ffTextureFEL.Description;
+    }
+
     bool NeedsHWFrames(AVCodecContext* codecCtx)
     {   // Checks whether we need to Re-Allocate FFFrames - Called by ConfigHWFrames (Helper)
 
@@ -173,6 +206,18 @@ public unsafe partial class Renderer
         {
             ffTexture.Dispose();
             ffTexture = null;
+        }
+
+        if (ffFramesFEL != null)
+        {
+            av_buffer_unref(ref ffFramesFEL);
+            ffFramesFEL = null;
+        }
+
+        if (ffTextureFEL != null)
+        {
+            ffTextureFEL.Dispose();
+            ffTextureFEL = null;
         }
 
         if (ffDevice != null)

@@ -114,9 +114,7 @@ inline float3 ToneMapLuma2020Absolute(float3 c)
 	if (y <= 0.0)
 		return c;
 
-	float toneY    = clamp(y, HDR.sourceMinNits, HDR.sourcePeakNits);
-	float mappedPQ = saturate(ToneSpline(NitsToPQ(toneY)));
-	float mappedY  = PQToNits(mappedPQ);
+    float mappedY = ToneSplineNits(y);
 
 	return c * (mappedY / y);
 }
@@ -132,9 +130,7 @@ inline float3 ToneMapLuma2020ToTarget(float3 c)
 	if (y <= 0.0)
 		return black.xxx;
 
-	float toneY    = clamp(y, HDR.sourceMinNits, HDR.sourcePeakNits);
-	float mappedPQ = saturate(ToneSpline(NitsToPQ(toneY)));
-	float mappedY  = PQToNits(mappedPQ);
+    float mappedY = ToneSplineNits(y);
 
 	float mappedRelative = saturate(mappedY / max(HDR.targetPeakNits, 1e-6));
 	float u = saturate((mappedRelative - black) / max(1.0 - black, 1e-6));

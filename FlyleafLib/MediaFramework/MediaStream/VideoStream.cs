@@ -2,6 +2,7 @@ using Vortice.Direct3D11;
 
 using FlyleafLib.MediaFramework.MediaDecoder;
 using FlyleafLib.MediaFramework.MediaDemuxer;
+using FlyleafLib.MediaFramework.MediaRenderer;
 
 namespace FlyleafLib.MediaFramework.MediaStream;
 
@@ -33,6 +34,7 @@ public unsafe class VideoStream : StreamBase
     public bool                         DoviRpuPresent      { get; set; }
     public bool                         DoviBlPresent       { get; set; }
     public bool                         DoviElPresent       { get; set; }
+    public bool                         DoviFELPresent      { get; set; }
 
     public Array4<AVComponentDescriptor>PixelComps          { get; set; }
     public int                          PixelComp0Depth     { get; set; }
@@ -119,7 +121,7 @@ public unsafe class VideoStream : StreamBase
                 Rotation = (uint)(rotation - (360 * Math.Floor(rotation / 360 + 0.9 / 360))); // TBR: fixed 0 - 90 - 180 - 270
             }
         }
-
+        
         var cropData= av_packet_side_data_get(cp->coded_side_data, cp->nb_coded_side_data, AVPacketSideDataType.FrameCropping);
         if (cropData != null && cropData->size == 16)
         {
@@ -164,7 +166,7 @@ public unsafe class VideoStream : StreamBase
                 DoviRpuPresent    = dovi->rpu_present_flag != 0;
                 DoviBlPresent     = dovi->bl_present_flag  != 0;
                 DoviElPresent     = dovi->el_present_flag  != 0;
-
+                
                 switch (dovi->dv_profile)
                 {
                     case 5:
@@ -354,10 +356,10 @@ public unsafe class VideoStream : StreamBase
                 ColorTransfer = codecCtx->color_trc;
         }
 
-        if (!DoviRpuPresent)
+        var doviData = av_frame_side_data_get(frame->side_data, frame->nb_side_data, AVFrameSideDataType.DOVIMetadata);
+        if (doviData != null && doviData->data != null)
         {
-            var doviData = av_frame_side_data_get(frame->side_data, frame->nb_side_data, AVFrameSideDataType.DOVIMetadata);
-            if (doviData != null && doviData->data != null)
+            if (!DoviRpuPresent)
             {
                 DoviProfile     = -1;   // Unknown profile
                 DoviRpuPresent  = true;
@@ -365,6 +367,11 @@ public unsafe class VideoStream : StreamBase
 
                 if (ColorTransfer == AVColorTransferCharacteristic.Unspecified)
                     ColorTransfer = AVColorTransferCharacteristic.SMPTE2084;
+            }
+            else if (DoviProfile == 7)
+            {
+                var dovi = (AVDOVIMetadata*)doviData->data;
+                DoviFELPresent = Renderer.FLIsDoviFEL(av_dovi_get_header(dovi), av_dovi_get_mapping(dovi));
             }
         }
 

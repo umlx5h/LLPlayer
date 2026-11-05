@@ -22,19 +22,23 @@ public unsafe partial class Renderer
     ID3D11ShaderResourceView gamutSrv;
     float                    gamutTargetMinNits  = float.NaN;
     float                    gamutTargetPeakNits = float.NaN;
+    DoviTargetGamut          gamutSourceGamut    = DoviTargetGamut.Unknown;
 
-    void FLGamutUpdateTarget()
+    void FLGamutUpdateTarget(DoviTargetGamut sourceGamut = DoviTargetGamut.Unknown)
     {
+        if (sourceGamut is not (DoviTargetGamut.P3 or DoviTargetGamut.BT709))
+            sourceGamut = DoviTargetGamut.Unknown;
+
         float targetMinNits  = hdrData.TargetMinNits;
         float targetPeakNits = hdrData.TargetPeakNits;
 
-        if (gamutTargetMinNits  == targetMinNits && gamutTxt != null &&
-            gamutTargetPeakNits == targetPeakNits)
+        if (gamutTargetMinNits == targetMinNits && gamutTxt != null &&
+            gamutTargetPeakNits == targetPeakNits && gamutSourceGamut == sourceGamut)
             return;
 
         FLGamutDispose();
 
-        ushort[] lut = FLGamutCreateLut(targetMinNits, targetPeakNits);
+        ushort[] lut = FLGamutCreateLut(targetMinNits, targetPeakNits, sourceGamut);
         
         fixed (ushort* ptr = lut)
         {
@@ -60,6 +64,7 @@ public unsafe partial class Renderer
 
         gamutTargetMinNits  = targetMinNits;
         gamutTargetPeakNits = targetPeakNits;
+        gamutSourceGamut    = sourceGamut;
 
         float minPQ = NitsToPQ(targetMinNits);
         float maxPQ = NitsToPQ(targetPeakNits);
@@ -74,7 +79,7 @@ public unsafe partial class Renderer
         gamutTxt?.Dispose(); gamutTxt = null;
     }
 
-    static ushort[] FLGamutCreateLut(float targetMinNits, float targetPeakNits)
+    static ushort[] FLGamutCreateLut(float targetMinNits, float targetPeakNits, DoviTargetGamut sourceGamut)
     {
         int      texels = gamutLutIntensity * gamutLutChroma * gamutLutHue;
         ushort[] lut    = new ushort[texels * 4];
@@ -91,8 +96,8 @@ public unsafe partial class Renderer
             float cos = MathF.Cos(hue);
             float sin = MathF.Sin(hue);
 
-            Vector3 sourcePeak = FLGamutSaturate(hue, true,  minPQ, maxPQ, minRgb, maxRgb);
-            Vector3 targetPeak = FLGamutSaturate(hue, false, minPQ, maxPQ, minRgb, maxRgb);
+            Vector3 sourcePeak = FLGamutSaturate(hue, true,  minPQ, maxPQ, minRgb, maxRgb, sourceGamut);
+            Vector3 targetPeak = FLGamutSaturate(hue, false, minPQ, maxPQ, minRgb, maxRgb, sourceGamut);
             float   maxChroma  = MathF.Max(sourcePeak.Y, targetPeak.Y);
 
             for (int chromaIndex = 0; chromaIndex < gamutLutChroma; chromaIndex++)
@@ -142,7 +147,7 @@ public unsafe partial class Renderer
         return FLGamutRGBToIPT(rgb, false);
     }
 
-    static Vector3 FLGamutSaturate(float hue, bool source2020, float minPQ, float maxPQ, float minRgb, float maxRgb)
+    static Vector3 FLGamutSaturate(float hue, bool source2020, float minPQ, float maxPQ, float minRgb, float maxRgb, DoviTargetGamut sourceGamut)
     {
         const float invPhi  = 0.6180339887498948f;
         const float invPhi2 = 0.38196601125010515f;
@@ -154,8 +159,8 @@ public unsafe partial class Renderer
         Vector3 a = new(lo.X + invPhi2 * de, 0.0f, hue);
         Vector3 b = new(lo.X + invPhi  * de, 0.0f, hue);
 
-        a = FLGamutDesatBounded(a.X, hue, 0.0f, gamutMaxChroma, source2020, minPQ, maxPQ, minRgb, maxRgb);
-        b = FLGamutDesatBounded(b.X, hue, 0.0f, gamutMaxChroma, source2020, minPQ, maxPQ, minRgb, maxRgb);
+        a = FLGamutDesatBounded(a.X, hue, 0.0f, gamutMaxChroma, source2020, minPQ, maxPQ, minRgb, maxRgb, sourceGamut);
+        b = FLGamutDesatBounded(b.X, hue, 0.0f, gamutMaxChroma, source2020, minPQ, maxPQ, minRgb, maxRgb, sourceGamut);
 
         while (de > gamutMaxDelta)
         {
@@ -166,14 +171,14 @@ public unsafe partial class Renderer
                 hi = b;
                 b  = a;
                 a.X = lo.X + invPhi2 * de;
-                a = FLGamutDesatBounded(a.X, hue, lo.Y - gamutMaxDelta, gamutMaxChroma, source2020, minPQ, maxPQ, minRgb, maxRgb);
+                a = FLGamutDesatBounded(a.X, hue, lo.Y - gamutMaxDelta, gamutMaxChroma, source2020, minPQ, maxPQ, minRgb, maxRgb, sourceGamut);
             }
             else
             {
                 lo = a;
                 a  = b;
                 b.X = lo.X + invPhi * de;
-                b = FLGamutDesatBounded(b.X, hue, hi.Y - gamutMaxDelta, gamutMaxChroma, source2020, minPQ, maxPQ, minRgb, maxRgb);
+                b = FLGamutDesatBounded(b.X, hue, hi.Y - gamutMaxDelta, gamutMaxChroma, source2020, minPQ, maxPQ, minRgb, maxRgb, sourceGamut);
             }
         }
 
@@ -189,7 +194,8 @@ public unsafe partial class Renderer
         float minPQ,
         float maxPQ,
         float minRgb,
-        float maxRgb)
+        float maxRgb,
+        DoviTargetGamut sourceGamut)
     {
         if (intensity <= minPQ)
             return new(minPQ, 0.0f, hue);
@@ -204,7 +210,7 @@ public unsafe partial class Renderer
         {
             Vector3 ipt = new(intensity, chroma * MathF.Cos(hue), chroma * MathF.Sin(hue));
 
-            if (FLGamutIsInGamut(ipt, source2020, minPQ, maxPQ, minRgb, maxRgb))
+            if (FLGamutIsInGamut(ipt, source2020, minPQ, maxPQ, minRgb, maxRgb, sourceGamut))
                 chromaMin = chroma;
             else
                 chromaMax = chroma;
@@ -216,7 +222,7 @@ public unsafe partial class Renderer
         return new(intensity, chroma, hue);
     }
 
-    static bool FLGamutIsInGamut(Vector3 ipt, bool source2020, float minPQ, float maxPQ, float minRgb, float maxRgb)
+    static bool FLGamutIsInGamut(Vector3 ipt, bool source2020, float minPQ, float maxPQ, float minRgb, float maxRgb, DoviTargetGamut sourceGamut)
     {
         Vector3 lmsPQ = FLGamutIPTToLMSPQ(ipt);
 
@@ -230,7 +236,9 @@ public unsafe partial class Renderer
                 PQEotf(lmsPQ.X),
                 PQEotf(lmsPQ.Y),
                 PQEotf(lmsPQ.Z)),
-            source2020);
+            source2020 && sourceGamut == DoviTargetGamut.P3 ? DoviTargetGamut.P3 :
+            source2020 && sourceGamut == DoviTargetGamut.BT709 ? DoviTargetGamut.BT709 :
+            source2020 ? DoviTargetGamut.BT2020 : DoviTargetGamut.Unknown);
 
         return rgb.X >= minRgb && rgb.X <= maxRgb &&
                rgb.Y >= minRgb && rgb.Y <= maxRgb &&
@@ -279,6 +287,17 @@ public unsafe partial class Renderer
             0.29576408f * c.X + 0.62307245f * c.Y + 0.08116675f * c.Z,
             0.15619198f * c.X + 0.72725164f * c.Y + 0.11655793f * c.Z,
             0.03510228f * c.X + 0.15658995f * c.Y + 0.80830303f * c.Z);
+    }
+
+    static Vector3 FLGamutLMSToRGB(Vector3 c, DoviTargetGamut sourceGamut)
+    {
+        if (sourceGamut == DoviTargetGamut.P3)
+            return new(
+                 4.84242977f * c.X - 3.92169164f * c.Y + 0.07925245f * c.Z,
+                -1.07515626f * c.X + 2.29866070f * c.Y - 0.22350553f * c.Z,
+                -0.00095691f * c.X - 0.14675422f * c.Y + 1.14771680f * c.Z);
+
+        return FLGamutLMSToRGB(c, sourceGamut == DoviTargetGamut.BT2020);
     }
 
     static Vector3 FLGamutLMSToRGB(Vector3 c, bool source2020)

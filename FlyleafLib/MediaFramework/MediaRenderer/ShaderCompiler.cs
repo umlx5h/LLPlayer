@@ -13,7 +13,7 @@ namespace FlyleafLib.MediaFramework.MediaRenderer;
 
 internal static partial class ShaderCompiler
 {
-    const int               BUFFER_SIZE     = 32 * 1024;
+    const int               BUFFER_SIZE     = 38 * 1024;
     const int               MAX_CACHE_SIZE  = 64;
     const string            MAIN            = "main";
     const string            LOG_PREFIX      = "[Shader] ";

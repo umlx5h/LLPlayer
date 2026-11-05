@@ -5,7 +5,7 @@ internal static partial class ShaderCompiler
     static ReadOnlySpan<byte> PS_DOVI => @"
 cbuffer DoviConfig : register(b2)
 {
-	float4 Dovi[190];
+	float4 Dovi[201];
 };
 
 #define DOVI_SAMPLE_SCALE       Dovi[0].x
@@ -25,18 +25,41 @@ cbuffer DoviConfig : register(b2)
 #define DOVI_TRIM_CHROMA     Dovi[188].w
 #define DOVI_TRIM_SAT        Dovi[189].x
 #define DOVI_TRIM_MS         Dovi[189].y
+#define DOVI_L8_LEVEL       Dovi[194].x
+#define DOVI_L8_MID         Dovi[194].z
+#define DOVI_L8_CLIP        Dovi[194].w
+#define DOVI_L8_GAIN        Dovi[195].x
+#define DOVI_L8_LIFT        Dovi[195].y
+#define DOVI_L8_GAMMA       Dovi[195].z
+#define DOVI_L8_CHROMA      Dovi[195].w
+#define DOVI_L8_SAT         Dovi[196].x
+#define DOVI_L8_MS          Dovi[196].y
+#define DOVI_L8_SAT_RYGC    Dovi[197]
+#define DOVI_L8_SAT_BM      Dovi[198].xy
+#define DOVI_L8_HUE_RY      Dovi[198].zw
+#define DOVI_L8_HUE_GCBM    Dovi[199]
+#define DOVI_L5_RECT         Dovi[200]
+inline bool DoviL5Active(float2 uv)
+{
+    if (DOVI_L5_RECT.z == 0.0)
+        return true;
+    return all(uv >= DOVI_L5_RECT.xy) && all(uv < DOVI_L5_RECT.zw);
+}
+#define DOVI_FEL_ACTIVE      Dovi[190].x
+#define DOVI_EL_CODE_SCALE   Dovi[190].y
+#define DOVI_EL_UV_SCALE     Dovi[190].zw
 
 // Chroma Weight is applied in IPTPQ after luminance and saturation trims.
 // The source retains absolute BT.2020 nits; final gamut mapping remains separate.
-inline float3 DoviTrimChromaWeight(float3 source2020Nits, float3 mappedIPT)
+inline float3 DoviTrimChromaWeight(float3 source2020Nits, float3 mappedIPT, float chromaWeight)
 {
     float3 sourceIPT = Absolute2020ToIPTPQ(source2020Nits);
     float saturation = length(sourceIPT.yz);
     if (saturation < 1e-5)
         return IPTPQToAbsolute2020(mappedIPT);
 
-    float intensityScale = max(0.0, 1.0 + (4.0 * DOVI_TRIM_CHROMA) * saturation);
-    float chromaScale    = max(0.0, 1.0 + (3.0 * DOVI_TRIM_CHROMA) * saturation);
+    float intensityScale = max(0.0, 1.0 + (4.0 * chromaWeight) * saturation);
+    float chromaScale    = max(0.0, 1.0 + (3.0 * chromaWeight) * saturation);
 
     float minNits = max(HDR.targetMinNits, 0.0);
     float maxNits = HDR.targetPeakNits;
@@ -99,11 +122,127 @@ inline float3 DoviApplyL2(float3 source2020Nits, float3 mapped2020)
             ipt.yz *= max(1.0 + DOVI_TRIM_SAT, 0.0);
 
         rgb = DOVI_TRIM_CHROMA != 0.0
-            ? DoviTrimChromaWeight(source2020Nits, ipt)
+            ? DoviTrimChromaWeight(source2020Nits, ipt, DOVI_TRIM_CHROMA)
             : IPTPQToAbsolute2020(ipt);
     }
 
     return HDR.nativeOutput != 0 ? rgb : rgb / peak;
+}
+
+// Approximate CM4 primary trims; Dolby's reference tone curve is proprietary.
+inline float3 DoviApplyL8(float3 source2020Nits, float3 mapped2020)
+{
+    if (DOVI_L8_LEVEL != 8.0)
+        return mapped2020;
+
+    if (DOVI_L8_GAIN == 1.0 && DOVI_L8_LIFT == 0.0 &&
+        DOVI_L8_GAMMA == 1.0 && DOVI_L8_SAT == 0.0 &&
+        DOVI_L8_CHROMA == 0.0 && DOVI_L8_MID == 0.0 &&
+        DOVI_L8_CLIP == 0.0)
+        return mapped2020;
+
+    float peak = max(HDR.targetPeakNits, 1e-6);
+    float3 rgb = HDR.nativeOutput != 0 ? mapped2020 : mapped2020 * peak;
+    float y = max(Luma2020(rgb), 0.0);
+    float minPQ = NitsToPQ(max(HDR.targetMinNits, 0.0));
+    float rangePQ = max(NitsToPQ(peak) - minPQ, 1e-6);
+    float yn = saturate((NitsToPQ(y) - minPQ) / rangePQ);
+
+    // CM4 lift, gamma and gain are kept separate from the CM2.9 SOP curve.
+    yn = pow(saturate(yn * DOVI_L8_GAIN + DOVI_L8_LIFT), max(DOVI_L8_GAMMA, 1e-4));
+
+    // Symmetric midtone contrast around 50%; keep endpoints fixed.
+    yn = saturate(yn + (DOVI_L8_MID * 0.7) *
+                  (4.0 * yn * (1.0 - yn) * (yn - 0.5)));
+
+    // Positive clip trim progressively limits the highlight ceiling.
+    float clip = saturate(DOVI_L8_CLIP * 2.0);
+    if (clip > 0.0)
+    {
+        float ceiling = 1.0 - 0.25 * clip;
+        float knee = max(ceiling - 0.12, 0.0);
+        if (yn > knee)
+            yn = knee + (ceiling - knee) *
+                 (1.0 - exp(-(yn - knee) / max(ceiling - knee, 1e-6)));
+    }
+
+    float targetY = PQToNits(minPQ + yn * rangePQ);
+    if (y > peak * 1e-6)
+        rgb *= targetY / y;
+    else
+        rgb = float3(targetY, targetY, targetY);
+
+    if (DOVI_L8_SAT != 0.0 || DOVI_L8_CHROMA != 0.0)
+    {
+        float3 ipt = Absolute2020ToIPTPQ(rgb);
+        ipt.yz *= max(1.0 + DOVI_L8_SAT, 0.0);
+        rgb = DOVI_L8_CHROMA != 0.0
+            ? DoviTrimChromaWeight(source2020Nits, ipt, DOVI_L8_CHROMA)
+            : IPTPQToAbsolute2020(ipt);
+    }
+
+    return HDR.nativeOutput != 0 ? rgb : rgb / peak;
+}
+
+// Hue anchors for BT.2020 R/Y/G/C/B/M in IPTPQ at 100 nits.
+inline float2 DoviL8SecondaryAt(float h)
+{
+    float2 r = float2(DOVI_L8_SAT_RYGC.x, DOVI_L8_HUE_RY.x);
+    float2 y = float2(DOVI_L8_SAT_RYGC.y, DOVI_L8_HUE_RY.y);
+    float2 g = float2(DOVI_L8_SAT_RYGC.z, DOVI_L8_HUE_GCBM.x);
+    float2 c = float2(DOVI_L8_SAT_RYGC.w, DOVI_L8_HUE_GCBM.y);
+    float2 b = float2(DOVI_L8_SAT_BM.x,   DOVI_L8_HUE_GCBM.z);
+    float2 m = float2(DOVI_L8_SAT_BM.y,   DOVI_L8_HUE_GCBM.w);
+
+    h = h < 0.64920 ? h + 6.28318531 : h;
+    if (h < 1.79875) return lerp(r, y, smoothstep(0.64920, 1.79875, h));
+    if (h < 2.38138) return lerp(y, g, smoothstep(1.79875, 2.38138, h));
+    if (h < 3.44598) return lerp(g, c, smoothstep(2.38138, 3.44598, h));
+    if (h < 4.27120) return lerp(c, b, smoothstep(3.44598, 4.27120, h));
+    if (h < 5.94541) return lerp(b, m, smoothstep(4.27120, 5.94541, h));
+    return lerp(m, r, smoothstep(5.94541, 6.93239, h));
+}
+
+// Approximate CM4 SDR secondary trims in IPTPQ before gamut mapping.
+inline float3 DoviApplyL8Secondary(float3 mapped2020)
+{
+    if (HDR.nativeOutput != 0 || DOVI_L8_LEVEL != 8.0 ||
+        (all(Dovi[197] == 0.0) && all(Dovi[198] == 0.0) && all(Dovi[199] == 0.0)))
+        return mapped2020;
+
+    float peak = max(HDR.targetPeakNits, 1e-6);
+    float3 original = Absolute2020ToIPTPQ(mapped2020 * peak);
+    float chroma = length(original.yz);
+    if (chroma < 1e-5)
+        return mapped2020;
+
+    float2 trim = DoviL8SecondaryAt(atan2(original.z, original.y));
+    trim *= smoothstep(0.001, 0.025, chroma);
+    if (all(trim == 0.0))
+        return mapped2020;
+
+    float angle = trim.y * 0.34906585;
+    float sn = sin(angle), cs = cos(angle);
+    float scale = max(0.0, 1.0 + trim.x * 0.75);
+    float3 adjusted = original;
+    adjusted.yz = scale * float2(original.y * cs - original.z * sn,
+                                 original.y * sn + original.z * cs);
+
+    float3 rgb = IPTPQToAbsolute2020(adjusted);
+    if (any(rgb < 0.0))
+    {
+        float fraction = 0.5;
+        [unroll] for (int i = 0; i < 6; i++)
+        {
+            rgb = IPTPQToAbsolute2020(lerp(original, adjusted, fraction));
+            if (all(rgb >= 0.0))
+                break;
+            fraction *= 0.5;
+        }
+        if (any(rgb < 0.0))
+            return mapped2020;
+    }
+    return rgb / peak;
 }
 
 inline float DoviReshapeComponent(float3 sig, int component)
@@ -161,7 +300,34 @@ inline float DoviReshapeComponent(float3 sig, int component)
 	return clamp(s, Dovi[b].x, Dovi[b].y);
 }
 
-inline float3 DoviDecodeYCC(float3 c)
+#if defined(dDoviFEL)
+// EL is a coded YUV residual; round the sampled codes before NLQ.
+inline float3 DoviComposeFEL(float3 reshaped, float2 uv)
+{
+    if (DOVI_FEL_ACTIVE == 0.0)
+        return reshaped;
+
+    float2 elUV = saturate(uv * DOVI_EL_UV_SCALE);
+    float3 el = float3(
+        Texture3.SampleLevel(Sampler, elUV, 0).r,
+        Texture4.SampleLevel(Sampler, elUV, 0).rg);
+    float3 rr = round(el * DOVI_EL_CODE_SCALE);
+
+    float3 residual;
+    [unroll] for (int c = 0; c < 3; c++)
+    {
+        float4 nlq = Dovi[191 + c];
+        float centered = round(rr[c] - nlq.x);
+        float r = sign(centered) *
+                  ((abs(centered) - 0.5) * nlq.y + nlq.z);
+        residual[c] = clamp(r, -nlq.w, nlq.w);
+    }
+
+    return saturate(reshaped + residual);
+}
+#endif
+
+inline float3 DoviDecodeYCC(float3 c, float2 uv)
 {
 	float3 sig      = saturate(c * DOVI_SAMPLE_SCALE);
 	float3 reshaped = sig;
@@ -173,6 +339,10 @@ inline float3 DoviDecodeYCC(float3 c)
 			DoviReshapeComponent(sig, 1),
 			DoviReshapeComponent(sig, 2));
 	}
+
+#if defined(dDoviFEL)
+    reshaped = DoviComposeFEL(reshaped, uv);
+#endif
 
 	float4 v = float4(reshaped, 1.0);
 
@@ -206,7 +376,7 @@ inline float DoviDetailSourceLuma(float2 uv)
     uv = saturate(uv);
     float3 yuv = float3(Texture1.SampleLevel(Sampler, uv, 0).r,
                         Texture2.SampleLevel(Sampler, uv, 0).rg);
-    float3 doviRgb = DoviDecodeYCC(yuv);
+    float3 doviRgb = DoviDecodeYCC(yuv, uv);
     return max(Luma2020(DoviTo2020(PQToLinear(doviRgb, 10000.0))), 0.0);
 }
 
@@ -218,17 +388,14 @@ inline float DoviDetailMappedLuma(float sourceY)
         HDR.sourceMinNits >= HDR.targetMinNits)
         return max(sourceY, 0.0);
 
-    float y = clamp(sourceY, HDR.sourceMinNits,
-                    max(HDR.sourcePeakNits, HDR.sourceMinNits));
-    return clamp(PQToNits(saturate(ToneSpline(NitsToPQ(y)))),
-                 max(HDR.targetMinNits, 0.0), HDR.targetPeakNits);
+    return ToneSplineNits(sourceY);
 }
 
 inline float3 DoviToneDetail(float3 source2020Nits, float3 mapped2020, float2 uv)
 {
-    float t = saturate(DOVI_TRIM_MS);
-    if (DOVI_TRIM_LEVEL != 2.0 || t <= 0.0 ||
-        HDR.targetPeakNits <= max(HDR.targetMinNits, 0.0))
+    float t = DOVI_L8_LEVEL == 8.0 ? DOVI_L8_MS :
+              (DOVI_TRIM_LEVEL == 2.0 ? DOVI_TRIM_MS : 0.0);
+    if (t == 0.0 || HDR.targetPeakNits <= max(HDR.targetMinNits, 0.0))
         return mapped2020;
 
     float mappedY = max(Luma2020(mapped2020), 0.0);
@@ -261,14 +428,14 @@ inline float3 DoviToneDetail(float3 source2020Nits, float3 mapped2020, float2 uv
     float level = saturate(mappedY / unit);
     float highlight = smoothstep(0.12, 0.70, level);
 
-    float candidateY = mappedY * exp2(highPassStops * highlight);
+    float candidateY = mappedY * exp2(highPassStops * highlight * sign(t));
     float minUnits = HDR.nativeOutput != 0
         ? max(HDR.targetMinNits, 0.0)
         : saturate(HDR.targetMinNits / displayPeak);
     float maxUnits = unit;
     candidateY = clamp(candidateY, minUnits, maxUnits);
 
-    float outputY = lerp(mappedY, candidateY, t);
+    float outputY = lerp(mappedY, candidateY, saturate(abs(t)));
     return mapped2020 * (outputY / max(mappedY, floorY));
 }
 #endif
